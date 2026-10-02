@@ -1,0 +1,200 @@
+# วิธีรันและพัฒนา
+
+> **ยังไม่เคยรันระบบนี้ เริ่มที่ [เริ่มต้นใช้งาน](getting-started.md)** หน้านี้เป็นรายละเอียดสำหรับคนที่รันได้แล้ว
+
+เอกสารนี้อธิบายคำสั่ง operator ตัวแปรแวดล้อม การทดสอบ กติกาที่เครื่องมือบังคับ และปัญหาที่เจอบ่อย โครงโฟลเดอร์และวิธีเพิ่ม use case อยู่ใน [โครงสร้างโค้ด](code-structure.md)
+
+## สิ่งที่ต้องมี
+
+| โปรแกรม | รุ่น | ใช้ทำอะไร |
+|---|---|---|
+| .NET SDK | 10.0 (ทดสอบกับ 10.0.400) | build และรัน API |
+| Node.js | 22 (Dockerfile ใช้ `node:22-alpine`) | หน้าเว็บ Next.js |
+| Docker Desktop | รุ่นปัจจุบัน | PostgreSQL ของ compose และฐานข้อมูลของ integration test |
+
+## รันทั้งหมดด้วย Docker Compose
+
+ทางนี้เป็นทางเลือก ทางหลักคือรันฐานข้อมูลใน Docker แล้วรัน API กับหน้าเว็บบนเครื่องตาม [เริ่มต้นใช้งาน](getting-started.md) ซึ่งแก้โค้ดแล้วเห็นผลทันที
+
+`docker-compose.yml` มีบริการ `postgres`, `api` (พอร์ต 5080) และ `web` (พอร์ต 3000) คำสั่งคือ
+
+```sh
+docker compose up --build
+docker compose run --rm api migrate
+docker compose run --rm api bootstrap --owner-email owner@example.test --owner-name "คุณเจ้าของ" --clinic-name "Happy Paws Clinic"
+```
+
+image ของ `api` build ผ่านแล้ว (`backend/Dockerfile` คัดลอก `Directory.Packages.props` ก่อน `dotnet restore` เพราะรุ่นของทุกแพ็กเกจอยู่ในไฟล์นั้น) ส่วน image ของ `web` ยังไม่ได้ทดสอบ build
+
+## คำสั่ง operator
+
+ไฟล์ `HappyPaws.Api` ตัวเดียวกับที่เปิด API รันคำสั่งเหล่านี้ได้ เลือกด้วยอาร์กิวเมนต์ตัวแรก เมื่อเป็นคำสั่ง web host จะไม่เปิดเลย (`Operator/OperatorCommands.cs`)
+
+| คำสั่ง | ทำอะไร |
+|---|---|
+| `migrate` | นำ migration ที่ยังไม่ได้ใช้ขึ้นฐานข้อมูล พิมพ์ `Applied N migration(s)` หรือ `Database is up to date.` |
+| `bootstrap` | สร้าง role ตั้งต้น 7 ตัว (`clinic_owner`, `clinic_admin`, `veterinarian`, `receptionist`, `vet_assistant`, `cashier`, `customer`) สาขาแรก และเจ้าของคนแรก รันซ้ำได้ สร้างเฉพาะที่ยังไม่มี และไม่สร้างเจ้าของคนที่สองถ้ามี `clinic_owner` ที่ใช้งานอยู่แล้ว |
+| `reset-credentials --email <อีเมล>` | ออกรหัสผ่านและความลับ TOTP ใหม่ และเพิกถอนทุกเซสชันของบัญชีนั้น ใช้เมื่อเจ้าของทำแอป authenticator หาย |
+| `seed-articles` | ใส่บทความตัวอย่างสี่เรื่อง รันซ้ำได้ เรื่องที่มีอยู่แล้วถูกข้าม ดู [บทความ](features/articles.md) |
+| `seed-staff` | ใส่บุคลากรตัวอย่าง 14 คนครบทุกแผนก ต้องรัน `bootstrap` ก่อน บัญชีที่ใส่เข้าสู่ระบบไม่ได้จนกว่าจะ `reset-credentials` รันซ้ำได้ ดู [ทีมของเรา](features/team.md) |
+| `seed-treatment-templates` | ใส่เทมเพลตแผนรักษาตัวอย่างหกแบบ รันซ้ำได้ ชื่อที่มีอยู่แล้วถูกข้าม สัญญาไม่มี endpoint สร้างเทมเพลต คำสั่งนี้จึงเป็นทางเดียวตอนนี้ ดู [งานรักษาต่อเนื่อง](features/clinical-records.md) |
+
+ตัวเลือกของ `bootstrap`
+
+| ตัวเลือก | ความหมาย |
+|---|---|
+| `--owner-email`, `--owner-name` | บัญชีเจ้าของ บังคับเมื่อยังไม่มีเจ้าของ |
+| `--owner-password` | รหัสผ่าน ถ้าไม่ส่งจะสุ่มแล้วพิมพ์ให้ |
+| `--clinic-name` | ชื่อคลินิกใน `clinic_profile` |
+| `--branch-code`, `--branch-name` | สาขาแรก ใช้เฉพาะเมื่อยังไม่มีสาขา ถ้าไม่ส่ง code จะเป็น `main` และ id เป็น `brn_main` |
+| `--branch-rooms` | ห้องตรวจ คั่นด้วยจุลภาค เช่น `room_1,room_2` |
+
+ส่งรหัสผ่านผ่านตัวแปร `HAPPYPAWS_OPERATOR_PASSWORD` แทน `--owner-password` หรือ `--password` ได้ เพื่อไม่ให้ค้างใน history ของ shell ตัวเลือกเขียนได้ทั้ง `--name value` และ `--name=value` exit code คือ 0 สำเร็จ 1 ถูกปฏิเสธ 2 ข้อมูลไม่ถูกต้อง
+
+**ทำไมเป็นคำสั่ง ไม่ใช่ endpoint** ทั้งสามอย่างเป็นสิ่งที่ไม่ควรมีทางทำผ่าน HTTP: เปลี่ยน schema, สร้างเจ้าของตอนที่ยังไม่มีใครมีสิทธิ์, เปลี่ยนรหัสผ่านโดยไม่รู้รหัสเดิม และสัญญาก็เขียนว่าไม่มี platform admin คนที่รัน process บนเครื่องได้ถือฐานข้อมูลอยู่แล้ว คำสั่งนี้แค่ให้ทางที่ถูกต้องและบันทึก audit ด้วย
+
+## เมื่อพอร์ต 5432 ถูกใช้
+
+เกิดบ่อยเมื่อเครื่องมี PostgreSQL ติดตั้งอยู่แล้ว
+
+1. ตั้ง `POSTGRES_PORT=5433` ใน `.env` แล้ว `docker compose up -d postgres` ใหม่ ค่านี้เปลี่ยนแค่พอร์ตฝั่งเครื่อง บริการ `api` ใน compose ยังต่อ `postgres:5432` ผ่านเครือข่ายของ compose
+2. API ที่รันบนเครื่องยังชี้ `localhost:5432` ตาม `appsettings.Development.json` ให้ตั้ง connection string ใหม่ เลือกทางใดทางหนึ่ง
+
+```sh
+# ตัวแปรแวดล้อม (bash)
+export ConnectionStrings__Postgres="Host=localhost;Port=5433;Database=happypaws;Username=happypaws;Password=happypaws"
+
+# หรือ user-secrets ของโปรเจกต์ API (UserSecretsId = happypaws-api)
+dotnet user-secrets --project src/HappyPaws.Api set "ConnectionStrings:Postgres" "Host=localhost;Port=5433;Database=happypaws;Username=happypaws;Password=happypaws"
+```
+
+บน PowerShell ใช้ `$env:ConnectionStrings__Postgres = "..."` แทน `export` ตั้งแล้วรัน `migrate`, `bootstrap` และ API ใน Terminal เดียวกัน
+
+## path `/v1`
+
+URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` API จึงใช้ `UsePathBase("/v1")` (`Http/ApiVersion.cs`)
+
+- `/v1/clinic` คือที่อยู่ที่ควรใช้ ส่วน `/clinic` ก็ยังตอบได้ เพราะ `UsePathBase` ปล่อย path ที่ไม่มี prefix ผ่านไปตรง ๆ มีไว้สำหรับ reverse proxy ที่ตัด `/v1` ออกให้แล้ว
+- `API_BASE_URL` ของหน้าเว็บต้องลงท้ายด้วย `/v1` ตาม `frontend/.env.example` คุกกี้ `hp_refresh` ของ API ตั้ง path ตามที่ผู้เรียกใช้ (`/v1/auth`)
+- path ที่ไม่มีอยู่จริงตอบ **401 ไม่ใช่ 404** ถ้าไม่ได้ส่ง token เพราะ `FallbackPolicy` บังคับเข้าสู่ระบบก่อนจะรู้ว่าไม่มี route เช่น `http://localhost:5080/` และ `/openapi/v1.json` ได้ 401
+
+## ตัวแปรแวดล้อม
+
+**ฝั่ง API** ค่าใน `appsettings.json` เขียนทับได้ด้วยตัวแปรที่ใช้ `__` แทน `:`
+
+| ตัวแปร | ค่าใน Development | ความหมาย |
+|---|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Development` (launch profile และ compose) | เลือก `appsettings.Development.json` |
+| `ConnectionStrings__Postgres` | `Host=localhost;Port=5432;...` | ฐานข้อมูล |
+| `Auth__Jwt__Issuer` | `http://localhost:5080` | บังคับ ไม่มีแล้ว API ไม่เปิด |
+| `Auth__Jwt__SigningKey` | คีย์ dev ใน `appsettings.Development.json` | บังคับ ยาวอย่างน้อย 32 ตัวอักษร ห้ามใช้คีย์ dev นอกเครื่องตัวเอง |
+| `Auth__Jwt__AccessTokenLifetimeMinutes` | 15 | อายุ access token (1 ถึง 60) |
+| `Cors__AllowedOrigins__0` | `http://localhost:3000` | origin ที่อนุญาต |
+| `Staff__Invitations__LogUndeliveredLinks` | `true` | เขียนลิงก์คำเชิญพนักงานลง log เพราะยังส่งอีเมลไม่ได้ ลิงก์นี้เป็นความลับ |
+| `Auth__SignIn__LogUndeliveredSecrets` | `true` | เขียนรหัส OTP ของลูกค้าและลิงก์รีเซ็ตรหัสผ่านลง log เพราะยังส่ง SMS และอีเมลไม่ได้ ทั้งสองอย่างเป็นความลับ |
+| `Auth__SignIn__PasswordResetUrlTemplate` | `http://localhost:3000/reset-password#token={token}` | หน้าเว็บที่ลิงก์รีเซ็ตรหัสผ่านชี้ไป |
+| `RateLimits__OtpPerPhonePer10Minutes` | 3 | จำนวนรหัส OTP ที่ขอได้ต่อเบอร์ใน 10 นาที |
+| `Storage__LocalRoot` | ว่าง (โฟลเดอร์ชั่วคราวของระบบ) | ที่เก็บไฟล์ที่อัปโหลด ต้องตั้งเป็นโฟลเดอร์ถาวรก่อนใช้งานจริง |
+| `Storage__SigningKey` | ว่าง (คำนวณจากคีย์ JWT) | คีย์ลงชื่อ URL อัปโหลดและดาวน์โหลด ถ้าตั้งเองต้องยาวอย่างน้อย 32 ตัวอักษร |
+| `Storage__PublicBaseUrl` | `http://localhost:5080/v1` | ส่วนต้นของ URL อัปโหลดและดาวน์โหลดที่ API ออกให้ |
+| `HAPPYPAWS_OPERATOR_PASSWORD` | ว่าง | รหัสผ่านสำหรับ `bootstrap` และ `reset-credentials` |
+| `HAPPYPAWS_DESIGNTIME_CONNECTION` | ว่าง | ฐานข้อมูลของ `dotnet-ef` ดู [ฐานข้อมูล](database.md#migration) |
+
+ตัวแปร `LINE_CHANNEL_*` ใน `.env.example` ยังไม่มีโค้ดอ่าน
+
+**ฝั่งหน้าเว็บ** เขียนใน `frontend/.env.local`
+
+| ตัวแปร | ค่าตัวอย่าง | ความหมาย |
+|---|---|---|
+| `API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่เซิร์ฟเวอร์ Next.js เรียก ไม่มีแล้วทุกคำขอที่เรียก API ล้ม |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5080/v1` | ประกาศไว้สำหรับการอ่านสาธารณะจากเบราว์เซอร์ แต่ตอนนี้ไม่มีโค้ดใช้ |
+
+## คำสั่งประจำวัน
+
+```sh
+# backend/
+dotnet build HappyPaws.slnx                    # warning เป็น error
+dotnet test HappyPaws.slnx                     # ทุกเทสต์ ต้องเปิด Docker
+dotnet test tests/HappyPaws.UnitTests          # เร็ว ไม่ต้องมี Docker
+dotnet tool restore                            # ครั้งแรก เพื่อใช้ dotnet dotnet-ef
+
+# frontend/
+npm run dev
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## การทดสอบ
+
+| โปรเจกต์ | ครอบอะไร | จำนวน |
+|---|---|---|
+| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP | 299 |
+| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 475 |
+
+integration test เป็นที่ตรวจสัญญา: status code, รูปของ error, cursor pagination, `If-Match` ที่ชน, `Idempotency-Key` และที่สำคัญที่สุดคือทุก endpoint ต้องปฏิเสธผู้เรียกที่ไม่มี scope ฝั่งหน้าเว็บยังไม่มีชุดทดสอบ หน้าคิวและหน้าเก็บเงินตรวจด้วยการใช้งานจริงในเบราว์เซอร์กับ API และฐานข้อมูลจริง แต่ไม่ได้บันทึกเป็นสคริปต์
+
+### สองกลุ่มของ integration test
+
+`Fixtures/ApiFixture.cs` เปิด container PostgreSQL ใหม่ รัน migration แล้วเปิด API ในโหมด Development พร้อม `ValidateOnBuild` ทำให้ DI ที่ต่อผิดล้มตั้งแต่เริ่ม
+
+| กลุ่ม | ใช้กับ | วิธีแยกข้อมูล |
+|---|---|---|
+| `ApiCollection` | เทสต์เกือบทั้งหมด (44 คลาส) | ใช้ฐานข้อมูลร่วมกัน แต่ละเทสต์สร้างข้อมูลของตัวเอง เทสต์ที่ต้องแก้ค่าระดับคลินิก (ประเภทนัด นโยบายยกเลิก ส่วนของเวชระเบียนที่เจ้าของเห็น) คืนค่าเดิมใน `finally` เพราะใน collection เดียวกันเทสต์รันทีละตัว |
+| `FreshInstanceCollection` | เทสต์ที่แก้ของที่มีชิ้นเดียวทั้ง instance (3 คลาส: `BootstrapTests`, `ClinicProfileAndBranchTests`, `ClinicSettingsTests`) | container แยกของตัวเอง สืบจาก `FreshInstanceTest` ซึ่งรัน `bootstrap` ก่อนเทสต์แรก |
+
+ใช้ fixture class เดียวกันทั้งสองกลุ่ม xUnit สร้าง fixture หนึ่งตัวต่อ collection การประกาศ collection ที่สองจึงได้ instance ที่สองที่ไม่เห็นข้อมูลของกันเลย ถ้าเทสต์ไหนแก้เวลาทำการ การตั้งค่าคิว การตั้งค่าเวชระเบียน หรือเรื่อง "มีเจ้าของหรือยัง" ต้องอยู่ใน `FreshInstanceCollection` ไม่อย่างนั้นจะเปลี่ยนสภาพใต้เทสต์อีกสองร้อยกว่าตัว
+
+### ข้อตกลงที่ควรรู้ก่อนเพิ่มเทสต์
+
+- **แทนที่เฉพาะ adapter ชั้นนอกสุด** `RecordingNotificationChannel` แทน `INotificationChannel` `RecordingStaffInvitationSender` แทนตัวส่งคำเชิญ และ `RecordingSignInSenders` แทนตัวส่งรหัส OTP และลิงก์รีเซ็ตรหัสผ่าน (อ่านรหัสด้วย `fixture.SignIn.CodeFor(phone)`) ส่วนประตูความยินยอมยังเป็นของจริง ถ้าแทน dispatcher เทสต์เรื่องการระงับข้อความจะผ่านกับระบบที่ไม่ได้ระงับอะไรเลย
+- **ระบุวันตามเวลาคลินิกเสมอ** คลินิกอยู่ `Asia/Bangkok` วันที่ UTC กับวันที่คลินิกต่างกัน 7 ชั่วโมงต่อวัน ใช้ `ClinicSeed.ClinicDate(...)` เทสต์จองที่สมมติว่า "วันนี้ยังมีช่องว่าง" จะล้มหลังราว 22:00 อย่างถูกต้อง เพราะต้องจองล่วงหน้า 120 นาที
+- **ตรวจ status ของทุกคำขอที่ใช้เตรียมข้อมูล** helper ที่ POST แล้วไม่ตรวจผล ทำให้ assertion ถัดไปล้มห่างจากจุดที่ผิดหลายขั้น ตัวช่วยใน `Fixtures/` เช่น `BookingScenario` ใส่ `Idempotency-Key` ให้แล้ว
+- **เข้าสู่ระบบแบบที่เบราว์เซอร์ทำ** `FreshInstance.SignInAsync` เรียก login แล้ว 2FA ด้วยรหัส TOTP จริง ส่วน `TestTokens` ออก token ตรงสำหรับเทสต์ที่ไม่ได้ทดสอบการเข้าสู่ระบบ
+- `Probes/ProbeController.cs` เป็น endpoint เฉพาะในเทสต์ ใช้ทดสอบ middleware ข้ามโมดูล ไม่ถูก ship
+
+## กติกาที่บังคับด้วยเครื่องมือ
+
+| กติกา | บังคับโดย |
+|---|---|
+| warning เป็น error รวมถึงคำเตือนช่องโหว่ของ NuGet | `TreatWarningsAsErrors` ใน `backend/Directory.Build.props` |
+| ทุกโปรเจกต์ใช้แพ็กเกจรุ่นเดียวกัน | `ManagePackageVersionsCentrally` และ `CentralPackageTransitivePinningEnabled` ใน `Directory.Packages.props` |
+| Domain ไม่พึ่งแพ็กเกจภายนอก | `HappyPaws.Domain.csproj` ไม่มี `PackageReference` |
+| ตัวสร้าง PDF อยู่ใน Infrastructure เท่านั้น | QuestPDF อ้างอิงเฉพาะใน `HappyPaws.Infrastructure.csproj` ฟอนต์ Sarabun ฝังเป็น resource ของโปรเจกต์นั้น |
+| XML doc ที่เขียนต้องถูกรูปแบบ เช่น `cref` ที่ชี้ไปของที่ไม่มีเป็น error แต่ไม่บังคับให้มีทุก member | `GenerateDocumentationFile` โดยปิด CS1591 |
+| ตัวตรวจ code style รันตอน build | `EnforceCodeStyleInBuild` ยังไม่มี `.editorconfig` จึงมีแค่กฎตั้งต้นของ SDK |
+| ห้าม `fetch` นอก `src/lib/api` | ESLint `no-restricted-globals` ใน `frontend/eslint.config.mjs` |
+| TypeScript แบบ strict รวม `noUncheckedIndexedAccess` | `frontend/tsconfig.json` |
+| endpoint ใหม่ปิดเป็นค่าตั้งต้น | `FallbackPolicy` ต้องเข้าสู่ระบบ ยกเว้นที่ใส่ `[AllowAnonymous]` |
+| DI ที่ต่อผิดล้มตั้งแต่เปิด | `ValidateOnBuild` ใน Development และใน integration test |
+| คีย์ JWT สั้นเกินหรือไม่มี API ไม่เปิด | `JwtOptions` ใช้ `ValidateOnStart` |
+
+เมื่อ NuGet audit เตือนแพ็กเกจที่มาทางอ้อม ให้ตรึงรุ่นที่แก้แล้วในหมวด "Transitive security pins" ของ `Directory.Packages.props` แทนการปิดคำเตือน ตัวอย่างที่มีอยู่คือ `System.Security.Cryptography.Xml`
+
+## ปัญหาที่เจอบ่อย
+
+| อาการ | สาเหตุ | ทางแก้ |
+|---|---|---|
+| `docker compose up` ฐานข้อมูลไม่ขึ้น พอร์ตชน | เครื่องมี PostgreSQL ใช้ 5432 อยู่ | ดู [เมื่อพอร์ต 5432 ถูกใช้](#เมื่อพอร์ต-5432-ถูกใช้) |
+| `password authentication failed for user "happypaws"` | `.env` ตั้งรหัสอื่น เช่น `change-me` แต่ API ใช้ `happypaws` หรือแก้ `.env` หลังสร้าง volume แล้ว (PostgreSQL อ่านรหัสตอนสร้าง volume ครั้งแรกเท่านั้น) | ตั้ง `ConnectionStrings__Postgres` ให้ตรง หรือ `docker compose down -v` เพื่อลบข้อมูลแล้วสร้างใหม่ |
+| `migrate` พิมพ์ `fail: Microsoft.EntityFrameworkCore.Database.Command` สองบรรทัด | EF Core ลองอ่านตาราง `__migrations` ที่ยังไม่มีบนฐานข้อมูลว่าง | ไม่ใช่ปัญหา ถ้าบรรทัดสุดท้ายเป็น `Applied N migration(s)` |
+| API ไม่เปิด แจ้ง `JwtOptions` ว่า `Issuer` หรือ `SigningKey` is required | ไม่ได้อยู่ใน Development เช่นรันด้วย `--no-launch-profile` หรือรัน dll ตรง จึงไม่ได้อ่าน `appsettings.Development.json` | ตั้ง `ASPNETCORE_ENVIRONMENT=Development` หรือใส่ `Auth__Jwt__Issuer` และ `Auth__Jwt__SigningKey` |
+| หน้าเว็บขึ้น `Missing environment variable: API_BASE_URL` | ไม่มี `frontend/.env.local` | `cp .env.example .env.local` ในโฟลเดอร์ `frontend` |
+| รหัส 2FA ไม่ผ่าน ขึ้นว่ารหัสไม่ถูกต้องหรือหมดอายุ | challenge มีอายุ 5 นาที หรือเวลาในเครื่องคลาดจากโทรศัพท์ | เริ่มเข้าสู่ระบบใหม่ ตรวจเวลาเครื่อง ถ้าความลับ TOTP หายใช้ `reset-credentials` |
+| เข้าสู่ระบบได้ด้วยรหัสผ่านอย่างเดียว แต่ได้ 403 แทบทุกหน้า | บัญชียังไม่ได้ลงทะเบียน 2FA แต่ role มี scope ทางการแพทย์ ประตู 2FA ของ `[RequireScope]` จึงปฏิเสธ | ให้บัญชีนั้นลงทะเบียนเองด้วย `POST /me/2fa/enroll` แล้วเข้าสู่ระบบใหม่ หรือใช้ `reset-credentials --email <อีเมล>` ซึ่งออกความลับ TOTP ให้ |
+| จองนัดไม่ได้เลย ได้ `slot_unavailable` ทุกช่วงเวลา | ยังไม่มีกะทำงาน ช่วงที่จองได้มาจากกะเท่านั้น | สร้างกะด้วย `POST /staff/schedules/shifts` ดู [ตารางเวร](features/schedules.md) |
+| จ่ายห้องตรวจให้บัตรคิวไม่ได้ ไม่มีห้องให้เลือก | `bootstrap` ไม่ได้ส่ง `--branch-rooms` และยังไม่มี endpoint แก้สาขา | สร้างฐานข้อมูลใหม่โดยส่ง `--branch-rooms` |
+| integration test ล้มตั้งแต่เริ่ม | Docker ไม่ได้เปิด Testcontainers สร้าง container ไม่ได้ | เปิด Docker Desktop แล้วรันใหม่ |
+| ลูกค้าขอรหัส OTP แล้วไม่ได้รับ | ยังไม่มีตัวส่ง SMS | ดูรหัสใน log ของ API บรรทัด `Development only. OTP for ...` ต้องเปิด `Auth:SignIn:LogUndeliveredSecrets` (เปิดไว้แล้วใน Development) |
+| ขอรหัส OTP ได้ `429` | ขอเกิน 3 ครั้งต่อเบอร์ใน 10 นาที | รอ 10 นาที หรือใช้เบอร์อื่นตอนทดลอง |
+| ไฟล์ที่อัปโหลดไว้หายหลังรีสตาร์ทเครื่อง | ไม่ได้ตั้ง `Storage:LocalRoot` ไฟล์จึงอยู่ในโฟลเดอร์ชั่วคราวของระบบ | ตั้ง `Storage__LocalRoot` เป็นโฟลเดอร์ถาวร |
+| `http://localhost:5080/` หรือ path ที่พิมพ์ผิดได้ 401 | ไม่มี token และ `FallbackPolicy` ตอบก่อนหา route | ใช้ path ที่ถูกต้อง เช่น `/v1/clinic` ซึ่งเปิดได้โดยไม่ต้องเข้าสู่ระบบ |
+| `docker compose up --build` ล้มที่ `dotnet restore` ด้วย `NU1015` | Dockerfile ไม่ได้คัดลอก `Directory.Packages.props` (แก้แล้วใน `backend/Dockerfile` ถ้าเจออีกแปลว่าไฟล์ถูกแก้กลับ) | ให้ `COPY` ไฟล์นี้ก่อนบรรทัด restore |
+
+## ทำงานกับสัญญา
+
+`API Reference.dc.html` คือสัญญา ถ้าโค้ดกับสัญญาไม่ตรงกัน สัญญาชนะ
+
+- **จุดกำกวม** บันทึกใน [จุดกำกวมของสัญญา](assumptions.md) แล้วทำตามการอ่านที่รักษาพฤติกรรมที่เขียนไว้
+- **สิ่งที่ขาดไปเลย** รายงานและขออนุมัติก่อน แล้วบันทึกใน [endpoint ส่วนขยาย](contract-extensions.md) พร้อมเหตุผลและทางเลือกที่ไม่เลือก ใน controller ให้ระบุว่าเป็นส่วนขยายด้วย
+- **ห้ามสร้าง endpoint เติมช่องว่างเอง** ถ้า endpoint ไม่อยู่ใน [แผนที่ endpoint](api-mapping.md) ถือว่าอยู่นอกขอบเขต

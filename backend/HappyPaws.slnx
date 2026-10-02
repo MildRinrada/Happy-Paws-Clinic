@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HappyPaws.Api/HappyPaws.Api.csproj" />
+    <Project Path="src/HappyPaws.Application/HappyPaws.Application.csproj" />
+    <Project Path="src/HappyPaws.Domain/HappyPaws.Domain.csproj" />
+    <Project Path="src/HappyPaws.Infrastructure/HappyPaws.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HappyPaws.IntegrationTests/HappyPaws.IntegrationTests.csproj" />
+    <Project Path="tests/HappyPaws.UnitTests/HappyPaws.UnitTests.csproj" />
+  </Folder>
+</Solution>

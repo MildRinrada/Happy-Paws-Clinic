@@ -1,0 +1,52 @@
+name: happypaws
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-happypaws}
+      POSTGRES_USER: ${POSTGRES_USER:-happypaws}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-happypaws}
+      TZ: Asia/Bangkok
+    ports:
+      # Host port only. Change POSTGRES_PORT when 5432 is already taken by a local PostgreSQL;
+      # the api service reaches the database over the compose network either way.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-happypaws} -d ${POSTGRES_DB:-happypaws}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-happypaws};Username=${POSTGRES_USER:-happypaws};Password=${POSTGRES_PASSWORD:-happypaws}
+      Cors__AllowedOrigins__0: http://localhost:3000
+    ports:
+      - "5080:8080"
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    environment:
+      # Server-side calls stay on the compose network; browser-side public reads go through localhost.
+      API_BASE_URL: http://api:8080/v1
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:5080/v1
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data:

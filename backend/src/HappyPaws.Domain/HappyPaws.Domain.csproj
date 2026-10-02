@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>HappyPaws.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    The Domain layer has NO package references on purpose.
+    It must not depend on ASP.NET Core, EF Core or any infrastructure concern.
+  -->
+
+</Project>

@@ -1,0 +1,40 @@
+# ---- secrets ----
+.env
+.env.local
+.env.*.local
+*.pfx
+*.key
+
+# ---- .NET ----
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+artifacts/
+TestResults/
+*.trx
+*.coverage
+coverage/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+next-env.d.ts
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- editors / OS ----
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# ---- local infrastructure ----
+docker/data/
+*.local.yml
