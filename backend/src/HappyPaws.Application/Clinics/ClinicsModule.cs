@@ -5,6 +5,8 @@ using HappyPaws.Application.Clinics.GetClinicProfile;
 using HappyPaws.Application.Clinics.GetOpeningHours;
 using HappyPaws.Application.Clinics.ListBranches;
 using HappyPaws.Application.Clinics.ManageBookingSettings;
+using HappyPaws.Application.Clinics.ManageContacts;
+using HappyPaws.Application.Clinics.SeedContacts;
 using HappyPaws.Application.Clinics.ReplaceOpeningHours;
 using HappyPaws.Application.Clinics.UpdateClinicProfile;
 using HappyPaws.Application.Clinics.UpdateMedicalRecordSettings;
@@ -27,6 +29,13 @@ public static class ClinicsModule
         services.AddScoped<GetOpeningHoursHandler>();
         services.AddScoped<ReplaceOpeningHoursHandler>();
         services.AddScoped<AddHolidayHandler>();
+
+        // Contact entries: a contract extension, docs/contract-extensions.md § 15.
+        services.AddScoped<ListContactsHandler>();
+        services.AddScoped<AddContactHandler>();
+        services.AddScoped<UpdateContactHandler>();
+        services.AddScoped<RemoveContactHandler>();
+        services.AddScoped<SeedContactsHandler>();
 
         services.AddScoped<GetBookingSettingsHandler>();
         services.AddScoped<UpdateBookingSettingsHandler>();

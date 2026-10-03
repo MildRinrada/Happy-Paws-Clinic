@@ -26,7 +26,7 @@ Next.js ทำหน้าที่ 3 อย่าง
 
 1. **แสดงหน้าจอ** หน้าพนักงานเป็น server component ที่อ่านข้อมูลจาก API ใหม่ทุกครั้งที่ render (`app/(staff)/layout.tsx` ตั้ง `dynamic = 'force-dynamic'`) client component มีเฉพาะส่วนที่ต้องโต้ตอบ และรับข้อมูลจาก server component ไม่ดึงเอง
 2. **ถือ token แทนเบราว์เซอร์** access token อยู่ในคุกกี้ `hp_at` และ refresh token อยู่ใน `hp_rt` ทั้งคู่เป็น httpOnly script บนหน้าเว็บอ่านไม่ได้ การแก้ข้อมูลทุกอย่างเป็น server action ที่อ่านคุกกี้ แนบ `Authorization: Bearer` แล้วเรียก API
-3. **ต่ออายุเซสชันก่อนทุกหน้า** `src/middleware.ts` ทำงานกับ `/login`, `/queue`, `/billing` และ `/api/queue/*` ถ้าคุกกี้ `hp_at` หมดแต่ยังมี `hp_rt` จะขอ token คู่ใหม่ เขียนคุกกี้ใหม่ และแก้ header ของคำขอนั้นให้หน้าเห็นคุกกี้ใหม่ทันที
+3. **ต่ออายุเซสชันก่อนทุกหน้า** `src/middleware.ts` ทำงานกับ `/login`, `/queue`, `/billing`, `/portal` และ `/api/queue/*` ถ้าคุกกี้ `hp_at` หมดแต่ยังมี `hp_rt` จะขอ token คู่ใหม่ เขียนคุกกี้ใหม่ และแก้ header ของคำขอนั้นให้หน้าเห็นคุกกี้ใหม่ทันที
 
 เบราว์เซอร์จึงไม่เคยคุยกับ API ตรง แม้แต่หน้าแรกสาธารณะก็ไม่เรียก API เพราะเป็นเนื้อหาคงที่ ตัวแปร `NEXT_PUBLIC_API_BASE_URL` ยังประกาศไว้ใน `next.config.ts` และ `src/config/env.ts` แต่ตอนนี้ไม่มีโค้ดใช้
 

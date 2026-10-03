@@ -181,6 +181,24 @@ public class PortalTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task Home_says_whose_ticket_each_queue_number_is()
+    {
+        var clinic = await ClinicSeed.ClinicAsync(fixture, cancellationToken: Token);
+        var booked = await BookingScenario.BookAsStaffAsync(fixture, clinic, 3, Token);
+        using var vet = fixture.Vet(clinic);
+        var ticketId = await CheckInAsync(vet, booked, Token);
+        using var customer = fixture.CustomerOf(clinic);
+
+        var home = await customer.GetFromJsonAsync<JsonElement>("/portal/home", Token);
+        var ticket = home.GetProperty("queue")[0];
+
+        // Without these an owner with two pets in on one day could not tell which number is whose.
+        Assert.Equal(ticketId, ticket.GetProperty("ticket_id").GetString());
+        Assert.Equal(clinic.PetId, ticket.GetProperty("pet_id").GetString());
+        Assert.Equal(booked, ticket.GetProperty("appointment_id").GetString());
+    }
+
+    [Fact]
     public async Task Staff_tokens_cannot_use_the_portal()
     {
         var clinic = await ClinicSeed.ClinicAsync(fixture, cancellationToken: Token);

@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 21 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7 และ 11 ถึง 13 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 และ 10 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 28 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7 และ 11 ถึง 14 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 และ 16 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -22,8 +22,11 @@
 | 11 | งานแล็บมี "ผลที่ยังไม่มีคนอ่าน" แต่ไม่มีทางบอกว่าอ่านแล้ว | `POST /staff/lab-requests/{id}/review` | **ทำแล้ว** |
 | 12 | contract ให้อัปโหลดผ่าน pre-signed URL แต่ไม่มีที่เก็บไฟล์ | `PUT /storage/uploads/{token}` และ `GET /storage/files/{token}` ของที่เก็บไฟล์ในเครื่อง | **ทำแล้ว** |
 | 13 | กล่องแจ้งเตือนบอกว่า "mark as read" แต่มีแค่ `GET` | `POST /portal/notifications/read` | **ทำแล้ว** |
+| 14 | หมวดการตรวจมีแต่การเขียน อ่านเคสที่เปิดค้างไม่ได้ | `GET /staff/consultations/{id}` | **ทำแล้ว** |
+| 15 | ไม่มีที่เก็บเบอร์โทร อีเมล แชท และแผนที่ของคลินิก | `GET`, `POST`, `PATCH`, `DELETE` บน `/clinic/contacts` พร้อมคำสั่ง `seed-contacts` | **ทำแล้ว** |
+| 16 | ไม่มีผู้ช่วยตอบคำถามบนหน้าเว็บ | `GET /assistant` และ `POST /assistant/chat` โมเดลสลับได้ด้วยค่าตั้ง | **ทำแล้ว** |
 
-endpoint ใหม่ 21 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 123 เส้น มีสองข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ และ § 6 เป็นกฎ ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 28 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 123 เส้น มีสองข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ และ § 6 เป็นกฎ ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -313,6 +316,52 @@ contract แยกพนักงานได้สองแบบ คือ `st
 
 **คำตอบ** `POST /portal/notifications/read` รับ `ids` ที่จะทำเครื่องหมาย หรือไม่ส่งเพื่อทำทั้งหมด ทำได้เฉพาะข้อความของตัวเอง id ของคนอื่นไม่มีผลและไม่เป็น error คำตอบบอกว่าทำไปกี่ข้อความ และเหลือที่ยังไม่อ่านกี่ข้อความ
 
+## 14. หมวดการตรวจมีแต่การเขียนแปดเส้น อ่านเคสไม่ได้
+
+หมวด Consultation ใน contract มี `POST` และ `PATCH` แปดเส้น ไม่มี `GET` เลย id ของเคสรู้ได้จากคำตอบของคำขอล่าสุดที่แตะเคสนั้นเท่านั้น หมอที่รีเฟรชหน้า หรือกลับมาเปิดเคสที่ค้างไว้หลังพักเที่ยง จึงไม่มีทางเห็นว่าในเคสมีอะไรอยู่แล้ว เป็นช่องโหว่แบบเดียวกับบิลใน § 7
+
+**คำตอบ** `GET /staff/consultations/{id}` ด้วย `consult:read` ตอบ `ConsultationDto` ตัวเดียวกับที่การเขียนทุกเส้นในหมวดนี้ตอบอยู่แล้ว พร้อม `ETag` ใช้กติกาสาขาเดียวกับการเขียน (`ConsultationAccess`) ได้รับอนุมัติก่อนสร้าง
+
+**audit** เมื่อคนที่อ่านไม่ใช่หมอเจ้าของเคส ระบบเขียน `consultation.viewed` ลง access log action นี้ประกาศไว้ใน `AuditActions` ตั้งแต่แรกแต่ยังไม่มีใครเรียก หมอที่เปิดเคสของตัวเองซ้ำไม่ถูกบันทึก ด้วยเหตุผลเดียวกับที่ autosave ไม่ถูกบันทึก คือแถวทุกครั้งที่รีเฟรชงานของตัวเองจะกลบแถวที่ access log มีไว้ให้เห็น
+
+**สิ่งที่ตั้งใจไม่ทำ** ไม่เพิ่มรายการเคส (`GET /staff/consultations?pet_id=`) ทางเข้าเคสคือปุ่มบนกระดานคิวและปฏิทินนัด ซึ่งเปิดเคสซ้ำแล้วได้เคสเดิม (`POST /staff/consultations` คืนเคสที่เปิดอยู่) เคสที่ปิดแล้วอยู่ในไทม์ไลน์ของสัตว์
+
+## 15. ไม่มีที่เก็บเบอร์โทรและช่องทางติดต่อของคลินิก
+
+โปรไฟล์คลินิกใน contract (`GET /clinic`) มีชื่อ โลโก้ สี ใบอนุญาต และผู้ควบคุมกิจการ สาขามีที่อยู่และพิกัด แต่ไม่มีที่ไหนเก็บเบอร์ที่ลูกค้าโทรหา อีเมล บัญชี LINE หรือลิงก์แผนที่ หน้าเว็บสาธารณะจึงเขียนค่าเหล่านี้ไว้ในโค้ดสองที่ (footer และการ์ดบนหน้าแรก) และสองที่นั้นเริ่มไม่ตรงกันแล้ว
+
+**คำตอบ** รายการช่องทางติดต่อ (`ClinicContact`) ตารางใหม่ `clinic_contacts` สี่ endpoint ได้รับอนุมัติก่อนสร้าง
+
+| Method | Endpoint | Scope |
+|---|---|---|
+| GET | `/clinic/contacts` | สาธารณะ เหมือน `GET /clinic` |
+| POST | `/clinic/contacts` | `settings:write` |
+| PATCH | `/clinic/contacts/{id}` | `settings:write` |
+| DELETE | `/clinic/contacts/{id}` | `settings:write` |
+
+**ทำไมเป็นรายการ ไม่ใช่ช่องเพิ่มใน `PATCH /clinic`** คลินิกแต่ละแห่งมีช่องทางไม่เหมือนกัน บางแห่งมีสองเบอร์ บางแห่งไม่มี Instagram การเพิ่มช่องตายตัวในโปรไฟล์จะเปลี่ยนรูปของคำตอบที่ contract กำหนดไว้ และยังรองรับกรณีนี้ไม่ได้ แต่ละรายการมี `kind` บอกว่าเป็นอะไร หน้าเว็บจึงแสดงแต่ละแบบได้ถูก และผูกกับสาขาได้
+
+**ทำไมใช้ `settings:write`** เป็น scope เดียวกับการเขียนข้อมูลคลินิกส่วนอื่นที่หน้าสาธารณะแสดง (`ClinicSetupController`) ไม่ต้องคิด scope ใหม่
+
+**สิ่งที่ตั้งใจไม่ทำ** ไม่บันทึกการแก้ลง audit log เพราะโปรไฟล์และเวลาทำการก็ไม่บันทึก ไม่รับลิงก์ที่ไม่ใช่ `http` หรือ `https` และไม่รับลิงก์ฝังแผนที่จากที่อื่นนอกจาก Google Maps embed เพราะ iframe บนหน้าสาธารณะคือการให้เว็บอื่นวาดลงบนหน้าของคลินิก ไม่ใส่ข้อมูลตั้งต้นใน migration ข้อมูลตัวอย่างมาจากคำสั่ง `seed-contacts` แทน รายละเอียดอยู่ใน [ข้อมูลติดต่อ](features/contact.md)
+
+## 16. ผู้ช่วย AI บนหน้าเว็บ
+
+contract ไม่มีส่วนแชทหรือผู้ช่วยอัตโนมัติ เจ้าของงานขอให้เพิ่ม chatbot บนหน้าเว็บสาธารณะ โดยตัว agent เป็นของระบบเอง และโมเดลสลับได้ระหว่าง API แบบเสียเงินกับโมเดล open source ที่รันเอง
+
+**คำตอบ** สอง endpoint สาธารณะ ได้รับอนุมัติก่อนสร้าง
+
+| Method | Endpoint | Scope |
+|---|---|---|
+| GET | `/assistant` | สาธารณะ บอกว่าผู้ช่วยเปิดอยู่ไหม |
+| POST | `/assistant/chat` | สาธารณะ จำกัด 10 ข้อความต่อนาทีต่อผู้เยี่ยมชม และโควตารายวันของทั้งคลินิก |
+
+**ขอบเขตคือข้อมูลสาธารณะเท่านั้น** เครื่องมือของผู้ช่วยเรียก use case เดียวกับหน้าเว็บสาธารณะ (ข้อมูลคลินิก ช่องทางติดต่อ เวลาทำการ บริการ เวลาว่าง) ผู้ช่วยจึงบอกอะไรไม่ได้มากกว่าที่หน้าเว็บแสดงอยู่แล้ว และไม่มีทางเข้าถึงเวชระเบียนหรือข้อมูลลูกค้า ไม่ว่าจะถูกหลอกถามอย่างไร
+
+**ไม่เก็บบทสนทนา** หน้าเว็บส่งบทสนทนาทั้งหมดมาทุกครั้ง เซิร์ฟเวอร์ไม่เก็บ และ log ไม่มีข้อความ มีแค่จำนวน token
+
+**สิ่งที่ตั้งใจไม่ทำ** ไม่ให้ผู้ช่วยจองนัดเอง (ส่งไปหน้าจองที่ต้องเข้าสู่ระบบ) ไม่ให้โมเดลสร้างลิงก์ที่หน้าเว็บแสดง (ปุ่มมาจากเครื่องมือเท่านั้น) และไม่ผูกกับผู้ให้บริการโมเดลรายเดียว รายละเอียดอยู่ใน [ผู้ช่วย AI](features/assistant.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -345,3 +394,6 @@ contract แยกพนักงานได้สองแบบ คือ `st
 | อ่านผลแล็บแล้ว | `backend/src/HappyPaws.Api/Controllers/Staff/LabRequestsController.cs`, `backend/src/HappyPaws.Application/Laboratory/ReviewLabResults/` |
 | ที่เก็บไฟล์ | `backend/src/HappyPaws.Api/Controllers/Storage/StorageController.cs`, `backend/src/HappyPaws.Infrastructure/Storage/LocalFileStorage.cs`, `backend/src/HappyPaws.Application/Common/Abstractions/IFileStorage.cs` |
 | อ่านแจ้งเตือนแล้ว | `backend/src/HappyPaws.Api/Controllers/Portal/PortalNotificationsController.cs`, `backend/src/HappyPaws.Application/Notifications/ListMyNotifications/MarkNotificationsReadHandler.cs` |
+| อ่านเคสตรวจ | `backend/src/HappyPaws.Api/Controllers/Staff/ConsultationsController.cs`, `backend/src/HappyPaws.Application/Consultations/GetConsultation/`, `backend/tests/HappyPaws.IntegrationTests/Api/Consultations/ReadConsultationTests.cs` |
+| ผู้ช่วย AI | `backend/src/HappyPaws.Application/Assistant/`, `backend/src/HappyPaws.Infrastructure/Assistant/`, `backend/src/HappyPaws.Api/Controllers/Public/AssistantController.cs` |
+| ช่องทางติดต่อ | `backend/src/HappyPaws.Domain/Clinics/ClinicContact.cs`, `backend/src/HappyPaws.Application/Clinics/ManageContacts/`, `SeedContacts/`, `backend/src/HappyPaws.Api/Controllers/Staff/ClinicContactsController.cs`, `Public/ClinicController.cs` |

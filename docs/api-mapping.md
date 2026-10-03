@@ -18,13 +18,13 @@ method, path และ scope คัดลอกจาก contract ตรงต�
 
 ## รูปแบบข้อมูลที่ส่ง
 
-response เป็น snake_case และ **สมาชิกที่เป็น null จะไม่ถูกส่งมาเลย** ไม่ได้ส่งเป็น `null` ตัวอย่างเช่น `/me` ของ token พนักงานล้วนจะไม่มีคีย์ `customer_id` ฝั่ง client จึงต้องตรวจว่ามีคีย์หรือไม่ ไม่ใช่ตรวจว่าค่าเป็น null กติกานี้ทำให้ error envelope สะอาดด้วย เพราะ `message_en`, `field` และ `details` เป็นค่าเลือกได้ทั้งหมด
+response เป็น snake_case และ **สมาชิกที่เป็น null จะไม่ถูกส่งมาเลย** ไม่ได้ส่งเป็น `null` ตัวอย่างเช่น `/me` ของ token พนักงานล้วนจะไม่มีคีย์ `customer_id` ฝั่ง client จึงต้องตรวจว่ามีคีย์หรือไม่ ไม่ใช่ตรวจว่าค่าเป็น null กติกานี้ทำให้ error envelope สะอาดด้วย เพราะ `message_en`, `field` และ `details` เป็นค่าเลือกได้ทั้งหมด object ที่อยู่ใน `details` ก็เป็น snake_case เช่นกัน เช่น ลูกค้าใน `details.existing` ของ `duplicate_customer` มี `display_name` (`Api/Errors/ApiErrorWriter.cs` ใช้กติกาเดียวกับ `Program.cs`)
 
 ## ดัชนีโดเมนไปโฟลเดอร์
 
 ช่อง use case ที่เขียนเป็น `<Module>/<โฟลเดอร์>/<ชื่อ>Handler` คือ use case ที่รวมอยู่ในโฟลเดอร์ร่วม เช่น ทุกเรื่องของ portal ฝั่งสัตว์เลี้ยงอยู่ใน `Patients/Portal/`
 
-คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(staff)/queue` และ `(staff)/billing` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
+คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
 
 | API domain | Backend module | Frontend feature | Frontend routes |
 |---|---|---|---|
@@ -32,7 +32,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Account & Access | `Identity` | `account` | `(staff)/settings/account`, `(portal)/account` |
 | Clinic setup | `Clinics` | `clinic` | `(public)/`, `(staff)/settings/clinic` |
 | Staff & Permissions | `Staff`, `Access` | `staff`, `access-control` | `(staff)/settings/staff`, `(staff)/settings/roles` |
-| Customer | `Customers` | `customers` | `(staff)/customers` |
+| Customer | `Customers` | `customers` | `(staff)/customers` (ค้นหา ลงทะเบียน หน้าลูกค้า มีแล้ว) |
 | Pet | `Patients` | `pets` | `(staff)/pets`, `(portal)/pets` |
 | Services | `ServiceCatalog` | `service-catalog` | `(public)/services`, `(staff)/settings/services` |
 | Booking & Appointment | `Appointments` | `booking`, `appointments` | `(public)/booking`, `(portal)/appointments`, `(staff)/appointments` |
@@ -443,7 +443,7 @@ event ของ webhook ขาออก (`appointment.created` ถึง `pet.cr
 
 ## ส่วนขยาย contract
 
-endpoint 21 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` 12 เส้นแรกและ 4 เส้นสุดท้ายปิดช่องโหว่ที่เจอตอนสร้างตาม contract ส่วนสองเส้นของบทความและสามเส้นของทีมเป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 28 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` 12 เส้นแรกและ 5 เส้นก่อนหกเส้นสุดท้ายปิดช่องโหว่ที่เจอตอนสร้างตาม contract ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI (หกเส้นสุดท้าย) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -468,6 +468,13 @@ endpoint 21 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | PUT | `/storage/uploads/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 | ✅ |
 | GET | `/storage/files/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 | ✅ |
 | POST | `/portal/notifications/read` | portal | `Portal/PortalNotificationsController` | `Notifications/ListMyNotifications/` (`MarkNotificationsReadHandler`) | § 13 | ✅ |
+| GET | `/staff/consultations/{id}` | `consult:read` | `Staff/ConsultationsController` | `Consultations/GetConsultation/` | § 14 | ✅ |
+| GET | `/clinic/contacts` | สาธารณะ | `Public/ClinicController` | `Clinics/ManageContacts/` (`ListContactsHandler`) | § 15 | ✅ |
+| POST | `/clinic/contacts` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`AddContactHandler`) | § 15 | ✅ |
+| PATCH | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`UpdateContactHandler`) | § 15 | ✅ |
+| DELETE | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`RemoveContactHandler`) | § 15 | ✅ |
+| GET | `/assistant` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`GetAssistantStatusHandler`) | § 16 | ✅ |
+| POST | `/assistant/chat` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`ChatHandler`) | § 16 | ✅ |
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -492,7 +499,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
 | ทำแล้วและมีเทสต์ (✅) | **123** |
-| เพิ่มนอก contract | **21** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
+| เพิ่มนอก contract | **28** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
 
@@ -500,7 +507,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-21 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด
+28 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด
 
 ## โค้ด
 

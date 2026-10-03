@@ -4,6 +4,7 @@ using HappyPaws.Application.Clinics.Dtos;
 using HappyPaws.Application.Clinics.GetClinicProfile;
 using HappyPaws.Application.Clinics.GetOpeningHours;
 using HappyPaws.Application.Clinics.ListBranches;
+using HappyPaws.Application.Clinics.ManageContacts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,6 +47,20 @@ public sealed class ClinicController : ControllerBase
     [ProducesResponseType<ListResponse<BranchDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<ListResponse<BranchDto>>> Branches(
         [FromServices] ListBranchesHandler handler,
+        CancellationToken cancellationToken) =>
+        Ok(ListResponse.Of(await handler.HandleAsync(cancellationToken)));
+
+    /// <summary>
+    /// <c>GET /clinic/contacts</c> — <b>not in the API reference</b>; see
+    /// <c>docs/contract-extensions.md § 15</c>. The phone numbers, email, chat accounts and maps the
+    /// website shows, in display order. Written in <c>Staff/ClinicContactsController</c>.
+    /// </summary>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpGet("contacts")]
+    [ProducesResponseType<ListResponse<ContactDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ListResponse<ContactDto>>> Contacts(
+        [FromServices] ListContactsHandler handler,
         CancellationToken cancellationToken) =>
         Ok(ListResponse.Of(await handler.HandleAsync(cancellationToken)));
 

@@ -182,12 +182,37 @@ contract บอกให้ "ตรวจแพ้ยา" แต่ไม่บ�
 | แพ้ยาที่ยอมรับแล้ว | `allergy_acknowledgement` บนใบสั่งยา |
 | ความถูกต้องของเวชระเบียน | `integrity_verified` คำนวณตอนอ่าน |
 
+## หน้าตรวจบนเว็บ
+
+`/consultations/<id>` หน้าทำงานของสัตวแพทย์ เปิดได้เมื่อถือ `consult:read`
+
+**ทางเข้า** ปุ่ม **เริ่มตรวจ** บนบัตรคิว (คิวที่รอ เรียกแล้ว หรืออยู่ในห้อง) และในรายละเอียดนัดบนปฏิทิน (นัดที่เช็กอินแล้ว) ทั้งสองปุ่มขึ้นเมื่อถือ `consult:write` และเรียก `POST /staff/consultations` การเปิดเคสของการมาครั้งเดิมซ้ำได้เคสเดิมกลับมา ปุ่มจึงใช้กลับเข้าเคสที่ค้างไว้ได้ด้วย (ขึ้นว่า **เปิดเคสตรวจ** เมื่อสัตว์อยู่ในห้องแล้ว) หน้าโหลดเคสด้วย `GET /staff/consultations/{id}` ซึ่งเป็นส่วนขยาย ดู [contract-extensions.md § 14](../contract-extensions.md)
+
+**หัวหน้า** ชื่อสัตว์ HN สถานะเคส ชนิด สายพันธุ์ น้ำหนักล่าสุด เจ้าของ (ลิงก์ไปหน้าลูกค้า) ลิงก์ไปหน้าสัตว์ และแถบแดงบอกชื่อยาที่แพ้ ซึ่งอ่านจากทะเบียนสัตว์ใหม่ทุกครั้งที่เปิดเคส
+
+| ส่วน | ทำอะไร | ต้องมี scope |
+|---|---|---|
+| บันทึกการตรวจ | อาการที่มา และ S O A P บันทึกเองหลังหยุดพิมพ์ 3 วินาที ส่งเฉพาะช่องที่แก้ | `consult:write` |
+| ตรวจร่างกายรายระบบ | ระบบละแถว เลือกปกติ ผิดปกติ (พร้อมสิ่งที่พบ) หรือไม่ได้ตรวจ บันทึกทั้งฟอร์มทับของเดิม | `consult:write` |
+| การวินิจฉัย | เพิ่มทีละข้อ ข้อแรกเป็นวินิจฉัยหลักโดยค่าตั้งต้น | `consult:write` |
+| สัญญาณชีพ | น้ำหนัก อุณหภูมิ ชีพจร การหายใจ กรอกค่าใดค่าหนึ่งก็บันทึกได้ | `vitals:write` |
+| หัตถการและค่าบริการ | รายการ จำนวน ราคา พร้อมยอดรวมที่จะออกบิล แต่ละรายการมี `Idempotency-Key` ของตัวเอง | `consult:write` |
+| ใบสั่งยา | ถ้าแพ้ยาที่สั่ง ฟอร์มหยุดและบอกชื่อยาที่แพ้ แพ้ระดับรุนแรงสั่งไม่ได้ ระดับอื่นใส่เหตุผลแล้วกดยืนยัน เหตุผลเก็บในใบสั่งยา | `rx:write` |
+| ปิดเคสและลงนาม | ถามยืนยันอีกครั้ง จองนัดติดตามผลได้ในขั้นเดียวกัน | `record:sign` |
+
+- **ส่วนที่บัญชีไม่มีสิทธิ์จะไม่มีฟอร์ม** ผู้ช่วยที่ถือแค่ `vitals:write` เห็นเคสและกรอกได้แค่สัญญาณชีพ บัญชีที่ไม่มี `record:sign` เห็นข้อความว่าให้สัตวแพทย์เป็นผู้ปิดเคส
+- **ทุกส่วนบันทึกแยกกัน** แล้วหน้าโหลดเคสใหม่ สิ่งที่เห็นจึงเป็นสิ่งที่ backend เก็บไว้จริงเสมอ
+- **ปิดเคสก่อนครบ** ได้ `incomplete_consultation` หน้าแสดงสิ่งที่ยังขาดพร้อมลิงก์ไปที่ส่วนนั้น
+- **นัดติดตามผล** เคสที่มาจากนัดเลือกบริการ "เหมือนครั้งนี้" ได้ เคส walk-in ไม่มีบริการเดิมให้ใช้ จึงต้องเลือกบริการ (backend ตอบ 422 ถ้าไม่ส่ง) รายการบริการมาจาก `GET /services`
+- **หลังปิดเคส** หน้าแสดงเลขบิลพร้อมลิงก์ไปหน้าบิล และเวลานัดติดตามผล ข้อมูลนี้อยู่ในที่อยู่ของหน้า เพราะเคสที่ปิดแล้วไม่ได้เก็บเลขบิลไว้ เคสที่ไม่มีหัตถการไม่ออกบิล ส่วนต่าง ๆ ของเคสที่ปิดแล้วเป็นแบบอ่านอย่างเดียว
+- **แบบฟอร์มตรวจรายระบบ** ใช้รายชื่อระบบในไฟล์ content ของหน้า (`consultation-page.ts`) เพราะ contract มีแค่ `PATCH /clinic/settings/medical-record` ไม่มีทางอ่านแบบฟอร์มที่คลินิกตั้งไว้ ถ้าคลินิกตั้งแบบฟอร์มของตัวเองด้วยชื่ออื่น backend จะปฏิเสธระบบที่ไม่อยู่ในแบบฟอร์มและหน้าแสดงข้อความนั้น
+
 ## ข้อจำกัด
 
 - **แจ้งสรุปการตรวจทาง LINE ยังเป็น stub** ข้อความผ่านประตูความยินยอมแล้วไปจบที่ `LoggingNotificationChannel` ซึ่งเขียน log ว่าไม่ได้ส่ง ดู [การแจ้งเตือน](notifications.md)
 - **append-only บังคับในโค้ด ไม่ใช่ในฐานข้อมูล** ไม่มี trigger หรือสิทธิ์ระดับตารางกันการ `UPDATE` แถวของ `medical_records` สิ่งที่จับการแก้ตรง ๆ ได้คือ `content_hash`
 - **role ตั้งต้น `veterinarian` ปิดเคสเองไม่ได้** ตารางใน contract ให้ `consult:*`, `record:write`, `rx:write` แต่ไม่ให้ `record:sign`, `record:read` และ `vitals:write` เจ้าของคลินิกต้องเพิ่มให้เอง ดู [จุดที่ contract กำกวม](../assumptions.md) และ [พนักงานและสิทธิ์](staff-and-roles.md)
-- **ยังไม่ได้ทำ** หน้าตรวจและหน้าเวชระเบียนบนเว็บ และการตัดสต๊อกตอนจ่ายยา ส่วนรายการใบสั่งยา การจ่ายยา กราฟน้ำหนัก เทมเพลตแผนรักษา ผลแล็บ และเอกสาร PDF มี API แล้วใน [งานรักษาต่อเนื่อง](clinical-records.md) ส่วนที่เจ้าของเห็นอยู่ใน [portal ลูกค้า](portal.md#ประวัติการรักษา)
+- **ยังไม่ได้ทำ** หน้าเวชระเบียนที่ลงนามแล้วและการแก้ไขเวชระเบียนบนเว็บ เทมเพลตการรักษาในหน้าตรวจ และการตัดสต๊อกตอนจ่ายยา ส่วนรายการใบสั่งยา การจ่ายยา กราฟน้ำหนัก เทมเพลตแผนรักษา ผลแล็บ และเอกสาร PDF มี API แล้วใน [งานรักษาต่อเนื่อง](clinical-records.md) ส่วนที่เจ้าของเห็นอยู่ใน [portal ลูกค้า](portal.md#ประวัติการรักษา)
 
 ## โค้ด
 
@@ -202,6 +227,9 @@ contract บอกให้ "ตรวจแพ้ยา" แต่ไม่บ�
 | ปิดเคส | `backend/src/HappyPaws.Application/Consultations/CloseConsultation/CloseConsultationHandler.cs`, `backend/src/HappyPaws.Application/Billing/ConsultationBilling.cs` |
 | เนื้อหาและ amendment | `backend/src/HappyPaws.Application/MedicalRecords/RecordContent.cs`, `MedicalRecords/AmendMedicalRecord/` |
 | controller | `backend/src/HappyPaws.Api/Controllers/Staff/ConsultationsController.cs`, `Staff/ConsultationPartsController.cs`, `Staff/MedicalRecordsController.cs` |
+| อ่านเคส (ส่วนขยาย) | `backend/src/HappyPaws.Application/Consultations/GetConsultation/` |
+| หน้าตรวจ | `frontend/src/app/(staff)/consultations/`, `frontend/src/features/consultations/` |
+| ปุ่มเริ่มตรวจ | `frontend/src/features/consultations/components/open-case-button.tsx` (ใช้ใน `features/queue/components/ticket-card.tsx` และ `features/appointments/components/detail/appointment-actions.tsx`) |
 | 2FA ตาม scope | `backend/src/HappyPaws.Api/Authorization/TwoFactorRequirement.cs` |
 | ตาราง | `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Consultations/`, `Configurations/MedicalRecords/` |
 | เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Consultations/`, `Domain/MedicalRecords/`, `Application/MedicalRecords/RecordContentTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Consultations/`, `Api/MedicalRecords/` |

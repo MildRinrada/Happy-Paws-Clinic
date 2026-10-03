@@ -56,11 +56,12 @@ dotnet run --project backend/src/HappyPaws.Api -- bootstrap --owner-email owner@
 dotnet run --project backend/src/HappyPaws.Api -- seed-articles
 dotnet run --project backend/src/HappyPaws.Api -- seed-staff
 dotnet run --project backend/src/HappyPaws.Api -- seed-treatment-templates
+dotnet run --project backend/src/HappyPaws.Api -- seed-contacts
 ```
 
 - คำสั่งแรกใช้เวลานานหน่อยเพราะต้อง build ก่อน บรรทัดท้ายต้องเป็น `Applied N migration(s)` ถ้าเห็น `fail:` สองบรรทัดก่อนหน้านั้นไม่ต้องตกใจ เป็นเรื่องปกติของฐานข้อมูลว่าง
 - `bootstrap` พิมพ์ **รหัสผ่าน** และ **รหัสลับ TOTP** ออกมาครั้งเดียว จดไว้ทั้งสองอย่าง แล้วเพิ่มรหัสลับในแอป authenticator บนมือถือ เช่น Google Authenticator หรือ Microsoft Authenticator (เลือกเพิ่มแบบพิมพ์รหัสเอง)
-- `seed-articles` ใส่บทความตัวอย่าง `seed-staff` ใส่บุคลากรตัวอย่าง หน้าแรกและหน้าทีมของเราจึงมีข้อมูลแสดง และ `seed-treatment-templates` ใส่เทมเพลตแผนรักษาตัวอย่าง ทั้งสามข้ามได้ถ้าไม่ต้องการ
+- `seed-articles` ใส่บทความตัวอย่าง `seed-staff` ใส่บุคลากรตัวอย่าง หน้าแรกและหน้าทีมของเราจึงมีข้อมูลแสดง `seed-treatment-templates` ใส่เทมเพลตแผนรักษาตัวอย่าง และ `seed-contacts` ใส่เบอร์โทร อีเมล แชท และแผนที่ตัวอย่างให้หน้าติดต่อเราและ footer ทั้งสี่ข้ามได้ถ้าไม่ต้องการ (ถ้าข้าม `seed-contacts` footer จะไม่มีข้อมูลติดต่อจนกว่าจะเพิ่มเองที่หน้าข้อมูลติดต่อ)
 
 `--` ในคำสั่งคือตัวแบ่ง ส่วนที่อยู่หลัง `--` ถูกส่งให้โปรแกรมของเรา ไม่ใช่ให้ `dotnet`
 

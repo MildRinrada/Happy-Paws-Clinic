@@ -74,7 +74,12 @@ public class CustomerRegisterTests(ApiFixture fixture)
 
         // The existing records travel with the refusal so the counter can pick one instead of
         // creating a second — a bare 409 would make the check an obstacle rather than a help.
-        Assert.Equal(1, body.GetProperty("details").GetProperty("existing").GetArrayLength());
+        var existing = body.GetProperty("details").GetProperty("existing");
+        Assert.Equal(1, existing.GetArrayLength());
+
+        // In the API's own wire format, like any response body: the counter shows the name.
+        Assert.Equal("คุณแม่", existing[0].GetProperty("display_name").GetString());
+        Assert.False(existing[0].TryGetProperty("displayName", out _));
 
         // A household really does share a number, so the check is a stop, not a wall.
         var allowed = await counter.PostAsJsonAsync(

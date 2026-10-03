@@ -14,7 +14,7 @@
 | 4 | คำสัญญาในการดูแล | `care/` | `content/care.ts` | `#about` |
 | 5 | ทีมสัตวแพทย์ | `vets/` | อ่านจาก API (`GET /team?department=veterinary`) ดู [ทีมของเรา](team.md) ส่วนหัวข้อและจำนวนคนอยู่ที่ `content/vets.ts` | `#vets` |
 | 6 | บทความ และรีวิว (สองคอลัมน์) | `articles/`, `testimonials/` | บทความอ่านจาก API (`GET /articles`) ดู [บทความ](articles.md) ส่วนรีวิวอยู่ที่ `content/testimonials.ts` | `#articles`, `#reviews` |
-| 7 | ที่ตั้งและช่องทางติดต่อ | `location/` | `content/location.ts` | `#contact` |
+| 7 | ที่ตั้งและช่องทางติดต่อ | `location/` | เวลาทำการ โทรศัพท์ LINE ที่อยู่ และแผนที่อ่านจาก API ดู [ข้อมูลติดต่อ](contact.md) ส่วนชื่อการ์ดและที่จอดรถอยู่ที่ `content/location.ts` | `#contact` |
 | 8 | ชวนเพิ่มเพื่อน LINE | `line/` | `content/line.ts` | |
 | 9 | แถบสีส้มชวนจองนัด | `booking-cta/` | `content/booking-cta.ts` | |
 
@@ -28,7 +28,9 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 |---|---|
 | ข้อความของ section ใด | `features/home/content/<section>.ts` |
 | เมนูบน header ปุ่มเข้าสู่ระบบ ปุ่มสมัคร | `frontend/src/config/site-navigation.ts` |
-| ทุกอย่างใน footer (สายด่วน ที่อยู่ ติดต่อ เวลาทำการ ใบอนุญาต ลิงก์ ลิขสิทธิ์) | `frontend/src/config/site-footer.ts` |
+| เบอร์โทร สายด่วน อีเมล LINE Facebook Instagram ที่อยู่ และแผนที่ ทั้งใน footer และหน้าแรก | หน้า **ข้อมูลติดต่อ** ในหน้าจอพนักงาน ดู [ข้อมูลติดต่อ](contact.md) |
+| เวลาทำการใน footer และหน้าแรก | เวลาทำการในระบบ (`PUT /clinic/hours`) |
+| ข้อความอื่นใน footer (หัวข้อ คำอธิบายสายด่วน ใบอนุญาต ลิงก์ ลิขสิทธิ์) | `frontend/src/config/site-footer.ts` |
 | ลำดับ section | ลำดับบรรทัดใน `app/(public)/page.tsx` |
 | ชื่อแท็บของเบราว์เซอร์ | `metadata` ใน `frontend/src/app/layout.tsx` |
 
@@ -52,8 +54,7 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 | รูปบริการ 3 รูป | `image` ของแต่ละการ์ดใน `content/services.ts` | การ์ดเล็กใช้ไอคอนวาดเองใน `services/icons/` ไม่ใช่รูป |
 | รูปหมอ | `photo_path` ในโปรไฟล์สาธารณะของแต่ละคน ดู [ทีมของเรา](team.md) | วางไฟล์ใต้ `frontend/public/images/team/` |
 | รูปบทความ | `cover_image_path` ของบทความในฐานข้อมูล ดู [บทความ](articles.md) | วางไฟล์ใต้ `frontend/public/` |
-| แผนที่ใน section ที่ตั้ง | `locationMap` ใน `content/location.ts` | ใส่ `embedUrl` (ลิงก์ embed ของ Google Maps จาก Share แล้ว Embed a map เอาค่า `src` ของ iframe) จะแสดงแผนที่สด ถ้าไม่มีใช้ `imageSrc` เป็นรูป |
-| แผนที่เล็กใน footer | `footerAddress.map.imageSrc` ใน `config/site-footer.ts` | |
+| แผนที่ใน section ที่ตั้งและใน footer | ลิงก์ฝังแผนที่ของรายการแผนที่ ในหน้า **ข้อมูลติดต่อ** | มีลิงก์ฝังจะแสดงแผนที่สด ถ้าไม่มีใช้รูปจาก `locationMap.imageSrc` (`content/location.ts`) และ `footerAddress.map.imageSrc` (`config/site-footer.ts`) |
 
 วงกลมสีข้างตัวเลข 9k+ ใน Hero ไม่ใช่รูป เป็นวงกลมสีที่วาดใน `hero/avatar-stack.tsx` ถ้าต้องการรูปลูกค้าจริงต้องแก้ component
 
@@ -74,8 +75,6 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 | ปุ่มจองนัดหมายในแถบสีส้ม | `content/booking-cta.ts` (`primaryAction`) | หน้าจองออนไลน์ |
 | เพิ่มเพื่อนใน LINE | `content/line.ts` (`action`) | ลิงก์เพิ่มเพื่อนของคลินิก `https://line.me/R/ti/p/@...` |
 | สมัครใช้งานฟรี | `config/site-navigation.ts` (`signUpLink`) | หน้าสมัครของลูกค้า (ยังไม่มี) |
-| เปิดใน Google Map | `config/site-footer.ts` (`footerAddress.mapLink`) | ลิงก์ Google Maps ของคลินิก |
-| Instagram, LINE, Facebook | `config/site-footer.ts` (`footerContact.socialLinks`) | บัญชีของคลินิก |
 | จองนัดหมาย และ ร่วมงานกับเรา ในแถวลิงก์ footer | `config/site-footer.ts` (`footerLinks`) | หน้าจอง และหน้ารับสมัครงาน (ยังไม่มี) |
 | Privacy Policy | `config/site-footer.ts` (`copyright.privacyLink`) | ประกาศความเป็นส่วนตัว (ยังไม่มี) |
 
@@ -87,8 +86,7 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 
 | เรื่อง | ที่ไหน | ปัญหา |
 |---|---|---|
-| เวลาทำการ | `content/stats.ts` การ์ดที่ 4, `content/location.ts` | สองที่นี้บอกว่าเปิดทุกวัน 09:00-20:00 ไม่เว้นวันหยุด แต่ footer (`footerHours`) บอกว่าจันทร์ อังคาร พฤหัสบดี ศุกร์ 09:00-20:00 เสาร์และอาทิตย์ 09:00-17:00 และพุธปิด |
-| เวลาทำการกับระบบ | ทั้งหน้า | เวลาจริงของคลินิกตั้งในระบบได้แล้ว (`GET /clinic/hours`) แต่หน้าแรกไม่ได้อ่าน แก้เวลาในระบบแล้วต้องแก้หน้าแรกเองด้วย |
+| เวลาทำการ | `content/stats.ts` การ์ดที่ 4 | การ์ดนี้ยังเขียนเองว่าเปิดทุกวัน 09:00-20:00 ไม่เว้นวันหยุด ส่วน footer การ์ดที่ตั้ง และหน้าติดต่อเราอ่านเวลาจริงจากระบบแล้ว แก้การ์ดนี้ให้ตรงกับเวลาในระบบ |
 | คำอธิบายการ์ดตัวเลข | `content/stats.ts` | การ์ด 4 ท่าน ใช้คำอธิบายเดียวกับการ์ด 15 ปี (ดูแลสัตว์เล็กในย่านนี้) |
 | บริการตรวจสุขภาพ | `content/services.ts` การ์ด `checkup` | คำอธิบายและป้าย งดอาหาร 8 ชม. ซ้ำกับการ์ดทันตกรรม |
 | ราคาแล็บ | `content/services.ts` การ์ด `lab` | มีคำว่าเริ่ม ฿800 และเริ่ม ฿1,800 ติดกัน |
@@ -99,9 +97,7 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 | สิ่งที่ยังไม่มีจริง | `content/line.ts`, `content/care.ts`, `content/hero.ts`, `content/booking-cta.ts` | เตือนก่อนนัด แจ้งเตือนคิวเมื่อเหลือ 1 คิว เลื่อนหรือยกเลิกนัดในแชต ส่งผลแล็บและเตือนวัคซีนเข้า LINE ดูประวัติสุขภาพออนไลน์ และจองออนไลน์ ยังไม่มีบนเว็บ และการส่งข้อความยังเป็น stub ดู [การแจ้งเตือน](notifications.md) |
 | ตัวเลขของคลินิก | `content/hero.ts`, `content/stats.ts` | 9,400 ตัว คะแนน 4.9 จาก 1,240 ครอบครัว 15 ปี 4 ท่าน และรู้ผลเลือดใน 30 นาที เป็นตัวเลขจากดีไซน์ ต้องยืนยันกับคลินิก |
 | ข้อมูลสถานพยาบาล | `config/site-footer.ts` (`footerLegal`) | เลขใบอนุญาต ชื่อและเลขใบประกอบวิชาชีพ และเลขนิติบุคคลมาจากดีไซน์ ข้อมูลเหล่านี้กฎหมายบังคับให้แสดง ห้ามเปิดใช้ด้วยค่าตัวอย่าง |
-| เบอร์และอีเมล | `config/site-footer.ts`, `content/location.ts` | เบอร์คลินิก สายด่วน อีเมล ที่อยู่ และ LINE ID มาจากดีไซน์ |
-| ที่อยู่ | `content/location.ts` กับ `config/site-footer.ts` | เขียนสองแบบ (กรุงเทพฯ กับ กรุงเทพมหานคร และการบอกทางจาก BTS ไม่เหมือนกัน) แก้ให้ตรงกันทั้งสองที่ |
-| ลำดับวันใน footer | `config/site-footer.ts` (`footerHours`) | วันพุธอยู่บรรทัดสุดท้าย ไม่เรียงตามวัน (แสดงตามลำดับในไฟล์) |
+| เบอร์ อีเมล และที่อยู่ | คำสั่ง `seed-contacts` | ค่าตัวอย่างจากดีไซน์ (ลิงก์ Facebook และ Instagram ชี้หน้าแรกของเว็บนั้น) แก้เป็นของจริงที่หน้า **ข้อมูลติดต่อ** ก่อนเปิดใช้ |
 
 ## ขนาดเมื่อเทียบกับดีไซน์
 
@@ -130,7 +126,7 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 | เนื้อหา | `frontend/src/features/home/content/` |
 | ชนิดข้อมูล | `frontend/src/features/home/types/home.types.ts` |
 | header | `frontend/src/components/layout/site-header/`, `frontend/src/config/site-navigation.ts` |
-| footer | `frontend/src/components/layout/site-footer/`, `frontend/src/config/site-footer.ts` |
+| footer | `frontend/src/components/layout/site-footer/`, `frontend/src/config/site-footer.ts` (ข้อความ), `frontend/src/features/clinic/lib/load-site-info.ts` (ข้อมูลติดต่อและเวลาทำการจาก API) |
 | ช่องรูป | `frontend/src/components/shared/image-slot.tsx` |
 | คอลัมน์เนื้อหา | `frontend/src/components/layout/site-container.tsx` |
 | ปุ่มของหน้าสาธารณะ | `frontend/src/components/ui/cta-link.tsx` |

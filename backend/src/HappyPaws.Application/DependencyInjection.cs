@@ -3,6 +3,7 @@ using FluentValidation;
 using HappyPaws.Application.Access;
 using HappyPaws.Application.Articles;
 using HappyPaws.Application.Appointments;
+using HappyPaws.Application.Assistant;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
@@ -68,6 +69,7 @@ public static class DependencyInjection
         services.AddPrescriptionsModule();
         services.AddNotificationsModule();
         services.AddCrmModule();
+        services.AddAssistantModule();
 
         return services;
     }

@@ -38,6 +38,7 @@ image ของ `api` build ผ่านแล้ว (`backend/Dockerfile` ค�
 | `seed-articles` | ใส่บทความตัวอย่างสี่เรื่อง รันซ้ำได้ เรื่องที่มีอยู่แล้วถูกข้าม ดู [บทความ](features/articles.md) |
 | `seed-staff` | ใส่บุคลากรตัวอย่าง 14 คนครบทุกแผนก ต้องรัน `bootstrap` ก่อน บัญชีที่ใส่เข้าสู่ระบบไม่ได้จนกว่าจะ `reset-credentials` รันซ้ำได้ ดู [ทีมของเรา](features/team.md) |
 | `seed-treatment-templates` | ใส่เทมเพลตแผนรักษาตัวอย่างหกแบบ รันซ้ำได้ ชื่อที่มีอยู่แล้วถูกข้าม สัญญาไม่มี endpoint สร้างเทมเพลต คำสั่งนี้จึงเป็นทางเดียวตอนนี้ ดู [งานรักษาต่อเนื่อง](features/clinical-records.md) |
+| `seed-contacts` | ใส่ช่องทางติดต่อตัวอย่าง 7 รายการ (โทรศัพท์ สายด่วน อีเมล LINE Facebook Instagram แผนที่) ทำเฉพาะเมื่อยังไม่มีรายการเลย ดู [ข้อมูลติดต่อ](features/contact.md) |
 
 ตัวเลือกของ `bootstrap`
 
@@ -129,8 +130,8 @@ npm run build
 
 | โปรเจกต์ | ครอบอะไร | จำนวน |
 |---|---|---|
-| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP | 299 |
-| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 475 |
+| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP, โควตารายวันของผู้ช่วย AI | 301 |
+| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 498 |
 
 integration test เป็นที่ตรวจสัญญา: status code, รูปของ error, cursor pagination, `If-Match` ที่ชน, `Idempotency-Key` และที่สำคัญที่สุดคือทุก endpoint ต้องปฏิเสธผู้เรียกที่ไม่มี scope ฝั่งหน้าเว็บยังไม่มีชุดทดสอบ หน้าคิวและหน้าเก็บเงินตรวจด้วยการใช้งานจริงในเบราว์เซอร์กับ API และฐานข้อมูลจริง แต่ไม่ได้บันทึกเป็นสคริปต์
 

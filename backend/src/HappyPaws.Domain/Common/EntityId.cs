@@ -59,6 +59,7 @@ public static class EntityId
     /// <summary>A staff invitation — kept apart from <c>cin</c> because accepting one creates a login.</summary>
     public const string StaffInvitation = "sin";
     public const string Holiday = "hol";
+    public const string Contact = "cct";
     public const string Article = "art";
     public const string TimeOff = "tof";
     public const string Vaccination = "vac";

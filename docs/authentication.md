@@ -46,8 +46,10 @@ sequenceDiagram
     B->>W: รหัส 6 หลัก
     W->>A: POST /auth/2fa/verify
     A-->>W: access_token + Set-Cookie hp_refresh
-    W-->>B: คุกกี้ hp_at และ hp_rt (httpOnly) แล้ว redirect ไป /queue
+    W-->>B: คุกกี้ hp_at และ hp_rt (httpOnly) แล้ว redirect ไป /queue หรือ /portal
 ```
+
+แผนภาพนี้เป็นการเข้าสู่ระบบของพนักงาน หน้าเว็บจริงเรียก `POST /auth/login` ซึ่งรับทั้งลูกค้าและพนักงาน (เบอร์โทรหรืออีเมล คู่กับรหัสผ่าน) บัญชีที่มี 2FA ได้ challenge แบบเดียวกัน หลังเข้าสู่ระบบ หน้าเว็บดู `capabilities` ที่ได้คืนมา ถ้ามี `staff_id` ไปหน้าคิว (`/queue`) ถ้าไม่มีไปหน้าแรกของลูกค้า (`/portal`)
 
 กติกาใน `StaffLoginHandler`
 
@@ -156,14 +158,19 @@ API ไม่ตรวจเซสชันในฐานข้อมูลท�
 |---|---|---|
 | `hp_at` | access token | `httpOnly`, `SameSite=Lax`, `path=/`, อายุเท่าที่ token เหลือลบ 30 วินาที |
 | `hp_rt` | refresh token (ค่าเดียวกับ `hp_refresh` ของ API) | `httpOnly`, `SameSite=Lax`, `path=/`, อายุ 30 วัน |
+| `hp_signed_in` | ค่า `1` เท่านั้น บอกว่าเบราว์เซอร์นี้ล็อกอินอยู่ | **ไม่เป็น** `httpOnly`, `SameSite=Lax`, `path=/`, อายุ 30 วัน เขียนและล้างพร้อมสองตัวบน |
 
-ทั้งสองเป็น `Secure` เมื่อ `NODE_ENV=production` ที่เลือก `Lax` แทน `Strict` เพราะลิงก์เข้าคอนโซลจากอีเมลจะไม่พาคุกกี้ไปถ้าเป็น `Strict` การเขียนข้อมูลทำผ่าน server action ซึ่ง Next.js ตรวจ origin ให้เอง
+`hp_signed_in` ไม่ใช่ข้อมูลยืนยันตัวตนและไม่ให้สิทธิ์อะไร มีไว้ให้หน้าสาธารณะซึ่งเป็นหน้า static เปลี่ยนปุ่ม "เข้าสู่ระบบ" เป็น "บัญชีของฉัน" ในเบราว์เซอร์ได้ โดยไม่ต้องอ่าน session จริง
+
+ทุกตัวเป็น `Secure` เมื่อ `NODE_ENV=production` ที่เลือก `Lax` แทน `Strict` เพราะลิงก์เข้าคอนโซลจากอีเมลจะไม่พาคุกกี้ไปถ้าเป็น `Strict` การเขียนข้อมูลทำผ่าน server action ซึ่ง Next.js ตรวจ origin ให้เอง
 
 - **เข้าสู่ระบบ** เป็น server action (`features/authentication/actions/sign-in.ts`) เรียก API สองขั้น แล้วเขียนคุกกี้เอง หน้าเว็บได้เพียง redirect ระหว่างสองขั้น `challenge` อยู่ใน state ของ `useActionState` ซึ่งส่งไปถึงเบราว์เซอร์ด้วย
 - **ทุกคำขอที่ต้องยืนยันตัวตนทำฝั่งเซิร์ฟเวอร์** `staffApi()` ใน `lib/api/server-client.ts` อ่าน `hp_at` แล้วใส่ `Authorization: Bearer` ไม่มี component ใดเรียก API จากเบราว์เซอร์
 - **ต่ออายุใน middleware** (`src/middleware.ts`) เมื่อ `hp_at` หมดแต่ยังมี `hp_rt` จะเรียก `POST /auth/refresh` เขียนคุกกี้ใหม่ และแก้ header `cookie` ของคำขอนั้นให้หน้าที่กำลัง render เห็นค่าใหม่ ไม่มีคุกกี้ทั้งคู่ หน้าเว็บถูกพาไป `/login` ส่วน `/api/*` ได้ 401
 - **refresh พร้อมกันหลายคำขอทำครั้งเดียว** (`lib/auth/refresh-session.ts`) เพราะการ refresh ซ้ำด้วยค่าเดิมคือสัญญาณขโมยและจะปิดเซสชัน ระบบจับคำขอที่ใช้ refresh token เดียวกันรวมกัน และคืนผลเดิมให้คำขอที่มาตามภายใน 20 วินาที ข้อมูลนี้อยู่ในหน่วยความจำของ process จึงใช้ได้กับเซิร์ฟเวอร์ Next.js ตัวเดียว
-- **middleware จับเฉพาะ path ที่ระบุ** คือ `/login`, `/queue/:path*`, `/billing/:path*`, `/api/queue/:path*` หน้าพนักงานใหม่ต้องเพิ่มใน `matcher` ไม่อย่างนั้นจะดูเหมือนออกจากระบบเมื่อ `hp_at` หมดอายุ
+- **middleware จับเฉพาะ path ที่ระบุ** คือ `/login`, `/queue/:path*`, `/appointments/:path*`, `/customers/:path*`, `/pets/:path*`, `/consultations/:path*`, `/settings/:path*`, `/billing/:path*`, `/portal/:path*`, `/api/queue/:path*` หน้าพนักงานใหม่ต้องเพิ่มใน `matcher` ไม่อย่างนั้นจะดูเหมือนออกจากระบบเมื่อ `hp_at` หมดอายุ
+- **กลับไปหน้าที่ตั้งใจไป** middleware ที่พาคนไม่มี session ไป `/login` จะแนบ `?next=` เป็นหน้าที่เขากำลังจะเปิด หลังล็อกอินจะกลับไปหน้านั้น ถ้า `destinationFor` ตรวจแล้วผ่าน คือต้องเป็น path ในเว็บนี้ (ไม่ใช่ `//host` หรือ URL เต็ม) และเป็นหน้าที่บัญชีใช้ได้ หน้าใน `/portal` ต้องเป็นลูกค้า หน้าอื่นต้องเป็นพนักงาน ถ้าไม่ผ่านจะไปหน้าแรกของบัญชีนั้น
+- **คนที่ล็อกอินอยู่แล้วเปิด `/login`** middleware ไม่พาไปไหน หน้า `/login` ถาม `GET /me` เองแล้วพาพนักงานไป `/queue` และลูกค้าไป `/portal` ถ้าให้ middleware พาไป `/queue` ตายตัว ลูกค้าจะวนกลับมาหน้าเข้าสู่ระบบไม่จบ บัญชีที่ไม่เป็นทั้งสองอย่างจะอยู่ที่หน้า `/login`
 - **สตรีมคิว** `EventSource` ส่ง header ไม่ได้ เบราว์เซอร์จึงต่อกับ `app/api/queue/stream/route.ts` บนโดเมนตัวเอง แล้ว route นี้ใส่ bearer token และส่งสตรีมของ API ต่อ token จึงไม่อยู่ใน URL ดู [Realtime](realtime.md)
 - **ออกจากระบบ** เรียก `POST /auth/logout` แล้วล้างคุกกี้ทั้งสองไม่ว่า API ตอบอะไร
 
@@ -183,7 +190,17 @@ API ไม่ตรวจเซสชันในฐานข้อมูลท�
 
 บัญชีจึงเกิดเมื่อพิสูจน์แล้วว่าแอปยืนยันตัวตนทำงาน ไม่มีคำขอใดคืนเซสชัน พนักงานใหม่ต้องเข้าสู่ระบบตามปกติ ลิงก์ผิดทุกแบบ (ไม่มี token ผิด หมดอายุ ใช้แล้ว) ตอบ 404 เหมือนกัน รหัส TOTP ผิดตอบ `422` ที่ช่อง `code` และลิงก์ยังใช้ต่อได้
 
-**ยังไม่มีตัวส่งอีเมล** `LoggingStaffInvitationSender` บันทึก log ระดับ warning ว่าส่งไม่ได้ ถ้าเปิด `Staff:Invitations:LogUndeliveredLinks` (เปิดใน `appsettings.Development.json`) จะเขียนลิงก์ลง log ด้วย ลิงก์คือรหัสเข้าระบบ ห้ามเปิดในที่ที่ log ถูกส่งออกจากเครื่อง หน้าเว็บก็ยังไม่มีหน้ารับคำเชิญตาม `AcceptUrlTemplate`
+**ยังไม่มีตัวส่งอีเมล** `LoggingStaffInvitationSender` บันทึก log ระดับ warning ว่าส่งไม่ได้ ถ้าเปิด `Staff:Invitations:LogUndeliveredLinks` (เปิดใน `appsettings.Development.json`) จะเขียนลิงก์ลง log ด้วย ลิงก์คือรหัสเข้าระบบ ห้ามเปิดในที่ที่ log ถูกส่งออกจากเครื่อง
+
+**หน้ารับคำเชิญ** อยู่ที่ `/invitations/{id}` ตรงกับ `AcceptUrlTemplate` ผู้ถูกเชิญเปิดลิงก์จาก log (หรืออีเมลเมื่อมีตัวส่ง) แล้วทำตามสามขั้น
+
+1. กด "เริ่มตั้งค่า" หน้าเว็บส่งคำขอแรกและแสดง QR code พร้อมความลับแบบตัวอักษรสำหรับพิมพ์เอง
+2. สแกนด้วยแอป authenticator ตั้งรหัสผ่านสองครั้ง และกรอกรหัส 6 หลักจากแอป
+3. ได้หน้ายืนยันพร้อมปุ่มไปหน้าเข้าสู่ระบบ
+
+- หน้าเว็บอ่าน token จากส่วนหลัง `#` ในเบราว์เซอร์ แล้วลบออกจากแถบที่อยู่ทันที token จึงไม่ค้างบนจอหรือในประวัติเบราว์เซอร์
+- QR code วาดบนเซิร์ฟเวอร์ของ frontend ด้วยไลบรารี `qrcode` ความลับไม่ถูกส่งไปบริการวาดรูปภายนอก
+- คำขอแรกเริ่มเมื่อกดปุ่ม ไม่ใช่ตอนเปิดหน้า เพื่อไม่ให้การรีเฟรชหน้าทำให้สับสนว่า QR code ไหนใช้ได้
 
 ## เจ้าของคนแรกและการกู้บัญชี
 
@@ -207,6 +224,7 @@ API ไม่ตรวจเซสชันในฐานข้อมูลท�
 | บัญชีและเซสชัน | `backend/src/HappyPaws.Domain/Identity/UserAccount.cs`, `UserSession.cs` |
 | ออก token, TOTP, hash รหัสผ่าน | `backend/src/HappyPaws.Infrastructure/Identity/` |
 | คำเชิญ | `backend/src/HappyPaws.Application/Staff/InviteStaffMember/`, `AcceptInvitation/`, `backend/src/HappyPaws.Infrastructure/Staff/LoggingStaffInvitationSender.cs` |
+| หน้ารับคำเชิญ | `frontend/src/app/(auth)/invitations/[id]/page.tsx`, `frontend/src/features/staff/` (`components/invitation/`, `actions/accept-invitation.ts`, `content/invitation-page.ts`) |
 | คำสั่ง operator | `backend/src/HappyPaws.Api/Operator/OperatorCommands.cs`, `backend/src/HappyPaws.Application/Identity/OperatorCredentials.cs` |
 | หน้าเว็บ | `frontend/src/middleware.ts`, `frontend/src/lib/auth/`, `frontend/src/lib/api/auth-transport.ts`, `frontend/src/features/authentication/` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Identity/`, `AuthChainTests.cs`, `Staff/StaffInvitationTests.cs` |

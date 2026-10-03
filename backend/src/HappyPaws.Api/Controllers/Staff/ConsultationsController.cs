@@ -3,6 +3,7 @@ using HappyPaws.Api.Contracts.Consultations;
 using HappyPaws.Api.Http;
 using HappyPaws.Api.Idempotency;
 using HappyPaws.Application.Consultations.Dtos;
+using HappyPaws.Application.Consultations.GetConsultation;
 using HappyPaws.Application.Consultations.OpenConsultation;
 using HappyPaws.Application.Consultations.UpdateConsultation;
 using HappyPaws.Domain.Access;
@@ -41,6 +42,30 @@ public sealed class ConsultationsController : ControllerBase
         Response.Headers.ETag = IfMatch.ToETag(consultation.Version);
 
         return Created($"/staff/consultations/{consultation.Id}", consultation);
+    }
+
+    /// <summary>
+    /// <c>GET /staff/consultations/{id}</c> — <b>not in the API reference</b>; see
+    /// <c>docs/contract-extensions.md § 14</c>. The case as every write in this section already
+    /// answers with it, so a reloaded page can show a draft left open.
+    /// </summary>
+    /// <param name="id">Consultation id.</param>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpGet("{id}")]
+    [RequireScope(Scopes.Consult.Read)]
+    [ProducesResponseType<ConsultationDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ConsultationDto>> Get(
+        string id,
+        [FromServices] GetConsultationHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var consultation = await handler.HandleAsync(new GetConsultationQuery(id), cancellationToken);
+
+        Response.Headers.ETag = IfMatch.ToETag(consultation.Version);
+
+        return Ok(consultation);
     }
 
     /// <summary>

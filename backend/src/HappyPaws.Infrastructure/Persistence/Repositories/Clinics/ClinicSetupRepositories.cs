@@ -74,6 +74,25 @@ internal sealed class BranchRepository(HappyPawsDbContext db) : IBranchRepositor
     }
 }
 
+/// <summary>EF Core implementation of the contact-entry port.</summary>
+internal sealed class ContactRepository(HappyPawsDbContext db) : IContactRepository
+{
+    public void Add(ClinicContact contact) => db.Set<ClinicContact>().Add(contact);
+
+    public void Remove(ClinicContact contact) => db.Set<ClinicContact>().Remove(contact);
+
+    public Task<ClinicContact?> FindTrackedAsync(string contactId, CancellationToken cancellationToken = default) =>
+        db.Set<ClinicContact>().FirstOrDefaultAsync(contact => contact.Id == contactId, cancellationToken);
+
+    public async Task<IReadOnlyList<ClinicContact>> ListAsync(CancellationToken cancellationToken = default) =>
+        await db.Set<ClinicContact>().AsNoTracking()
+            .OrderBy(contact => contact.SortOrder).ThenBy(contact => contact.CreatedAt).ThenBy(contact => contact.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task<bool> AnyAsync(CancellationToken cancellationToken = default) =>
+        db.Set<ClinicContact>().AnyAsync(cancellationToken);
+}
+
 /// <summary>EF Core implementation of the holiday port.</summary>
 internal sealed class HolidayRepository(HappyPawsDbContext db) : IHolidayRepository
 {

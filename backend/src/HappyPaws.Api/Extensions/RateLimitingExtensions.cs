@@ -21,10 +21,17 @@ public static class RateLimitingExtensions
     /// <summary>Apply to messaging endpoints with <c>[EnableRateLimiting(RateLimitingExtensions.MessagingPolicy)]</c>.</summary>
     public const string MessagingPolicy = "messaging";
 
+    /// <summary>
+    /// The website assistant: every message costs a model call, and the endpoint is open to anyone,
+    /// so it gets the tightest limit in the system (<c>Assistant:MessagesPerMinute</c>).
+    /// </summary>
+    public const string AssistantPolicy = "assistant";
+
     public static IServiceCollection AddClinicRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var perToken = configuration.GetValue("RateLimits:PerTokenPerMinute", 600);
         var messaging = configuration.GetValue("RateLimits:MessagingPerMinute", 60);
+        var assistant = configuration.GetValue("Assistant:MessagesPerMinute", 10);
 
         services.AddRateLimiter(options =>
         {
@@ -33,6 +40,9 @@ public static class RateLimitingExtensions
 
             options.AddPolicy(MessagingPolicy, context =>
                 Partition(context, messaging, suffix: ":messaging"));
+
+            options.AddPolicy(AssistantPolicy, context =>
+                Partition(context, assistant, suffix: ":assistant"));
 
             options.OnRejected = async (context, cancellationToken) =>
             {

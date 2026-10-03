@@ -187,9 +187,44 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 - เช็กอินไม่ตรวจว่านัดเป็นของวันนี้ บัตรคิวที่ได้เป็นของวันที่เช็กอิน
 - `GET /portal/appointments` กรองด้วย `customer_id` ของนัด ส่วน `GET /appointments/{id}` ตรวจจากการดูแลสัตว์ ผู้ดูแลร่วมจึงเปิดนัดที่อีกคนจองได้ แต่ไม่เห็นในรายการของตัวเอง
 
+## ปฏิทินนัดบนเว็บ
+
+`/appointments` เมนู **ปฏิทินนัด** ในหน้าจอพนักงาน เห็นเฉพาะบัญชีที่ถือ `appointment:read` ส่วนลูกค้าจองเองที่ `/portal/book` ดู [portal ลูกค้า](portal.md)
+
+- **ดูทีละวัน** ของสาขาที่เลือกอยู่ วันอยู่ในที่อยู่ของหน้า (`/appointments?date=YYYY-MM-DD`) มีปุ่มวันก่อนหน้า วันนี้ วันถัดไป และช่องเลือกวัน หัวหน้าบอกจำนวนนัดทั้งหมดและนัดที่ยังไม่มาถึง
+- **จอกว้างเป็นตาราง** เวลาเรียงลงมา หนึ่งคอลัมน์ต่อหมอ 1 ชั่วโมงสูง 72 px ทุกหมอที่ทำงานสาขานี้มีคอลัมน์ แม้วันนั้นจะว่าง นัดที่ยังไม่ระบุหมอไปอยู่คอลัมน์ "ยังไม่ระบุหมอ" นัดที่เวลาซ้อนกันในคอลัมน์เดียวแบ่งความกว้างกัน ช่วงเวลาของตารางมาจากเวลาทำการของวันนั้น (`GET /clinic/hours`) และขยายเองถ้ามีนัดนอกเวลา
+- **จอแคบเป็นรายการ** เรียงตามเวลา
+- **สีของนัดตามสถานะ** ยกเลิกแล้วเป็นตัวขีดฆ่า ไม่มาตามนัดเป็นสีแดงจาง สัตว์ที่มีประวัติแพ้ยามีเครื่องหมาย `!` สีแดง
+- **กดนัดเพื่อเปิดรายละเอียด** ชื่อสัตว์ ชื่อและเบอร์เจ้าของ (ลิงก์ไปหน้าลูกค้า) เวลา บริการ หมอ ประเภท อาการที่แจ้ง และแถบแดงบอกชื่อยาที่แพ้
+- **ปุ่มในรายละเอียดขึ้นตามสถานะและสิทธิ์** มีเฉพาะนัดที่ยัง `booked` หรือ `confirmed`
+
+| ปุ่ม | ขึ้นเมื่อ |
+|---|---|
+| เช็กอินเข้าคิว | ถือ `appointment:checkin` และเป็นนัดของวันนี้ บอกเลขคิวที่ได้ |
+| ยืนยันนัด | ถือ `appointment:write` และนัดยัง `booked` |
+| เลื่อนนัด | ถือ `appointment:write` เลือกวัน เวลา และเปลี่ยนหมอได้ ส่ง `If-Match` ถ้าเวลาไม่ว่าง ขึ้นเวลาที่ API เสนอให้กดเลือก |
+| ไม่มาตามนัด | ถือ `appointment:write` และเลยเวลานัดแล้ว |
+| ยกเลิกนัด | ถือ `appointment:write` ถามเหตุผลก่อน เหตุผลเก็บไว้ในนัด |
+
+ปุ่มเช็กอินขึ้นเฉพาะวันนี้ และทุกปุ่มขึ้นเฉพาะนัดที่ยังไม่มาถึง เพราะ backend ยอมให้เช็กอินนัดวันอื่น และยอมเลื่อนนัดที่เช็กอินแล้ว (ดูข้อสังเกตด้านบน) หน้าเว็บจึงไม่เปิดทางให้กดผิดแบบนั้น
+
+**จองแทนลูกค้า** `/appointments/new` ปุ่ม **จองนัด** ขึ้นเมื่อถือ `appointment:write`
+
+- ค้นสัตว์ด้วยชื่อหรือ HN (สัตว์ที่เสียชีวิตไม่ขึ้น) เลือกบริการ วัน และหมอ (หรือใครก็ได้ที่ว่าง)
+- เวลาว่างมาจาก `GET /booking/availability` ชุดเดียวกับที่ลูกค้าเห็น และพิมพ์เวลาเองได้ เพราะพนักงานไม่ต้องรอระยะจองล่วงหน้าแบบลูกค้า backend ยังตรวจว่าหมอว่างจริง
+- เวลาไม่ว่างได้ `slot_unavailable` หน้าขึ้นข้อความพร้อมเวลาที่เสนอ (ตัดเวลาซ้ำ และแสดงไม่เกิน 6 เวลา)
+- ฟอร์มหนึ่งใบใช้ `Idempotency-Key` เดียว กดซ้ำไม่จองซ้ำ ถ้าถูกปฏิเสธ ครั้งถัดไปใช้ key ใหม่ เพราะครั้งก่อนไม่ได้จองอะไร
+- จองสำเร็จแล้วกลับไปที่ปฏิทินของวันนั้น
+
+**ข้อจำกัดของหน้าเว็บ**
+
+- รายการบริการมาจาก `GET /services` ซึ่งมีเฉพาะบริการที่เปิดจองออนไลน์ บริการที่รับเฉพาะทางโทรศัพท์จึงเลือกจากหน้านี้ไม่ได้ และชื่อบริการของนัดแบบนั้นขึ้นเป็นคำว่า "บริการ" contract ไม่มีรายการบริการฝั่งพนักงาน ดู [assumptions.md § 27](../assumptions.md)
+- ชื่อหมอมาจาก `GET /staff/members` (ต้องมี `staff:read`) ถ้าไม่มีสิทธิ์ ใช้รายชื่อหมอจากหน้าทีมของเว็บแทน
+- ยังไม่มีมุมมองรายสัปดาห์ ตารางเวรของหมอยังไม่ขึ้นเป็นพื้นหลังของคอลัมน์ และยังลากนัดเพื่อเลื่อนไม่ได้
+
 ## ยังไม่ได้ทำ
 
-การเตือนนัด และหน้าจองกับหน้าตารางนัดบนเว็บ ส่วนไม่มาตามนัด นัดต่อเนื่อง คิวรอ ตรวจนัดชน ประเภทนัด และนโยบายยกเลิก ทำแล้วใน [นัดขั้นสูง](advanced-booking.md) ตารางเวรอยู่ใน [ตารางเวร](schedules.md)
+การเตือนนัด ส่วนไม่มาตามนัด นัดต่อเนื่อง คิวรอ ตรวจนัดชน ประเภทนัด และนโยบายยกเลิก ทำแล้วใน [นัดขั้นสูง](advanced-booking.md) ตารางเวรอยู่ใน [ตารางเวร](schedules.md)
 
 ## โค้ด
 
@@ -205,4 +240,5 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 | controller | `backend/src/HappyPaws.Api/Controllers/Public/BookingAvailabilityController.cs`, `Portal/BookingHoldsController.cs`, `Portal/PortalAppointmentsController.cs`, `Staff/AppointmentsController.cs`, `Account/AppointmentsController.cs`, `Account/AppointmentActionsController.cs` |
 | constraint กันจองซ้อน | `backend/src/HappyPaws.Infrastructure/Persistence/Migrations/20260823081447_AppointmentSlotExclusion.cs`, `Persistence/PostgresErrorTranslator.cs` |
 | ค่าตั้งการจอง | `backend/src/HappyPaws.Domain/Clinics/BookingSettings.cs` |
+| ปฏิทินนัดและหน้าจอง | `frontend/src/app/(staff)/appointments/`, `frontend/src/features/appointments/` (`components/calendar/`, `components/detail/`, `components/new/`, `lib/load-calendar.ts`, `lib/block-layout.ts`, `actions/calendar-actions.ts`) |
 | เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Appointments/AppointmentStateMachineTests.cs`, `backend/tests/HappyPaws.UnitTests/Application/Appointments/SlotCalculatorTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/` |

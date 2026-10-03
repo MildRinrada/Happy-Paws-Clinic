@@ -20,6 +20,7 @@ using HappyPaws.Application.Queueing;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.ServiceCatalog;
 using HappyPaws.Application.Staff;
+using HappyPaws.Infrastructure.Assistant;
 using HappyPaws.Infrastructure.Auditing;
 using HappyPaws.Application.MedicalRecords.GenerateDocument;
 using HappyPaws.Infrastructure.Common;
@@ -94,6 +95,9 @@ public static class DependencyInjection
                 .UseSnakeCaseNamingConvention()
                 .AddInterceptors(provider.GetRequiredService<TimestampInterceptor>());
         });
+
+        // The website assistant's model: Gemini, an OpenAI-format server (Ollama, vLLM) or none.
+        services.AddAssistantModel(configuration);
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
@@ -186,6 +190,7 @@ public static class DependencyInjection
         services.AddScoped<IClinicSettingsStore, ClinicSettingsStore>();
         services.AddScoped<IBranchRepository, BranchRepository>();
         services.AddScoped<IHolidayRepository, HolidayRepository>();
+        services.AddScoped<IContactRepository, ContactRepository>();
 
         // ---- Staff and permissions ----
         services.AddScoped<IRoleRepository, RoleRepository>();

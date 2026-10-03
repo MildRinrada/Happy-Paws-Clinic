@@ -2,6 +2,7 @@ using HappyPaws.Application.Consultations.AddDiagnosis;
 using HappyPaws.Application.Consultations.AddPrescription;
 using HappyPaws.Application.Consultations.AddTreatment;
 using HappyPaws.Application.Consultations.CloseConsultation;
+using HappyPaws.Application.Consultations.GetConsultation;
 using HappyPaws.Application.Consultations.ListTreatmentTemplates;
 using HappyPaws.Application.Consultations.OpenConsultation;
 using HappyPaws.Application.Consultations.RecordExamination;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application.Consultations;
 
-/// <summary>Registers the eight consultation use cases and the treatment templates.</summary>
+/// <summary>Registers the consultation use cases (the contract's eight and one read) and the treatment templates.</summary>
 public static class ConsultationsModule
 {
     public static IServiceCollection AddConsultationsModule(this IServiceCollection services)
@@ -20,6 +21,7 @@ public static class ConsultationsModule
         services.AddScoped<ConsultationAccess>();
 
         services.AddScoped<OpenConsultationHandler>();
+        services.AddScoped<GetConsultationHandler>();
         services.AddScoped<UpdateConsultationHandler>();
         services.AddScoped<RecordVitalsHandler>();
         services.AddScoped<RecordExaminationHandler>();

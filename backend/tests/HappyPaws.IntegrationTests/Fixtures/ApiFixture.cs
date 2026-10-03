@@ -53,6 +53,9 @@ public sealed class ApiFixture : IAsyncLifetime
     /// <summary>The stand-in SMS and email for customer sign-in, for reading codes and reset links.</summary>
     public RecordingSignInSenders SignIn => Services.GetRequiredService<RecordingSignInSenders>();
 
+    /// <summary>The stand-in model server behind the website assistant.</summary>
+    public ModelScript Model => Services.GetRequiredService<ModelScript>();
+
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
@@ -98,6 +101,14 @@ internal sealed class ClinicApiFactory(string connectionString) : WebApplication
                 ["Auth:Jwt:SigningKey"] = SigningKey,
                 ["Clinic:TimeZone"] = "Asia/Bangkok",
                 ["Cors:AllowedOrigins:0"] = "http://localhost:3000",
+
+                // The assistant talks to a scripted stand-in through the real OpenAI-format adapter.
+                ["Assistant:Provider"] = "openai",
+                ["Assistant:BaseUrl"] = "http://model.test/v1",
+                ["Assistant:Model"] = "test-model",
+                ["Assistant:ApiKey"] = "test-key",
+                ["Assistant:MessagesPerMinute"] = "1000",
+                ["Assistant:DailyConversationTurns"] = "0",
             }));
 
         // Unhandled faults become a 500 with no detail in the body, by design. Without a log sink
@@ -136,6 +147,11 @@ internal sealed class ClinicApiFactory(string connectionString) : WebApplication
             services.AddSingleton<RecordingSignInSenders>();
             services.AddSingleton<IOtpSender>(provider => provider.GetRequiredService<RecordingSignInSenders>());
             services.AddSingleton<IPasswordResetSender>(provider => provider.GetRequiredService<RecordingSignInSenders>());
+
+            // The model server is the one outside dependency of the assistant; it is scripted.
+            services.AddSingleton<ModelScript>();
+            services.ConfigureHttpClientDefaults(client => client.ConfigurePrimaryHttpMessageHandler(
+                provider => new ScriptedModelHandler(provider.GetRequiredService<ModelScript>())));
         });
     }
 }

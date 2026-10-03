@@ -1156,6 +1156,76 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Clinics.ClinicContact", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EmbedUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("embed_url");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("url");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("value");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clinic_contacts");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_clinic_contacts_branch_id");
+
+                    b.HasIndex("SortOrder")
+                        .HasDatabaseName("ix_clinic_contacts_sort_order");
+
+                    b.ToTable("clinic_contacts", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Clinics.ClinicHoliday", b =>
                 {
                     b.Property<string>("Id")
@@ -4236,6 +4306,15 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_receipts_invoices_invoice_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Clinics.ClinicContact", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_clinic_contacts_branches_branch_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Clinics.ClinicHoliday", b =>

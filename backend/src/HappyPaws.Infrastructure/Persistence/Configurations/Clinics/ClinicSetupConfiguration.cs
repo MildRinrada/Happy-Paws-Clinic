@@ -69,6 +69,29 @@ internal sealed class ClinicHolidayConfiguration : EntityConfiguration<ClinicHol
     }
 }
 
+internal sealed class ClinicContactConfiguration : EntityConfiguration<ClinicContact>
+{
+    protected override void ConfigureEntity(EntityTypeBuilder<ClinicContact> builder)
+    {
+        builder.ToTable("clinic_contacts");
+
+        builder.Property(contact => contact.Kind).HasMaxLength(20).IsRequired();
+        builder.Property(contact => contact.Label).HasMaxLength(ClinicContact.LabelMax).IsRequired();
+        builder.Property(contact => contact.Value).HasMaxLength(ClinicContact.ValueMax).IsRequired();
+        builder.Property(contact => contact.Url).HasMaxLength(ClinicContact.UrlMax);
+        builder.Property(contact => contact.EmbedUrl).HasMaxLength(ClinicContact.UrlMax);
+        builder.Property(contact => contact.BranchId).HasMaxLength(40);
+        builder.Property(contact => contact.SortOrder).IsRequired();
+
+        builder.HasIndex(contact => contact.SortOrder);
+
+        // A branch is closed, never deleted, so Restrict costs nothing and keeps an entry from
+        // pointing at a branch that is not there.
+        builder.HasOne<Branch>().WithMany()
+            .HasForeignKey(contact => contact.BranchId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class QueueSettingsConfiguration : EntityConfiguration<QueueSettings>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<QueueSettings> builder)

@@ -1,5 +1,6 @@
 using HappyPaws.Application.Articles.SeedArticles;
 using HappyPaws.Application.Clinics.Bootstrap;
+using HappyPaws.Application.Clinics.SeedContacts;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Consultations.SeedTreatmentTemplates;
@@ -19,6 +20,7 @@ namespace HappyPaws.Api.Operator;
 /// seed-articles       publish the sample health articles (skips any already there)
 /// seed-staff          add sample staff in every department (skips addresses already taken)
 /// seed-treatment-templates  add sample treatment templates (skips names already taken)
+/// seed-contacts       add sample contact entries (only when the clinic has none yet)
 /// </code>
 /// <para>
 /// <b>These are commands, not endpoints, on purpose.</b> Each does something no request should be
@@ -42,6 +44,7 @@ public static class OperatorCommands
     private const string SeedArticles = "seed-articles";
     private const string SeedStaff = "seed-staff";
     private const string SeedTreatmentTemplates = "seed-treatment-templates";
+    private const string SeedContacts = "seed-contacts";
 
     /// <summary>Set instead of <c>--owner-password</c> / <c>--password</c> to keep it out of shell history.</summary>
     private const string PasswordVariable = "HAPPYPAWS_OPERATOR_PASSWORD";
@@ -49,7 +52,7 @@ public static class OperatorCommands
     /// <summary>True when the process was started to run a command rather than to serve requests.</summary>
     public static bool IsRequested(string[] args) =>
         args.Length > 0
-        && args[0] is Migrate or Bootstrap or ResetCredentials or SeedArticles or SeedStaff or SeedTreatmentTemplates;
+        && args[0] is Migrate or Bootstrap or ResetCredentials or SeedArticles or SeedStaff or SeedTreatmentTemplates or SeedContacts;
 
     /// <summary>Runs the command named by <c>args[0]</c> and returns the process exit code.</summary>
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter output)
@@ -84,6 +87,10 @@ public static class OperatorCommands
 
                 case SeedTreatmentTemplates:
                     await SeedTreatmentTemplatesAsync(scope.ServiceProvider, output);
+                    break;
+
+                case SeedContacts:
+                    await SeedContactsAsync(scope.ServiceProvider, output);
                     break;
             }
 
@@ -217,6 +224,15 @@ public static class OperatorCommands
             await output.WriteLineAsync(
                 $"Treatment templates already present, left as they are: {string.Join(", ", result.Skipped)}");
         }
+    }
+
+    private static async Task SeedContactsAsync(IServiceProvider services, TextWriter output)
+    {
+        var result = await services.GetRequiredService<SeedContactsHandler>().HandleAsync();
+
+        await output.WriteLineAsync(result.AlreadyPresent
+            ? "Contacts: the clinic already has its own entries. Nothing was added."
+            : $"Contacts added: {result.Created}. Edit them in the console under settings.");
     }
 
     /// <summary>

@@ -53,7 +53,7 @@ Errors/               แปลง exception และ model state เป็น 
 Http/                 ICurrentUser, If-Match, คุกกี้ refresh, path base /v1
 Extensions/           ตั้งค่า authentication, authorization, rate limit, OpenAPI
 Middleware/           RequestContextMiddleware (request id)
-Operator/             คำสั่ง migrate, bootstrap, reset-credentials, seed-articles, seed-staff
+Operator/             คำสั่ง migrate, bootstrap, reset-credentials, seed-articles, seed-staff, seed-treatment-templates, seed-contacts
 ```
 
 controller แบ่งตาม **ผู้ใช้** ไม่ใช่ตามโมดูล เพราะสัญญาแยก `/staff/*`, `/portal/*` และเส้นสาธารณะออกจากกัน ลูกค้าที่อ่านใบแจ้งหนี้ของตัวเองกับแคชเชียร์ที่อ่านใบแจ้งหนี้ใช้ use case คนละตัวในโมดูล `Billing` เดียวกัน

@@ -13,8 +13,12 @@ using HappyPaws.Application.Scheduling;
 
 namespace HappyPaws.Application.Patients.Portal;
 
-/// <summary>A ticket on today's board, as its owner follows it.</summary>
-public sealed record PortalQueueDto(string TicketId, string Number, string Status, int Ahead);
+/// <summary>
+/// A ticket on today's board, as its owner follows it. <c>PetId</c> and <c>AppointmentId</c> say
+/// whose ticket it is, so an owner with two pets in on one day sees each number against the right
+/// pet. <c>AppointmentId</c> is null for a walk-in.
+/// </summary>
+public sealed record PortalQueueDto(string TicketId, string Number, string Status, int Ahead, string PetId, string? AppointmentId);
 
 /// <summary>A vaccine that is due or overdue for one of the owner's pets.</summary>
 public sealed record PortalVaccinationDueDto(string PetId, string PetName, string VaccineName, DateOnly NextDueOn, string Status);
@@ -87,7 +91,9 @@ public sealed class GetPortalHomeHandler(
                 ticket.Id,
                 ticket.Number,
                 Queueing.Dtos.QueueTicketDto.ToWireStatus(ticket.Status),
-                await tickets.CountAheadOfAsync(ticket, cancellationToken)));
+                await tickets.CountAheadOfAsync(ticket, cancellationToken),
+                ticket.PetId,
+                ticket.AppointmentId));
         }
 
         var latest = await inbox.ListAsync(customerId, unreadOnly: false, new CursorPageRequest(3), cancellationToken);

@@ -14,4 +14,5 @@ public static class HttpStatus
     public const int Locked = 423;
     public const int UnprocessableEntity = 422;
     public const int TooManyRequests = 429;
+    public const int ServiceUnavailable = 503;
 }

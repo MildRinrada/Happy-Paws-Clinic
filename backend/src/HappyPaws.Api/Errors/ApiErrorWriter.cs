@@ -46,8 +46,17 @@ public static class ApiErrorWriter
         await context.Response.WriteAsync(JsonSerializer.Serialize(body, SerializerOptions));
     }
 
+    /// <summary>
+    /// The same wire format as every success response (see <c>Program.cs</c>). Objects carried in
+    /// <c>details</c>, such as the customers listed by <c>duplicate_customer</c>, are records like
+    /// any other response and must read <c>display_name</c>, not <c>displayName</c>. Dictionary keys
+    /// are left as written: they are already the API's own names (<c>existing</c>, a field name).
+    /// </summary>
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
     {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+
         // Thai messages must survive unescaped so a client can display them without decoding.
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
