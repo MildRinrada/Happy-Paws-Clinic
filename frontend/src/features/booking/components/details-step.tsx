@@ -1,0 +1,121 @@
+'use client';
+
+import { formatBaht } from '@/lib/format/money';
+import { bookingPage } from '../content/booking-page';
+import type { BookableType, BookingDetails, BookingOptions } from '../types/booking.types';
+import { BookingFieldset } from './booking-fieldset';
+import { ChoiceCard } from './choice-card';
+
+interface DetailsStepProps {
+  options: BookingOptions;
+  value: BookingDetails;
+  onChange: (value: BookingDetails) => void;
+  onNext: () => void;
+}
+
+const TYPES: BookableType[] = ['regular', 'follow_up'];
+
+/** Step 1: which pet, where, what service and what kind of visit, and anything for the vet. */
+export function DetailsStep({ options, value, onChange, onNext }: DetailsStepProps) {
+  const text = bookingPage.details;
+  const services = options.servicesByBranch[value.branchId] ?? [];
+  const set = (patch: Partial<BookingDetails>) => onChange({ ...value, ...patch });
+  const ready = Boolean(value.petId && value.branchId && value.serviceId);
+
+  return (
+    <div className="space-y-6">
+      <BookingFieldset legend={text.pet}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {options.pets.map((pet) => (
+            <ChoiceCard
+              key={pet.id}
+              name="pet"
+              value={pet.id}
+              checked={value.petId === pet.id}
+              onChange={(petId) => set({ petId })}
+              title={pet.name}
+              detail={pet.species}
+            />
+          ))}
+        </div>
+      </BookingFieldset>
+
+      {options.branches.length > 1 && (
+        <BookingFieldset legend={text.branch}>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {options.branches.map((branch) => (
+              <ChoiceCard
+                key={branch.id}
+                name="branch"
+                value={branch.id}
+                checked={value.branchId === branch.id}
+                onChange={(branchId) => set({ branchId, serviceId: '' })}
+                title={branch.name}
+              />
+            ))}
+          </div>
+        </BookingFieldset>
+      )}
+
+      <BookingFieldset legend={text.service}>
+        {services.length === 0 ? (
+          <p className="text-sm text-site-muted">{text.noServices}</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {services.map((service) => (
+              <ChoiceCard
+                key={service.id}
+                name="service"
+                value={service.id}
+                checked={value.serviceId === service.id}
+                onChange={(serviceId) => set({ serviceId })}
+                title={service.name}
+                detail={`${text.minutes(service.duration_minutes)}  ${text.priceFrom(formatBaht(service.price_satang))}`}
+              />
+            ))}
+          </div>
+        )}
+      </BookingFieldset>
+
+      <BookingFieldset legend={text.type}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {TYPES.map((type) => (
+            <ChoiceCard
+              key={type}
+              name="type"
+              value={type}
+              checked={value.type === type}
+              onChange={() => set({ type })}
+              title={text.types[type].label}
+              detail={text.types[type].hint}
+            />
+          ))}
+        </div>
+      </BookingFieldset>
+
+      <div className="space-y-2">
+        <label htmlFor="booking-reason" className="block text-sm font-semibold text-ink-900">
+          {text.reason}
+        </label>
+        <textarea
+          id="booking-reason"
+          value={value.reason}
+          onChange={(event) => set({ reason: event.target.value })}
+          maxLength={1000}
+          rows={3}
+          placeholder={text.reasonPlaceholder}
+          className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-site-teal"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!ready}
+        className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {text.next}
+      </button>
+    </div>
+  );
+}

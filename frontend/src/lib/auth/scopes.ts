@@ -1,0 +1,43 @@
+/**
+ * "Does this session hold this scope", with the contract's two wildcard forms — the same rule the
+ * backend's `ScopeSet` applies: `*` is everything and `queue:*` is every action on a resource.
+ *
+ * This decides which menus to draw and nothing else. A menu hidden here is a convenience; the
+ * backend re-checks the scope on every request and is the only thing that actually refuses one
+ * (docs/authorization.md § 7).
+ */
+export function allows(granted: readonly string[], required: string): boolean {
+  if (granted.includes('*') || granted.includes(required)) {
+    return true;
+  }
+
+  const separator = required.indexOf(':');
+
+  return separator > 0 && granted.includes(`${required.slice(0, separator)}:*`);
+}
+
+/** The scopes the console's screens are built on. Names are the contract's. */
+export const Scope = {
+  AppointmentRead: 'appointment:read',
+  AppointmentWrite: 'appointment:write',
+  AppointmentCheckIn: 'appointment:checkin',
+  QueueRead: 'queue:read',
+  QueueWrite: 'queue:write',
+  QueueCall: 'queue:call',
+  PatientRead: 'patient:read',
+  PatientWrite: 'patient:write',
+  RecordRead: 'record:read',
+  RecordWrite: 'record:write',
+  RecordSign: 'record:sign',
+  ConsultRead: 'consult:read',
+  ConsultWrite: 'consult:write',
+  VitalsWrite: 'vitals:write',
+  PrescriptionWrite: 'rx:write',
+  StaffRead: 'staff:read',
+  CustomerRead: 'customer:read',
+  CustomerWrite: 'customer:write',
+  InvoiceWrite: 'invoice:write',
+  SettingsWrite: 'settings:write',
+  PaymentCollect: 'payment:collect',
+  ReceiptIssue: 'receipt:issue',
+} as const;

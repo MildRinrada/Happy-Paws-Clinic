@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 is configured in CSS. Design tokens live here so that the staff console,
+   the customer portal and the LIFF views share one palette and type scale. */
+@theme {
+  /* The font variables are set on <html> by next/font in app/layout.tsx. */
+  --font-sans: var(--font-plex-thai), 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --font-display: var(--font-prompt), 'Prompt', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Brand: a calm clinical teal. 600 is the action colour and clears AA on white. */
+  --color-brand-50: #eefaf7;
+  --color-brand-100: #d5f2ec;
+  --color-brand-200: #aee4da;
+  --color-brand-300: #7dcfc3;
+  --color-brand-400: #4bb3a6;
+  --color-brand-500: #2f978b;
+  --color-brand-600: #217a71;
+  --color-brand-700: #1d625c;
+  --color-brand-800: #1b4f4b;
+  --color-brand-900: #1a423f;
+
+  /* Warm neutrals, so long tables do not read as cold grey. */
+  --color-ink-50: #f8f7f5;
+  --color-ink-100: #efede9;
+  --color-ink-200: #dedad3;
+  --color-ink-300: #c4beb4;
+  --color-ink-400: #9c958a;
+  --color-ink-500: #787268;
+  --color-ink-600: #5c574f;
+  --color-ink-700: #45413b;
+  --color-ink-800: #2e2b27;
+  --color-ink-900: #1c1a17;
+
+  /* The public site. It is louder than the console on purpose — it is read once by a pet owner
+     deciding whether to book, not all day by a receptionist — so it has its own few colours
+     rather than stretching the console's palette. Change the public site's look here. */
+  --color-site-teal: #0e9384;
+  --color-site-orange: #ff9500;
+  --color-site-forest: #13322b;
+  --color-site-forest-raised: #2b4a42;
+  --color-site-border: #a3a3a3;
+  --color-site-muted: #666666;
+  --color-site-soft: #f1f4f2;
+  /* LINE's own green, for the section that sends people to the clinic's LINE account. */
+  --color-line-green: #06c755;
+  --color-site-violet: #6c5ce0;
+  /* The warm note on the customer's visit card ("ควรมาถึงคลินิกภายในเวลานี้"). */
+  --color-site-sun: #ffd57a;
+  /* The emergency hotline bar. */
+  --color-site-alert: #e64c3c;
+  --color-site-footer: #0e1f1c;
+  --color-site-footer-raised: #374442;
+
+  --color-stat-green: #109352;
+  --color-stat-orange: #f7941f;
+  --color-stat-purple: #6c5ce0;
+  --color-stat-gray: #686868;
+
+  /* The wordmark beside the logo is set in a Latin grotesque, not in the Thai text face. */
+  --font-wordmark: var(--font-inter), 'Inter', 'Helvetica Neue', Arial, sans-serif;
+
+  /* A slide's caption rising into place on the sign-in slideshow. */
+  --animate-caption-in: caption-in 0.7s ease-out both;
+
+  @keyframes caption-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink-50 font-sans text-ink-800 antialiased;
+}
+
+/* One focus ring for every interactive element: a keyboard user at a counter must always be able
+   to see where they are. */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand-600;
+}
+
+@media print {
+  /* A receipt prints on its own: the console's chrome is not part of the document. */
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+}

@@ -1,0 +1,41 @@
+/** One customer's page at the counter: contact, money owed, portal and pets. */
+export const customerDetail = {
+  metaTitle: 'ข้อมูลลูกค้า · Happy Paws Clinic',
+  back: 'กลับไปหน้าค้นหา',
+  notFound: 'ไม่พบลูกค้ารายนี้',
+  noAccess: 'บัญชีนี้ไม่มีสิทธิ์ดูทะเบียนลูกค้า (customer:read)',
+  justRegistered: 'ลงทะเบียนลูกค้าแล้ว เพิ่มสัตว์เลี้ยงตัวแรกได้ด้านล่าง',
+  merged: 'เรกคอร์ดนี้ถูกรวมเข้ากับลูกค้าอีกรายแล้ว',
+  openMerged: 'เปิดเรกคอร์ดที่ใช้อยู่',
+  inactive: 'ปิดใช้งาน',
+  contact: {
+    title: 'ข้อมูลติดต่อ',
+    phone: 'เบอร์โทร',
+    email: 'อีเมล',
+    noEmail: 'ไม่ได้ให้ไว้',
+    since: 'ลงทะเบียนเมื่อ',
+  },
+  balance: {
+    title: 'ยอดค้างชำระ',
+    clear: 'ไม่มียอดค้าง',
+    open: 'ไปหน้าเก็บเงิน',
+  },
+  portal: {
+    title: 'บัญชีออนไลน์',
+    linked: 'ลูกค้าใช้งานบัญชีออนไลน์แล้ว ดูคิว นัด และประวัติสัตว์เองได้',
+    never: 'ยังไม่ได้ชวนลูกค้าเปิดบัญชีออนไลน์',
+    live: (sentTo: string, expires: string) => `ส่งคำเชิญไปที่ ${sentTo} แล้ว ใช้ได้ถึง ${expires}`,
+    expired: (sentAt: string) => `คำเชิญที่ส่งเมื่อ ${sentAt} หมดอายุแล้ว`,
+    invite: 'ส่งคำเชิญ',
+    resend: 'ส่งคำเชิญอีกครั้ง',
+    sending: 'กำลังส่ง…',
+    sent: 'ส่งคำเชิญแล้ว',
+  },
+  pets: {
+    title: 'สัตว์เลี้ยง',
+    empty: 'ยังไม่มีสัตว์เลี้ยงในเรกคอร์ดนี้',
+    add: '+ เพิ่มสัตว์เลี้ยง',
+    deceased: 'เสียชีวิตแล้ว',
+    microchip: 'ไมโครชิป',
+  },
+};
