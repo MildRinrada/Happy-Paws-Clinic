@@ -21,6 +21,8 @@ export const portalPaths = {
   account: '/portal/account',
   pets: '/portal/pets',
   editPet: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/edit`,
+  petDocuments: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/documents`,
+  packages: '/portal/packages',
 };
 
 export const portalNavLinks: PortalNavLink[] = [
@@ -38,6 +40,7 @@ export const portalHeader = {
   accountMenuLabel: 'เมนูบัญชี',
   accountLinks: [
     { label: 'บัญชีของฉัน', href: portalPaths.account },
+    { label: 'แพ็กเกจของฉัน', href: portalPaths.packages },
     { label: 'แจ้งเตือน', href: portalPaths.notifications },
     { label: 'หน้าเว็บคลินิก', href: '/' },
   ] satisfies SiteLink[],

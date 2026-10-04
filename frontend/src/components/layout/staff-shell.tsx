@@ -19,6 +19,8 @@ const navigation: NavItem[] = [
   { href: '/queue', label: 'คิววันนี้', scopes: [Scope.QueueRead] },
   { href: '/appointments', label: 'ปฏิทินนัด', scopes: [Scope.AppointmentRead] },
   { href: '/customers', label: 'ลูกค้าและสัตว์', scopes: [Scope.CustomerRead] },
+  { href: '/lab', label: 'แล็บ', scopes: [Scope.LabRead, Scope.LabWrite] },
+  { href: '/prescriptions', label: 'จ่ายยา', scopes: [Scope.PrescriptionDispense] },
   { href: '/billing', label: 'เก็บเงิน', scopes: [Scope.InvoiceWrite] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
   { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead] },
@@ -49,7 +51,7 @@ export function StaffShell({ context, children }: { context: StaffContext; child
         <p className="px-3 font-display text-lg font-semibold text-brand-800">Happy Paws</p>
         <p className="px-3 text-xs text-ink-500">ระบบจัดการคลินิก</p>
 
-        <nav aria-label="เมนูหลัก" className="mt-4 flex gap-1 lg:mt-6 lg:flex-col">
+        <nav aria-label="เมนูหลัก" className="-mx-4 mt-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:mt-6 lg:flex-col lg:overflow-visible lg:px-0">
           {items.map((item) => (
             <NavLink key={item.href} href={entryOf(item.href, context)} section={item.href}>
               {item.label}

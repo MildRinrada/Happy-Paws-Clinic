@@ -101,6 +101,8 @@ export const config = {
     '/schedules/:path*',
     '/account/:path*',
     '/billing/:path*',
+    '/lab/:path*',
+    '/prescriptions/:path*',
     '/portal/:path*',
     '/api/queue/:path*',
   ],

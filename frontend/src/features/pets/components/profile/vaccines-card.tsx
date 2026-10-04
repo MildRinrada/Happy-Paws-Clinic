@@ -3,9 +3,17 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { formatLongDate } from '@/lib/format/datetime';
 import { petProfile } from '../../content/pet-profile';
 import type { PetVaccinations } from '../../types/pet.types';
+import { RecordVaccinationForm } from './record-vaccination-form';
+
+interface VaccinesCardProps {
+  petId: string;
+  vaccinations: PetVaccinations;
+  /** `record:write`, and the patient is alive: a closed record takes no new dose. */
+  canRecord: boolean;
+}
 
 /** What is due next, overdue first, then what was given and from which lot. */
-export function VaccinesCard({ vaccinations }: { vaccinations: PetVaccinations }) {
+export function VaccinesCard({ petId, vaccinations, canRecord }: VaccinesCardProps) {
   const text = petProfile.vaccines;
   const { due, doses } = vaccinations;
 
@@ -50,6 +58,8 @@ export function VaccinesCard({ vaccinations }: { vaccinations: PetVaccinations }
             </ul>
           </section>
         )}
+
+        {canRecord && <RecordVaccinationForm petId={petId} />}
       </CardBody>
     </Card>
   );

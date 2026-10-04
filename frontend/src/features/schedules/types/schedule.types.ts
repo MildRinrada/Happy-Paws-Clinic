@@ -67,3 +67,19 @@ export interface TimeOffResult {
   shifts_remaining: Shift[];
   conflicts: TimeOffConflict[];
 }
+
+/**
+ * One case-assignment rule: cases for this species and/or service go to these people first, in
+ * this order. At least one of `species` and `service_id` is set.
+ */
+export interface AssignmentRule {
+  species?: string | null;
+  service_id?: string | null;
+  staff_ids: string[];
+}
+
+/** `PUT /staff/schedules/assignment-rules` answers the whole stored set. There is no `GET`. */
+export interface AssignmentRules {
+  version: number;
+  rules: AssignmentRule[];
+}

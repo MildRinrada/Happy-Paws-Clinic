@@ -1,11 +1,14 @@
 import { staffApi } from '@/lib/api/server-client';
+import type { DocumentKind } from '../lib/document-rules';
 
 export interface NewPetDocument {
   petId: string;
   fileName: string;
   contentType: string;
   sizeBytes: number;
-  kind: 'photo' | 'lab_result' | 'referral' | 'imaging' | 'other';
+  kind: DocumentKind;
+  /** What the clinic sees as the document's name. Left out, the backend uses the file name. */
+  title?: string;
 }
 
 /** What `POST /portal/documents` answers: the record, and where to send the bytes. */
@@ -27,6 +30,7 @@ export function createPetDocument(input: NewPetDocument): Promise<DocumentUpload
       content_type: input.contentType,
       size_bytes: input.sizeBytes,
       kind: input.kind,
+      title: input.title || undefined,
     },
   });
 }

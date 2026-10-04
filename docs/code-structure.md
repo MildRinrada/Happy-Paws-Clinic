@@ -151,7 +151,7 @@ frontend/
 | Hook | `features/<ชื่อ>/hooks/` | logic ฝั่งเบราว์เซอร์ เช่น `use-queue-stream.ts` | ไม่มี |
 | Types | `features/<ชื่อ>/types/<ชื่อ>.types.ts` | รูปข้อมูลจาก API ชื่อฟิลด์ snake_case | DTO |
 
-feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `pets`, `portal`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
+feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `laboratory`, `pets`, `portal`, `prescriptions`, `privacy`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
 
 ## กติกาการเขียนโค้ด
 

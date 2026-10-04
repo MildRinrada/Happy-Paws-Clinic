@@ -9,6 +9,7 @@ import { getCustomer } from '@/features/customers/api/getCustomer';
 import { BalanceCard } from '@/features/customers/components/balance-card';
 import { ContactCard } from '@/features/customers/components/contact-card';
 import { CustomerPetsCard } from '@/features/customers/components/customer-pets-card';
+import { MergeCustomerCard } from '@/features/customers/components/merge-customer-card';
 import { PortalInviteCard } from '@/features/customers/components/portal-invite-card';
 import { customerDetail } from '@/features/customers/content/customer-detail';
 import { customerPaths } from '@/features/customers/lib/customer-paths';
@@ -96,6 +97,9 @@ export default async function CustomerPage({
             invitation={detail.invitation}
             canInvite={context.can(Scope.CustomerWrite)}
           />
+          {context.can(Scope.CustomerMerge) && !customer.merged_into_customer_id && (
+            <MergeCustomerCard customer={customer} />
+          )}
         </div>
       </div>
     </div>

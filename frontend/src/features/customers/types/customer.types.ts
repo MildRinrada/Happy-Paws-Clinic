@@ -31,6 +31,16 @@ export interface CustomerDetail {
   invitation?: PortalInvitation;
 }
 
+/**
+ * What `POST /staff/customers/{id}/merge` answers: both records after the merge, and how many rows
+ * moved per table (`pets`, `appointments`, `invoices`, ..., `carer_links_moved`).
+ */
+export interface MergeResult {
+  surviving: Customer;
+  merged: Customer;
+  moved: Record<string, number>;
+}
+
 /** `POST /staff/customers`. `allow_duplicate_phone` only after a `409 duplicate_customer`. */
 export interface NewCustomer {
   display_name: string;

@@ -151,4 +151,8 @@ export const consultationPage = {
       prescriptions: 'ใบสั่งยา',
     } as Record<string, string>,
   },
+
+  lab: {
+    title: 'ส่งตรวจแล็บ',
+  },
 };

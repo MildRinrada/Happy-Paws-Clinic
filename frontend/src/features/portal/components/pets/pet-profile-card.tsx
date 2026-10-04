@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatLongDate } from '@/lib/format/datetime';
+import { petDocuments } from '../../content/pet-documents';
 import { portalPaths } from '../../content/portal-navigation';
 import { portalPets } from '../../content/portal-pets';
 import { recordsHref } from '../../lib/portal-links';
@@ -47,6 +48,9 @@ export function PetProfileCard({ pet }: { pet: MyPet }) {
             {portalPets.edit}
           </Link>
         )}
+        <Link href={portalPaths.petDocuments(pet.id)} className="text-sm font-semibold text-site-teal hover:underline">
+          {petDocuments.linkLabel}
+        </Link>
         {pet.may_view_history && (
           <Link href={recordsHref(pet.id)} className="text-sm font-semibold text-site-teal hover:underline">
             {portalPets.records}

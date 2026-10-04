@@ -18,6 +18,8 @@ import { VitalsList } from '@/features/consultations/components/vitals/vitals-li
 import { consultationPage } from '@/features/consultations/content/consultation-page';
 import { CLOSED_PARAMS } from '@/features/consultations/lib/closed-params';
 import { loadConsultationView, type ConsultationView } from '@/features/consultations/lib/load-consultation-view';
+import { CaseLabRequests } from '@/features/laboratory/components/case-lab-requests';
+import { LabOrderForm } from '@/features/laboratory/components/order/lab-order-form';
 import { listServices } from '@/features/service-catalog/api/listServices';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
@@ -46,7 +48,7 @@ export default async function ConsultationPage({
 
   let view: ConsultationView;
   try {
-    view = await authed(() => loadConsultationView(id));
+    view = await authed(() => loadConsultationView(id, { withLab: context.can(Scope.LabRead) }));
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return <Alert>{text.notFound}</Alert>;
     if (error instanceof ApiError && error.status === 403) return <Alert>{error.message}</Alert>;
@@ -56,6 +58,7 @@ export default async function ConsultationPage({
   const { consultation } = view;
   const open = consultation.status === 'draft';
   const canWrite = open && context.can(Scope.ConsultWrite);
+  const canOrderLab = open && context.can(Scope.LabRequest);
   // For booking a follow-up. The only service list the contract has is the public one.
   const services = open ? ((await listServices(consultation.branch_id).catch(() => [])) ?? []) : [];
   const invoiceId = query[CLOSED_PARAMS.invoiceId];
@@ -99,6 +102,14 @@ export default async function ConsultationPage({
               <DiagnosisForm consultationId={consultation.id} hasPrimary={consultation.diagnoses.some((diagnosis) => diagnosis.is_primary)} />
             )}
           </PartCard>
+
+          {/* Lab requests are their own records: results come back after the case is signed, so the list stays when it closes. */}
+          {(canOrderLab || view.labRequests !== null) && (
+            <PartCard id="lab" title={text.lab.title}>
+              <CaseLabRequests requests={view.labRequests} canRecord={context.can(Scope.LabWrite)} />
+              {canOrderLab && <LabOrderForm petId={consultation.pet_id} consultationId={consultation.id} />}
+            </PartCard>
+          )}
         </div>
 
         <div className="space-y-6">

@@ -1,16 +1,22 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { loadVets } from '@/features/appointments/lib/load-calendar';
 import { AllergiesCard } from '@/features/pets/components/profile/allergies-card';
+import { DocumentsCard } from '@/features/pets/components/profile/documents-card';
 import { OwnersCard } from '@/features/pets/components/profile/owners-card';
 import { PetFacts } from '@/features/pets/components/profile/pet-facts';
 import { TimelineCard } from '@/features/pets/components/profile/timeline-card';
+import { TreatmentPlanCard } from '@/features/pets/components/profile/treatment-plan-card';
 import { VaccinesCard } from '@/features/pets/components/profile/vaccines-card';
 import { WeightCard } from '@/features/pets/components/profile/weight-card';
 import { petProfile } from '@/features/pets/content/pet-profile';
 import { loadPetProfile, type PetProfile } from '@/features/pets/lib/load-pet-profile';
+import { prescriptionPaths } from '@/features/prescriptions/lib/prescription-paths';
+import { listServices } from '@/features/service-catalog/api/listServices';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -47,6 +53,18 @@ export default async function PetPage({
 
   const { pet, allergies, latest_weight } = profile.detail;
 
+  // A closed record takes no new dose and no new plan; the backend refuses both.
+  const alive = !pet.is_deceased;
+  const canRecord = context.can(Scope.RecordWrite);
+  const canPlan = alive && context.can(Scope.ConsultWrite);
+  const canPrint = context.can(Scope.RecordRead);
+  const branchId = context.branch?.id;
+
+  // What the plan form picks from, read only for someone who may plan.
+  const [services, vets] = canPlan && branchId
+    ? await Promise.all([listServices(branchId).catch(() => []), loadVets(branchId)])
+    : [[], []];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -58,19 +76,33 @@ export default async function PetPage({
           </span>
         }
         subtitle={[pet.species, pet.breed].filter(Boolean).join(' / ')}
+        actions={
+          context.can(Scope.PrescriptionRead) && (
+            <Link
+              href={prescriptionPaths.forPet(pet.id)}
+              className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-50"
+            >
+              {text.drugHistory}
+            </Link>
+          )
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-6">
-          <AllergiesCard petId={pet.id} allergies={allergies} canRecord={context.can(Scope.RecordWrite)} />
+          <AllergiesCard petId={pet.id} allergies={allergies} canRecord={canRecord} />
+          {canPlan && <TreatmentPlanCard petId={pet.id} branchId={branchId} services={services} vets={vets} />}
           <TimelineCard petId={pet.id} history={profile.history} paged={Boolean(cursor)} />
         </div>
 
         <div className="space-y-6">
           <PetFacts pet={pet} />
-          <OwnersCard owners={profile.owners} />
+          <OwnersCard petId={pet.id} owners={profile.owners} canManage={context.can(Scope.PatientWrite)} />
           <WeightCard latest={latest_weight} series={profile.weights} />
-          {profile.vaccinations && <VaccinesCard vaccinations={profile.vaccinations} />}
+          {profile.vaccinations && (
+            <VaccinesCard petId={pet.id} vaccinations={profile.vaccinations} canRecord={alive && canRecord} />
+          )}
+          {(canRecord || canPrint) && <DocumentsCard petId={pet.id} canUpload={canRecord} canPrint={canPrint} />}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ export const petProfile = {
   notFound: 'ไม่พบสัตว์เลี้ยงตัวนี้',
   noAccess: 'บัญชีนี้ไม่มีสิทธิ์ดูทะเบียนสัตว์ (patient:read)',
   deceased: (date: string) => `เสียชีวิตเมื่อ ${date}`,
+  drugHistory: 'ประวัติยาและจ่ายยา',
   facts: {
     microchip: 'ไมโครชิป',
     noMicrochip: 'ไม่มี',

@@ -3,11 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { runAction } from '@/lib/actions/action-result';
-import { createShifts, recordTimeOff } from '../api/schedules';
+import { createShifts, recordTimeOff, replaceAssignmentRules } from '../api/schedules';
 
 /**
- * The roster page's two writes. The roster is what booking offers, so the booking pages are as
- * stale as this one after either.
+ * The roster page's writes. The roster is what booking offers, so the booking pages are as stale
+ * as this one after a shift or leave. The assignment rules are written whole and never read back.
  */
 
 function refresh() {
@@ -47,5 +47,29 @@ export async function recordTimeOffAction(values: z.infer<typeof timeOff>) {
   const result = await runAction(() => recordTimeOff(parsed));
 
   refresh();
+  return result;
+}
+
+const assignmentRules = z.object({
+  rules: z
+    .array(
+      z.object({
+        species: z.string().trim().max(40).optional(),
+        service_id: z.string().min(1).max(64).optional(),
+        staff_ids: z.array(staffId).min(1).max(20),
+      }),
+    )
+    .max(50),
+});
+
+/**
+ * Replaces every case-assignment rule with the set given; an empty set removes them all. Nothing
+ * on any page shows the rules, so only this page is refreshed.
+ */
+export async function replaceAssignmentRulesAction(values: z.infer<typeof assignmentRules>) {
+  const { rules } = assignmentRules.parse(values);
+  const result = await runAction(() => replaceAssignmentRules(rules));
+
+  revalidatePath('/schedules');
   return result;
 }

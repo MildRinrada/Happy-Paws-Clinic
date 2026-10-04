@@ -193,9 +193,44 @@ POST /v1/staff/documents/generate
 - วันที่พิมพ์เป็นภาษาไทยแบบปีพุทธศักราช ฟอนต์ Sarabun (สัญญาอนุญาต SIL Open Font License) ฝังอยู่ในไฟล์ จึงอ่านได้เหมือนกันทุกเครื่อง
 - ใช้ไลบรารี QuestPDF ด้วยสัญญาอนุญาต Community ซึ่งใช้ได้ฟรีกับองค์กรที่รายได้ต่ำกว่าเกณฑ์ของผู้พัฒนา ถ้าคลินิกเกินเกณฑ์ต้องซื้อสัญญาอนุญาต
 
+## หน้าจอพนักงาน
+
+ทุกปุ่มและฟอร์มขึ้นตาม scope ของบัญชี การซ่อนเป็นเรื่อง UX เท่านั้น backend ตรวจซ้ำทุกคำขอ
+
+**หน้าสัตว์** `/pets/<id>`
+
+- **บันทึกวัคซีน** ฟอร์มท้ายการ์ดวัคซีน ต้องถือ `record:write` และสัตว์ยังมีชีวิต
+- **แผนการรักษาหลายครั้ง** การ์ดในคอลัมน์ซ้าย ต้องถือ `consult:write` เลือกบริการ หมอ และวันของแต่ละครั้ง บันทึกแล้วแสดงนัดที่จองให้ทันที บริการมาจาก `GET /services` จึงเลือกได้เฉพาะบริการที่เปิดจองออนไลน์
+- **เอกสาร** การ์ดในคอลัมน์ขวา
+  - อัปโหลดไฟล์ (ต้องถือ `record:write`) เบราว์เซอร์ส่งไฟล์ตรงไปที่ URL ที่เซ็นแล้ว แบบเดียวกับ portal
+  - พิมพ์ PDF สมุดวัคซีน ใบรับรองสุขภาพ และใบส่งตัว (ต้องถือ `record:read`) ไฟล์ดาวน์โหลดในเบราว์เซอร์ทันที
+- ปุ่ม **ประวัติยาและจ่ายยา** บนหัวหน้า (ต้องถือ `rx:read`) เปิดหน้าจ่ายยาของสัตว์ตัวนั้น
+
+**แล็บ** `/lab` เมนู **แล็บ** เห็นเมื่อถือ `lab:read` หรือ `lab:write`
+
+- แท็บสถานะ รอผล ผลยังไม่มีคนอ่าน อ่านแล้ว และทั้งหมด กับตัวเลือก "ที่ฉันส่ง" เฉพาะสาขาที่เลือกไว้
+- บัญชีที่ลงผลได้ (`lab:write`) เปิดมาที่แท็บรอผล หมอเปิดมาที่แท็บผลยังไม่มีคนอ่าน
+- **ลงผล** (`lab:write`) ใส่ได้หลายแถว ชื่อค่า ค่า หน่วย ช่วงปกติ และติ๊กผิดปกติ ค่าที่เป็นตัวเลขส่งเป็น `value` ที่เหลือส่งเป็น `value_text`
+- **อ่านผลแล้ว** (`lab:read`) ขึ้นเมื่อมีผลที่ยังไม่มีคนอ่าน
+- **หน้าตรวจ** มีส่วน **ส่งตรวจแล็บ** ใต้การวินิจฉัย สั่งตรวจได้ระหว่างเคสยังเปิดและถือ `lab:request` เลือกตรวจในคลินิกหรือส่งแล็บนอก (ต้องใส่ชื่อแล็บ) และติ๊กด่วนได้ รายการคำขอของเคสยังแสดงหลังปิดเคส เพราะผลมักมาทีหลัง
+
+**จ่ายยา** `/prescriptions` เมนู **จ่ายยา** เห็นเมื่อถือ `rx:dispense`
+
+- ยังไม่เลือกสัตว์ หน้าแสดงช่องค้นหาสัตว์ และรายการ **รอจ่ายยา** ของสาขาที่ใช้ได้ (`GET /staff/prescriptions?dispensed=false`)
+- เลือกสัตว์แล้ว (`?pet_id=`) แสดงการแพ้ยา แล้วประวัติยา โดยใบที่ยังไม่จ่ายขึ้นก่อน แต่ละใบมีป้าย รอจ่าย จ่ายแล้ว กำลังใช้ยา และยาซ้ำซ้อน ใบที่ซ้ำมีกล่องแดงบอกว่าซ้ำกับใบไหน
+- กดจ่ายสองครั้ง ครั้งที่สองเป็นการยืนยัน และเตือนอีกรอบถ้ายาซ้ำ จ่ายแล้วแสดงฉลากพร้อมปุ่ม **พิมพ์ฉลาก** ตอนพิมพ์มีแค่ฉลากบนกระดาษ
+- หน้าบอกไว้ด้วยว่ายังไม่ตัดสต๊อกและยายังไม่ขึ้นบิล
+
+**เทมเพลต** ฟอร์มการรักษาในหน้าตรวจมีปุ่ม **เลือกจากเทมเพลต** โหลดเทมเพลตครั้งแรกที่เปิด เลือกแล้วดูหัตถการ ยา และแผนได้ ปุ่ม **ใส่ในฟอร์ม** เติมชื่อ จำนวน และหมายเหตุ แล้วพาไปช่องราคา ไม่มีอะไรถูกบันทึกจนกว่าจะกด **เพิ่ม**
+
 ## ข้อจำกัดที่รู้อยู่
 
-- ยังไม่มีหน้าจอสำหรับเรื่องเหล่านี้
+- ไม่มี endpoint อ่านแผนการรักษาและรายการเอกสารของสัตว์ฝั่งพนักงาน หน้าสัตว์จึงเห็นแผนเฉพาะตอนเพิ่งสร้าง นัดของแผนดูได้ในปฏิทินนัด
+- อัปโหลดจากเบราว์เซอร์ต้องใส่ origin ของหน้าเว็บใน `Cors:AllowedOrigins` ของ API ตอนนี้ตั้งไว้เฉพาะ `http://localhost:3000` ถ้าเปิดหน้าเว็บที่ port อื่น อัปโหลดจะไม่สำเร็จ และเหลือแถวเอกสารที่ไม่มีไฟล์
+- ผลแล็บรับแค่ค่า ไม่รับไฟล์แนบ ใบรายงานจากแล็บให้อัปโหลดเป็นเอกสารของสัตว์แบบ `lab_result` ยกเลิกคำขอหรือแก้ผลที่บันทึกแล้วไม่ได้ เพราะไม่มี endpoint
+- คำขอแล็บและใบสั่งยามีแค่รหัสพนักงาน หน้าจอจึงไม่แสดงชื่อคนส่งตรวจหรือคนอ่านผล
+- คำตอบของหน้าตรวจไม่มีคำขอแล็บ หน้าตรวจจึงอ่าน `GET /staff/lab-requests?pet_id=` แล้วเลือกเฉพาะของเคสนั้น ทุกครั้งที่เปิดหน้าตรวจด้วยบัญชีที่ถือ `lab:read` จึงมีบรรทัด `pet.lab_results_viewed` ใน access log
+- เทมเพลตไม่มีราคา หมอพิมพ์ราคาเอง และยาในเทมเพลตยังเติมลงใบสั่งยาไม่ได้
 - การจ่ายยาไม่ตัดสต๊อกและไม่ขึ้นบิล จนกว่าจะมีโมดูล Inventory
 - ยังไม่มีการเตือนวัคซีนตามวันครบกำหนด จนกว่าจะมีโมดูล Automation
 - การตรวจยาซ้ำซ้อนดูจากชื่อยา ไม่รู้จักกลุ่มยาหรือชื่อการค้า
@@ -214,4 +249,7 @@ POST /v1/staff/documents/generate
 | PDF | `backend/src/HappyPaws.Application/MedicalRecords/GenerateDocument/`, `backend/src/HappyPaws.Infrastructure/Documents/QuestPdfRenderer.cs` |
 | ที่เก็บไฟล์ | `backend/src/HappyPaws.Infrastructure/Storage/LocalFileStorage.cs`, `backend/src/HappyPaws.Api/Controllers/Storage/StorageController.cs` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Staff/` (`PetVaccinationsController`, `PetWeightsController`, `LabRequestsController`, `LabResultsController`, `PrescriptionsController`, `PrescriptionDispenseController`, `TreatmentTemplatesController`, `PetDocumentsController`, `DocumentGenerationController`) |
+| หน้าสัตว์ | `frontend/src/app/(staff)/pets/[id]/page.tsx`, `frontend/src/features/pets/` (`components/profile/`, `actions/`) |
+| หน้าแล็บ | `frontend/src/app/(staff)/lab/page.tsx`, `frontend/src/features/laboratory/` |
+| หน้าจ่ายยาและเทมเพลต | `frontend/src/app/(staff)/prescriptions/page.tsx`, `frontend/src/features/prescriptions/`, `frontend/src/features/consultations/components/treatments/template-picker.tsx` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Patients/VaccinationAndWeightTests.cs`, `DocumentUploadTests.cs`, `Api/Laboratory/LabRequestTests.cs`, `Api/Prescriptions/PharmacyTests.cs`, `Api/MedicalRecords/DocumentGenerationTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Patients/ClinicalRecordsTests.cs` |

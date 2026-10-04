@@ -28,8 +28,21 @@ export interface HttpClientConfig {
   authHeaders?: () => Promise<HeadersInit> | HeadersInit;
 }
 
+/** A file the backend answered with instead of JSON, such as a generated PDF. */
+export interface FileResponse {
+  bytes: ArrayBuffer;
+  /** The name from `Content-Disposition`, when the backend gave one. */
+  fileName?: string;
+}
+
+/** `filename="..."` out of a `Content-Disposition`. */
+function fileNameFrom(disposition: string | null): string | undefined {
+  const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+}
+
 export function createHttpClient({ baseUrl, authHeaders }: HttpClientConfig) {
-  async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
+  async function send(method: string, path: string, options: RequestOptions, accept: string): Promise<Response> {
     const url = new URL(baseUrl.replace(/\/$/, '') + path);
 
     for (const [key, value] of Object.entries(options.query ?? {})) {
@@ -39,7 +52,7 @@ export function createHttpClient({ baseUrl, authHeaders }: HttpClientConfig) {
     }
 
     const headers = new Headers(await authHeaders?.());
-    headers.set('Accept', 'application/json');
+    headers.set('Accept', accept);
 
     if (options.body !== undefined) {
       headers.set('Content-Type', 'application/json');
@@ -60,20 +73,36 @@ export function createHttpClient({ baseUrl, authHeaders }: HttpClientConfig) {
       cache: options.cache ?? 'no-store',
     });
 
+    // A refusal is the usual JSON error envelope whatever was asked for.
+    if (!response.ok) {
+      throw new ApiError(response.status, extractError(await response.json().catch(() => null), response.status));
+    }
+
+    return response;
+  }
+
+  async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
+    const response = await send(method, path, options, 'application/json');
+
     if (response.status === 204) {
       return undefined as T;
     }
 
-    const payload = await response.json().catch(() => null);
+    return (await response.json().catch(() => null)) as T;
+  }
 
-    if (!response.ok) {
-      throw new ApiError(response.status, extractError(payload, response.status));
-    }
+  /** A POST answered with a file rather than JSON. */
+  async function postForFile(path: string, accept: string, options: RequestOptions = {}): Promise<FileResponse> {
+    const response = await send('POST', path, options, `${accept}, application/json`);
 
-    return payload as T;
+    return {
+      bytes: await response.arrayBuffer(),
+      fileName: fileNameFrom(response.headers.get('Content-Disposition')),
+    };
   }
 
   return {
+    postForFile,
     get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
     post: <T>(path: string, options?: RequestOptions) => request<T>('POST', path, options),
     put: <T>(path: string, options?: RequestOptions) => request<T>('PUT', path, options),

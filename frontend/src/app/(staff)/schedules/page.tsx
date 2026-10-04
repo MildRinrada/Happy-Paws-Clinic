@@ -4,10 +4,12 @@ import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { getScheduleCalendar } from '@/features/schedules/api/schedules';
 import { AddShiftForm } from '@/features/schedules/components/add-shift-form';
+import { AssignmentRulesSection } from '@/features/schedules/components/assignment-rules-section';
 import { RosterTable } from '@/features/schedules/components/roster-table';
 import { TimeOffForm } from '@/features/schedules/components/time-off-form';
 import { WeekNav } from '@/features/schedules/components/week-nav';
 import { schedulePage } from '@/features/schedules/content/schedule-page';
+import { loadRuleServices } from '@/features/schedules/lib/load-rule-services';
 import { rosterWeek } from '@/features/schedules/lib/roster-week';
 import { listStaffMembers } from '@/features/staff/api/listStaffMembers';
 import { optional } from '@/lib/api/api-error';
@@ -20,7 +22,7 @@ interface SchedulesPageProps {
   searchParams: Promise<{ week?: string }>;
 }
 
-/** One week of the roster at the branch in view, and the forms that add to it. */
+/** One week of the roster at the branch in view, the forms that add to it, and the case-assignment rules. */
 export default async function SchedulesPage({ searchParams }: SchedulesPageProps) {
   const context = await loadStaffContext();
 
@@ -37,10 +39,11 @@ export default async function SchedulesPage({ searchParams }: SchedulesPageProps
   const branch = context.branch;
   const canWrite = context.can(Scope.ScheduleWrite);
 
-  const [calendar, members] = await Promise.all([
+  const [calendar, members, services] = await Promise.all([
     getScheduleCalendar(days[0]!, days[6]!, branch.id),
     // Choosing someone who has no shift yet needs the staff list, which is `staff:read`.
     canWrite && context.can(Scope.StaffRead) ? optional(listStaffMembers(branch.id)) : Promise.resolve(null),
+    canWrite ? loadRuleServices(branch.id, context.can(Scope.ServiceManage)) : Promise.resolve([]),
   ]);
 
   const people = members
@@ -54,10 +57,13 @@ export default async function SchedulesPage({ searchParams }: SchedulesPageProps
       <RosterTable days={days} staff={calendar.staff} today={today} />
 
       {canWrite && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <AddShiftForm people={people} branchId={branch.id} defaultDay={defaultDay} />
-          <TimeOffForm people={people} defaultDay={defaultDay} />
-        </div>
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <AddShiftForm people={people} branchId={branch.id} defaultDay={defaultDay} />
+            <TimeOffForm people={people} defaultDay={defaultDay} />
+          </div>
+          <AssignmentRulesSection people={people} services={services} />
+        </>
       )}
     </div>
   );

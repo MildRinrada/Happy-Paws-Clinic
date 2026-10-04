@@ -1,5 +1,13 @@
 import { staffApi } from '@/lib/api/server-client';
-import type { NewShiftsInput, ScheduleCalendar, Shift, TimeOffInput, TimeOffResult } from '../types/schedule.types';
+import type {
+  AssignmentRule,
+  AssignmentRules,
+  NewShiftsInput,
+  ScheduleCalendar,
+  Shift,
+  TimeOffInput,
+  TimeOffResult,
+} from '../types/schedule.types';
 
 /**
  * The roster: read on `schedule:read`, written on `schedule:write`. What is written here is what
@@ -20,4 +28,13 @@ export async function createShifts(input: NewShiftsInput): Promise<Shift[]> {
 /** `POST /staff/schedules/time-off` — takes effect at once and lists the appointments in the way. */
 export function recordTimeOff(input: TimeOffInput): Promise<TimeOffResult> {
   return staffApi().post<TimeOffResult>('/staff/schedules/time-off', { body: input });
+}
+
+/**
+ * `PUT /staff/schedules/assignment-rules` — "กติกาจ่ายเคสอัตโนมัติ". Replaces the whole set; an
+ * empty list removes every rule. The contract has no way to read the rules back, so this answer is
+ * the only place the stored set is ever seen.
+ */
+export function replaceAssignmentRules(rules: AssignmentRule[]): Promise<AssignmentRules> {
+  return staffApi().put<AssignmentRules>('/staff/schedules/assignment-rules', { body: { rules } });
 }

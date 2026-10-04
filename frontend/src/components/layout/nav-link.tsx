@@ -21,7 +21,7 @@ export function NavLink({ href, section = href, children }: NavLinkProps) {
     <Link
       href={href}
       aria-current={current ? 'page' : undefined}
-      className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      className={`block shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
         current ? 'bg-brand-600 text-white' : 'text-ink-700 hover:bg-ink-100'
       }`}
     >
