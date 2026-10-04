@@ -91,8 +91,16 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 | `Auth__Jwt__SigningKey` | คีย์ dev ใน `appsettings.Development.json` | บังคับ ยาวอย่างน้อย 32 ตัวอักษร ห้ามใช้คีย์ dev นอกเครื่องตัวเอง |
 | `Auth__Jwt__AccessTokenLifetimeMinutes` | 15 | อายุ access token (1 ถึง 60) |
 | `Cors__AllowedOrigins__0` | `http://localhost:3000` | origin ที่อนุญาต |
-| `Staff__Invitations__LogUndeliveredLinks` | `true` | เขียนลิงก์คำเชิญพนักงานลง log เพราะยังส่งอีเมลไม่ได้ ลิงก์นี้เป็นความลับ |
-| `Auth__SignIn__LogUndeliveredSecrets` | `true` | เขียนรหัส OTP ของลูกค้าและลิงก์รีเซ็ตรหัสผ่านลง log เพราะยังส่ง SMS และอีเมลไม่ได้ ทั้งสองอย่างเป็นความลับ |
+| `Staff__Invitations__LogUndeliveredLinks` | `true` | เขียนลิงก์คำเชิญพนักงานลง log เมื่อยังไม่ได้ตั้งอีเมล ลิงก์นี้เป็นความลับ |
+| `Staff__Invitations__AcceptUrlTemplate` | `http://localhost:3000/invitations/{id}#token={token}` | หน้าเว็บที่ลิงก์คำเชิญชี้ไป ต้องเปลี่ยนเป็นโดเมนจริงตอนติดตั้ง |
+| `Auth__SignIn__LogUndeliveredSecrets` | `true` | เขียนรหัส OTP ของลูกค้าและลิงก์รีเซ็ตรหัสผ่านลง log เมื่อยังไม่ได้ตั้ง SMS หรืออีเมล ทั้งสองอย่างเป็นความลับ |
+| `Messaging__Email__Host` | ว่าง | SMTP server เช่น `smtp.gmail.com` ว่างคือไม่ส่งอีเมล ดูหัวข้อ [ตั้งค่าอีเมลและ SMS](#ตั้งค่าอีเมลและ-sms) |
+| `Messaging__Email__Port`, `Security` | `587`, `starttls` | `ssl` สำหรับพอร์ต 465 |
+| `Messaging__Email__Username`, `Password` | ว่าง | บัญชี SMTP ตั้ง `Password` ด้วยตัวแปรแวดล้อมเท่านั้น |
+| `Messaging__Email__FromAddress`, `FromName` | ว่าง | ผู้ส่ง `FromName` ว่างคือใช้ชื่อคลินิก |
+| `Messaging__Sms__Provider` | ว่าง | `thaibulksms` คือส่ง SMS ว่างคือไม่ส่ง |
+| `Messaging__Sms__ApiKey`, `ApiSecret` | ว่าง | กุญแจของ ThaiBulkSMS ตั้ง `ApiSecret` ด้วยตัวแปรแวดล้อมเท่านั้น |
+| `Messaging__Sms__Sender` | ว่าง | ชื่อผู้ส่งที่ลงทะเบียนกับ ThaiBulkSMS ว่างคือชื่อตั้งต้นของบัญชี |
 | `Auth__SignIn__PasswordResetUrlTemplate` | `http://localhost:3000/reset-password#token={token}` | หน้าเว็บที่ลิงก์รีเซ็ตรหัสผ่านชี้ไป |
 | `RateLimits__OtpPerPhonePer10Minutes` | 3 | จำนวนรหัส OTP ที่ขอได้ต่อเบอร์ใน 10 นาที |
 | `Storage__LocalRoot` | ว่าง (โฟลเดอร์ชั่วคราวของระบบ) | ที่เก็บไฟล์ที่อัปโหลด ต้องตั้งเป็นโฟลเดอร์ถาวรก่อนใช้งานจริง |
@@ -109,6 +117,42 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 |---|---|---|
 | `API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่เซิร์ฟเวอร์ Next.js เรียก ไม่มีแล้วทุกคำขอที่เรียก API ล้ม |
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5080/v1` | ประกาศไว้สำหรับการอ่านสาธารณะจากเบราว์เซอร์ แต่ตอนนี้ไม่มีโค้ดใช้ |
+
+## ตั้งค่าอีเมลและ SMS
+
+ข้อความสามแบบส่งจริงเมื่อตั้งค่านี้ ถ้าไม่ตั้ง ระบบเขียนลง log แทนเหมือนเดิม
+
+| ข้อความ | ช่องทาง |
+|---|---|
+| รหัส OTP ตอนลูกค้าสมัครหรือเข้าสู่ระบบ | SMS |
+| ลิงก์ตั้งรหัสผ่านใหม่ | อีเมลถ้าบัญชีมีอีเมลและตั้งอีเมลไว้ ไม่อย่างนั้น SMS |
+| ลิงก์คำเชิญพนักงาน | อีเมล |
+
+**อีเมล** ใช้ SMTP ของผู้ให้บริการรายไหนก็ได้ ตัวอย่างกับ Google Workspace (ต้องสร้าง App Password ในบัญชี Google ก่อน)
+
+```powershell
+$env:Messaging__Email__Host = "smtp.gmail.com"
+$env:Messaging__Email__Username = "no-reply@yourclinic.com"
+$env:Messaging__Email__Password = "<app password>"
+$env:Messaging__Email__FromAddress = "no-reply@yourclinic.com"
+```
+
+Amazon SES, Resend และ SendGrid ใช้ค่าชุดเดียวกัน เปลี่ยนแค่ Host และบัญชีตามที่ผู้ให้บริการบอก
+
+**SMS** ใช้ ThaiBulkSMS สมัครบัญชีแล้วสร้าง API key และ secret ที่หน้าตั้งค่าของเว็บ ThaiBulkSMS
+
+```powershell
+$env:Messaging__Sms__Provider = "thaibulksms"
+$env:Messaging__Sms__ApiKey = "<api key>"
+$env:Messaging__Sms__ApiSecret = "<api secret>"
+$env:Messaging__Sms__Sender = "<ชื่อผู้ส่งที่ลงทะเบียนไว้>"
+```
+
+- ตั้งรหัสผ่านและ secret ด้วยตัวแปรแวดล้อมเท่านั้น ห้ามใส่ใน `appsettings.json` ที่ขึ้น git
+- ถ้าส่งไม่สำเร็จ เช่น เครดิตหมดหรือรหัสผ่าน SMTP ผิด คำขอของผู้ใช้ยังสำเร็จ แต่ log ของ API มีบรรทัดระดับ error ว่า `not delivered` พร้อมเหตุผล ไม่มีรหัสหรือลิงก์อยู่ในบรรทัดนั้น
+- ลิงก์ในข้อความใช้ `Auth__SignIn__PasswordResetUrlTemplate` และ `Staff__Invitations__AcceptUrlTemplate` ต้องเปลี่ยนเป็นโดเมนจริงของคลินิกก่อนใช้งาน
+- เมื่อตั้งค่าแล้ว ควรปิด `Auth__SignIn__LogUndeliveredSecrets` และ `Staff__Invitations__LogUndeliveredLinks` ในเครื่องที่ใช้งานจริง
+- รูปแบบคำขอไปที่ ThaiBulkSMS เขียนตาม API v2 (`POST /sms` แบบ basic auth) ทดสอบแล้วกับเซิร์ฟเวอร์จำลองเท่านั้น ควรลองส่งจริงด้วยบัญชีของคลินิกหนึ่งครั้งก่อนเปิดใช้
 
 ## คำสั่งประจำวัน
 
@@ -178,6 +222,7 @@ integration test เป็นที่ตรวจสัญญา: status code, 
 |---|---|---|
 | `docker compose up` ฐานข้อมูลไม่ขึ้น พอร์ตชน | เครื่องมี PostgreSQL ใช้ 5432 อยู่ | ดู [เมื่อพอร์ต 5432 ถูกใช้](#เมื่อพอร์ต-5432-ถูกใช้) |
 | `password authentication failed for user "happypaws"` | `.env` ตั้งรหัสอื่น เช่น `change-me` แต่ API ใช้ `happypaws` หรือแก้ `.env` หลังสร้าง volume แล้ว (PostgreSQL อ่านรหัสตอนสร้าง volume ครั้งแรกเท่านั้น) | ตั้ง `ConnectionStrings__Postgres` ให้ตรง หรือ `docker compose down -v` เพื่อลบข้อมูลแล้วสร้างใหม่ |
+| หน้าเว็บกดแล้วรอนาน โดยเฉพาะครั้งแรกที่เปิดแต่ละหน้า | `npm run dev` compile หน้านั้นตอนถูกเปิดครั้งแรก | ปกติของโหมด dev ซึ่งใช้ Turbopack อยู่แล้ว (`next dev --turbopack`) ครั้งต่อไปเร็วขึ้นเอง ระหว่างรอ เมนูมีวงหมุน และเนื้อหาเป็นโครงสีเทา (`loading.tsx`) ระบบที่ build แล้ว (`npm run build` แล้ว `npm start`) ไม่ต้อง compile ตอนเปิด |
 | `migrate` พิมพ์ `fail: Microsoft.EntityFrameworkCore.Database.Command` สองบรรทัด | EF Core ลองอ่านตาราง `__migrations` ที่ยังไม่มีบนฐานข้อมูลว่าง | ไม่ใช่ปัญหา ถ้าบรรทัดสุดท้ายเป็น `Applied N migration(s)` |
 | API ไม่เปิด แจ้ง `JwtOptions` ว่า `Issuer` หรือ `SigningKey` is required | ไม่ได้อยู่ใน Development เช่นรันด้วย `--no-launch-profile` หรือรัน dll ตรง จึงไม่ได้อ่าน `appsettings.Development.json` | ตั้ง `ASPNETCORE_ENVIRONMENT=Development` หรือใส่ `Auth__Jwt__Issuer` และ `Auth__Jwt__SigningKey` |
 | หน้าเว็บขึ้น `Missing environment variable: API_BASE_URL` | ไม่มี `frontend/.env.local` | `cp .env.example .env.local` ในโฟลเดอร์ `frontend` |

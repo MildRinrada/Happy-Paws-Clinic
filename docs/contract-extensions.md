@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 28 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7 และ 11 ถึง 14 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 และ 16 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 30 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 และ 16 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -25,8 +25,9 @@
 | 14 | หมวดการตรวจมีแต่การเขียน อ่านเคสที่เปิดค้างไม่ได้ | `GET /staff/consultations/{id}` | **ทำแล้ว** |
 | 15 | ไม่มีที่เก็บเบอร์โทร อีเมล แชท และแผนที่ของคลินิก | `GET`, `POST`, `PATCH`, `DELETE` บน `/clinic/contacts` พร้อมคำสั่ง `seed-contacts` | **ทำแล้ว** |
 | 16 | ไม่มีผู้ช่วยตอบคำถามบนหน้าเว็บ | `GET /assistant` และ `POST /assistant/chat` โมเดลสลับได้ด้วยค่าตั้ง | **ทำแล้ว** |
+| 17 | หน้าจัดการบริการหาบริการที่ไม่ได้เปิดจองออนไลน์ไม่เจอ และแก้ชื่อหรือระยะเวลาไม่ได้ | `GET /staff/services` และ `PATCH /staff/services/{id}` | **ทำแล้ว** |
 
-endpoint ใหม่ 28 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 123 เส้น มีสองข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ และ § 6 เป็นกฎ ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 30 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 123 เส้น มีสองข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ และ § 6 เป็นกฎ ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -362,6 +363,23 @@ contract ไม่มีส่วนแชทหรือผู้ช่วย�
 
 **สิ่งที่ตั้งใจไม่ทำ** ไม่ให้ผู้ช่วยจองนัดเอง (ส่งไปหน้าจองที่ต้องเข้าสู่ระบบ) ไม่ให้โมเดลสร้างลิงก์ที่หน้าเว็บแสดง (ปุ่มมาจากเครื่องมือเท่านั้น) และไม่ผูกกับผู้ให้บริการโมเดลรายเดียว รายละเอียดอยู่ใน [ผู้ช่วย AI](features/assistant.md)
 
+## 17. จัดการบริการได้แค่ราคากับการเปิดจองออนไลน์
+
+contract ให้ `POST /staff/services` สร้างบริการ `PATCH …/pricing` เปลี่ยนราคา และ `PATCH …/availability` เปิดปิดการจองออนไลน์ แต่รายการบริการมีเส้นเดียวคือ `GET /services` ซึ่งเป็นเมนูสาธารณะ แสดงเฉพาะบริการที่เปิดจองออนไลน์ บริการที่จองได้ที่เคาน์เตอร์อย่างเดียว ซึ่งเป็นค่าเริ่มต้นของบริการใหม่ทุกตัว จึงหาไม่เจอในหน้าจัดการ และเมนูสาธารณะไม่มี `version` ให้ส่งเป็น `If-Match` นอกจากนี้ไม่มีทางแก้ชื่อ หมวด ระยะเวลา หรือผู้ให้บริการ และไม่มีทางเลิกขายบริการ ทั้งที่ช่อง `is_active` มีอยู่ใน `ServiceDto` แล้ว
+
+**คำตอบ** สอง endpoint ได้รับอนุมัติก่อนสร้าง
+
+| Method | Endpoint | Scope |
+|---|---|---|
+| GET | `/staff/services?category=` | `service:manage` ตอบทุกบริการ รวมบริการที่จองที่เคาน์เตอร์อย่างเดียวและที่ปิดใช้งาน ในรูป `ServiceDto` ตัวเดียวกับการเขียนสามเส้น |
+| PATCH | `/staff/services/{id}` | `service:manage` แก้ `name` `category_code` `duration_minutes` `eligible_staff_ids` `is_active` ช่องที่ไม่ส่งไม่เปลี่ยน รองรับ `If-Match` |
+
+**ทำไมไม่รวมราคาไว้ใน `PATCH` นี้** contract แยกราคาไว้เส้นของตัวเองเพราะราคามีวันที่มีผล การแก้ราคาผ่านเส้นนี้จะข้ามกติกานั้น เส้นนี้จึงแก้เฉพาะสิ่งที่ไม่มีวันที่
+
+**ปิดใช้งานแทนการลบ** `is_active: false` ทำให้จองใหม่ไม่ได้ทั้งเคาน์เตอร์และออนไลน์ (`BookingSlotResolver` และ `GET /booking/availability` เช็กช่องนี้อยู่แล้ว) แต่นัดและบิลเดิมยังอ้างถึงบริการได้ ระยะเวลาใหม่มีผลกับนัดที่จองหลังจากนี้ นัดเดิมไม่หดหรือยืด
+
+**สิ่งที่ตั้งใจไม่ทำ** ไม่เพิ่ม `DELETE` และไม่เปิดรายการนี้ให้ scope อื่น หน้าจองที่เคาน์เตอร์ยังใช้เมนูสาธารณะเหมือนเดิม ([assumptions.md § 27](./assumptions.md)) รายละเอียดหน้าจออยู่ใน [บริการ](features/services.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -397,3 +415,4 @@ contract ไม่มีส่วนแชทหรือผู้ช่วย�
 | อ่านเคสตรวจ | `backend/src/HappyPaws.Api/Controllers/Staff/ConsultationsController.cs`, `backend/src/HappyPaws.Application/Consultations/GetConsultation/`, `backend/tests/HappyPaws.IntegrationTests/Api/Consultations/ReadConsultationTests.cs` |
 | ผู้ช่วย AI | `backend/src/HappyPaws.Application/Assistant/`, `backend/src/HappyPaws.Infrastructure/Assistant/`, `backend/src/HappyPaws.Api/Controllers/Public/AssistantController.cs` |
 | ช่องทางติดต่อ | `backend/src/HappyPaws.Domain/Clinics/ClinicContact.cs`, `backend/src/HappyPaws.Application/Clinics/ManageContacts/`, `SeedContacts/`, `backend/src/HappyPaws.Api/Controllers/Staff/ClinicContactsController.cs`, `Public/ClinicController.cs` |
+| รายการและการแก้บริการ | `backend/src/HappyPaws.Api/Controllers/Staff/ServicesController.cs`, `backend/src/HappyPaws.Application/ServiceCatalog/ListServices/`, `UpdateService/`, `backend/tests/HappyPaws.IntegrationTests/Api/ServiceCatalog/ServiceManagementTests.cs` |

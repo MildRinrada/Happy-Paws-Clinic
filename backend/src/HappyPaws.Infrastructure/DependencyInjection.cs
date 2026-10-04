@@ -26,6 +26,7 @@ using HappyPaws.Application.MedicalRecords.GenerateDocument;
 using HappyPaws.Infrastructure.Common;
 using HappyPaws.Infrastructure.Documents;
 using HappyPaws.Infrastructure.Identity;
+using HappyPaws.Infrastructure.Messaging;
 using HappyPaws.Infrastructure.Notifications;
 using HappyPaws.Infrastructure.Realtime;
 using HappyPaws.Infrastructure.Persistence;
@@ -114,13 +115,12 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, IdentityPasswordHasher>();
         services.AddSingleton<ITwoFactorService, TotpService>();
 
-        // Customer sign-in. The two senders are loud placeholders until SMS and email adapters
-        // exist; see LoggingCustomerSignInSenders. The contract's OTP limit is read from config.
+        // Customer sign-in. The contract's OTP limit is read from config. The code, reset and
+        // invitation senders go by SMS and email when Messaging:* is set, and to the log
+        // placeholders when it is not; see MessagingRegistration.
         services.AddScoped<ICustomerSignInRepository, CustomerSignInRepository>();
-        services.AddOptions<SignInDeliveryOptions>().Bind(configuration.GetSection(SignInDeliveryOptions.SectionName));
-        services.AddSingleton<IOtpSender, LoggingOtpSender>();
-        services.AddSingleton<IPasswordResetSender, LoggingPasswordResetSender>();
         services.AddSingleton(new OtpSettings(configuration.GetValue("RateLimits:OtpPerPhonePer10Minutes", 3)));
+        services.AddMessaging(configuration);
 
         // ---- Booking and Appointment module ----
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
@@ -196,12 +196,6 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IStaffInvitationRepository, StaffInvitationRepository>();
-
-        // Another loud placeholder: invitations are logged, not emailed, until an email adapter
-        // lands. See LoggingStaffInvitationSender on what it will and will not write to the log.
-        services.AddOptions<StaffInvitationOptions>()
-            .Bind(configuration.GetSection(StaffInvitationOptions.SectionName));
-        services.AddSingleton<IStaffInvitationSender, LoggingStaffInvitationSender>();
 
         // ---- Service catalogue ----
         services.AddScoped<IServiceRepository, ServiceRepository>();

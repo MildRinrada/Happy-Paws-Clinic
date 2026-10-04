@@ -3,11 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { LinkPendingDot } from './link-pending-dot';
+
+interface NavLinkProps {
+  href: string;
+  /** The section the link stands for, when it opens one page of several (settings opens its first tab). */
+  section?: string;
+  children: ReactNode;
+}
 
 /** A sidebar link that knows when it is the current page, and says so to a screen reader. */
-export function NavLink({ href, children }: { href: string; children: ReactNode }) {
+export function NavLink({ href, section = href, children }: NavLinkProps) {
   const pathname = usePathname();
-  const current = pathname === href || pathname.startsWith(`${href}/`);
+  const current = pathname === section || pathname.startsWith(`${section}/`);
 
   return (
     <Link
@@ -18,6 +26,7 @@ export function NavLink({ href, children }: { href: string; children: ReactNode 
       }`}
     >
       {children}
+      <LinkPendingDot />
     </Link>
   );
 }

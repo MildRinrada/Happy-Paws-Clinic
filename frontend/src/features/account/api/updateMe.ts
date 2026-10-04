@@ -1,12 +1,14 @@
 import { staffApi } from '@/lib/api/server-client';
-import type { Me } from '../types/account.types';
+import type { Me, NotificationChannels } from '../types/account.types';
 
 export interface MeChanges {
   display_name?: string;
   email?: string;
   /** An empty string removes the phone number. */
   phone?: string;
-  notifications?: { email: boolean; sms: boolean; line: boolean };
+  /** The language messages to this person are written in. */
+  language?: 'th' | 'en';
+  notifications?: NotificationChannels;
   /** Required by the backend whenever the email or phone actually changes. */
   current_password?: string;
 }

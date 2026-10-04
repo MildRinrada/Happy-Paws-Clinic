@@ -2,8 +2,7 @@
  * The public site's header links. Edit the menu here, not in the header components.
  *
  * A menu link goes either to a page of its own or to a section of the home page (the `id` on that
- * section). Sign-up points at '#' because there is no customer sign-up page yet; give it a real
- * `href` when there is.
+ * section). Sign-up goes to the customer sign-up page.
  */
 export interface SiteLink {
   label: string;
@@ -21,7 +20,7 @@ export const mainNavLinks: SiteLink[] = [
 
 export const signInLink: SiteLink = { label: 'เข้าสู่ระบบ', href: '/login' };
 
-export const signUpLink: SiteLink = { label: 'สมัครใช้งานฟรี', href: '#' };
+export const signUpLink: SiteLink = { label: 'สมัครใช้งานฟรี', href: '/register' };
 
 /**
  * Shown instead of sign-in and sign-up to someone already signed in. It goes to the sign-in page

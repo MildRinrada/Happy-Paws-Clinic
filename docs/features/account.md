@@ -112,13 +112,64 @@ PATCH /v1/staff/users/usr_.../status
 - บันทึก audit `user.status_changed` พร้อมสถานะก่อนและหลัง
 - `user:manage` เป็น scope ระดับสูง ผู้เรียกต้องผ่าน 2FA ในเซสชันนั้น
 
+## หน้าจอ
+
+### หน้า "บัญชีของฉัน" ของพนักงาน (`/account`)
+
+กดชื่อตัวเองที่มุมขวาบนของหน้าพนักงานเพื่อเปิดหน้านี้ พนักงานทุกคนใช้ได้กับบัญชีของตัวเอง ไม่ต้องมีสิทธิ์พิเศษ หน้านี้มี 4 การ์ด เรียงจากบนลงล่าง
+
+**ข้อมูลส่วนตัว** (`GET /me`, `PATCH /me`)
+
+- แก้ชื่อที่แสดง อีเมล เบอร์โทร ภาษา และช่องทางรับข้อความ (อีเมล SMS LINE)
+- ส่งไปเฉพาะช่องที่เปลี่ยนจริง เทียบอีเมลแบบตัวพิมพ์เล็ก และเทียบเบอร์แบบตัวเลขล้วน พิมพ์ `081-234-5678` แทน `0812345678` จึงไม่นับว่าเปลี่ยน
+- ช่องรหัสผ่านปัจจุบันโผล่มาเฉพาะตอนเปลี่ยนอีเมลหรือเบอร์ เพราะ backend บังคับแค่สองช่องนี้
+- ส่ง `version` ไปใน `If-Match` ถ้ามีคนแก้บัญชีนี้จากอีกเครื่องไปก่อน จะเห็นข้อความให้โหลดหน้าใหม่
+- ข้อความปฏิเสธจาก backend ขึ้นใต้ช่องที่ backend ระบุ เช่น อีเมลซ้ำขึ้นใต้ช่องอีเมล รหัสผ่านผิดขึ้นใต้ช่องรหัสผ่าน
+
+**เปลี่ยนรหัสผ่าน** (`POST /me/password`)
+
+- กรอกรหัสผ่านปัจจุบัน รหัสผ่านใหม่ และพิมพ์รหัสผ่านใหม่ซ้ำ หน้าจอตรวจเองก่อนว่ารหัสใหม่ยาวอย่างน้อย 8 ตัวและสองช่องตรงกัน ที่เหลือ backend ตรวจ เช่น ห้ามซ้ำรหัสเดิม
+- endpoint นี้ตอบรหัสผ่านเดิมผิดด้วย `401` ซึ่งปกติแปลว่าเซสชันหมดแล้ว หน้าจอจึงแปลง `401` จากคำขอนี้เป็นข้อความ "รหัสผ่านปัจจุบันไม่ถูกต้อง" ใต้ช่องรหัสผ่านปัจจุบัน แทนการพาไปหน้าเข้าสู่ระบบ
+- backend เพิกถอนเซสชันอื่นทั้งหมดแต่เก็บเซสชันที่ใช้อยู่ไว้ cookie ของเครื่องนี้จึงยังใช้ได้ ไม่ต้องลบ หลังเปลี่ยนสำเร็จ หน้าโหลดรายการอุปกรณ์ใหม่ จะเหลือแค่เครื่องนี้
+
+**ยืนยันตัวตนสองขั้นตอน** (`POST /me/2fa/enroll`)
+
+- บอกว่าเปิดอยู่หรือไม่ ใช้วิธีไหน และเหลือรหัสสำรองกี่รหัส (`two_factor` จาก `GET /me`) ถ้าเหลือ 2 รหัสหรือน้อยกว่า มีข้อความเตือนให้ตั้งค่าใหม่
+- กดตั้งค่าแล้วทำตามลำดับ
+  1. กรอกรหัสผ่านปัจจุบัน (เรียก endpoint ครั้งแรก)
+  2. สแกน QR code หรือพิมพ์รหัสลับในแอป แล้วกรอกรหัส 6 หลักจากแอป (เรียกครั้งที่สอง) พิมพ์แบบมีเว้นวรรค เช่น `162 544` ได้ ระบบตัดเว้นวรรคก่อนส่ง
+  3. หน้าแสดงรหัสสำรอง 8 รหัสพร้อมคำเตือนว่าจะไม่แสดงอีก มีปุ่มคัดลอกทั้งหมด กด "เก็บรหัสแล้ว" รหัสจะหายไปจากหน้า
+- QR code วาดบนเซิร์ฟเวอร์ Next.js ไม่ส่งไปให้บริการภายนอกวาด เบราว์เซอร์ได้รับแค่รูป QR กับรหัสลับที่ผู้ใช้ต้องเห็นอยู่แล้ว ไม่ได้รับ `otp_auth_uri` และรหัสสำรองอยู่แค่ใน state ของหน้า ไม่ได้เก็บที่ไหน
+- กดยกเลิกระหว่างทางได้ แอปเดิมยังใช้ได้จนกว่าจะยืนยันรหัสจากแอปใหม่สำเร็จ
+- ถ้า backend ตอบ `403` (เปลี่ยนแอปจากเซสชันที่ยังไม่ผ่านแอปเดิม) หรือ `409 state_conflict` (ขั้นแรกหมดอายุหรือถูกใช้ไปแล้ว) หน้าจอบอกเหตุผลและวิธีแก้เป็นภาษาไทยแทนข้อความทั่วไปของ backend
+- cookie ของเครื่องนี้ไม่ต้องเปลี่ยน backend บันทึกว่าเซสชันนี้ผ่าน 2FA แล้ว จึง refresh ต่อได้ เซสชันอื่นที่ยังไม่ผ่าน 2FA จะ refresh ไม่ได้ และ middleware พาไปหน้าเข้าสู่ระบบเอง
+
+**อุปกรณ์ที่เข้าสู่ระบบอยู่** (`GET /me/sessions`, `DELETE /me/sessions/{id}`)
+
+- แสดงทุกเซสชันที่ยังใช้ได้ เครื่องนี้อยู่บนสุดและมีป้าย "เครื่องนี้" ที่เหลือเรียงตามเวลาใช้ล่าสุด
+- แต่ละแถวบอกชื่ออุปกรณ์แบบคร่าว ๆ ที่อ่านจาก user agent เช่น "Chrome บน Windows" เวลาใช้ล่าสุด เวลาเข้าสู่ระบบ และ IP
+- กด "ออกจากระบบ" แล้วต้องกดยืนยันอีกครั้งจึงเพิกถอน เครื่องนี้ไม่มีปุ่ม ให้ใช้ปุ่มออกจากระบบด้านบนของหน้า ซึ่งเพิกถอนด้วย refresh token
+- ถ้ารายการเก่าจนเซสชันที่สั่งเพิกถอนกลายเป็นเครื่องนี้ หน้าจอลบ cookie แล้วพาไปหน้าเข้าสู่ระบบ ไม่ปล่อยให้หน้าพังในคำขอถัดไป
+
+**สิ่งที่ไม่มีในหน้านี้**
+
+- พักหรือปิดบัญชีตัวเอง `PATCH /staff/users/{id}/status` ใช้กับบัญชีคนอื่นเท่านั้น และตอบ `409 cannot_deactivate_self` ถ้าเป็นบัญชีตัวเอง จึงไม่มีปุ่มนี้
+- ปิด 2FA ไม่มี endpoint ให้ปิด
+- ออกรหัสสำรองใหม่โดยไม่เปลี่ยนแอป ไม่มี endpoint แยก ต้องตั้งค่าแอปใหม่ทั้งชุด
+
+### หน้า "บัญชีของฉัน" ของลูกค้า (`/portal/account`)
+
+ใช้ `GET /me`, `PATCH /me`, `POST /me/password` และ `/me/sessions` ชุดเดียวกัน แต่ไม่มีส่วนตั้ง 2FA และใช้ server action คนละชุดกับหน้าของพนักงาน (`account-actions.ts`)
+
 ## ข้อจำกัดที่รู้อยู่
 
-- ยังไม่มีหน้าจอสำหรับเรื่องเหล่านี้
 - เปลี่ยนอีเมลแล้วไม่มีการส่งอีเมลยืนยันไปที่อยู่ใหม่ เพราะยังไม่มีตัวส่งอีเมล
 - เจ้าของที่สร้างด้วย `bootstrap` และพนักงานที่รับคำเชิญยังไม่มี recovery code จนกว่าจะลงทะเบียนเองหนึ่งครั้ง
 - ความลับ TOTP ยังเก็บในฐานข้อมูลโดยไม่เข้ารหัส ดู [ข้อมูลและความลับ](../security/data-and-secrets.md)
-- `POST /me/password` ตอบรหัสผ่านเดิมผิดด้วย `401` ส่วน endpoint ใหม่ตอบ `422` ควรทำให้ตรงกัน
+- `POST /me/password` ตอบรหัสผ่านเดิมผิดด้วย `401` ส่วน endpoint ใหม่ตอบ `422` ควรทำให้ตรงกัน ตอนนี้หน้าจอแปลงให้เอง ถ้าแก้ backend แล้ว ลบการแปลงใน `my-account-actions.ts` ได้
+- คนที่ยังไม่เคยมี 2FA แล้วเปิดจากหน้านี้ access token ที่ถืออยู่ยังไม่มีค่า "ผ่าน 2FA" จนกว่าจะ refresh รอบถัดไป (ไม่เกิน 15 นาที) ระหว่างนั้นงานที่ต้องผ่าน 2FA อาจได้ `403` ออกแล้วเข้าใหม่ก็หาย พนักงานแทบทุกคนมี 2FA ตั้งแต่รับคำเชิญ กรณีนี้จึงเกิดน้อย
+- ชื่ออุปกรณ์ในรายการเซสชันเดาจาก user agent อย่างหยาบ ๆ ใช้ช่วยจำเครื่องเท่านั้น
+- ช่องทางรับข้อความถูกเก็บและแสดงเท่านั้น ตัวส่งข้อความยังไม่ได้อ่าน หน้าจอบอกไว้ใต้ช่อง
 
 ## โค้ด
 
@@ -128,3 +179,12 @@ PATCH /v1/staff/users/usr_.../status
 | use case | `backend/src/HappyPaws.Application/Identity/` (`UpdateProfile`, `EnrolTwoFactor`, `SetUserStatus`, `VerifyTwoFactor`, `RecoveryCodes.cs`, `CurrentPassword.cs`) |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Account/MeController.cs`, `Controllers/Staff/UserStatusController.cs` |
 | เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Identity/AccountSelfServiceTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Identity/AccountSelfServiceTests.cs` |
+| หน้าจอพนักงาน | `frontend/src/app/(staff)/account/page.tsx` |
+| เรียก API | `frontend/src/features/account/api/` (`getMe.ts`, `updateMe.ts`, `changePassword.ts`, `enrolTwoFactor.ts`, `sessions.ts`) |
+| server action | `frontend/src/features/account/actions/my-account-actions.ts` (หน้าพนักงาน), `account-actions.ts` (หน้าลูกค้า) |
+| ฟอร์มโปรไฟล์ | `frontend/src/features/account/components/profile/` (`profile-form.tsx`, `notification-channels-field.tsx`), `lib/profile-changes.ts` |
+| ฟอร์มรหัสผ่าน | `frontend/src/features/account/components/password/password-form.tsx` |
+| ตั้ง 2FA | `frontend/src/features/account/components/two-factor/` (`two-factor-card.tsx`, `two-factor-status.tsx`, `two-factor-setup.tsx`, `enrol-password-step.tsx`, `enrol-code-step.tsx`, `authenticator-qr.tsx`, `recovery-codes.tsx`, `copy-button.tsx`) |
+| อุปกรณ์ | `frontend/src/features/account/components/sessions/` (`sessions-card.tsx`, `session-item.tsx`, `revoke-session-button.tsx`) |
+| ข้อความบนหน้าจอ | `frontend/src/features/account/content/` (`account-page.ts`, `profile-settings.ts`, `password-settings.ts`, `two-factor-settings.ts`, `session-settings.ts`) |
+| type | `frontend/src/features/account/types/account.types.ts` |

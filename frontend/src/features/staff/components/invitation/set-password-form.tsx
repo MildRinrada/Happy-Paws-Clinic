@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
+import { ONE_TIME_CODE_MAX_LENGTH, ONE_TIME_CODE_PATTERN, oneTimeCodeDigits } from '@/lib/auth/one-time-code';
 import { invitationPage } from '../../content/invitation-page';
 import { StepHeading } from './step-heading';
 
@@ -41,7 +42,7 @@ export function SetPasswordForm({ onSubmit, submitting, errors }: SetPasswordFor
 
     const form = new FormData(event.currentTarget);
     const password = String(form.get('password') ?? '');
-    const code = String(form.get('code') ?? '').trim();
+    const code = oneTimeCodeDigits(String(form.get('code') ?? ''));
     const problems = check(password, String(form.get('confirm') ?? ''), code);
 
     setLocal(problems);
@@ -80,8 +81,8 @@ export function SetPasswordForm({ onSubmit, submitting, errors }: SetPasswordFor
           name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="[0-9]{6,8}"
-          maxLength={8}
+          pattern={ONE_TIME_CODE_PATTERN}
+          maxLength={ONE_TIME_CODE_MAX_LENGTH}
           required
           aria-invalid={Boolean(shown.code)}
           className="text-center font-mono text-lg tracking-[0.4em]"

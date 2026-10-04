@@ -1,0 +1,12 @@
+/** The words every settings form shares. */
+export const formMessages = {
+  conflict: 'มีคนบันทึกข้อมูลนี้ไปก่อนแล้ว โหลดหน้าใหม่เพื่อดูข้อมูลล่าสุด แล้วแก้อีกครั้ง',
+  unreachable: 'ติดต่อระบบไม่ได้ ลองอีกครั้ง',
+  saved: 'บันทึกแล้ว',
+  save: 'บันทึก',
+  saving: 'กำลังบันทึก…',
+  cancel: 'ยกเลิก',
+  add: 'เพิ่ม',
+  adding: 'กำลังเพิ่ม…',
+  noAccess: 'บัญชีนี้ไม่มีสิทธิ์แก้ส่วนนี้',
+};

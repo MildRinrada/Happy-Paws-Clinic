@@ -15,6 +15,26 @@ export interface Me {
   version?: number;
 }
 
+/** The message channels on `GET /me` and `PATCH /me`. */
+export type NotificationChannels = NonNullable<Me['notifications']>;
+
+/**
+ * `POST /me/2fa/enroll`. The first call (with the password) answers `confirmation_required` with
+ * the secret; the second (with a code) answers `enabled` with the recovery codes, shown this once.
+ */
+export interface TwoFactorEnrolment {
+  status: 'confirmation_required' | 'enabled';
+  secret?: string;
+  otp_auth_uri?: string;
+  recovery_codes?: string[];
+}
+
+/** What the browser is given to scan: the secret as text and as a QR image. Never the raw URI. */
+export interface AuthenticatorSecret {
+  secret: string;
+  qrDataUrl: string;
+}
+
 /** One signed-in device — `GET /me/sessions`. */
 export interface AccountSession {
   id: string;

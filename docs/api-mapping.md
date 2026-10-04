@@ -102,6 +102,8 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ค่าตั้งเหล่านี้ไม่ได้เก็บไว้เฉย ๆ โมดูลที่เกี่ยวข้องอ่านไปใช้จริง วันหยุดปิดช่วงจอง (`Appointments/Availability/BookingSlotResolver`) ค่าตั้งคิวกำหนดรูปแบบเลขคิวและการเริ่มเลขใหม่ทุกวัน (`Appointments/CheckInAppointment`, `Queueing/IssueWalkInTicket`) ค่าตั้งเวชระเบียนกำหนดว่าการตรวจต้องมีอะไรครบก่อนปิดเคส (`Consultations/CloseConsultation`) และแบบฟอร์มตรวจรายระบบ (`Consultations/RecordExamination`) การอ่านค่าที่ contract ไม่มีให้ ดู [assumptions.md § 27](./assumptions.md)
 
+หน้าจอของการเขียนทั้งหมดในหมวดนี้อยู่ใต้ `/settings` ฝั่งพนักงาน ดู [ตั้งค่าคลินิก](features/clinic-setup.md)
+
 เจ้าของคนแรก สาขาแรก และชุด role แรก **สร้างผ่าน API นี้ไม่ได้** เพราะการเขียนทุกเส้นต้องมี scope และฐานข้อมูลว่างไม่มีใครถือ scope เลย ทั้งหมดมาจากคำสั่ง operator `bootstrap` ([development.md](./development.md)) ซึ่งตั้งใจทำเป็นคำสั่ง ไม่ใช่ endpoint
 
 ## Staff and Permissions
@@ -157,6 +159,8 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | PATCH | `/staff/services/{id}/availability` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateAvailability/` | `ServiceCatalog` | ✅ |
 
 การเปลี่ยนราคา **เป็นการตั้งล่วงหน้า ไม่ใช่เขียนทับ** `PATCH .../pricing` เพิ่มเวอร์ชันราคาที่มีวันที่เข้าไปในตารางราคาของบริการ การอ่านทุกครั้งแสดงเวอร์ชันที่มีผลในวันที่ถาม (`ClinicService.PricingOn`) จึงใส่ราคาใหม่ไว้ก่อนวันที่มีผลได้ และราคาเก่ายังอยู่ในระบบ ราคาในแคตตาล็อกเป็น *ราคาตั้ง* บรรทัดในใบแจ้งหนี้ยังมีราคาต่อหน่วยของตัวเอง และยังไม่มีอะไรคัดลอกราคาตั้งไปใส่บิล ส่วน availability จำกัดว่าบริการจองออนไลน์ได้ที่สาขาไหนและช่วงเวลาไหน การหาช่วงว่างอ่านค่านี้ตอนคำนวณ slot
+
+หน้าจัดการบริการใช้ส่วนขยายอีกสองเส้น คือ `GET /staff/services` และ `PATCH /staff/services/{id}` ([ส่วนขยาย § 17](#ส่วนขยาย-contract)) เพราะเมนูสาธารณะไม่มีบริการที่จองได้ที่เคาน์เตอร์อย่างเดียว และไม่มีทางแก้ชื่อหรือระยะเวลา หน้าจออยู่ใน [บริการ](features/services.md)
 
 ## Booking and Appointment
 
@@ -443,7 +447,7 @@ event ของ webhook ขาออก (`appointment.created` ถึง `pet.cr
 
 ## ส่วนขยาย contract
 
-endpoint 28 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` 12 เส้นแรกและ 5 เส้นก่อนหกเส้นสุดท้ายปิดช่องโหว่ที่เจอตอนสร้างตาม contract ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI (หกเส้นสุดท้าย) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 30 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14 และ 17) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -475,6 +479,8 @@ endpoint 28 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | DELETE | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`RemoveContactHandler`) | § 15 | ✅ |
 | GET | `/assistant` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`GetAssistantStatusHandler`) | § 16 | ✅ |
 | POST | `/assistant/chat` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`ChatHandler`) | § 16 | ✅ |
+| GET | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/ListServices/` | § 17 | ✅ |
+| PATCH | `/staff/services/{id}` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateService/` | § 17 | ✅ |
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -499,7 +505,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
 | ทำแล้วและมีเทสต์ (✅) | **123** |
-| เพิ่มนอก contract | **28** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
+| เพิ่มนอก contract | **30** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
 
@@ -507,7 +513,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-28 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด
+30 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด
 
 ## โค้ด
 

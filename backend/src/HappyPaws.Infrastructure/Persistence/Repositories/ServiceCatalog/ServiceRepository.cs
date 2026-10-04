@@ -40,4 +40,20 @@ internal sealed class ServiceRepository(HappyPawsDbContext db) : IServiceReposit
             .OrderBy(service => service.CategoryCode).ThenBy(service => service.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ClinicService>> ListAllAsync(
+        string? categoryCode = null,
+        CancellationToken cancellationToken = default)
+    {
+        var services = db.Set<ClinicService>().AsNoTracking();
+
+        if (categoryCode is { Length: > 0 })
+        {
+            services = services.Where(service => service.CategoryCode == categoryCode);
+        }
+
+        return await services
+            .OrderBy(service => service.CategoryCode).ThenBy(service => service.Name)
+            .ToListAsync(cancellationToken);
+    }
 }

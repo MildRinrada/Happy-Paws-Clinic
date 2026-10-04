@@ -46,3 +46,15 @@ public sealed record UpdateAvailabilityRequest(
 
 /// <summary>One weekly window: <c>{ "day": "saturday", "from": "09:00", "to": "12:00" }</c>.</summary>
 public sealed record BookingWindowRequest(string Day, string From, string To);
+
+/// <summary>
+/// <c>PATCH /staff/services/{id}</c>. Not in the API reference; see
+/// <c>docs/contract-extensions.md § 17</c>. An absent field is left alone; an empty
+/// <c>eligible_staff_ids</c> means any vet on shift.
+/// </summary>
+public sealed record UpdateServiceRequest(
+    string? Name = null,
+    string? CategoryCode = null,
+    int? DurationMinutes = null,
+    IReadOnlyList<string>? EligibleStaffIds = null,
+    bool? IsActive = null);

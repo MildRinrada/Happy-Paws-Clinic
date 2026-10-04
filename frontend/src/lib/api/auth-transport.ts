@@ -114,6 +114,29 @@ export async function postLogin(identifier: string, password: string): Promise<L
     : { kind: 'signed_in', ...(await signedInFrom(response)) };
 }
 
+/** What `POST /auth/register` takes, on the wire. */
+export interface RegisterBody {
+  phone: string;
+  code: string;
+  display_name: string;
+  password: string;
+  email?: string;
+}
+
+/**
+ * `POST /auth/register` — opens a customer's account with a proven phone number and signs them
+ * straight in, which is why it lives here: the refresh token comes back only in `Set-Cookie`.
+ */
+export async function postRegister(body: RegisterBody): Promise<SignedIn> {
+  const response = await post('/auth/register', body);
+
+  if (!response.ok) {
+    throw await failure(response);
+  }
+
+  return signedInFrom(response);
+}
+
 /** `POST /auth/2fa/verify` — "คืน access token จริง". */
 export async function postVerifyTwoFactor(challenge: string, code: string): Promise<SignedIn> {
   const response = await post('/auth/2fa/verify', { challenge, code });

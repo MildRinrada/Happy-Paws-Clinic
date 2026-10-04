@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { ONE_TIME_CODE_MAX_LENGTH, ONE_TIME_CODE_PATTERN } from '@/lib/auth/one-time-code';
 import { verifySecondFactor, type SignInState } from '../../actions/sign-in';
 import { signInPage } from '../../content/sign-in-page';
 import { SignInField } from './sign-in-field';
@@ -37,8 +38,8 @@ export function SecondFactorForm({ challenge }: { challenge: Challenge }) {
         hint={text.codeHint}
         inputMode="numeric"
         autoComplete="one-time-code"
-        pattern="[0-9]{6,8}"
-        maxLength={8}
+        pattern={ONE_TIME_CODE_PATTERN}
+        maxLength={ONE_TIME_CODE_MAX_LENGTH}
         required
         autoFocus
         className="text-center font-mono text-lg tracking-[0.4em]"

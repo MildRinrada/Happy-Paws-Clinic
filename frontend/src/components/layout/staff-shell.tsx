@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { selectBranch } from '@/features/account/actions/select-branch';
 import type { StaffContext } from '@/features/account/lib/staff-context';
 import { signOut } from '@/features/authentication/actions/sign-in';
+import { settingsTabs } from '@/features/settings/content/settings-tabs';
 import { Scope } from '@/lib/auth/scopes';
 import { BranchSwitcher } from './branch-switcher';
 import { NavLink } from './nav-link';
@@ -9,17 +11,26 @@ import { NavLink } from './nav-link';
 interface NavItem {
   href: string;
   label: string;
-  /** The scope the screen behind the link is built on. */
-  scope: string;
+  /** The scopes the screens behind the link are built on; holding any one shows the link. */
+  scopes: string[];
 }
 
 const navigation: NavItem[] = [
-  { href: '/queue', label: 'คิววันนี้', scope: Scope.QueueRead },
-  { href: '/appointments', label: 'ปฏิทินนัด', scope: Scope.AppointmentRead },
-  { href: '/customers', label: 'ลูกค้าและสัตว์', scope: Scope.CustomerRead },
-  { href: '/billing', label: 'เก็บเงิน', scope: Scope.InvoiceWrite },
-  { href: '/settings/contacts', label: 'ข้อมูลติดต่อ', scope: Scope.SettingsWrite },
+  { href: '/queue', label: 'คิววันนี้', scopes: [Scope.QueueRead] },
+  { href: '/appointments', label: 'ปฏิทินนัด', scopes: [Scope.AppointmentRead] },
+  { href: '/customers', label: 'ลูกค้าและสัตว์', scopes: [Scope.CustomerRead] },
+  { href: '/billing', label: 'เก็บเงิน', scopes: [Scope.InvoiceWrite] },
+  { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
+  { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead] },
 ];
+
+/**
+ * Where a menu entry goes. Settings opens straight on the first tab this session can use, rather
+ * than on `/settings`, which would only redirect there: one round trip instead of two.
+ */
+function entryOf(href: string, context: StaffContext): string {
+  return href === '/settings' ? (settingsTabs.find((tab) => context.can(tab.scope))?.href ?? href) : href;
+}
 
 /**
  * The staff console's chrome: who is signed in, which branch is in view, and where they can go.
@@ -30,7 +41,7 @@ const navigation: NavItem[] = [
  * reaches a page whose data the backend then refuses.
  */
 export function StaffShell({ context, children }: { context: StaffContext; children: ReactNode }) {
-  const items = navigation.filter((item) => context.can(item.scope));
+  const items = navigation.filter((item) => item.scopes.some(context.can));
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">
@@ -40,7 +51,7 @@ export function StaffShell({ context, children }: { context: StaffContext; child
 
         <nav aria-label="เมนูหลัก" className="mt-4 flex gap-1 lg:mt-6 lg:flex-col">
           {items.map((item) => (
-            <NavLink key={item.href} href={item.href}>
+            <NavLink key={item.href} href={entryOf(item.href, context)} section={item.href}>
               {item.label}
             </NavLink>
           ))}
@@ -56,7 +67,9 @@ export function StaffShell({ context, children }: { context: StaffContext; child
           />
 
           <div className="flex items-center gap-3">
-            <p className="text-sm text-ink-700">{context.me.display_name}</p>
+            <Link href="/account" className="rounded-lg px-2 py-1.5 text-sm text-ink-700 hover:bg-ink-100" title="บัญชีของฉัน">
+              {context.me.display_name}
+            </Link>
             <form action={signOut}>
               <button type="submit" className="rounded-lg px-2.5 py-1.5 text-sm text-ink-600 hover:bg-ink-100">
                 ออกจากระบบ

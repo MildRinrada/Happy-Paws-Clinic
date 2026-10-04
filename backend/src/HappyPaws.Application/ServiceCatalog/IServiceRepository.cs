@@ -27,4 +27,12 @@ public interface IServiceRepository
         string? categoryCode = null,
         string? branchId = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// <c>GET /staff/services</c> (an extension, <c>docs/contract-extensions.md § 17</c>): every
+    /// service, counter-only and inactive ones included, optionally narrowed to one category.
+    /// </summary>
+    Task<IReadOnlyList<ClinicService>> ListAllAsync(
+        string? categoryCode = null,
+        CancellationToken cancellationToken = default);
 }

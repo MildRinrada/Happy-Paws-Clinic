@@ -128,6 +128,52 @@ public sealed class ClinicService : Entity
 
     public void SetOnlineBooking(bool enabled) => OnlineBookingEnabled = enabled;
 
+    /// <summary>
+    /// <c>PATCH /staff/services/{id}</c> (an extension, <c>docs/contract-extensions.md § 17</c>). A
+    /// null leaves that part alone. A new duration applies to bookings made from now on; an
+    /// appointment already booked keeps the end it was given.
+    /// </summary>
+    public void Revise(string? name, string? categoryCode, int? durationMinutes)
+    {
+        if (name is not null && string.IsNullOrWhiteSpace(name))
+        {
+            throw new DomainException("invalid_service", "ต้องระบุชื่อบริการ");
+        }
+
+        if (durationMinutes is < 5 or > 480)
+        {
+            throw new DomainException("invalid_service", "ระยะเวลาบริการต้องอยู่ระหว่าง 5–480 นาที");
+        }
+
+        if (name is not null)
+        {
+            Name = name.Trim();
+        }
+
+        if (categoryCode is not null)
+        {
+            CategoryCode = categoryCode.Trim();
+        }
+
+        if (durationMinutes is { } duration)
+        {
+            DurationMinutes = duration;
+        }
+    }
+
+    /// <summary>Replaces who may perform the service. Empty means any vet on shift.</summary>
+    public void SetEligibleStaff(IEnumerable<string> staffIds)
+    {
+        _eligibleStaffIds.Clear();
+        _eligibleStaffIds.AddRange(staffIds.Distinct(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// Takes the service off every booking path, counter included, or puts it back. Nothing is
+    /// deleted: past appointments and bills still name it.
+    /// </summary>
+    public void SetActive(bool active) => IsActive = active;
+
     public void RestrictToBranches(IEnumerable<string> branchIds)
     {
         _branchIds.Clear();

@@ -78,5 +78,5 @@ export const footerLinks: SiteLink[] = [
 /** The black bar at the very bottom. */
 export const copyright = {
   text: 'Copyright © 2569 (2026) Happy Paws Veterinary Clinic Co., Ltd. สงวนลิขสิทธิ์ทุกประการ',
-  privacyLink: { label: 'Privacy Policy', href: '#' } satisfies SiteLink,
+  privacyLink: { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' } satisfies SiteLink,
 };

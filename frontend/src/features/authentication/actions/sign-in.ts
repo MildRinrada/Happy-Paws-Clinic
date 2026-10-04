@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { ApiError } from '@/lib/api/api-error';
 import { postLogin, postLogout, postVerifyTwoFactor, type LoginOutcome, type SignedIn } from '@/lib/api/auth-transport';
+import { oneTimeCodeDigits } from '@/lib/auth/one-time-code';
 import { SIGN_IN_PATH, clearSession, readRefreshToken, writeSession } from '@/lib/auth/session';
 import { signInPage } from '../content/sign-in-page';
 import { destinationFor } from '../lib/home-path';
@@ -37,7 +38,7 @@ const credentials = z.object({
 
 const secondFactor = z.object({
   challenge: z.string().min(1),
-  code: z.string().trim().regex(/^\d{6,8}$/),
+  code: z.string().regex(/^\d{6,8}$/),
 });
 
 /** The backend's own message, which deliberately does not say which half of the pair was wrong. */
@@ -84,7 +85,10 @@ export async function verifySecondFactor(previous: SignInState, form: FormData):
     return { step: 'credentials' };
   }
 
-  const parsed = secondFactor.safeParse({ challenge: previous.challenge, code: form.get('code') });
+  const parsed = secondFactor.safeParse({
+    challenge: previous.challenge,
+    code: oneTimeCodeDigits(String(form.get('code') ?? '')),
+  });
 
   if (!parsed.success) {
     return { ...previous, error: signInPage.errors.badCode };

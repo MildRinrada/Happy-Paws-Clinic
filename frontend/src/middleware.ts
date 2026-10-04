@@ -98,6 +98,8 @@ export const config = {
     '/pets/:path*',
     '/consultations/:path*',
     '/settings/:path*',
+    '/schedules/:path*',
+    '/account/:path*',
     '/billing/:path*',
     '/portal/:path*',
     '/api/queue/:path*',

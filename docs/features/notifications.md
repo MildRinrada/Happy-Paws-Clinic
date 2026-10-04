@@ -59,19 +59,22 @@ stub ตั้งใจให้ดัง เพราะ stub อันตร�
 
 คำเชิญพนักงานไม่ผ่าน `INotificationDispatcher` แต่ใช้ `IStaffInvitationSender` เพราะสองเหตุผล dispatcher ส่งถึงลูกค้าและอยู่หลังความยินยอมของลูกค้า ส่วนคนที่ถูกเชิญไม่ใช่ลูกค้า และข้อความเชิญมีความลับ (token) ที่ห้ามลง log แบบข้อความเรียกคิว
 
-- ตอนนี้ตัวส่งคือ `LoggingStaffInvitationSender` เขียน log ระดับ warning ว่าไม่ได้ส่ง พร้อมรหัสคำเชิญ อีเมล และวันหมดอายุ (7 วัน) ไม่เขียนลิงก์
+- เมื่อตั้ง `Messaging:Email` ไว้ คำเชิญส่งเป็นอีเมลจริงผ่าน SMTP (`EmailStaffInvitationSender`) มีปุ่มรับคำเชิญและวันหมดอายุ ดู [ตั้งค่าอีเมลและ SMS](../development.md#ตั้งค่าอีเมลและ-sms)
+- ถ้าไม่ได้ตั้ง ตัวส่งคือ `LoggingStaffInvitationSender` เขียน log ระดับ warning ว่าไม่ได้ส่ง พร้อมรหัสคำเชิญ อีเมล และวันหมดอายุ (7 วัน) ไม่เขียนลิงก์
 - ตั้ง `Staff:Invitations:LogUndeliveredLinks` เป็น `true` เพื่อให้เขียนลิงก์รับคำเชิญลง log ได้ ค่าเริ่มต้นปิด `appsettings.Development.json` เปิดไว้เพื่อให้นักพัฒนาทำ flow ให้จบได้ ห้ามเปิดในที่ที่ log ออกจากเครื่อง เพราะลิงก์คือ credential
 - รูปแบบลิงก์ตั้งที่ `Staff:Invitations:AcceptUrlTemplate` token อยู่หลัง `#` ซึ่งเบราว์เซอร์ไม่ส่งไปที่เซิร์ฟเวอร์ จึงไม่ติดใน access log และ `Referer`
 
 รายละเอียดคำเชิญดู [พนักงานและสิทธิ์](staff-and-roles.md)
 
-รหัส OTP และลิงก์รีเซ็ตรหัสผ่านก็ใช้ทางแยกด้วยเหตุผลเดียวกัน คือ `IOtpSender` และ `IPasswordResetSender` ตัวส่งตอนนี้คือ `LoggingCustomerSignInSenders` เขียนรหัสหรือลิงก์ลง log เฉพาะเมื่อเปิด `Auth:SignIn:LogUndeliveredSecrets` ดู [การเข้าสู่ระบบของลูกค้า](customer-sign-in.md)
+รหัส OTP และลิงก์รีเซ็ตรหัสผ่านก็ใช้ทางแยกด้วยเหตุผลเดียวกัน คือ `IOtpSender` และ `IPasswordResetSender` รหัส OTP ส่งทาง SMS ผ่าน ThaiBulkSMS เมื่อตั้ง `Messaging:Sms` ลิงก์รีเซ็ตส่งทางอีเมลถ้าบัญชีมีอีเมล ไม่อย่างนั้นทาง SMS ถ้าไม่ได้ตั้งทั้งคู่ ตัวส่งคือ `LoggingCustomerSignInSenders` ซึ่งเขียนรหัสหรือลิงก์ลง log เฉพาะเมื่อเปิด `Auth:SignIn:LogUndeliveredSecrets` ดู [การเข้าสู่ระบบของลูกค้า](customer-sign-in.md)
+
+ตัวส่งทั้งสามไม่ throw เพราะถูกเรียกหลัง commit ถ้า SMTP หรือ ThaiBulkSMS ปฏิเสธ ระบบเขียน log ระดับ error โดยไม่มีรหัสหรือลิงก์ แล้วผู้ใช้ขอใหม่ได้
 
 ## ยังไม่ได้ทำ
 
 | เรื่อง | สถานะ |
 |---|---|
-| ตัวส่ง LINE, SMS, อีเมล | ยังไม่มี |
+| ตัวส่ง LINE, SMS, อีเมล ของข้อความถึงลูกค้า (เรียกคิว ใบเสร็จ) | ยังไม่มี SMS และอีเมลมีแล้วเฉพาะรหัส OTP ลิงก์รีเซ็ตรหัสผ่าน และคำเชิญพนักงาน ยังไม่ได้ต่อเข้ากับ `INotificationChannel` |
 | ที่เก็บปลายทาง LINE ของลูกค้า | ลูกค้ามีแค่ `Phone` และ `Email` ยังไม่มีช่องเก็บ LINE user id ที่ตัวส่ง LINE ต้องใช้ |
 | เตือนนัดล่วงหน้า | ยังไม่มีตัวตั้งเวลา และยังไม่มี template `appointment.reminder` |
 | บันทึกการส่ง (delivery log) | ยังไม่มีตาราง ตอนนี้มีแค่ log ของแอป |
@@ -99,6 +102,7 @@ LINE เป็นช่องทางส่งข้อความออกเ
 | ประตูความยินยอม | `backend/src/HappyPaws.Application/Customers/ConsentGate.cs`, `backend/src/HappyPaws.Infrastructure/Notifications/ConsentAwareNotificationDispatcher.cs` |
 | ช่องทาง stub | `backend/src/HappyPaws.Infrastructure/Notifications/LoggingNotificationChannel.cs` |
 | คำเชิญพนักงาน | `backend/src/HappyPaws.Application/Staff/IStaffInvitationSender.cs`, `backend/src/HappyPaws.Infrastructure/Staff/LoggingStaffInvitationSender.cs` |
+| ส่งอีเมลและ SMS จริง | `backend/src/HappyPaws.Infrastructure/Messaging/` (`MessagingRegistration.cs`, `DeliveringSenders.cs`, `MessageTexts.cs`, `Email/SmtpEmailTransport.cs`, `Sms/ThaiBulkSmsTransport.cs`), เทสต์ `backend/tests/HappyPaws.IntegrationTests/Messaging/` |
 | กล่องแจ้งเตือน | `backend/src/HappyPaws.Domain/Notifications/InboxNotification.cs`, `backend/src/HappyPaws.Application/Notifications/NotificationText.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Notifications/InboxRepository.cs` |
 | การลงทะเบียน | `backend/src/HappyPaws.Infrastructure/DependencyInjection.cs` (หัวข้อ Notifications) |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Customers/ConsentEnforcementTests.cs` |

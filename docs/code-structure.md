@@ -116,18 +116,20 @@ frontend/
   next.config.ts        output standalone สำหรับ Dockerfile
   eslint.config.mjs     ห้าม fetch นอก src/lib/api
   src/
-    middleware.ts       ต่ออายุเซสชันก่อนหน้า /login, /queue, /billing, /api/queue
+    middleware.ts       ต่ออายุเซสชันก่อนหน้าพนักงาน หน้า portal /login และ /api/queue
     app/                URL ของหน้าจอ
-      (public)/         หน้าแรกสาธารณะ
-      (auth)/login/     เข้าสู่ระบบพนักงาน
-      (staff)/          queue, billing, billing/[id] พร้อม layout และ error.tsx
-      (portal)/         ว่าง
+      (public)/         หน้าแรก เกี่ยวกับคลินิก ติดต่อเรา ทีม บทความ
+      (auth)/           เข้าสู่ระบบ และรับคำเชิญพนักงาน
+      (staff)/          queue, appointments, customers, pets, consultations, billing, schedules
+                        และ settings/ (clinic, hours, rules, services, contacts ใต้ layout แท็บเดียวกัน)
+      (portal)/         portal ลูกค้า
       api/queue/stream/ route handler ส่งต่อ SSE
     features/<ชื่อ>/    หนึ่งโฟลเดอร์ต่อหนึ่งเรื่อง
     components/
-      ui/               ปุ่ม การ์ด ช่องกรอก alert
+      ui/               ปุ่ม การ์ด ช่องกรอก checkbox alert และสถานะการบันทึกของฟอร์ม
       layout/           staff-shell, site-header/, site-footer/, site-container
       shared/           image-slot.tsx
+    hooks/              hook ที่หลาย feature ใช้ร่วม เช่น use-form-submit.ts ของฟอร์มตั้งค่า
     lib/
       api/              http-client, server-client, auth-transport, event-stream, api-error
       auth/             คุกกี้เซสชัน, refresh, scope
@@ -149,7 +151,7 @@ frontend/
 | Hook | `features/<ชื่อ>/hooks/` | logic ฝั่งเบราว์เซอร์ เช่น `use-queue-stream.ts` | ไม่มี |
 | Types | `features/<ชื่อ>/types/<ชื่อ>.types.ts` | รูปข้อมูลจาก API ชื่อฟิลด์ snake_case | DTO |
 
-feature ที่มีโค้ด: `account`, `authentication`, `billing`, `clinic`, `customers`, `home`, `pets`, `queue`, `service-catalog`, `staff` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
+feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `pets`, `portal`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
 
 ## กติกาการเขียนโค้ด
 

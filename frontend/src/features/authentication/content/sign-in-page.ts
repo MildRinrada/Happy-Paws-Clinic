@@ -1,8 +1,9 @@
 /**
  * Everything the sign-in page says, and where its links go. Edit the wording here.
  *
- * Forgot-password and sign-up point at '#' because those pages do not exist yet. Give them a real
- * `href` when they do; nothing in the components needs to change.
+ * `notices` are the short messages another page can leave on this one through `?notice=`. Only
+ * the keys listed here are shown, so the address bar cannot be used to put any other text on the
+ * page.
  */
 export const signInPage = {
   metaTitle: 'เข้าสู่ระบบ',
@@ -12,12 +13,16 @@ export const signInPage = {
 
   identifierLabel: 'เบอร์โทรศัพท์หรืออีเมล',
   passwordLabel: 'รหัสผ่าน',
-  forgotPassword: { label: 'ลืมรหัสผ่าน?', href: '#' },
+  forgotPassword: { label: 'ลืมรหัสผ่าน?', href: '/forgot-password' },
   submit: 'เข้าสู่ระบบ',
   submitting: 'กำลังตรวจสอบ',
 
   signUpPrompt: 'ยังไม่มีบัญชี?',
-  signUp: { label: 'สมัครสมาชิก', href: '#' },
+  signUp: { label: 'สมัครสมาชิก', href: '/register' },
+
+  notices: {
+    registered: 'สมัครสมาชิกเรียบร้อยแล้ว เข้าสู่ระบบด้วยเบอร์โทรและรหัสผ่านที่เพิ่งตั้ง',
+  },
 
   secondFactor: {
     heading: 'ยืนยันตัวตนขั้นที่สอง',
