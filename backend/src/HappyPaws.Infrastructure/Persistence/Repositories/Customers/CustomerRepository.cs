@@ -24,6 +24,9 @@ internal sealed class CustomerRepository(HappyPawsDbContext db) : ICustomerRepos
     public Task<Customer?> FindTrackedByIdAsync(string customerId, CancellationToken cancellationToken = default) =>
         db.Set<Customer>().FirstOrDefaultAsync(customer => customer.Id == customerId, cancellationToken);
 
+    public Task<Customer?> WithLineAddressAsync(string lineUserId, CancellationToken cancellationToken = default) =>
+        db.Set<Customer>().AsNoTracking().FirstOrDefaultAsync(customer => customer.LineUserId == lineUserId, cancellationToken);
+
     public async Task<IReadOnlyList<Customer>> WithPhoneAsync(
         string phone,
         CancellationToken cancellationToken = default) =>

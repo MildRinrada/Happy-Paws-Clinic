@@ -113,6 +113,12 @@ public sealed record TreatmentDto(
             treatment.Note);
 }
 
+/// <summary>A drug written on the case.</summary>
+/// <remarks>
+/// <list type="bullet">
+/// <item><c>inventory_item_id</c>: Not in the API reference (<c>docs/contract-extensions.md § 20</c>). The stock item the drug is tied to: picked when it was written, or matched by name when it was dispensed. Absent for a typed drug not yet dispensed, which will be matched by name only.</item>
+/// </list>
+/// </remarks>
 public sealed record PrescriptionDto(
     string Id,
     string DrugName,
@@ -124,7 +130,8 @@ public sealed record PrescriptionDto(
     string? AllergyAcknowledgement,
     DateTimeOffset PrescribedAt,
     string PrescribedByStaffId,
-    DateTimeOffset? DispensedAt)
+    DateTimeOffset? DispensedAt,
+    string? InventoryItemId = null)
 {
     public static PrescriptionDto From(Domain.Prescriptions.Prescription prescription) =>
         new(
@@ -138,5 +145,6 @@ public sealed record PrescriptionDto(
             prescription.AllergyAcknowledgement,
             prescription.PrescribedAt,
             prescription.PrescribedByStaffId,
-            prescription.DispensedAt);
+            prescription.DispensedAt,
+            prescription.InventoryItemId);
 }

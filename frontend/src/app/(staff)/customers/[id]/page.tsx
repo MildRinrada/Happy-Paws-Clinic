@@ -9,6 +9,7 @@ import { getCustomer } from '@/features/customers/api/getCustomer';
 import { BalanceCard } from '@/features/customers/components/balance-card';
 import { ContactCard } from '@/features/customers/components/contact-card';
 import { CustomerPetsCard } from '@/features/customers/components/customer-pets-card';
+import { LineAddressCard } from '@/features/customers/components/line/line-address-card';
 import { MergeCustomerCard } from '@/features/customers/components/merge-customer-card';
 import { PortalInviteCard } from '@/features/customers/components/portal-invite-card';
 import { customerDetail } from '@/features/customers/content/customer-detail';
@@ -23,7 +24,8 @@ export const metadata: Metadata = { title: customerDetail.metaTitle };
 
 /**
  * One customer, as the counter looks at them while they wait: who they are, what they owe,
- * whether they can follow their visit online, and their animals, with the form to add another.
+ * whether they can follow their visit online, where their LINE messages go, and their animals,
+ * with the form to add another.
  */
 export default async function CustomerPage({
   params,
@@ -96,6 +98,11 @@ export default async function CustomerPage({
             customer={customer}
             invitation={detail.invitation}
             canInvite={context.can(Scope.CustomerWrite)}
+          />
+          <LineAddressCard
+            line={detail.line}
+            customerName={customer.display_name}
+            canEdit={context.can(Scope.CustomerWrite) && !customer.merged_into_customer_id}
           />
           {context.can(Scope.CustomerMerge) && !customer.merged_into_customer_id && (
             <MergeCustomerCard customer={customer} />

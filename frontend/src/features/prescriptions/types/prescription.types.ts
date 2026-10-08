@@ -26,7 +26,11 @@ export interface PrescriptionItem {
   dispensed_at?: string;
   dispensed_by_staff_id?: string;
   duplicate_of: string[];
-  /** Once dispensed: the inventory item the drug matched, when it matched one. */
+  /**
+   * The inventory item the drug is tied to: picked from stock when written (a contract extension,
+   * docs/contract-extensions.md § 20), or matched by name at dispense. Absent for a typed drug not
+   * yet dispensed, and for one that matched nothing.
+   */
   inventory_item_id?: string;
   /** Once dispensed: whether the quantity came off the branch's stock. */
   stock_deducted?: boolean;

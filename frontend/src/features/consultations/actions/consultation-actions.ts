@@ -161,6 +161,8 @@ export async function addTreatmentAction(input: z.infer<typeof treatment>) {
 const prescription = z.object({
   consultationId: id,
   drugName: text(200).min(1),
+  /** Picked from stock (docs/contract-extensions.md § 20). Absent for a typed drug. */
+  inventoryItemId: id.optional(),
   dose: text(100).min(1),
   frequency: text(100).min(1),
   durationDays: z.number().int().positive(),
@@ -178,6 +180,7 @@ export async function addPrescriptionAction(input: z.infer<typeof prescription>)
       parsed.consultationId,
       {
         drug_name: parsed.drugName,
+        inventory_item_id: parsed.inventoryItemId,
         dose: parsed.dose,
         frequency: parsed.frequency,
         duration_days: parsed.durationDays,

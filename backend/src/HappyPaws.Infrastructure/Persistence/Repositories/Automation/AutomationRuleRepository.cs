@@ -9,13 +9,16 @@ internal sealed class AutomationRuleRepository(HappyPawsDbContext db) : IAutomat
     public void Add(AutomationRule rule) => db.Set<AutomationRule>().Add(rule);
 
     public Task<AutomationRule?> FindAsync(string id, CancellationToken cancellationToken = default) =>
-        db.Set<AutomationRule>().AsNoTracking().FirstOrDefaultAsync(rule => rule.Id == id, cancellationToken);
+        Live().AsNoTracking().FirstOrDefaultAsync(rule => rule.Id == id, cancellationToken);
+
+    public Task<AutomationRule?> FindTrackedAsync(string id, CancellationToken cancellationToken = default) =>
+        Live().FirstOrDefaultAsync(rule => rule.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<AutomationRule>> ListAsync(
         IReadOnlyCollection<string>? visibleBranchIds,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Set<AutomationRule>().AsNoTracking();
+        var query = Live().AsNoTracking();
 
         if (visibleBranchIds is { } visible)
         {
@@ -30,9 +33,12 @@ internal sealed class AutomationRuleRepository(HappyPawsDbContext db) : IAutomat
     }
 
     public async Task<IReadOnlyList<AutomationRule>> EnabledAsync(CancellationToken cancellationToken = default) =>
-        await db.Set<AutomationRule>().AsNoTracking()
+        await Live().AsNoTracking()
             .Where(rule => rule.Enabled)
             .OrderBy(rule => rule.CreatedAt)
             .ThenBy(rule => rule.Id)
             .ToListAsync(cancellationToken);
+
+    /// <summary>Rules that have not been deleted. A deleted rule stays only so its history names it.</summary>
+    private IQueryable<AutomationRule> Live() => db.Set<AutomationRule>().Where(rule => rule.DeletedAt == null);
 }

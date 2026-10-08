@@ -105,6 +105,7 @@ export const config = {
     '/dashboard/:path*',
     '/inventory/:path*',
     '/notifications/:path*',
+    '/messages/:path*',
     '/prescriptions/:path*',
     '/portal/:path*',
     '/api/queue/:path*',

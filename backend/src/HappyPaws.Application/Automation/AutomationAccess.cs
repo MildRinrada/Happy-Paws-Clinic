@@ -28,6 +28,30 @@ public sealed class AutomationAccess(IAutomationRuleRepository rules, BranchGuar
     }
 
     /// <summary>
+    /// Loads a rule, tracked, for an edit or a delete (<c>docs/contract-extensions.md § 19</c>).
+    /// <para>
+    /// Stricter than reading, the same line create draws: a clinic-wide rule reaches every branch's
+    /// customers, so only a caller the branch guard does not restrict may change one. A branch-bound
+    /// reader still sees it, and still previews it.
+    /// </para>
+    /// </summary>
+    public async Task<AutomationRule> LoadForChangeAsync(string ruleId, CancellationToken cancellationToken = default)
+    {
+        var rule = await rules.FindTrackedAsync(ruleId, cancellationToken) ?? throw new NotFoundException("automation", ruleId);
+
+        if (rule.BranchId is { } branchId)
+        {
+            branchGuard.EnsureCanAccess(branchId);
+        }
+        else if (branchGuard.VisibleBranchIds is not null)
+        {
+            throw new ForbiddenException("a branch-bound caller cannot change a clinic-wide rule");
+        }
+
+        return rule;
+    }
+
+    /// <summary>
     /// Whether a reminder's subject may be shown to this reader: its branch is one of theirs, or it
     /// belongs to no branch. The rule still sends it; this only decides who sees it in a preview.
     /// </summary>

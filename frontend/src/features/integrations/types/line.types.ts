@@ -38,3 +38,23 @@ export interface LineBroadcastInput {
   customer_ids: string[];
   message: string;
 }
+
+/**
+ * One recent follower of the clinic's LINE account, from `GET /staff/integrations/line/followers`
+ * (docs/contract-extensions.md § 18). The counter picks one as a customer's LINE address.
+ */
+export interface LineFollower {
+  line_user_id: string;
+  display_name?: string;
+  /** An `https` address on LINE's servers. */
+  picture_url?: string;
+  followed_at: string;
+  last_seen_at: string;
+  /** Only when listing linked followers too. */
+  linked_customer_id?: string;
+}
+
+export interface LineFollowerPage {
+  data: LineFollower[];
+  page: { next_cursor?: string };
+}

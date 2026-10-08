@@ -24,7 +24,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ช่อง use case ที่เขียนเป็น `<Module>/<โฟลเดอร์>/<ชื่อ>Handler` คือ use case ที่รวมอยู่ในโฟลเดอร์ร่วม เช่น ทุกเรื่องของ portal ฝั่งสัตว์เลี้ยงอยู่ใน `Patients/Portal/`
 
-คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
+คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(staff)/inventory` (รายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ), `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
 
 | API domain | Backend module | Frontend feature | Frontend routes |
 |---|---|---|---|
@@ -48,7 +48,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Operational stats | `Analytics` | `analytics` | `(staff)/dashboard` |
 | Business dashboard | `Analytics` | `analytics` | `(staff)/dashboard` (แท็บธุรกิจ) |
 | Billing & Payments | `Billing` | `billing` | `(staff)/billing`, `(portal)/invoices` |
-| Inventory | `Inventory` | `inventory` | `(staff)/inventory` |
+| Inventory | `Inventory` | `inventory` | `(staff)/inventory` (แท็บรายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ) |
 | Loyalty & Promotions | `Crm` | `crm` | `(staff)/crm`, `(portal)/packages` |
 | Reminders & Automation | `Automation` | `automation` | `(staff)/notifications/automations`, `(staff)/notifications/reminders` |
 | Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/dashboard` (ส่งออกรายงาน), `(staff)/audit` |
@@ -238,7 +238,7 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 **"ออกบิล" เกิดใน transaction เดียวกันนี้** การปิดเคสออกใบแจ้งหนี้ผ่าน `Billing/ConsultationBilling` ตัวอย่างใน contract เอง (`record.signed` แล้ว `invoice.issued ฿1,460`) จึงเป็นสิ่งที่ endpoint ทำจริง เคสที่ไม่มีการรักษาไม่ออกบิล เพราะบิล ฿0 คือเอกสารที่เคาน์เตอร์ต้องมาดู และเป็นแถวในรายงานรายได้ทุกฉบับ เพียงเพื่อบอกว่าไม่ได้คิดเงินอะไร
 
-**คิดเงินเฉพาะการรักษา** "เข้าบิลอัตโนมัติ" เขียนไว้ที่ endpoint treatments ที่เดียว และการรักษาเป็นส่วนเดียวของเคสที่มีราคา `Prescription` บันทึกยา ขนาด และจำนวน ไม่มีเงินอยู่ตรงไหนเลย ยาคิดเงินตอนจ่ายจริง ("ตัดสต๊อกเมื่อจ่ายจริง") ซึ่งต้องใช้โมดูล Inventory เพื่อรู้ราคา ถ้าใส่ตัวเลขตอนนี้ จะเป็นค่าใช้จ่ายบนบิลลูกค้าที่ไม่มีอะไรในระบบรองรับ
+**คิดเงินการรักษา และยาที่จ่ายแล้ว** "เข้าบิลอัตโนมัติ" เขียนไว้ที่ endpoint treatments ดังนั้นทุกหัตถการขึ้นบิล `Prescription` ตอนเขียนไม่มีราคา ยาคิดเงินตอนจ่ายจริง ("ตัดสต๊อกเมื่อจ่ายจริง") ด้วยราคาขายของรายการในคลังที่ชื่อตรงกัน ราคาถูกเก็บไว้ที่ใบสั่งยาตอนจ่าย ยาที่จ่ายก่อนปิดเคสขึ้นบิลตอนปิดเคสเป็นรายการชนิด `medicine` ข้างหัตถการ ยาที่จ่ายหลังปิดเคสถูกเพิ่มลงบิลของเคสถ้ายัง `open` ถ้าบิลรับเงินแล้วได้บิลใบใหม่ ยาที่ยังไม่จ่ายหรือไม่พบในคลังไม่ถูกคิดเงิน ดู [สต๊อกยาและเวชภัณฑ์](features/inventory.md#ค่ายาขึ้นบิลเดียวกับการรักษา)
 
 ## Customer portal
 
@@ -308,16 +308,16 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 | POST | `/staff/lab-requests/{id}/results` | `lab:write` | `Staff/LabResultsController` | `Laboratory/RecordLabResults/` | `Laboratory` | ✅ |
 | GET | `/staff/lab-requests?status=pending` | `lab:read` | `Staff/LabRequestsController` | `Laboratory/ListLabRequests/` | `Laboratory` | ✅ |
 | GET | `/staff/prescriptions?pet_id=` | `rx:read` | `Staff/PrescriptionsController` | `Prescriptions/ListPrescriptions/` | `Prescriptions` | ✅ |
-| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | `Staff/PrescriptionDispenseController` | `Prescriptions/DispensePrescription/` | `Prescriptions` (ยังไม่ตัดสต๊อก) | ✅ |
+| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | `Staff/PrescriptionDispenseController` | `Prescriptions/DispensePrescription/` | `Prescriptions`, `Inventory`, `Billing` | ✅ |
 | GET | `/staff/templates/treatments` | `consult:read` | `Staff/TreatmentTemplatesController` | `Consultations/ListTreatmentTemplates/` | `Consultations` | ✅ |
 | POST | `/staff/documents/generate` | `record:read` | `Staff/DocumentGenerationController` | `MedicalRecords/GenerateDocument/` | `MedicalRecords` และตัวสร้าง PDF (QuestPDF) | ✅ |
 | GET | `/staff/medical-records/{id}/audit` | `record:audit` | `Staff/MedicalRecordsController` | `MedicalRecords/GetRecordAudit/` | `MedicalRecords`, `Auditing` | ✅ |
 
 มุมมอง audit ของเวชระเบียนตอบจากสองแหล่ง เพราะคำถามมีสองครึ่ง amendment บอกว่า *ตอนนี้เอกสารเขียนว่าอะไร และมาถึงตรงนี้อย่างไร* ส่วน audit entry บอกว่า *ใครแตะ จากที่ไหน เมื่อไร* รวมถึงการเปิดดู ซึ่งไม่ทิ้งร่องรอยในตัวเอกสาร
 
-ใบสั่งยา **ถูกเขียน** โดยโมดูลการตรวจ แต่ยัง **ไม่ถูกจ่าย** contract แยกสองอย่างนี้ ("ตัดสต๊อกเมื่อจ่ายจริง") entity ก็แยกเช่นกัน `DispensedAt` เป็น null จนกว่าจะมี `rx:dispense` และคลังยาไม่ถูกแตะก่อนหน้านั้น
+ใบสั่งยา **ถูกเขียน** โดยโมดูลการตรวจ และ **ถูกจ่าย** โดยห้องยา contract แยกสองอย่างนี้ ("ตัดสต๊อกเมื่อจ่ายจริง") entity ก็แยกเช่นกัน `DispensedAt` เป็น null จนกว่าจะมี `rx:dispense` และคลังยาไม่ถูกแตะก่อนหน้านั้น
 
-การจ่ายยาตอนนี้บันทึกว่าจ่ายแล้วและคืนข้อมูลฉลาก แต่ **ยังไม่ตัดสต๊อก** เพราะยังไม่มีโมดูล Inventory คำตอบบอกตรง ๆ ว่า `stock_deducted: false` แล็บมีส่วนขยายหนึ่งเส้นคือ `POST /staff/lab-requests/{id}/review` สำหรับกดว่าอ่านผลแล้ว ดู [งานรักษาต่อเนื่อง](features/clinical-records.md)
+การจ่ายยาบันทึกว่าจ่ายแล้ว ตัดสต๊อกของสาขาที่เปิดเคส (`Inventory/Dispensing/StockDispenser`) คิดค่ายา (`Billing/MedicineBilling`) และคืนข้อมูลฉลาก ใน transaction เดียว ยาที่ชื่อไม่ตรงกับรายการในคลังหรือของไม่พอไม่ถูกปฏิเสธ คำตอบบอกด้วย `stock_deducted` และ `stock.status` ดู [assumptions.md § 42](./assumptions.md) ใบสั่งยาที่หมอเลือกยาจากคลังผ่าน `GET /staff/prescriptions/drug-options` มี `inventory_item_id` การจ่ายใช้รหัสนั้นก่อน และเทียบชื่อเฉพาะใบที่ไม่มีรหัส ([ส่วนขยาย § 20](#ส่วนขยาย-contract)) แล็บมีส่วนขยายหนึ่งเส้นคือ `POST /staff/lab-requests/{id}/review` สำหรับกดว่าอ่านผลแล้ว ดู [งานรักษาต่อเนื่อง](features/clinical-records.md)
 
 ## Notifications and Messaging
 
@@ -345,7 +345,7 @@ Application -> Notification port -> Infrastructure/Notifications/Line/ -> LINE M
 | POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ เพราะยังไม่มี `Crm`) | ✅ |
 | POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` | ✅ |
 
-`POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี
+`POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี `follow` และ `message` ยังจดผู้ติดตามล่าสุดไว้ให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](./contract-extensions.md))
 
 postback action ใน `Domain/Integrations/LinePostbackActions.cs` ทำงานกับเรกคอร์ดจริง handler จึงต้องหาที่อยู่ LINE ที่ส่งมากลับไปเป็นลูกค้าที่ลงทะเบียนที่อยู่นั้นไว้ แล้วใช้กฎสิทธิ์ของ portal ตามปกติ นี่คือการค้นจากที่อยู่ส่ง ไม่ใช่การยืนยันตัวตน ทำตามแบบนี้แล้ว แต่ยังไม่มีทางบันทึกที่อยู่ LINE ลงเรกคอร์ดลูกค้าผ่าน API จึงยังไม่มีลูกค้าคนใดถูกพบจริง ดู [LINE](features/line.md) และ [assumptions.md](./assumptions.md) (§ B, § 41)
 
@@ -392,13 +392,17 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 ## Inventory
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| GET | `/staff/inventory/items` | `inventory:read` | `Staff/InventoryItemsController` | `Inventory/ListItems/` | `Inventory` |
-| POST | `/staff/inventory/movements` | `inventory:write` | `Staff/InventoryMovementsController` | `Inventory/RecordMovement/` | `Inventory` |
-| POST | `/staff/inventory/adjustments` | `inventory:adjust` | `Staff/InventoryAdjustmentsController` | `Inventory/AdjustStock/` | `Inventory` |
-| GET | `/staff/inventory/alerts` | `inventory:read` | `Staff/InventoryAlertsController` | `Inventory/ListAlerts/` | `Inventory` |
-| POST | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/PurchaseOrdersController` | `Inventory/CreatePurchaseOrder/` | `Inventory` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| GET | `/staff/inventory/items` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListItems/` | `Inventory` | ✅ |
+| POST | `/staff/inventory/movements` | `inventory:write` | `Staff/InventoryStockController` | `Inventory/RecordMovement/` | `Inventory` | ✅ |
+| POST | `/staff/inventory/adjustments` | `inventory:adjust` | `Staff/InventoryStockController` | `Inventory/AdjustStock/` | `Inventory`, `Auditing` | ✅ |
+| GET | `/staff/inventory/alerts` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListAlerts/` | `Inventory` | ✅ |
+| POST | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryStockController` | `Inventory/CreatePurchaseOrder/` | `Inventory`, `Auditing` | ✅ |
+
+ร่างแรกมีห้า controller ตอนสร้างจริงรวมเหลือสองตัว `InventoryController` ถือการอ่าน `InventoryStockController` ถือการเขียนสามเส้น ซึ่งแต่ละเส้นใช้ scope ของตัวเอง
+
+**สต๊อกเป็นของสาขา สมุดสต๊อกแก้ไม่ได้** รายการในคลังใช้ทั้งคลินิก จำนวนเก็บเป็นล็อตต่อสาขา และทุกการเปลี่ยนยอดเขียนแถวในสมุด (`stock_movements`) ที่มีจำนวนเท่ากัน ภายใต้ advisory lock ต่อรายการต่อสาขา contract ไม่มี endpoint สร้างรายการ รายการจึงเกิดจากการรับเข้าหรือใบสั่งซื้อที่ส่ง `new_item` และใบสั่งซื้อรับของบางส่วนได้ด้วยการรับเข้าที่อ้าง `purchase_order_id` รายละเอียดอยู่ใน [สต๊อกยาและเวชภัณฑ์](features/inventory.md) และการตีความใน [assumptions.md § 42](./assumptions.md)
 
 ## Loyalty, Packages and Promotions
 
@@ -419,7 +423,7 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 | POST | `/staff/automations/{id}/simulate` | `automation:manage` | `Staff/AutomationSimulationController` | `Automation/SimulateAutomation/` | `Automation` | ✅ |
 | GET | `/staff/reminders/upcoming` | `automation:read` | `Staff/RemindersController` | `Automation/ListUpcomingReminders/` | `Automation` | ✅ |
 
-กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (`RecurringJobHost`, งาน `AutomationJob`) `simulate` และ `upcoming` ใช้ `AutomationEvaluator` ตัวเดียวกับการรันจริงในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง ข้อความแต่ละฉบับถูกจองด้วย unique key ใน `automation_dispatches` ก่อนส่ง จึงไม่ส่งซ้ำแม้มี API หลาย instance รายละเอียดอยู่ใน [เตือนอัตโนมัติ](features/automation.md)
+กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (`RecurringJobHost`, งาน `AutomationJob`) `simulate` และ `upcoming` ใช้ `AutomationEvaluator` ตัวเดียวกับการรันจริงในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง ข้อความแต่ละฉบับถูกจองด้วย unique key ใน `automation_dispatches` ก่อนส่ง จึงไม่ส่งซ้ำแม้มี API หลาย instance การแก้ เปิดปิด และลบกติกา (`PATCH` และ `DELETE /staff/automations/{id}`) ไม่อยู่ใน contract ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) § 19 รายละเอียดอยู่ใน [เตือนอัตโนมัติ](features/automation.md)
 
 การส่งออกรายงานเป็นงานเบื้องหลังของตัวตั้งเวลาเดียวกัน (`ReportExportJob`) worker จองงานด้วย `FOR UPDATE SKIP LOCKED` ไฟล์เป็น CSV เก็บผ่าน `LocalFileStorage` และดาวน์โหลดด้วย URL ที่ลงชื่อ อายุ 1 ชั่วโมง นอกจาก `report:export` ยังต้องมี scope ของรายงานนั้นด้วย ดู [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
 
@@ -451,7 +455,7 @@ event ของ webhook ขาออก (`appointment.created` ถึง `pet.cr
 
 ## ส่วนขยาย contract
 
-endpoint 30 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14 และ 17) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -485,6 +489,16 @@ endpoint 30 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | POST | `/assistant/chat` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`ChatHandler`) | § 16 | ✅ |
 | GET | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/ListServices/` | § 17 | ✅ |
 | PATCH | `/staff/services/{id}` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateService/` | § 17 | ✅ |
+| GET | `/staff/integrations/line/followers` | `customer:write` | `Staff/LineFollowersController` | `Integrations/ListLineFollowers/` | § 18 | ✅ |
+| PUT | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`LinkLineAddressHandler`) | § 18 | ✅ |
+| DELETE | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`UnlinkLineAddressHandler`) | § 18 | ✅ |
+| PATCH | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/UpdateAutomation/` | § 19 | ✅ |
+| DELETE | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/DeleteAutomation/` | § 19 | ✅ |
+| GET | `/staff/prescriptions/drug-options` | `rx:write` | `Staff/PrescriptionsController` | `Prescriptions/ListDrugOptions/` | § 20 | ✅ |
+
+§ 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
+
+§ 20 เพิ่ม `inventory_item_id` ที่ไม่บังคับในคำขอ `POST /staff/consultations/{id}/prescriptions` และช่องเดียวกันในใบสั่งยาของคำตอบเคส คำขอที่มีแค่ชื่อยาทำงานเหมือนเดิมทุกอย่าง
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -509,7 +523,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
 | ทำแล้วและมีเทสต์ (✅) | **137** |
-| เพิ่มนอก contract | **30** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
+| เพิ่มนอก contract | **36** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
 
@@ -517,7 +531,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-30 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด
+36 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19 และ § 20) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด
 
 ## โค้ด
 

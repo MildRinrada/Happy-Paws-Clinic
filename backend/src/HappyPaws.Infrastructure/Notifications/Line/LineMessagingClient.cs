@@ -67,6 +67,39 @@ internal sealed class LineMessagingClient(IHttpClientFactory clients, IOptions<L
             retryKey: null,
             cancellationToken);
 
+    /// <summary>
+    /// <c>GET /v2/bot/profile/{userId}</c>: the display name and picture of someone who follows the
+    /// account. LINE answers only for a follower; anyone else is a 404, which becomes an exception
+    /// here like any other refusal.
+    /// </summary>
+    public async Task<LineProfile> ProfileAsync(string accessToken, string userId, CancellationToken cancellationToken = default)
+    {
+        var http = clients.CreateClient(ClientName);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"{options.Value.BaseUrl.TrimEnd('/')}/v2/bot/profile/{Uri.EscapeDataString(userId)}");
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await http.SendAsync(request, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var reason = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new LineApiException(response.StatusCode, reason[..Math.Min(300, reason.Length)]);
+        }
+
+        var profile = await response.Content.ReadFromJsonAsync<ProfileBody>(Json, cancellationToken);
+
+        return new LineProfile(profile?.DisplayName, profile?.PictureUrl);
+    }
+
+    /// <summary>The parts of LINE's profile answer kept: no status message, no language.</summary>
+    private sealed record ProfileBody(
+        [property: JsonPropertyName("displayName")] string? DisplayName,
+        [property: JsonPropertyName("pictureUrl")] string? PictureUrl);
+
     /// <summary>A text message, with its buttons as LINE quick replies of the postback kind.</summary>
     internal static object Message(string text, IReadOnlyList<LineQuickReply>? quickReplies) => new
     {

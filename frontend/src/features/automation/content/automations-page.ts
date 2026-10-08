@@ -1,11 +1,11 @@
-/** The rules page: list, stats, create form and the preview. */
+/** The rules page: list, stats, create form, the switch, edit and delete, and the preview. */
 export const automationsPage = {
   metaTitle: 'เตือนอัตโนมัติ · Happy Paws Clinic',
   title: 'เตือนอัตโนมัติ',
   subtitle: 'กติกาที่ระบบใช้ส่งข้อความเตือนเอง เช่น ครบกำหนดวัคซีนหรือก่อนถึงนัด ทุกข้อความผ่านการตรวจความยินยอมเหมือนการส่งปกติ',
   noAccess: 'บัญชีนี้ไม่มีสิทธิ์ดูกติกาเตือนอัตโนมัติ',
   empty: 'ยังไม่มีกติกา',
-  noToggle: 'ระบบยังเปิดหรือปิดกติกาที่สร้างแล้วไม่ได้ เพราะสัญญา API ยังไม่มีทางแก้กติกา ถ้าอยากเปิดใช้กติกาเริ่มต้น ให้ลองดูตัวอย่างก่อน แล้วสร้างกติกาเดียวกันโดยติ๊กเปิดใช้',
+  startHint: 'กติกาใหม่และกติกาเริ่มต้นปิดไว้ก่อน ลองกดดูตัวอย่างผู้รับ แล้วค่อยเปิดสวิตช์ของกติกานั้น',
 
   enabled: 'เปิดใช้',
   disabled: 'ปิดอยู่',
@@ -31,6 +31,29 @@ export const automationsPage = {
     species: (value: string) => `เฉพาะ${value}`,
     vaccine: (value: string) => `เฉพาะวัคซีน ${value}`,
     unconfirmed: 'เฉพาะนัดที่ยังไม่ยืนยัน',
+  },
+
+  manage: {
+    switchLabel: (name: string) => `เปิดใช้กติกา ${name}`,
+    confirmOn: 'เปิดแล้วระบบจะเริ่มส่งข้อความถึงลูกค้าจริงในรอบถัดไป',
+    confirmOnButton: 'ยืนยันเปิดใช้',
+    switching: 'กำลังบันทึก…',
+    edit: 'แก้ไข',
+    remove: 'ลบ',
+    confirmRemove: 'ลบกติกานี้ ข้อความที่ส่งไปแล้วยังอยู่ในประวัติการส่ง',
+    confirmRemoveButton: 'ยืนยันลบ',
+    removing: 'กำลังลบ…',
+    cancel: 'ยกเลิก',
+    clinicWideLocked: 'กติกาทั้งคลินิก แก้ เปิดปิด หรือลบได้เฉพาะผู้ที่ไม่ถูกจำกัดสาขา',
+  },
+
+  edit: {
+    watches: (trigger: string) => `เรื่องที่เฝ้าดู: ${trigger} เปลี่ยนไม่ได้ ถ้าต้องการเตือนเรื่องอื่นให้สร้างกติกาใหม่`,
+    noRepeat: 'ลูกค้าที่ได้ข้อความจากกติกานี้ไปแล้วจะไม่ได้ซ้ำ แม้จะเปลี่ยนเวลาส่ง',
+    save: 'บันทึก',
+    saving: 'กำลังบันทึก…',
+    saved: 'บันทึกแล้ว',
+    cancel: 'ยกเลิก',
   },
 
   simulate: {

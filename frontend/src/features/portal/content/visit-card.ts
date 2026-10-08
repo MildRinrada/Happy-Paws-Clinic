@@ -1,11 +1,12 @@
 import type { AppointmentStatus } from '@/features/appointments/types/appointment.types';
 import type { VisitStage } from '../lib/visit-stage';
+import { portalPaths } from './portal-navigation';
 
 /**
  * Everything the visit card says, and where its links go. Edit the wording here.
  *
- * Reschedule and chat point at '#' because those pages do not exist yet. Give them a real `href`
- * when they do (chat could go to the clinic's LINE account); nothing else needs to change.
+ * Chat points at '#' because that page does not exist yet. Give it a real `href` when it does
+ * (it could go to the clinic's LINE account); nothing else needs to change.
  */
 export const visitCard = {
   liveTitle: 'ติดตามสด คิววันนี้',
@@ -50,7 +51,7 @@ export const visitCard = {
 
   checkIn: 'เช็กอินล่วงหน้า',
   checkingIn: 'กำลังเช็กอิน',
-  reschedule: { label: 'เลื่อนนัด', href: '#' },
+  reschedule: { label: 'เลื่อนนัด', href: portalPaths.reschedule },
   chat: { label: 'แชทกับคลินิก', href: '#' },
 
   unreachable: 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่อีกครั้ง',

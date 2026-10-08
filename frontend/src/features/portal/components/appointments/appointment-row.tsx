@@ -1,6 +1,7 @@
 import { formatLongDate, formatTime } from '@/lib/format/datetime';
 import { portalAppointments } from '../../content/portal-appointments';
 import type { AppointmentRowView } from '../../lib/load-appointments';
+import { AppointmentActions } from './appointment-actions';
 
 const statusTone: Record<string, string> = {
   booked: 'bg-amber-50 text-amber-800',
@@ -12,7 +13,10 @@ const statusTone: Record<string, string> = {
   no_show: 'bg-red-50 text-red-700',
 };
 
-/** One appointment: the time on the left, what and with whom, and its state. */
+/**
+ * One appointment: the time on the left, what and with whom, and its state. One that can still be
+ * changed carries the move and cancel actions under it.
+ */
 export function AppointmentRow({ row }: { row: AppointmentRowView }) {
   return (
     <li className="flex items-start gap-4 py-3">
@@ -24,6 +28,8 @@ export function AppointmentRow({ row }: { row: AppointmentRowView }) {
         <p className="text-sm font-semibold text-ink-900">{row.title}</p>
         <p className="text-sm text-ink-700">{row.vet}</p>
         <p className="text-xs text-site-muted">{formatLongDate(row.startsAt)}</p>
+        {row.lateCancellation && <p className="mt-1 text-xs font-semibold text-red-700">{portalAppointments.lateCancelled}</p>}
+        {row.canChange && <AppointmentActions appointmentId={row.id} />}
       </div>
 
       <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[row.status] ?? 'bg-ink-100 text-ink-700'}`}>

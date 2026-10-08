@@ -16,22 +16,24 @@ interface ConditionFieldsProps {
   value: ConditionValue;
   errors: Record<string, string>;
   onChange: (value: ConditionValue) => void;
+  /** Keeps the field ids apart when the create form and an edit form are on one page. */
+  idPrefix?: string;
 }
 
 /** The optional narrowing: a species, a vaccine (vaccine rules), unconfirmed visits only (visit rules). */
-export function ConditionFields({ trigger, value, errors, onChange }: ConditionFieldsProps) {
+export function ConditionFields({ trigger, value, errors, onChange, idPrefix = 'automation' }: ConditionFieldsProps) {
   const text = automationsPage.create;
   const set = (change: Partial<ConditionValue>) => onChange({ ...value, ...change });
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label={text.species} htmlFor="automation-species" hint={text.speciesHint} error={errors['condition.species']}>
-        <Input id="automation-species" value={value.species} maxLength={200} onChange={(event) => set({ species: event.target.value })} />
+      <Field label={text.species} htmlFor={`${idPrefix}-species`} hint={text.speciesHint} error={errors['condition.species']}>
+        <Input id={`${idPrefix}-species`} value={value.species} maxLength={200} onChange={(event) => set({ species: event.target.value })} />
       </Field>
 
       {trigger === 'vaccine_due' && (
-        <Field label={text.vaccineName} htmlFor="automation-vaccine" hint={text.vaccineHint} error={errors['condition.vaccine_name']}>
-          <Input id="automation-vaccine" value={value.vaccineName} maxLength={200} onChange={(event) => set({ vaccineName: event.target.value })} />
+        <Field label={text.vaccineName} htmlFor={`${idPrefix}-vaccine`} hint={text.vaccineHint} error={errors['condition.vaccine_name']}>
+          <Input id={`${idPrefix}-vaccine`} value={value.vaccineName} maxLength={200} onChange={(event) => set({ vaccineName: event.target.value })} />
         </Field>
       )}
 

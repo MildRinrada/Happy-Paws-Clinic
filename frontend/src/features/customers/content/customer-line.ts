@@ -1,0 +1,43 @@
+/** The LINE card on a customer's page (docs/contract-extensions.md § 18). */
+export const customerLine = {
+  title: 'LINE',
+  linked: 'ผูกแล้ว',
+  blocked: 'บล็อกบัญชีอยู่',
+  none: 'ยังไม่ผูก',
+  noName: 'ไม่ทราบชื่อใน LINE',
+  canReceive: 'ข้อความแจ้งเตือนจะส่งทาง LINE ก่อน',
+  blockedSince: (when: string) => `ลูกค้าบล็อกบัญชี LINE ของคลินิกเมื่อ ${when} ข้อความจึงไปทาง SMS หรืออีเมลแทน`,
+  notLinked: 'ข้อความแจ้งเตือนไปทาง SMS หรืออีเมล ถ้าลูกค้าเพิ่มเพื่อน LINE ของคลินิกแล้ว เลือกชื่อของเขาจากรายชื่อด้านล่างได้',
+  pick: 'เลือกจากผู้ติดตาม LINE',
+  change: 'เปลี่ยน',
+  unlink: 'ยกเลิกการผูก',
+  confirmUnlink: 'ยกเลิกการผูก LINE ของลูกค้ารายนี้',
+  confirmUnlinkButton: 'ยืนยันยกเลิก',
+  unlinking: 'กำลังยกเลิก…',
+  cancel: 'ยกเลิก',
+  conflict: 'ข้อมูลลูกค้าถูกแก้จากที่อื่นระหว่างนี้ โหลดหน้าใหม่แล้วลองอีกครั้ง',
+  unreachable: 'ติดต่อระบบไม่ได้ ลองอีกครั้ง',
+
+  picker: {
+    heading: 'ผู้ติดตาม LINE ล่าสุด',
+    hint: 'ให้ลูกค้าเพิ่มเพื่อนหรือพิมพ์ข้อความถึง LINE ของคลินิก แล้วกดโหลดใหม่ ชื่อของเขาจะอยู่บนสุด แสดงเฉพาะ 14 วันล่าสุดที่ยังไม่ผูกกับลูกค้าคนใด',
+    search: 'ค้นชื่อใน LINE',
+    refresh: 'โหลดใหม่',
+    loading: 'กำลังโหลด…',
+    more: 'ดูเพิ่ม',
+    empty: 'ยังไม่มีผู้ติดตามใหม่ใน 14 วันล่าสุด',
+    close: 'ปิด',
+    choose: 'เลือก',
+    followedAt: (when: string) => `ล่าสุด ${when}`,
+  },
+
+  confirm: {
+    question: (lineName: string, customer: string) => `ผูก LINE "${lineName}" กับ ${customer}`,
+    check: 'ตรวจกับลูกค้าก่อนว่าเป็นบัญชีของเขา ข้อความเรื่องสัตว์เลี้ยงจะส่งไปที่บัญชีนี้',
+    confirm: 'ยืนยันผูก',
+    linking: 'กำลังบันทึก…',
+    back: 'เลือกใหม่',
+    taken: 'LINE นี้ผูกกับลูกค้าคนอื่นอยู่แล้ว',
+    openTaken: 'เปิดเรกคอร์ดนั้น',
+  },
+};

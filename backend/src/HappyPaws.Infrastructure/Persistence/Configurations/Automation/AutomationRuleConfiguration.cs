@@ -27,6 +27,11 @@ internal sealed class AutomationRuleConfiguration : EntityConfiguration<Automati
         builder.Property(rule => rule.TemplateKey).HasMaxLength(60).IsRequired();
         builder.Property(rule => rule.CreatedByStaffId).HasMaxLength(40);
 
+        // Deleted rules stay for their history (docs/contract-extensions.md § 19); every read skips them.
+        builder.Property(rule => rule.DeletedAt);
+        builder.Property(rule => rule.DeletedByStaffId).HasMaxLength(40);
+        builder.Ignore(rule => rule.IsDeleted);
+
         builder.Ignore(rule => rule.Timing);
         builder.Ignore(rule => rule.SubjectKind);
 

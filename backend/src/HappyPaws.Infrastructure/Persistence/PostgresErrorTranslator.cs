@@ -1,4 +1,6 @@
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Customers.LineAddress;
+using HappyPaws.Infrastructure.Persistence.Configurations.Customers;
 using HappyPaws.Application.Inventory;
 using HappyPaws.Infrastructure.Persistence.Configurations.Inventory;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +49,11 @@ internal static class PostgresErrorTranslator
             // the same answer it would have had a second later.
             PostgresException { SqlState: UniqueViolation, ConstraintName: InventoryItemConfiguration.NameKeyIndex } =>
                 InventoryItemResolver.Exists(existingId: null),
+
+            // Two counters linking one LINE address to two customers at the same moment
+            // (docs/contract-extensions.md § 18): the loser hears what it would have a second later.
+            PostgresException { SqlState: UniqueViolation, ConstraintName: CustomerConfiguration.LineAddressIndex } =>
+                LineAddressConflict.Taken(customerId: null),
 
             _ => null,
         };

@@ -1,4 +1,6 @@
 using HappyPaws.Domain.Appointments;
+using HappyPaws.Domain.Customers;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Infrastructure.Jobs;
 using HappyPaws.Infrastructure.Persistence;
 using HappyPaws.Infrastructure.Persistence.Idempotency;
@@ -59,6 +61,40 @@ public class HousekeepingTests(ApiFixture fixture)
         Assert.Contains(live.Id, holds);
         Assert.Contains(justExpired.Id, holds);
         Assert.Equal(new[] { freshKey.Key }, keys);
+    }
+
+    [Fact]
+    public async Task LINE_followers_nobody_linked_go_after_fourteen_days_and_linked_or_recent_ones_stay()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var old = LineFollower.Record($"U{Guid.NewGuid():N}", now.AddDays(-15));
+        var oldButLinked = LineFollower.Record($"U{Guid.NewGuid():N}", now.AddDays(-30));
+        var recent = LineFollower.Record($"U{Guid.NewGuid():N}", now.AddDays(-13));
+        var customer = Customer.Create("คุณลูกค้า LINE เก่า", $"08{Random.Shared.Next(10_000_000, 99_999_999)}");
+        customer.SetLineAddress(oldButLinked.LineUserId);
+
+        using (var scope = fixture.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>();
+            db.Set<LineFollower>().AddRange(old, oldButLinked, recent);
+            db.Set<Customer>().Add(customer);
+            await db.SaveChangesAsync(Token);
+        }
+
+        using (var scope = fixture.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<HousekeepingJob>().RunAsync(Token);
+        }
+
+        using var check = fixture.CreateScope();
+        var kept = await check.ServiceProvider.GetRequiredService<HappyPawsDbContext>().Set<LineFollower>().AsNoTracking()
+            .Where(follower => new[] { old.Id, oldButLinked.Id, recent.Id }.Contains(follower.Id))
+            .Select(follower => follower.Id)
+            .ToListAsync(Token);
+
+        Assert.DoesNotContain(old.Id, kept);
+        Assert.Contains(oldButLinked.Id, kept);
+        Assert.Contains(recent.Id, kept);
     }
 
     private static IdempotencyRecord Key(DateTimeOffset createdAt) => new()

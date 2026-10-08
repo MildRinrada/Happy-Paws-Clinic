@@ -3,6 +3,7 @@ import type { Appointment, AppointmentStatus } from '@/features/appointments/typ
 import { authed } from '@/lib/auth/session';
 import { clinicDay } from '@/lib/format/datetime';
 import type { PortalQueueItem } from '../types/portal.types';
+import { CHANGEABLE, canChangeOnline } from './appointment-rules';
 import { serviceNames, vetNames } from './display-names';
 import { loadPortalHome } from './load-portal-home';
 import { visitStage, type VisitStage } from './visit-stage';
@@ -27,7 +28,6 @@ export interface VisitCardView {
 
 /** States in which today's appointment is still the one the owner is following. */
 const IN_PROGRESS: ReadonlySet<AppointmentStatus> = new Set(['booked', 'confirmed', 'checked_in', 'in_consultation']);
-const CHANGEABLE: ReadonlySet<AppointmentStatus> = new Set(['booked', 'confirmed']);
 
 /** A visit already under way sorts first: called, then in the room, then waiting, then not yet arrived. */
 const STAGE_ORDER: Record<VisitStage, number> = { called: 0, in_room: 1, waiting: 2, before: 3, done: 4 };
@@ -83,7 +83,7 @@ export async function loadVisitCards(): Promise<VisitCardView[]> {
       ticket,
       stage: visitStage(ticket?.status, appointment.status),
       canCheckIn: today && !ticket && CHANGEABLE.has(appointment.status),
-      canReschedule: CHANGEABLE.has(appointment.status),
+      canReschedule: canChangeOnline(appointment.status, appointment.starts_at),
     };
   });
 

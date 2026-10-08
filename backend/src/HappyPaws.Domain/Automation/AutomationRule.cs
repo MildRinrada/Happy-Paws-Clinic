@@ -80,6 +80,21 @@ public sealed class AutomationRule : Entity
     /// <summary>Null for the clinic's starter rules, which were seeded, not written by anyone.</summary>
     public string? CreatedByStaffId { get; private set; }
 
+    /// <summary>
+    /// When the rule was deleted (<c>DELETE /staff/automations/{id}</c>, <c>docs/contract-extensions.md § 19</c>).
+    /// <para>
+    /// A deleted rule is kept, switched off, and left out of every list and every run. Its row stays
+    /// because <c>automation_dispatches</c> point at it: the delivery log of a reminder sent last
+    /// month must still say which rule sent it, under the name it had then.
+    /// </para>
+    /// </summary>
+    public DateTimeOffset? DeletedAt { get; private set; }
+
+    /// <summary>Who deleted it.</summary>
+    public string? DeletedByStaffId { get; private set; }
+
+    public bool IsDeleted => DeletedAt is not null;
+
     public AutomationTiming Timing => new(OffsetDays, OffsetHours, SendTime);
 
     /// <summary>The kind of record this rule's reminders are about.</summary>
@@ -106,32 +121,12 @@ public sealed class AutomationRule : Entity
         string? serviceId = null,
         bool unconfirmedOnly = false)
     {
-        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > NameMax)
-        {
-            throw Invalid($"ชื่อกติกาต้องมี 1 ถึง {NameMax} ตัวอักษร");
-        }
-
         if (string.IsNullOrWhiteSpace(templateKey))
         {
             throw Invalid("ต้องระบุเทมเพลตของข้อความ");
         }
 
-        EnsureTiming(trigger, offsetDays, offsetHours, sendTime);
-
-        if (vaccineName is not null && trigger != AutomationTrigger.VaccineDue)
-        {
-            throw Invalid("เงื่อนไขชื่อวัคซีนใช้ได้กับการเตือนวัคซีนเท่านั้น");
-        }
-
-        if (serviceId is not null && trigger == AutomationTrigger.VaccineDue)
-        {
-            throw Invalid("เงื่อนไขบริการใช้ได้กับนัดและแผนการรักษาเท่านั้น");
-        }
-
-        if (unconfirmedOnly && trigger != AutomationTrigger.AppointmentUpcoming)
-        {
-            throw Invalid("เงื่อนไขเฉพาะนัดที่ยังไม่ยืนยันใช้ได้กับการเตือนนัดเท่านั้น");
-        }
+        EnsureValid(name, trigger, offsetDays, offsetHours, sendTime, vaccineName, serviceId, unconfirmedOnly);
 
         return new AutomationRule
         {
@@ -151,6 +146,104 @@ public sealed class AutomationRule : Entity
             ServiceId = Trimmed(serviceId),
             UnconfirmedOnly = unconfirmedOnly,
         };
+    }
+
+    /// <summary>
+    /// Replaces everything about the rule that may be edited: its name, when it sends, which
+    /// subjects count, and the channel. <c>PATCH /staff/automations/{id}</c>, not in the API
+    /// reference; see <c>docs/contract-extensions.md § 19</c>.
+    /// <para>
+    /// <b>What it watches is fixed.</b> The trigger, and with it the template and the kind of record
+    /// the "already sent" key names, never changes; a rule that should watch something else is a new
+    /// rule. That is what keeps an edit from re-sending: the key is <c>(rule, subject, due date)</c>,
+    /// none of which an edit touches, so a subject this rule has already reminded is already sent
+    /// whatever the new timing says.
+    /// </para>
+    /// </summary>
+    public void Revise(
+        string name,
+        int? offsetDays,
+        int? offsetHours,
+        TimeOnly? sendTime,
+        AutomationChannel channel,
+        string? branchId,
+        string? species,
+        string? vaccineName,
+        string? serviceId,
+        bool unconfirmedOnly)
+    {
+        EnsureLive();
+        EnsureValid(name, Trigger, offsetDays, offsetHours, sendTime, vaccineName, serviceId, unconfirmedOnly);
+
+        Name = name.Trim();
+        OffsetDays = offsetDays;
+        OffsetHours = offsetHours;
+        SendTime = offsetHours is null ? sendTime ?? AutomationTiming.DefaultSendTime : null;
+        Channel = channel;
+        BranchId = Trimmed(branchId);
+        Species = Trimmed(species);
+        VaccineName = Trimmed(vaccineName);
+        ServiceId = Trimmed(serviceId);
+        UnconfirmedOnly = unconfirmedOnly;
+    }
+
+    /// <summary>Switches the rule on or off. Off, the scheduler skips it; its history stays.</summary>
+    public void SetEnabled(bool enabled)
+    {
+        EnsureLive();
+        Enabled = enabled;
+    }
+
+    /// <summary>
+    /// Deletes the rule: off, out of every list and run, and kept so its history still names it.
+    /// </summary>
+    public void Delete(string? staffId, DateTimeOffset at)
+    {
+        EnsureLive();
+        Enabled = false;
+        DeletedAt = at;
+        DeletedByStaffId = staffId;
+    }
+
+    private void EnsureLive()
+    {
+        if (IsDeleted)
+        {
+            throw new DomainException("automation_deleted", "กติกานี้ถูกลบแล้ว");
+        }
+    }
+
+    private static void EnsureValid(
+        string name,
+        AutomationTrigger trigger,
+        int? offsetDays,
+        int? offsetHours,
+        TimeOnly? sendTime,
+        string? vaccineName,
+        string? serviceId,
+        bool unconfirmedOnly)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > NameMax)
+        {
+            throw Invalid($"ชื่อกติกาต้องมี 1 ถึง {NameMax} ตัวอักษร");
+        }
+
+        EnsureTiming(trigger, offsetDays, offsetHours, sendTime);
+
+        if (Trimmed(vaccineName) is not null && trigger != AutomationTrigger.VaccineDue)
+        {
+            throw Invalid("เงื่อนไขชื่อวัคซีนใช้ได้กับการเตือนวัคซีนเท่านั้น");
+        }
+
+        if (Trimmed(serviceId) is not null && trigger == AutomationTrigger.VaccineDue)
+        {
+            throw Invalid("เงื่อนไขบริการใช้ได้กับนัดและแผนการรักษาเท่านั้น");
+        }
+
+        if (unconfirmedOnly && trigger != AutomationTrigger.AppointmentUpcoming)
+        {
+            throw Invalid("เงื่อนไขเฉพาะนัดที่ยังไม่ยืนยันใช้ได้กับการเตือนนัดเท่านั้น");
+        }
     }
 
     private static void EnsureTiming(AutomationTrigger trigger, int? offsetDays, int? offsetHours, TimeOnly? sendTime)

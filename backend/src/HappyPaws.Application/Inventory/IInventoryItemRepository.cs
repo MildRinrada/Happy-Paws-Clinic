@@ -18,4 +18,14 @@ public interface IInventoryItemRepository
 
     /// <summary>The catalogue by name, narrowed to names containing <paramref name="search"/> when given.</summary>
     Task<IReadOnlyList<InventoryItem>> ListAsync(string? search, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Medicines only, by name, narrowed to names containing <paramref name="search"/> when given,
+    /// at most <paramref name="limit"/> of them — the prescriber's drug picker
+    /// (<c>docs/contract-extensions.md § 20</c>).
+    /// </summary>
+    Task<IReadOnlyList<InventoryItem>> SearchMedicinesAsync(
+        string? search,
+        int limit,
+        CancellationToken cancellationToken = default);
 }

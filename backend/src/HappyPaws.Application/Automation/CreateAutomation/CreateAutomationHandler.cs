@@ -178,8 +178,8 @@ public sealed class CreateAutomationValidator : AbstractValidator<CreateAutomati
 /// Creates a reminder rule.
 /// <para>
 /// <b>Off unless <c>enabled: true</c>.</b> A new rule messages real customers on its own at the
-/// next tick, so the safe default is a rule that can be simulated first. The contract has no way
-/// to switch a rule on or off afterwards; see <c>docs/features/automation.md</c>.
+/// next tick, so the safe default is a rule that can be simulated first, then switched on with
+/// <c>PATCH /staff/automations/{id}</c> (<c>docs/contract-extensions.md § 19</c>).
 /// </para>
 /// <para>
 /// <b>Branch.</b> A rule belongs to one branch or to the whole clinic. A branch-bound member of

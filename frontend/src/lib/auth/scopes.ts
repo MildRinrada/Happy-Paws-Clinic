@@ -52,6 +52,8 @@ export const Scope = {
   ServiceManage: 'service:manage',
   ScheduleRead: 'schedule:read',
   ScheduleWrite: 'schedule:write',
+  MessageRead: 'message:read',
+  MessageWrite: 'message:write',
   NotifySend: 'notify:send',
   NotifyManage: 'notify:manage',
   NotifyRead: 'notify:read',
@@ -69,5 +71,7 @@ export const Scope = {
   InventoryAdjust: 'inventory:adjust',
   InventoryPurchase: 'inventory:purchase',
   PaymentCollect: 'payment:collect',
+  PaymentRefund: 'payment:refund',
+  InvoiceDiscount: 'invoice:discount',
   ReceiptIssue: 'receipt:issue',
 } as const;

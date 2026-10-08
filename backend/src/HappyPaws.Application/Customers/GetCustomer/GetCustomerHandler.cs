@@ -2,6 +2,8 @@ using HappyPaws.Application.Billing;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Customers.Dtos;
+using HappyPaws.Application.Customers.LineAddress;
+using HappyPaws.Application.Integrations;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Patients.Dtos;
 
@@ -37,6 +39,7 @@ public sealed class GetCustomerHandler(
     ICustomerInvitationRepository invitations,
     IPetRepository pets,
     IInvoiceRepository invoices,
+    ILineFollowerRepository followers,
     IClock clock)
 {
     public async Task<CustomerDetailDto> HandleAsync(
@@ -52,11 +55,15 @@ public sealed class GetCustomerHandler(
         var owned = await pets.ForCustomerAsync(customer.Id, cancellationToken);
         var outstanding = await invoices.OutstandingForCustomerAsync(customer.Id, cancellationToken);
         var invitation = await invitations.LatestForCustomerAsync(customer.Id, cancellationToken);
+        var follower = customer.LineUserId is { } lineUserId
+            ? await followers.FindAsync(lineUserId, cancellationToken)
+            : null;
 
         return new CustomerDetailDto(
             CustomerDto.From(customer),
             [.. owned.Select(PetSummaryDto.From)],
             outstanding.Satang,
-            invitation is null ? null : InvitationDto.From(invitation, clock.UtcNow));
+            invitation is null ? null : InvitationDto.From(invitation, clock.UtcNow),
+            CustomerLineDto.From(customer, follower));
     }
 }

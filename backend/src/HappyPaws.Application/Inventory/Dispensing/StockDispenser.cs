@@ -26,9 +26,11 @@ public sealed record DispenseStockResult(
 /// <summary>
 /// "ตัดสต๊อก" — takes a dispensed prescription off the dispensing branch's shelf.
 /// <para>
-/// <b>Matching.</b> The prescription's drug name is matched to the catalogue by
-/// <see cref="InventoryItem.KeyOf"/>: spacing and case flattened, otherwise exact. The prescription
-/// endpoint in the contract carries a drug name and no item reference, so the name is all there is,
+/// <b>Matching.</b> A drug picked from stock when it was written carries its item
+/// (<see cref="Prescription.InventoryItemId"/>, <c>docs/contract-extensions.md § 20</c>), and that
+/// item is used whatever the name says. Only a drug typed as free text is matched by name, through
+/// <see cref="InventoryItem.KeyOf"/>: spacing and case flattened, otherwise exact. The contract's
+/// prescription carries a drug name and no item reference, so for those the name is all there is,
 /// and an exact match is the only one that cannot take the wrong drug off the shelf.
 /// </para>
 /// <para>
@@ -54,7 +56,9 @@ public sealed class StockDispenser(IInventoryItemRepository items, IStockLedger 
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        var item = await items.FindByNameKeyAsync(InventoryItem.KeyOf(prescription.DrugName), cancellationToken);
+        var item = prescription.InventoryItemId is { } linked
+            ? await items.FindAsync(linked, cancellationToken)
+            : await items.FindByNameKeyAsync(InventoryItem.KeyOf(prescription.DrugName), cancellationToken);
 
         if (item is null)
         {

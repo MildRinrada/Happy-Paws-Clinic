@@ -7,6 +7,7 @@ import { Field, Input } from '@/components/ui/field';
 import { formatDateTime } from '@/lib/format/datetime';
 import { formatBaht } from '@/lib/format/money';
 import { issueReceiptAction } from '../actions/billing-actions';
+import { invoiceDocument } from '../content/invoice-document';
 import type { Receipt } from '../types/billing.types';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   receipt?: Receipt;
   /** A receipt is for money received, so there has to have been some. */
   hasPayments: boolean;
+  /** Money given back on this bill. A receipt is not reissued for it, so the card says so. */
+  refundedSatang: number;
 }
 
 /**
@@ -23,7 +26,7 @@ interface Props {
  * issued rather than a second original, which matters for a ใบกำกับภาษี: two originals of one tax
  * document is a problem in the clinic's books.
  */
-export function ReceiptPanel({ invoiceId, receipt, hasPayments }: Props) {
+export function ReceiptPanel({ invoiceId, receipt, hasPayments, refundedSatang }: Props) {
   const [wantsTaxInvoice, setWantsTaxInvoice] = useState(false);
   const [taxId, setTaxId] = useState('');
   const [legalName, setLegalName] = useState('');
@@ -54,6 +57,9 @@ export function ReceiptPanel({ invoiceId, receipt, hasPayments }: Props) {
             </div>
           )}
         </dl>
+        {refundedSatang > 0 && (
+          <Alert tone="info">{invoiceDocument.receiptRefunded(formatBaht(refundedSatang))}</Alert>
+        )}
         <Button variant="secondary" className="no-print w-full" onClick={() => window.print()}>
           พิมพ์
         </Button>
@@ -86,6 +92,7 @@ export function ReceiptPanel({ invoiceId, receipt, hasPayments }: Props) {
   return (
     <div className="space-y-4">
       {error && <Alert>{error}</Alert>}
+      {refundedSatang > 0 && <Alert tone="info">{invoiceDocument.receiptRefundedBefore(formatBaht(refundedSatang))}</Alert>}
 
       <label className="flex items-center gap-2 text-sm text-ink-800">
         <input

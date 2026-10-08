@@ -92,11 +92,28 @@ internal sealed class FakeLineServer : HttpMessageHandler
             request.Headers.TryGetValues("X-Line-Retry-Key", out var keys) ? keys.First() : null,
             JsonDocument.Parse(body).RootElement.Clone()));
 
-        return new HttpResponseMessage(Status)
-        {
-            Content = new StringContent(Status == HttpStatusCode.OK ? "{}" : """{"message":"refused by the fake"}"""),
-        };
+        var answer = Status == HttpStatusCode.OK && request.RequestUri.AbsolutePath.StartsWith(ProfilePath, StringComparison.Ordinal)
+            ? JsonSerializer.Serialize(ProfileOf(Uri.UnescapeDataString(request.RequestUri.AbsolutePath[ProfilePath.Length..])))
+            : Status == HttpStatusCode.OK ? "{}" : """{"message":"refused by the fake"}""";
+
+        return new HttpResponseMessage(Status) { Content = new StringContent(answer) };
     }
+
+    private const string ProfilePath = "/v2/bot/profile/";
+
+    /// <summary>The profile the fake gives every follower: a name made from the id, so a test can search for it.</summary>
+    public static object ProfileOf(string userId) => new
+    {
+        userId,
+        displayName = DisplayNameOf(userId),
+        pictureUrl = $"https://profile.line-scdn.net/{userId}",
+        statusMessage = "ไม่ถูกเก็บ",
+    };
+
+    public static string DisplayNameOf(string userId) => $"ผู้ติดตาม {userId[^8..]}";
+
+    /// <summary>The profile reads LINE was asked for.</summary>
+    public IReadOnlyList<LineCall> ProfileReads => [.. _calls.Where(call => call.Path.StartsWith(ProfilePath, StringComparison.Ordinal))];
 }
 
 /// <summary>SMS and email that record what they are handed, each switchable on, off, or failing.</summary>

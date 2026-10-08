@@ -18,6 +18,8 @@ export interface StaffContext {
   branches: Branch[];
   /** The branch in view, or `undefined` when the clinic has none this session can reach. */
   branch?: Branch;
+  /** True when the backend's BranchGuard limits this session to its assigned branches. */
+  branchBound: boolean;
   can: (scope: string) => boolean;
 }
 
@@ -48,6 +50,7 @@ export const loadStaffContext = cache(async (): Promise<StaffContext | null> => 
     scopes: staff.scopes,
     branches,
     branch: branches.find((branch) => branch.id === chosen) ?? branches[0],
+    branchBound: !unbound,
     can: (scope) => allows(staff.scopes, scope),
   };
 });

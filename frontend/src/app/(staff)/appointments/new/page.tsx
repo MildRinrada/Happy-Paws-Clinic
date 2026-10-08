@@ -39,7 +39,13 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
 
       <Card>
         <CardBody className="py-5">
-          <NewAppointmentForm branchId={context.branch.id} services={services} vets={vets} initialDay={day} />
+          <NewAppointmentForm
+            branchId={context.branch.id}
+            services={services}
+            vets={vets}
+            initialDay={day}
+            canCheck={context.can(Scope.AppointmentRead)}
+          />
         </CardBody>
       </Card>
     </div>

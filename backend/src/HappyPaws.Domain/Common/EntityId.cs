@@ -109,6 +109,12 @@ public static class EntityId
     public const string PurchaseOrder = "po";
     public const string PurchaseOrderLine = "pol";
 
+    /// <summary>
+    /// Someone who added the clinic's LINE account as a friend, kept for a short while so the
+    /// counter can pick them as a customer's LINE address (<c>docs/contract-extensions.md § 18</c>).
+    /// </summary>
+    public const string LineFollower = "lfw";
+
     public static string New(string prefix)
     {
         Span<byte> buffer = stackalloc byte[16];

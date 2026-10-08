@@ -12,6 +12,7 @@ export const settingsTabs: SettingsTab[] = [
   { href: '/settings/clinic', label: 'คลินิกและสาขา', scope: Scope.SettingsWrite },
   { href: '/settings/hours', label: 'เวลาทำการและวันหยุด', scope: Scope.SettingsWrite },
   { href: '/settings/rules', label: 'กติกาการจอง คิว และเวชระเบียน', scope: Scope.SettingsWrite },
+  { href: '/settings/appointments', label: 'นโยบายยกเลิกและประเภทนัด', scope: Scope.SettingsWrite },
   { href: '/settings/services', label: 'บริการและราคา', scope: Scope.ServiceManage },
   { href: '/settings/staff', label: 'พนักงานและสิทธิ์', scope: Scope.StaffRead },
   { href: '/settings/contacts', label: 'ข้อมูลติดต่อ', scope: Scope.SettingsWrite },

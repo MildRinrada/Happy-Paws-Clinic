@@ -3,28 +3,43 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
+import type { DrugOption } from '@/features/prescriptions/types/drug-option.types';
 import { addPrescriptionAction } from '../../actions/consultation-actions';
 import { consultationPage } from '../../content/consultation-page';
+import { drugPicker } from '../../content/drug-picker';
 import { usePartSubmit } from '../../hooks/use-part-submit';
 import { AllergyConflict, type ConflictInfo } from './allergy-conflict';
+import { DrugSearchField } from './drug-search-field';
 
 const empty = { drugName: '', dose: '', frequency: '', durationDays: '', quantity: '', instructions: '' };
 
 /**
  * Writes a prescription. The backend checks it against the patient's allergies; a match stops the
  * form with the allergy named, and the vet either changes the drug or gives a reason to go ahead.
+ * The drug is picked from the case branch's stock or typed; only a picked drug is tied to stock
+ * (docs/contract-extensions.md § 20).
  */
-export function PrescriptionForm({ consultationId }: { consultationId: string }) {
+export function PrescriptionForm({ consultationId, branchId }: { consultationId: string; branchId: string }) {
   const text = consultationPage.prescriptions.fields;
   const [values, setValues] = useState(empty);
+  const [item, setItem] = useState<DrugOption>();
   const [conflict, setConflict] = useState<ConflictInfo>();
   const [key, setKey] = useState(() => crypto.randomUUID());
   const { errors, message, pending, submit } = usePartSubmit();
 
   const set = (field: keyof typeof empty) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
-    if (field === 'drugName') setConflict(undefined);
+    if (field === 'drugName') {
+      setConflict(undefined);
+      setItem(undefined);
+    }
   };
+
+  function pickDrug(option: DrugOption) {
+    setValues((current) => ({ ...current, drugName: option.name }));
+    setItem(option);
+    setConflict(undefined);
+  }
 
   function send(acknowledgeAllergy?: string) {
     submit(
@@ -32,6 +47,7 @@ export function PrescriptionForm({ consultationId }: { consultationId: string })
         addPrescriptionAction({
           consultationId,
           drugName: values.drugName,
+          inventoryItemId: item?.item_id,
           dose: values.dose,
           frequency: values.frequency,
           durationDays: Number(values.durationDays),
@@ -42,6 +58,7 @@ export function PrescriptionForm({ consultationId }: { consultationId: string })
         }),
       () => {
         setValues(empty);
+        setItem(undefined);
         setConflict(undefined);
         setKey(crypto.randomUUID());
       },
@@ -64,9 +81,14 @@ export function PrescriptionForm({ consultationId }: { consultationId: string })
     <form onSubmit={save} className="space-y-3 border-t border-ink-100 pt-4">
       {message && <p role="alert" className="text-sm text-red-700">{message}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={text.drug} htmlFor="rx-drug" error={errors.drug_name}>
-          <Input id="rx-drug" value={values.drugName} maxLength={200} required onChange={(event) => set('drugName')(event.target.value)} />
-        </Field>
+        <DrugSearchField
+          branchId={branchId}
+          name={values.drugName}
+          item={item}
+          error={errors.drug_name ?? errors.inventory_item_id}
+          onType={set('drugName')}
+          onPick={pickDrug}
+        />
         <Field label={text.dose} htmlFor="rx-dose" error={errors.dose}>
           <Input id="rx-dose" value={values.dose} placeholder={text.dosePlaceholder} maxLength={100} required onChange={(event) => set('dose')(event.target.value)} />
         </Field>
@@ -77,7 +99,7 @@ export function PrescriptionForm({ consultationId }: { consultationId: string })
           <Field label={text.days} htmlFor="rx-days" error={errors.duration_days}>
             <Input id="rx-days" type="number" min={1} step={1} value={values.durationDays} required onChange={(event) => set('durationDays')(event.target.value)} />
           </Field>
-          <Field label={text.quantity} htmlFor="rx-quantity" error={errors.quantity}>
+          <Field label={item ? drugPicker.quantityIn(item.unit) : text.quantity} htmlFor="rx-quantity" error={errors.quantity}>
             <Input id="rx-quantity" type="number" min={1} step={1} value={values.quantity} required onChange={(event) => set('quantity')(event.target.value)} />
           </Field>
         </div>

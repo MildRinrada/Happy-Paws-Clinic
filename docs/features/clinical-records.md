@@ -16,7 +16,8 @@
 | GET | `/staff/lab-requests` | `lab:read` | รายการงานแล็บ |
 | POST | `/staff/lab-requests/{id}/review` | `lab:read` | กดว่าอ่านผลแล้ว (ส่วนขยาย) |
 | GET | `/staff/prescriptions` | `rx:read` | ประวัติยา พร้อมตรวจยาซ้ำซ้อน |
-| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | จ่ายยาและได้ข้อมูลฉลาก |
+| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | จ่ายยา ตัดสต๊อก คิดค่ายา และได้ข้อมูลฉลาก |
+| GET | `/staff/prescriptions/drug-options` | `rx:write` | ยาในคลังให้เลือกตอนสั่งยา พร้อมราคาและสถานะสต๊อกของสาขาเดียว (ส่วนขยาย) |
 | GET | `/staff/templates/treatments` | `consult:read` | เทมเพลตแผนรักษาของคลินิก |
 | POST | `/staff/pets/{id}/documents` | `record:write` | ขอ URL อัปโหลดไฟล์เข้าแฟ้มของสัตว์ |
 | POST | `/staff/documents/generate` | `record:read` | พิมพ์ใบรับรองสุขภาพ ใบส่งตัว หรือสมุดวัคซีนเป็น PDF |
@@ -124,14 +125,27 @@ POST /v1/staff/lab-requests/lab_.../results
     "duration_days": 3, "quantity": 3, "prescribed_by": "สพ.ญ. มินท์", "prescriber_license_no": "ส.พ. 06120",
     "dispensed_on": "2026-10-02"
   },
-  "stock_deducted": false
+  "stock_deducted": true,
+  "stock": { "status": "deducted", "item_id": "itm_...", "item_name": "Meloxicam", "unit": "ml", "available": 40,
+             "lots": [ { "lot_id": "lot_...", "lot_number": "M12", "expires_on": "2027-03-31", "quantity": 3 } ] },
+  "charge": { "placement": "on_close", "unit_price_satang": 2000, "amount_satang": 6000 }
 }
 ```
 
 - `label` เป็นข้อมูล ไม่ใช่รูป เครื่องพิมพ์ฉลาก PDF และหน้าจอวางข้อความต่างกัน API จึงไม่เลือกให้
-- **ยังไม่ตัดสต๊อก** เพราะยังไม่มีโมดูล Inventory และยาก็ยังไม่ขึ้นบิลด้วยเหตุผลเดียวกัน คำตอบบอกตรง ๆ ด้วย `stock_deducted: false`
+- **ตัดสต๊อกในจังหวะเดียวกัน** ใบสั่งยาที่หมอเลือกยาจากคลังมีรหัสรายการ ระบบใช้รายการนั้นเลยแม้ชื่อในใบจะต่าง ใบที่พิมพ์ชื่อเองไม่มีรหัส ระบบจึงหารายการในคลังที่ชื่อตรงกับชื่อยาทั้งชื่อ (ไม่สนตัวพิมพ์และช่องว่างซ้ำ) แล้วตัดจากล็อตของสาขาที่เปิดเคส ล็อตที่หมดอายุก่อนออกก่อน การบันทึกจ่าย การตัดสต๊อก และค่ายา อยู่ใน transaction เดียว
+- **ไม่ปฏิเสธการจ่ายเพราะสต๊อก** ไม่พบยาในคลัง คือ `stock.status: not_matched` ไม่ตัดและไม่คิดเงิน ของในระบบไม่พอ คือ `insufficient` ไม่ตัด (ไม่ตัดบางส่วน) แต่คิดเงิน เพราะยาถูกจ่ายไปจริง ตัดได้คือ `deducted` และ `stock_deducted: true`
+- **ค่ายาขึ้นบิลของเคส** ราคาขายของรายการ ณ ตอนจ่าย คูณจำนวน `charge.placement` บอกว่าไปไหน `on_close` (เคสยังเปิด ขึ้นบิลตอนปิดเคส) `invoiced` (ลงบิลของเคสที่ยังไม่รับเงิน) หรือ `separate_invoice` (บิลของเคสรับเงินแล้ว จึงออกบิลใหม่) ดู [สต๊อกยาและเวชภัณฑ์](inventory.md)
+- ประวัติยาบอกผลการจ่ายด้วย `inventory_item_id`, `stock_deducted` และ `charged_unit_price_satang`
 - จ่ายได้ครั้งเดียว ครั้งที่สองตอบ `409 state_conflict`
 - การเขียนใบสั่งยา (`rx:write`) กับการจ่าย (`rx:dispense`) เป็นคนละสิทธิ์
+
+**เลือกยาจากคลังตอนสั่งยา** เป็นส่วนขยาย ([contract-extensions.md § 20](../contract-extensions.md)) `POST /staff/consultations/{id}/prescriptions` รับ `inventory_item_id` ไม่บังคับ ได้มาจาก `GET /staff/prescriptions/drug-options?q=&branch=` (`rx:write`) ซึ่งคืนแค่รหัส ชื่อ หน่วย ราคาขาย จำนวนที่ใช้ได้ และสถานะ `ok` `low` `out` ของสาขาเดียว ไม่มีต้นทุนหรือล็อต สัตวแพทย์จึงไม่ต้องถือ `inventory:read`
+
+- ไม่ส่ง `drug_name` ระบบใช้ชื่อของรายการ ส่งมาด้วยระบบเก็บชื่อที่พิมพ์ไว้บนฉลาก
+- รหัสที่ไม่มีตอบ `404` เวชภัณฑ์ตอบ `422`
+- การตรวจแพ้ยาเทียบทั้งชื่อที่พิมพ์และชื่อของรายการ ขั้นตอน `409 allergy_conflict` และการยืนยันเหตุผลเหมือนเดิม
+- ใบสั่งยาในคำตอบของเคสมี `inventory_item_id` เมื่อผูกกับรายการ คำขอที่ไม่มีรหัสทำงานเหมือนเดิมทุกอย่าง
 
 ## เทมเพลตแผนรักษา
 
@@ -219,7 +233,10 @@ POST /v1/staff/documents/generate
 - ยังไม่เลือกสัตว์ หน้าแสดงช่องค้นหาสัตว์ และรายการ **รอจ่ายยา** ของสาขาที่ใช้ได้ (`GET /staff/prescriptions?dispensed=false`)
 - เลือกสัตว์แล้ว (`?pet_id=`) แสดงการแพ้ยา แล้วประวัติยา โดยใบที่ยังไม่จ่ายขึ้นก่อน แต่ละใบมีป้าย รอจ่าย จ่ายแล้ว กำลังใช้ยา และยาซ้ำซ้อน ใบที่ซ้ำมีกล่องแดงบอกว่าซ้ำกับใบไหน
 - กดจ่ายสองครั้ง ครั้งที่สองเป็นการยืนยัน และเตือนอีกรอบถ้ายาซ้ำ จ่ายแล้วแสดงฉลากพร้อมปุ่ม **พิมพ์ฉลาก** ตอนพิมพ์มีแค่ฉลากบนกระดาษ
-- หน้าบอกไว้ด้วยว่ายังไม่ตัดสต๊อกและยายังไม่ขึ้นบิล
+- ใบที่รอจ่ายมีป้าย **ผูกกับสต๊อก** หรือ **ชื่อพิมพ์เอง จับคู่ด้วยชื่อตอนจ่าย**
+- หลังจ่าย หน้าบอกว่าตัดสต๊อกไปกี่หน่วย หรือทำไมไม่ได้ตัด และค่ายาไปอยู่บิลไหน ใบที่จ่ายแล้วแต่ไม่ได้ตัดสต๊อกมีป้าย **ไม่ได้ตัดสต๊อก** ในประวัติยา
+
+**สั่งยาในหน้าตรวจ** ช่องชื่อยาค้นยาในคลังของสาขาของเคสขณะพิมพ์ แต่ละตัวมีป้าย มีของ ใกล้หมด หรือหมด พร้อมจำนวนที่เหลือและราคาต่อหน่วย เลือกด้วยเมาส์หรือลูกศรกับ Enter แล้วชื่อถูกเติมให้และช่องจำนวนบอกหน่วย พิมพ์ชื่อเองก็ได้ ใต้ช่องขึ้นว่า "ไม่ผูกกับสต๊อก ตอนจ่ายจะจับคู่ด้วยชื่อ ถ้าชื่อไม่ตรงกับในคลังทุกตัวอักษร จะไม่ตัดสต๊อกและไม่คิดเงิน" พิมพ์ทับชื่อที่เลือกไว้คือยกเลิกการผูก รายการยาของเคสมีป้าย **ผูกกับสต๊อก** หรือ **ไม่ผูกกับสต๊อก** ทุกแถว
 
 **เทมเพลต** ฟอร์มการรักษาในหน้าตรวจมีปุ่ม **เลือกจากเทมเพลต** โหลดเทมเพลตครั้งแรกที่เปิด เลือกแล้วดูหัตถการ ยา และแผนได้ ปุ่ม **ใส่ในฟอร์ม** เติมชื่อ จำนวน และหมายเหตุ แล้วพาไปช่องราคา ไม่มีอะไรถูกบันทึกจนกว่าจะกด **เพิ่ม**
 
@@ -231,7 +248,7 @@ POST /v1/staff/documents/generate
 - คำขอแล็บและใบสั่งยามีแค่รหัสพนักงาน หน้าจอจึงไม่แสดงชื่อคนส่งตรวจหรือคนอ่านผล
 - คำตอบของหน้าตรวจไม่มีคำขอแล็บ หน้าตรวจจึงอ่าน `GET /staff/lab-requests?pet_id=` แล้วเลือกเฉพาะของเคสนั้น ทุกครั้งที่เปิดหน้าตรวจด้วยบัญชีที่ถือ `lab:read` จึงมีบรรทัด `pet.lab_results_viewed` ใน access log
 - เทมเพลตไม่มีราคา หมอพิมพ์ราคาเอง และยาในเทมเพลตยังเติมลงใบสั่งยาไม่ได้
-- การจ่ายยาไม่ตัดสต๊อกและไม่ขึ้นบิล จนกว่าจะมีโมดูล Inventory
+- ยาที่หมอพิมพ์ชื่อเองยังผูกกับรายการในคลังด้วยชื่อเท่านั้น ชื่อต้องตรงกับชื่อรายการ ไม่อย่างนั้นยาจ่ายได้แต่ไม่ตัดสต๊อกและไม่คิดเงิน ยาที่เลือกจากคลังไม่มีปัญหานี้
 - การเตือนวัคซีนและรอบแผนการรักษาทำแล้วใน [เตือนอัตโนมัติ](automation.md) แต่กติกาเริ่มต้นปิดไว้ คลินิกต้องเปิดใช้เอง
 - การตรวจยาซ้ำซ้อนดูจากชื่อยา ไม่รู้จักกลุ่มยาหรือชื่อการค้า
 - สร้างหรือแก้เทมเพลตผ่าน API ไม่ได้
@@ -252,4 +269,5 @@ POST /v1/staff/documents/generate
 | หน้าสัตว์ | `frontend/src/app/(staff)/pets/[id]/page.tsx`, `frontend/src/features/pets/` (`components/profile/`, `actions/`) |
 | หน้าแล็บ | `frontend/src/app/(staff)/lab/page.tsx`, `frontend/src/features/laboratory/` |
 | หน้าจ่ายยาและเทมเพลต | `frontend/src/app/(staff)/prescriptions/page.tsx`, `frontend/src/features/prescriptions/`, `frontend/src/features/consultations/components/treatments/template-picker.tsx` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Patients/VaccinationAndWeightTests.cs`, `DocumentUploadTests.cs`, `Api/Laboratory/LabRequestTests.cs`, `Api/Prescriptions/PharmacyTests.cs`, `Api/MedicalRecords/DocumentGenerationTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Patients/ClinicalRecordsTests.cs` |
+| เลือกยาจากคลังตอนสั่งยา (ส่วนขยาย § 20) | `backend/src/HappyPaws.Application/Prescriptions/ListDrugOptions/`, `backend/src/HappyPaws.Application/Consultations/AddPrescription/`, `frontend/src/features/consultations/components/prescriptions/` (`drug-search-field.tsx`, `drug-suggestions.tsx`, `stock-link-badge.tsx`), `frontend/src/features/prescriptions/api/listDrugOptions.ts` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Patients/VaccinationAndWeightTests.cs`, `DocumentUploadTests.cs`, `Api/Laboratory/LabRequestTests.cs`, `Api/Prescriptions/PharmacyTests.cs`, `DispensingStockTests.cs`, `DrugPickerTests.cs`, `Api/MedicalRecords/DocumentGenerationTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Patients/ClinicalRecordsTests.cs` |

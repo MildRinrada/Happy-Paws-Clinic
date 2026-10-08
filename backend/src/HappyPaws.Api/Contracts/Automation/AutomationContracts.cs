@@ -1,4 +1,5 @@
 using HappyPaws.Application.Automation.CreateAutomation;
+using HappyPaws.Application.Automation.UpdateAutomation;
 
 namespace HappyPaws.Api.Contracts.Automation;
 
@@ -33,6 +34,35 @@ public sealed record CreateAutomationRequest(
             : new AutomationConditionInput(Condition.BranchId, Condition.Species, Condition.VaccineName, Condition.ServiceId, Condition.UnconfirmedOnly),
         Action is null ? null : new AutomationActionInput(Action.Type, Action.Channel, Action.Template),
         Enabled);
+}
+
+/// <summary>
+/// <c>PATCH /staff/automations/{id}</c>, not in the API reference (<c>docs/contract-extensions.md § 19</c>).
+/// The shape of create with every part optional:
+/// <code>
+/// { "enabled": true }
+/// { "trigger": { "offset_hours": 2 }, "action": { "channel": "line" } }
+/// { "name": "เตือนวัคซีน 7 วัน", "trigger": { "offset_days": 7, "send_time": "10:00" }, "condition": { "species": "" } }
+/// </code>
+/// An absent field is kept; an empty string clears a condition. <c>trigger.type</c> cannot change.
+/// </summary>
+public sealed record UpdateAutomationRequest(
+    string? Name = null,
+    AutomationTriggerRequest? Trigger = null,
+    AutomationConditionRequest? Condition = null,
+    AutomationActionRequest? Action = null,
+    bool? Enabled = null)
+{
+    public UpdateAutomationCommand ToCommand(string id, uint? ifMatchVersion) => new(
+        id,
+        Name,
+        Trigger is null ? null : new AutomationTriggerInput(Trigger.Type, Trigger.OffsetDays, Trigger.OffsetHours, Trigger.SendTime),
+        Condition is null
+            ? null
+            : new AutomationConditionInput(Condition.BranchId, Condition.Species, Condition.VaccineName, Condition.ServiceId, Condition.UnconfirmedOnly),
+        Action is null ? null : new AutomationActionInput(Action.Type, Action.Channel, Action.Template),
+        Enabled,
+        ifMatchVersion);
 }
 
 /// <summary>What the rule watches, and when it sends.</summary>

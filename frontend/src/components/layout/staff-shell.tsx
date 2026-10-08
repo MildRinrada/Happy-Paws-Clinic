@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
   { href: '/prescriptions', label: 'จ่ายยา', scopes: [Scope.PrescriptionDispense] },
   { href: '/inventory', label: 'สต๊อกยา', scopes: [Scope.InventoryRead] },
   { href: '/billing', label: 'เก็บเงิน', scopes: [Scope.InvoiceWrite] },
+  { href: '/messages', label: 'ข้อความลูกค้า', scopes: [Scope.MessageRead] },
   { href: '/notifications', label: 'แจ้งเตือนลูกค้า', scopes: [Scope.NotifyRead, Scope.NotifySend, Scope.AutomationRead] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
   { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead] },

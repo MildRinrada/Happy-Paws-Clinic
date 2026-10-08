@@ -127,6 +127,8 @@ contract กำหนดว่า POST ที่สร้างเงิน น�
 | `POST /staff/invoices` | `invoice:write` |
 | `POST /staff/invoices/{id}/payments` | `payment:collect` |
 | `POST /staff/invoices/{id}/refunds` | `payment:refund` |
+| `POST /staff/inventory/movements` | `inventory:write` |
+| `POST /staff/inventory/purchase-orders` | `inventory:purchase` |
 
 `IdempotencyMiddleware` กับ `EfIdempotencyStore` ทำงานดังนี้
 

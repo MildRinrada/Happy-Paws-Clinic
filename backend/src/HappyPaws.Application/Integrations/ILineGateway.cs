@@ -47,6 +47,13 @@ public interface ILineGateway
     /// </summary>
     Task<bool> VerifySignatureAsync(ReadOnlyMemory<byte> body, string? signature, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The display name and picture LINE shows for a follower (<c>GET /v2/bot/profile/{userId}</c>),
+    /// for the counter's list of recent followers (<c>docs/contract-extensions.md § 18</c>). Null when
+    /// there is no access token or LINE does not answer. Never throws.
+    /// </summary>
+    Task<LineProfile?> ProfileAsync(string lineUserId, CancellationToken cancellationToken = default);
+
     /// <summary>Answers an event with a text message. Never throws; a failed reply is logged.</summary>
     Task ReplyAsync(
         string replyToken,

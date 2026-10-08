@@ -18,7 +18,9 @@ namespace HappyPaws.Domain.Prescriptions;
 /// </para>
 /// <para>
 /// What the dispense did is kept here: which inventory item the drug was matched to, whether stock
-/// was actually taken, and the unit price charged. The price is captured at the moment of handing
+/// was actually taken, and the unit price charged. The item may also be chosen when the drug is
+/// written (<c>docs/contract-extensions.md § 20</c>); the dispense then uses that item and never
+/// matches by name. The price is captured at the moment of handing
 /// over, like a treatment's, so a later price change does not restate it; a dispense before the
 /// case closes is billed from this field when the case's invoice is raised.
 /// </para>
@@ -62,8 +64,18 @@ public sealed class Prescription : Entity
 
     public string? DispensedByStaffId { get; private set; }
 
-    /// <summary>The inventory item this drug was matched to at dispense. Null when nothing matched.</summary>
+    /// <summary>
+    /// The inventory item this drug is for. Set when the drug is written if the prescriber picked
+    /// it from stock (<c>docs/contract-extensions.md § 20</c>), otherwise set at dispense when the
+    /// name matched an item. Null when neither happened.
+    /// </summary>
     public string? InventoryItemId { get; private set; }
+
+    /// <summary>
+    /// True once the drug is tied to an inventory item, whether picked when written or matched when
+    /// dispensed. Before the dispense, true only for a drug picked from stock.
+    /// </summary>
+    public bool IsLinkedToStock => InventoryItemId is not null;
 
     /// <summary>True when the dispense took the quantity off the branch's stock.</summary>
     public bool StockDeducted { get; private set; }
@@ -121,7 +133,8 @@ public sealed class Prescription : Entity
         int durationDays,
         int quantity,
         string? instructions = null,
-        string? allergyAcknowledgement = null)
+        string? allergyAcknowledgement = null,
+        string? inventoryItemId = null)
     {
         if (string.IsNullOrWhiteSpace(drugName))
         {
@@ -154,6 +167,7 @@ public sealed class Prescription : Entity
             AllergyAcknowledgement = string.IsNullOrWhiteSpace(allergyAcknowledgement)
                 ? null
                 : allergyAcknowledgement.Trim(),
+            InventoryItemId = string.IsNullOrWhiteSpace(inventoryItemId) ? null : inventoryItemId.Trim(),
         };
     }
 
@@ -183,6 +197,12 @@ public sealed class Prescription : Entity
         if (stockDeducted && inventoryItemId is null)
         {
             throw new DomainException("invalid_prescription", "ตัดสต๊อกได้เฉพาะยาที่ผูกกับรายการในคลัง");
+        }
+
+        if (InventoryItemId is { } linked && inventoryItemId != linked)
+        {
+            // A drug picked from stock when it was written is dispensed against that item and no other.
+            throw new DomainException("invalid_prescription", "ยานี้ผูกกับรายการในคลังไว้แล้ว ต้องจ่ายจากรายการเดิม");
         }
 
         if (chargedUnitPriceSatang is <= 0)

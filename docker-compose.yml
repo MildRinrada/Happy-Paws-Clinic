@@ -32,6 +32,10 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-happypaws};Username=${POSTGRES_USER:-happypaws};Password=${POSTGRES_PASSWORD:-happypaws}
       Cors__AllowedOrigins__0: http://localhost:3000
+      # The clinic's LINE Official Account; empty keeps LINE off. See docs/features/line.md.
+      Messaging__Line__ChannelId: ${LINE_CHANNEL_ID:-}
+      Messaging__Line__ChannelSecret: ${LINE_CHANNEL_SECRET:-}
+      Messaging__Line__ChannelAccessToken: ${LINE_CHANNEL_ACCESS_TOKEN:-}
     ports:
       - "5080:8080"
 

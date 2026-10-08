@@ -105,6 +105,16 @@ public static class AuditActions
     /// </summary>
     public const string CustomerMerged = "customer.merged";
 
+    /// <summary>
+    /// The counter saved a LINE address on a customer's record, picked from the recent followers
+    /// (<c>docs/contract-extensions.md § 18</c>). Where the clinic's messages to a person go is
+    /// personal data, and a wrong pick sends their pet's news to someone else.
+    /// </summary>
+    public const string CustomerLineLinked = "customer.line_linked";
+
+    /// <summary>The counter took a LINE address off a customer's record.</summary>
+    public const string CustomerLineUnlinked = "customer.line_unlinked";
+
     public const string ConsentRecorded = "consent.recorded";
     public const string ConsentWithdrawn = "consent.withdrawn";
     public const string DataRequestRaised = "data_request.raised";
@@ -274,6 +284,15 @@ public static class AuditActions
     public const string AutomationCreated = "automation.created";
 
     /// <summary>
+    /// A reminder rule was edited or switched on or off (<c>docs/contract-extensions.md § 19</c>).
+    /// Switching one on is what starts it messaging customers, so it is on record like creating one.
+    /// </summary>
+    public const string AutomationUpdated = "automation.updated";
+
+    /// <summary>A reminder rule was deleted. Its history stays; who stopped it, and when, is here.</summary>
+    public const string AutomationDeleted = "automation.deleted";
+
+    /// <summary>
     /// A report was exported to a file. Money and personal data left the system in a form that can
     /// be forwarded, so who asked for it, of what, and for which branches is on record.
     /// </summary>
@@ -307,7 +326,7 @@ public static class AuditActions
         RecordSigned, RecordAmended,
         AllergyRecorded, PetMarkedDeceased, PetCreated, VaccinationRecorded, TreatmentPlanCreated, DocumentAdded,
         LabRequested, LabResultsRecorded, LabResultsReviewed, PrescriptionDispensed,
-        CustomerCreated, CustomerMerged,
+        CustomerCreated, CustomerMerged, CustomerLineLinked, CustomerLineUnlinked,
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,
         NotificationBroadcast, LineIntegrationConfigured,
         SignedIn, SignInFailed, PasswordChanged, SessionRevoked, AccountRegistered, PasswordReset,
@@ -321,7 +340,7 @@ public static class AuditActions
         PaymentCollected, PaymentRefunded, ReceiptIssued, ServicePricingChanged,
         ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced,
         AccountProfileUpdated, TwoFactorEnrolled, RecoveryCodeUsed, UserStatusChanged,
-        AutomationCreated, ReportExported,
+        AutomationCreated, AutomationUpdated, AutomationDeleted, ReportExported,
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
     };
 

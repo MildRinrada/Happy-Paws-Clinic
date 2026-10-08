@@ -32,17 +32,29 @@ internal sealed class InventoryItemRepository(HappyPawsDbContext db) : IInventor
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<InventoryItem>> ListAsync(string? search, CancellationToken cancellationToken = default)
-    {
-        var query = db.Set<InventoryItem>().AsNoTracking();
+    public async Task<IReadOnlyList<InventoryItem>> ListAsync(string? search, CancellationToken cancellationToken = default) =>
+        await Named(db.Set<InventoryItem>().AsNoTracking(), search)
+            .OrderBy(item => item.NameKey).ThenBy(item => item.Id)
+            .ToListAsync(cancellationToken);
 
-        if (search is { Length: > 0 })
+    public async Task<IReadOnlyList<InventoryItem>> SearchMedicinesAsync(
+        string? search,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        await Named(db.Set<InventoryItem>().AsNoTracking().Where(item => item.Kind == InventoryItemKind.Medicine), search)
+            .OrderBy(item => item.NameKey).ThenBy(item => item.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+    private static IQueryable<InventoryItem> Named(IQueryable<InventoryItem> query, string? search)
+    {
+        if (search is not { Length: > 0 })
         {
-            // LIKE's own wildcards in the search are taken literally.
-            var pattern = $"%{search.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_")}%";
-            query = query.Where(item => EF.Functions.ILike(item.Name, pattern));
+            return query;
         }
 
-        return await query.OrderBy(item => item.NameKey).ThenBy(item => item.Id).ToListAsync(cancellationToken);
+        // LIKE's own wildcards in the search are taken literally.
+        var pattern = $"%{search.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_")}%";
+        return query.Where(item => EF.Functions.ILike(item.Name, pattern));
     }
 }

@@ -85,7 +85,7 @@ Queueing/
 
 `Common/` เก็บของที่ทุกโมดูลใช้: `Abstractions/` (`IUnitOfWork`, `IClock`, `ICurrentUser`), `Authorization/` (`BranchGuard`, `PetAccessGuard`), `Concurrency/`, `Errors/`, `Pagination/`, `Validation/`
 
-โมดูลที่มีโค้ดแล้ว: `Access`, `Analytics`, `Appointments`, `Auditing`, `Automation`, `Billing`, `Clinics`, `Consultations`, `Customers`, `Identity`, `Integrations`, `MedicalRecords`, `Notifications`, `Patients`, `Queueing`, `Reporting`, `ServiceCatalog`, `Staff` ส่วนโมดูลอื่นให้ดูในโฟลเดอร์ว่ามีโค้ดหรือยังเป็น `.gitkeep` การสั่งยาตอนนี้อยู่ใน `Consultations/AddPrescription/`
+โมดูลที่มีโค้ดแล้ว: `Access`, `Analytics`, `Appointments`, `Auditing`, `Automation`, `Billing`, `Clinics`, `Consultations`, `Customers`, `Identity`, `Integrations`, `Inventory`, `MedicalRecords`, `Notifications`, `Patients`, `Queueing`, `Reporting`, `ServiceCatalog`, `Staff` ส่วนโมดูลอื่นให้ดูในโฟลเดอร์ว่ามีโค้ดหรือยังเป็น `.gitkeep` การสั่งยาตอนนี้อยู่ใน `Consultations/AddPrescription/`
 
 ### HappyPaws.Domain
 
@@ -124,6 +124,7 @@ frontend/
       (staff)/          queue, appointments, customers, pets, consultations, billing, schedules
                         และ settings/ (clinic, hours, rules, services, contacts, line ใต้ layout แท็บเดียวกัน)
                         notifications/ (log, send, broadcast, templates ใต้ layout แท็บเดียวกัน)
+                        inventory/ (รายการ, alerts, movements, adjustments, purchase-orders ใต้ layout แท็บเดียวกัน)
       (portal)/         portal ลูกค้า
       api/queue/stream/ route handler ส่งต่อ SSE
     features/<ชื่อ>/    หนึ่งโฟลเดอร์ต่อหนึ่งเรื่อง
@@ -153,7 +154,7 @@ frontend/
 | Hook | `features/<ชื่อ>/hooks/` | logic ฝั่งเบราว์เซอร์ เช่น `use-queue-stream.ts` | ไม่มี |
 | Types | `features/<ชื่อ>/types/<ชื่อ>.types.ts` | รูปข้อมูลจาก API ชื่อฟิลด์ snake_case | DTO |
 
-feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `integrations`, `laboratory`, `notifications`, `pets`, `portal`, `prescriptions`, `privacy`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
+feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `integrations`, `inventory`, `laboratory`, `notifications`, `pets`, `portal`, `prescriptions`, `privacy`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
 
 ## กติกาการเขียนโค้ด
 

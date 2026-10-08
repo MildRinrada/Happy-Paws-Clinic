@@ -5,12 +5,17 @@ import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { DiscountForm } from '@/features/billing/components/discount/discount-form';
 import { InvoiceDocument } from '@/features/billing/components/invoice-document';
 import { PaymentForm } from '@/features/billing/components/payment-form';
 import { ReceiptPanel } from '@/features/billing/components/receipt-panel';
+import { RefundForm } from '@/features/billing/components/refund/refund-form';
 import { VoidForm } from '@/features/billing/components/void-form';
-import { invoiceStatusLabel, isCollectible } from '@/features/billing/lib/invoice-labels';
+import { discountForm } from '@/features/billing/content/discount-form';
+import { refundForm } from '@/features/billing/content/refund-form';
+import { invoiceStatusLabel, isCollectible, isRefundable } from '@/features/billing/lib/invoice-labels';
 import { loadInvoiceDetail, type InvoiceDetailView } from '@/features/billing/lib/load-billing-view';
+import { loadStaffOptions } from '@/features/billing/lib/load-staff-options';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -50,6 +55,18 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const { invoice, customer } = view;
   const status = invoiceStatusLabel[invoice.status];
 
+  // Each form is offered by state and by the contract's own scope for it: `invoice:discount` to
+  // reduce what is owed, `payment:refund` to give money back. The backend checks both again.
+  const canDiscount = isCollectible(invoice.status) && context.can(Scope.InvoiceDiscount);
+  const canRefund = isRefundable(invoice.status) && invoice.paid_satang > 0 && context.can(Scope.PaymentRefund);
+
+  // Staff names, for the approver picker and for naming approvers on the bill. Read only when used.
+  const staff =
+    canDiscount || invoice.discounts.length > 0
+      ? await authed(() => loadStaffOptions(invoice.branch_id, context.can(Scope.StaffRead)))
+      : null;
+  const staffNames = new Map(staff?.map((member) => [member.id, member.name]));
+
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -76,7 +93,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         <Card>
           <CardHeader title="รายการ" />
           <CardBody>
-            <InvoiceDocument invoice={invoice} />
+            <InvoiceDocument invoice={invoice} staffNames={staffNames} />
           </CardBody>
         </Card>
 
@@ -96,6 +113,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             </Card>
           )}
 
+          {canDiscount && (
+            <Card className="no-print">
+              <CardHeader title={discountForm.heading} />
+              <CardBody>
+                {/* Not keyed by version: after a conflict the form keeps what was typed and the message. */}
+                <DiscountForm invoice={invoice} self={{ id: context.staffId, name: context.me.display_name }} staff={staff} />
+              </CardBody>
+            </Card>
+          )}
+
           {context.can(Scope.ReceiptIssue) && invoice.status !== 'void' && (
             <Card>
               <CardHeader title="ใบเสร็จ" />
@@ -104,7 +131,17 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                   invoiceId={invoice.id}
                   receipt={invoice.receipt}
                   hasPayments={invoice.payments.length > 0}
+                  refundedSatang={invoice.refunded_satang}
                 />
+              </CardBody>
+            </Card>
+          )}
+
+          {canRefund && (
+            <Card className="no-print">
+              <CardHeader title={refundForm.heading} />
+              <CardBody>
+                <RefundForm invoice={invoice} />
               </CardBody>
             </Card>
           )}

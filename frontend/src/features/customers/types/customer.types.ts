@@ -23,12 +23,29 @@ export interface PortalInvitation {
   is_live: boolean;
 }
 
+/**
+ * Where the customer's LINE messages go (docs/contract-extensions.md § 18). The LINE user id is
+ * not shown; the name and picture are the follower's, while the follower list still holds them.
+ */
+export interface CustomerLine {
+  customer_id: string;
+  /** The customer's version, for `If-Match` on the next change. */
+  version: number;
+  linked: boolean;
+  /** Linked and not blocked: a LINE message would reach them now. */
+  can_receive: boolean;
+  unfollowed_at?: string;
+  display_name?: string;
+  picture_url?: string;
+}
+
 /** `GET /staff/customers/{id}` — "ข้อมูลติดต่อ สัตว์ทั้งหมด ยอดค้างชำระ". */
 export interface CustomerDetail {
   customer: Customer;
   pets: PetSummary[];
   outstanding_satang: number;
   invitation?: PortalInvitation;
+  line: CustomerLine;
 }
 
 /**

@@ -82,4 +82,54 @@ public class AutomationRuleTests
     {
         Assert.Throws<DomainException>(() => Rule(AutomationTrigger.AppointmentUpcoming, days: null, hours: 2, sendTime: new TimeOnly(8, 0)));
     }
+
+    [Fact]
+    public void An_edit_replaces_timing_conditions_and_channel_but_never_what_the_rule_watches()
+    {
+        var rule = Rule(AutomationTrigger.AppointmentUpcoming, days: null, hours: 24);
+
+        rule.Revise("เตือน 2 ชั่วโมง", null, 2, null, AutomationChannel.Sms, "brn_1", " สุนัข ", null, "svc_1", unconfirmedOnly: true);
+
+        Assert.Equal(AutomationTrigger.AppointmentUpcoming, rule.Trigger);
+        Assert.Equal(2, rule.OffsetHours);
+        Assert.Null(rule.OffsetDays);
+        Assert.Null(rule.SendTime);
+        Assert.Equal(AutomationChannel.Sms, rule.Channel);
+        Assert.Equal("brn_1", rule.BranchId);
+        Assert.Equal("สุนัข", rule.Species);
+        Assert.True(rule.UnconfirmedOnly);
+
+        rule.Revise("เตือนเช้าวันนัด", 0, null, null, AutomationChannel.Auto, null, null, null, null, unconfirmedOnly: false);
+        Assert.Equal(new TimeOnly(9, 0), rule.SendTime);
+        Assert.Null(rule.BranchId);
+    }
+
+    [Fact]
+    public void An_edit_is_held_to_the_rules_of_create()
+    {
+        var rule = Rule();
+
+        Assert.Throws<DomainException>(() => rule.Revise("", 14, null, null, AutomationChannel.Line, null, null, null, null, false));
+        Assert.Throws<DomainException>(() => rule.Revise("x", null, 24, null, AutomationChannel.Line, null, null, null, null, false));
+        Assert.Throws<DomainException>(() => rule.Revise("x", 14, null, null, AutomationChannel.Line, null, null, null, "svc_1", false));
+        Assert.Equal(14, rule.OffsetDays);
+    }
+
+    [Fact]
+    public void A_deleted_rule_is_off_and_can_no_longer_be_changed()
+    {
+        var rule = Rule();
+        rule.SetEnabled(true);
+        var at = DateTimeOffset.UtcNow;
+
+        rule.Delete("stf_2", at);
+
+        Assert.True(rule.IsDeleted);
+        Assert.False(rule.Enabled);
+        Assert.Equal(at, rule.DeletedAt);
+        Assert.Equal("stf_2", rule.DeletedByStaffId);
+        Assert.Throws<DomainException>(() => rule.SetEnabled(true));
+        Assert.Throws<DomainException>(() => rule.Delete("stf_2", at));
+        Assert.Throws<DomainException>(() => rule.Revise("x", 14, null, null, AutomationChannel.Line, null, null, null, null, false));
+    }
 }

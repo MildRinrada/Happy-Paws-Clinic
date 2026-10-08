@@ -23,3 +23,10 @@ public sealed record CreateCustomerRequest(
 /// </para>
 /// </summary>
 public sealed record MergeCustomerRequest(string DuplicateCustomerId);
+
+/// <summary>
+/// <c>PUT /staff/customers/{id}/line</c>, not in the API reference (<c>docs/contract-extensions.md § 18</c>):
+/// <c>{ "line_user_id": "U4af4980629..." }</c>, an address from
+/// <c>GET /staff/integrations/line/followers</c>.
+/// </summary>
+public sealed record LinkLineAddressRequest(string? LineUserId = null);

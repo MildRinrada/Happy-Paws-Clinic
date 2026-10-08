@@ -2,7 +2,7 @@
 
 คลินิกส่งการแจ้งเตือนผ่าน LINE Official Account ของคลินิกเอง (ช่อง Messaging API) **LINE เป็นช่องทางส่งข้อความออกเท่านั้น** ไม่ใช้เข้าสู่ระบบ ไม่ผูกบัญชี และไม่ใช้ยืนยันตัวตน ที่อยู่ LINE ของลูกค้าเป็นข้อมูลสำหรับส่ง เหมือนอีเมล ดู [assumptions.md](../assumptions.md) หัวข้อ A และ B
 
-endpoint ของ LINE ที่ทำในรอบนี้มีสามเส้น ส่วนสี่เส้นที่ใช้ LINE เป็นตัวตน (`POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link`, `GET /line/liff/booking-context`) ตั้งใจไม่ทำ
+endpoint ของ LINE ใน contract ที่ทำแล้วมีสามเส้น บวกส่วนขยายสามเส้นที่ให้เคาน์เตอร์ผูกที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](../contract-extensions.md)) ส่วนสี่เส้นที่ใช้ LINE เป็นตัวตน (`POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link`, `GET /line/liff/booking-context`) ตั้งใจไม่ทำ
 
 ## ตั้งค่า: `PUT /staff/integrations/line`
 
@@ -75,9 +75,9 @@ LINE นับ push ทุกข้อความ (รวมการเรี�
 
 | event | ระบบทำอะไร |
 |---|---|
-| `follow` | ตอบข้อความต้อนรับ ถ้าที่อยู่นี้เป็นของลูกค้าที่เคยบล็อก จะเริ่มส่งถึงเขาอีกครั้ง ไม่สร้างหรือผูกอะไร |
-| `unfollow` | ถ้าที่อยู่นี้เป็นของลูกค้า หยุด push ถึงเขาทันที ประวัติการส่งจะบอก `unfollowed` และข้อความไปทาง SMS แทน |
-| `message` | ตอบอัตโนมัติว่าบัญชีนี้ใช้ส่งการแจ้งเตือนเท่านั้น พร้อมลิงก์ portal ไม่เก็บข้อความ |
+| `follow` | ตอบข้อความต้อนรับ ถ้าที่อยู่นี้เป็นของลูกค้าที่เคยบล็อก จะเริ่มส่งถึงเขาอีกครั้ง และจดผู้ติดตามพร้อมชื่อและรูปจาก LINE ไว้ให้เคาน์เตอร์เลือก ไม่สร้างลูกค้าและไม่ผูกอะไรเอง |
+| `unfollow` | ถ้าที่อยู่นี้เป็นของลูกค้า หยุด push ถึงเขาทันที ประวัติการส่งจะบอก `unfollowed` และข้อความไปทาง SMS แทน ผู้ติดตามคนนี้หายจากรายชื่อ และชื่อกับรูปถูกลบ |
+| `message` | ตอบอัตโนมัติว่าบัญชีนี้ใช้ส่งการแจ้งเตือนเท่านั้น พร้อมลิงก์ portal ไม่เก็บข้อความ แต่เลื่อนคนที่พิมพ์ขึ้นบนสุดของรายชื่อผู้ติดตาม (คนที่ยังไม่อยู่ในรายชื่อและยังไม่ได้ผูกกับลูกค้าถูกจดใหม่) |
 | `postback` | ทำตามปุ่ม ดูข้างล่าง |
 
 event จากกลุ่มหรือห้องแชต และ event โหมด `standby` ถูกข้าม คำตอบใช้ reply API (`/v2/bot/message/reply`) ซึ่งไม่นับโควตา
@@ -100,9 +100,27 @@ handler ของ portal ไม่ถูกเรียกตรง เพรา
 
 ## ที่อยู่ LINE ของลูกค้า
 
-รอบนี้เพิ่ม `customers.line_user_id` (ไม่ซ้ำกันเมื่อมีค่า) และ `customers.line_unfollowed_at`
+`customers.line_user_id` (ไม่ซ้ำกันเมื่อมีค่า) คือที่ที่ข้อความ LINE ไป และ `customers.line_unfollowed_at` บอกว่าลูกค้าบล็อกบัญชีอยู่ LINE user id เป็นรหัสเฉพาะของแต่ละบัญชี Official Account พนักงานพิมพ์เองไม่ได้ และเส้นผูกบัญชีของ contract ถูกตัดออกตามหัวข้อ A ส่วนขยาย [contract-extensions.md § 18](../contract-extensions.md) จึงให้เคาน์เตอร์ **เลือกจากผู้ติดตามล่าสุด** แทน เหมือนพิมพ์อีเมลให้ลูกค้า
 
-**ยังไม่มีทางใส่ค่านี้ผ่าน API** สัญญามีแค่ endpoint ผูกบัญชีที่ถูกตัดออก และ LINE user id เป็นรหัสเฉพาะของแต่ละช่อง พนักงานพิมพ์เองไม่ได้ ตอนนี้ระบบส่ง LINE และรับปุ่มได้ครบ แต่จะถึงลูกค้าได้เมื่อมีวิธีบันทึกที่อยู่ ทางที่เสนอ (ต้องขออนุมัติเป็นส่วนขยาย) คือให้เคาน์เตอร์เลือกจากผู้ติดตามที่เพิ่งเพิ่มเพื่อน หรือให้ลูกค้าส่งรหัสสั้นจาก portal เข้าแชต ซึ่งเป็นการยืนยันที่อยู่ส่ง แบบเดียวกับยืนยันอีเมล ทั้งสองทางต้องตัดสินก่อนว่าไม่ขัดกับหัวข้อ A ระหว่างนี้ข้อความไปทาง SMS หรืออีเมล
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/integrations/line/followers?unlinked=true&q=&limit=&cursor=` | `customer:write` | ผู้ติดตามที่ยังติดตามอยู่ เห็นล่าสุดใน 14 วัน ใหม่สุดก่อน |
+| PUT | `/staff/customers/{id}/line` | `customer:write` | `{ "line_user_id": "U..." }` ผูกที่อยู่ รองรับ `If-Match` |
+| DELETE | `/staff/customers/{id}/line` | `customer:write` | ยกเลิกการผูก รองรับ `If-Match` |
+
+**รายชื่อผู้ติดตาม** อยู่ในตาราง `line_followers` หนึ่งแถวต่อหนึ่ง LINE user id
+
+- `follow` สร้างแถวหรือนำแถวเดิมกลับมา แล้วอ่านชื่อและรูปจาก `GET /v2/bot/profile/{userId}` (ต้องมี access token ถ้าอ่านไม่ได้ แถวไม่มีชื่อ หน้าจอแสดง "ไม่ทราบชื่อใน LINE")
+- `message` เลื่อน `last_seen_at` ขึ้นมา คนที่เพิ่มเพื่อนไว้ก่อนมีตารางนี้จึงพิมพ์ข้อความอะไรก็ได้ แล้วจะขึ้นบนสุด
+- `unfollow` ตั้ง `unfollowed_at` และลบชื่อกับรูป แถวนั้นไม่ขึ้นในรายชื่อ
+- งาน `housekeeping` ลบแถวที่ไม่ได้ผูกกับลูกค้าคนใดเมื่อไม่เห็นเกิน 14 วัน แถวที่ผูกแล้วเก็บไว้ตราบที่ยังผูก เพื่อให้หน้าลูกค้าบอกได้ว่าเป็น LINE ของใคร
+- ไม่เก็บข้อความที่พิมพ์ และไม่เก็บ status message รูปต้องเป็น `https`
+
+**การผูก** ต้องเป็นผู้ติดตามที่อยู่ในรายชื่อ 14 วันล่าสุดและยังติดตามอยู่ (ไม่อย่างนั้น `422`) ที่อยู่ที่ผูกกับลูกค้าคนอื่นแล้วได้ `409 line_address_taken` พร้อม `details.customer_id` การผูกและยกเลิกบันทึก audit `customer.line_linked` และ `customer.line_unlinked` ลูกค้าที่ผูกแล้วบล็อกบัญชีทีหลัง webhook ตั้ง `line_unfollowed_at` ตามเดิม และ `follow` ครั้งใหม่ทำให้ส่งได้อีก
+
+**ทำไมใช้ `customer:write`** รายชื่อมีไว้กรอกข้อมูลติดต่อของลูกค้าเท่านั้น คนที่แก้ข้อมูลลูกค้าได้จึงเห็น role ที่อ่านทะเบียนได้อย่างเดียวไม่เห็นชื่อและรูปของคนที่ยังไม่ใช่ลูกค้า
+
+**ไม่ทำ** ไม่จับคู่จากเบอร์หรือชื่อ ไม่ให้ลูกค้าผูกเองจาก portal และไม่ส่งข้อความตอนผูก ขั้นตอนบนหน้าจออยู่ใน [ลูกค้าและสัตว์เลี้ยง](customers-and-pets.md#ผูก-line-ที่เคาน์เตอร์)
 
 ## หน้าจอ
 
@@ -110,6 +128,7 @@ handler ของ portal ไม่ถูกเรียกตรง เพรา
 |---|---|---|
 | ตั้งค่า LINE (สถานะ ข้อมูลช่องทาง สวิตช์ โควตา) | `/settings/line` | `integration:manage` |
 | ประกาศทาง LINE | `/notifications/broadcast` | `notify:broadcast` |
+| ผูก LINE ของลูกค้า (การ์ด LINE ในหน้าลูกค้า) | `/customers/<id>` | `customer:write` |
 
 หน้าตั้งค่าไม่แสดง secret และ token ที่เก็บไว้ ช่องที่เว้นว่างคือใช้ค่าเดิม มีช่องติ๊กสำหรับลบค่าที่เก็บไว้ หน้า webhook แสดง path ที่ต้องนำไปต่อท้าย URL สาธารณะของ API แล้วใส่ใน LINE Developers
 
@@ -125,6 +144,7 @@ handler ของ portal ไม่ถูกเรียกตรง เพรา
 | webhook | `backend/src/HappyPaws.Api/Controllers/Webhooks/LineWebhookController.cs`, `backend/src/HappyPaws.Application/Integrations/HandleLineWebhook/` |
 | ข้อมูลปุ่ม | `backend/src/HappyPaws.Application/Integrations/LinePostbackData.cs`, `backend/src/HappyPaws.Domain/Integrations/LinePostbackActions.cs` |
 | ประกาศ | `backend/src/HappyPaws.Application/Notifications/BroadcastToSegment/`, `backend/src/HappyPaws.Api/Controllers/Staff/LineBroadcastController.cs` |
+| ผู้ติดตามและการผูก | `backend/src/HappyPaws.Domain/Integrations/LineFollower.cs`, `backend/src/HappyPaws.Application/Integrations/ListLineFollowers/`, `backend/src/HappyPaws.Application/Customers/LineAddress/`, `backend/src/HappyPaws.Api/Controllers/Staff/LineFollowersController.cs`, `CustomerLineController.cs` |
 | client ของ LINE และลายเซ็น | `backend/src/HappyPaws.Infrastructure/Notifications/Line/` |
-| หน้าจอ | `frontend/src/features/integrations/`, `frontend/src/app/(staff)/settings/line/`, `frontend/src/app/(staff)/notifications/broadcast/` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/`, `Api/Notifications/BroadcastTests.cs`, `Messaging/LineClientTests.cs` |
+| หน้าจอ | `frontend/src/features/integrations/`, `frontend/src/app/(staff)/settings/line/`, `frontend/src/app/(staff)/notifications/broadcast/`, การ์ด LINE ของลูกค้า `frontend/src/features/customers/components/line/` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/` (รวม `LineFollowerTests.cs`), `Api/Notifications/BroadcastTests.cs`, `Messaging/LineClientTests.cs` |

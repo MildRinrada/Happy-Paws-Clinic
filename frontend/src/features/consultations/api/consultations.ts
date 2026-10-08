@@ -65,6 +65,8 @@ export function addPrescription(
   id: string,
   prescription: {
     drug_name: string;
+    /** A contract extension (docs/contract-extensions.md § 20): the drug picked from stock. */
+    inventory_item_id?: string;
     dose: string;
     frequency: string;
     duration_days: number;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
 import { purchaseOrderPage } from '../content/purchase-order-page';
@@ -23,7 +24,9 @@ interface Props {
 /** One item on the order: which (or a new one), how many, at what cost. */
 export function OrderLineRow({ index, line, items, onChange, onRemove, errors }: Props) {
   const text = purchaseOrderPage;
-  const id = `order-line-${line.key}`;
+  // useId, not the row's random key: the first row is drawn on the server too, and a random id
+  // would differ between the server's HTML and the browser's.
+  const id = `order-line-${useId()}`;
   const set = (patch: Partial<OrderLineDraft>) => onChange({ ...line, ...patch });
 
   return (

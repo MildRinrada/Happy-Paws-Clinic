@@ -31,6 +31,27 @@ internal sealed class LineGateway(
         return secret is not null && LineSignature.IsValid(secret, body.Span, signature);
     }
 
+    public async Task<LineProfile?> ProfileAsync(string lineUserId, CancellationToken cancellationToken = default)
+    {
+        var token = (await credentials.ResolveAsync(cancellationToken)).AccessToken;
+
+        if (token is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await client.ProfileAsync(token, lineUserId, cancellationToken);
+        }
+        catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            // The follower is still recorded without a name; the counter sees "ไม่ทราบชื่อ".
+            logger.LogWarning(error, "LINE profile could not be read");
+            return null;
+        }
+    }
+
     public async Task ReplyAsync(
         string replyToken,
         string text,

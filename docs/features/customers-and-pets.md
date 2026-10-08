@@ -1,13 +1,13 @@
 # ลูกค้าและสัตว์เลี้ยง
 
-ทะเบียนเจ้าของและคนไข้ของคลินิก เจ้าของหนึ่งคนมีสัตว์ได้หลายตัว และสัตว์หนึ่งตัวมีผู้ดูแลได้หลายคน เคาน์เตอร์ใช้หน้านี้ค้นหาลูกค้า ลงทะเบียนคนใหม่ เพิ่มสัตว์ และชวนลูกค้าเปิดบัญชีออนไลน์
+ทะเบียนเจ้าของและคนไข้ของคลินิก เจ้าของหนึ่งคนมีสัตว์ได้หลายตัว และสัตว์หนึ่งตัวมีผู้ดูแลได้หลายคน เคาน์เตอร์ใช้หน้านี้ค้นหาลูกค้า ลงทะเบียนคนใหม่ เพิ่มสัตว์ ชวนลูกค้าเปิดบัญชีออนไลน์ และผูก LINE ของลูกค้าไว้รับการแจ้งเตือน
 
 ## ใครใช้
 
 | scope | ทำอะไรได้ |
 |---|---|
 | `customer:read` | ค้นหาลูกค้าและเปิดหน้าลูกค้า |
-| `customer:write` | ลงทะเบียนลูกค้าและส่งคำเชิญเข้า portal |
+| `customer:write` | ลงทะเบียนลูกค้า ส่งคำเชิญเข้า portal และผูกหรือยกเลิก LINE ของลูกค้า (เห็นรายชื่อผู้ติดตาม LINE ล่าสุดด้วย) |
 | `customer:merge` | รวมเรกคอร์ดซ้ำ แยกจาก `customer:write` เพราะย้อนกลับผ่าน API ไม่ได้ |
 | `patient:read` | ดูทะเบียนสัตว์ |
 | `patient:write` | เพิ่มสัตว์ จัดการผู้ดูแลร่วม และบันทึกว่าสัตว์เสียชีวิต |
@@ -27,7 +27,7 @@
 
 ## หน้าลูกค้า
 
-`GET /staff/customers/{id}` ตอบสามอย่างในครั้งเดียว คือ ข้อมูลติดต่อ สัตว์ทั้งหมด และยอดค้างชำระ พร้อมสถานะคำเชิญล่าสุด ยอดค้างอ่านจากโมดูลการเงินโดยตรง จึงตรงกับหน้าเก็บเงินเสมอ
+`GET /staff/customers/{id}` ตอบสามอย่างในครั้งเดียว คือ ข้อมูลติดต่อ สัตว์ทั้งหมด และยอดค้างชำระ พร้อมสถานะคำเชิญล่าสุด และสถานะ LINE (`line`) ซึ่งเป็นส่วนขยาย ดูหัวข้อถัดไป ยอดค้างอ่านจากโมดูลการเงินโดยตรง จึงตรงกับหน้าเก็บเงินเสมอ
 
 id ของเรกคอร์ดที่ถูกรวมไปแล้วยังเปิดได้ และมี `merged_into_customer_id` บอกว่าย้ายไปที่ไหน id ที่พิมพ์อยู่บนใบเสร็จเก่าจึงไม่กลายเป็น 404
 
@@ -47,6 +47,21 @@ id ของเรกคอร์ดที่ถูกรวมไปแล้�
 
 ตอนนี้ยังไม่มีตัวส่ง SMS จริง ข้อความไปขึ้นใน log ของ API ([การแจ้งเตือน](notifications.md)) ส่วนครึ่งที่ว่า "ผูก LINE" ไม่ได้ทำโดยตั้งใจ เพราะ LINE เป็นช่องทางส่งข้อความ ไม่ใช่ตัวตน ดู [assumptions.md § A](../assumptions.md)
 
+## ผูก LINE ที่เคาน์เตอร์
+
+ส่วนขยาย [contract-extensions.md § 18](../contract-extensions.md) ที่อยู่ LINE เป็นข้อมูลสำหรับส่งข้อความ เหมือนอีเมล ไม่ใช่การเข้าสู่ระบบหรือการยืนยันตัวตน พนักงานเป็นคนเลือกให้ เพราะ LINE user id พิมพ์เองไม่ได้
+
+1. ลูกค้าเพิ่มเพื่อน LINE ของคลินิก (หรือพิมพ์ข้อความอะไรก็ได้ ถ้าเคยเพิ่มไว้นานแล้ว)
+2. พนักงานเปิดหน้าลูกค้า กด **เลือกจากผู้ติดตาม LINE** รายชื่อมาจาก `GET /staff/integrations/line/followers` เรียงคนที่เพิ่งเห็นล่าสุดก่อน แสดงรูป ชื่อใน LINE และเวลา เฉพาะ 14 วันล่าสุดและยังไม่ได้ผูกกับลูกค้าคนใด กด **โหลดใหม่** ถ้ายังไม่เห็นชื่อ หรือค้นด้วยชื่อใน LINE
+3. กด **เลือก** ที่คนนั้น ตรวจกับลูกค้าว่าเป็นบัญชีของเขา แล้วกด **ยืนยันผูก** ระบบเรียก `PUT /staff/customers/{id}/line` พร้อม version ของลูกค้า
+
+- LINE ที่ผูกกับลูกค้าคนอื่นอยู่แล้วได้ `409 line_address_taken` หน้าจอบอกและมีลิงก์ไปเรกคอร์ดนั้น ต้องยกเลิกที่นั่นก่อน
+- คนที่บล็อกบัญชีแล้ว หรือไม่อยู่ในรายชื่อ 14 วันล่าสุด ผูกไม่ได้ (`422`)
+- การ์ด **LINE** บอกว่าผูกแล้ว บล็อกบัญชีอยู่ หรือยังไม่ผูก ถ้าผูกแล้วมีปุ่ม **เปลี่ยน** และ **ยกเลิกการผูก** (`DELETE /staff/customers/{id}/line` ต้องกดยืนยันอีกครั้ง) หลังยกเลิก ข้อความไปทาง SMS หรืออีเมล
+- ลูกค้าที่บล็อกบัญชีทีหลังยังผูกอยู่ แต่ข้อความไปทาง SMS จนกว่าจะเพิ่มเพื่อนกลับ
+- ทุกการผูกและยกเลิกบันทึกลง audit log (`customer.line_linked`, `customer.line_unlinked`)
+- ระบบไม่จับคู่ LINE กับลูกค้าเองจากชื่อหรือเบอร์ และลูกค้าผูกเองจาก portal ไม่ได้ ดู [LINE](line.md#ที่อยู่-line-ของลูกค้า)
+
 ## ส่วนอื่นของทะเบียน
 
 - **ผู้ดูแลร่วม** `POST /staff/pets/{id}/owners` กำหนดได้ว่าดูประวัติการรักษาได้ไหม (`may_view_history`) การถอนสิทธิ์ปิดลิงก์ ไม่ลบประวัติ
@@ -60,7 +75,7 @@ id ของเรกคอร์ดที่ถูกรวมไปแล้�
 
 - **`/customers`** ช่องค้นหาเดียว คำค้นอยู่ในที่อยู่ของหน้า (`/customers?q=`) จึงกดย้อนกลับหรือเปิดซ้ำได้ ไม่ใส่คำค้นจะเห็นลูกค้าที่ลงทะเบียนล่าสุด ปุ่ม **ลงทะเบียนลูกค้าใหม่** ขึ้นเมื่อถือ `customer:write`
 - **`/customers/new`** ฟอร์มชื่อ เบอร์ อีเมล ถ้าเบอร์ซ้ำ ฟอร์มแสดงลูกค้าที่ใช้เบอร์นั้นพร้อมปุ่มเปิดเรกคอร์ด และปุ่ม "คนละคน สร้างลูกค้าใหม่" ซึ่งส่งซ้ำพร้อม `allow_duplicate_phone` ถ้าแก้เบอร์ กล่องนี้หายไป บันทึกสำเร็จแล้วพาไปหน้าลูกค้าพร้อมเปิดฟอร์มเพิ่มสัตว์ไว้ให้
-- **`/customers/<id>`** รายการสัตว์พร้อมเลข HN การ์ดข้อมูลติดต่อ ยอดค้างชำระ (มีลิงก์ไปหน้าเก็บเงินเมื่อถือ `invoice:write`) และการ์ดบัญชีออนไลน์ที่มีปุ่มส่งคำเชิญเมื่อถือ `customer:write`
+- **`/customers/<id>`** รายการสัตว์พร้อมเลข HN การ์ดข้อมูลติดต่อ ยอดค้างชำระ (มีลิงก์ไปหน้าเก็บเงินเมื่อถือ `invoice:write`) การ์ดบัญชีออนไลน์ที่มีปุ่มส่งคำเชิญเมื่อถือ `customer:write` และการ์ด LINE ที่มีตัวเลือกผู้ติดตามเมื่อถือ `customer:write` (ดูหัวข้อผูก LINE ที่เคาน์เตอร์)
 - **รวมเรกคอร์ดซ้ำ** การ์ดในหน้าลูกค้า ขึ้นเมื่อถือ `customer:merge` เรกคอร์ดที่เปิดอยู่คือตัวที่เก็บไว้
   1. ค้นหาเรกคอร์ดที่ซ้ำ ผลค้นหาไม่มีเรกคอร์ดที่เปิดอยู่
   2. อ่านสิ่งที่จะเกิดขึ้น ข้อความตรงกับที่ backend ทำ ได้แก่ ย้ายสัตว์ ผู้ดูแล นัด คิว เคส เวชระเบียน บิล ความยินยอม และคำขอ PDPA ไปเรกคอร์ดที่เก็บ ข้อมูลติดต่อไม่ถูกคัดลอก เรกคอร์ดซ้ำถูกปิด ไม่ถูกลบ และย้อนกลับไม่ได้
@@ -92,12 +107,13 @@ id ของเรกคอร์ดที่ถูกรวมไปแล้�
 
 | ส่วน | ไฟล์ |
 |---|---|
-| use case ลูกค้า | `backend/src/HappyPaws.Application/Customers/` (`SearchCustomers/`, `CreateCustomer/`, `GetCustomer/`, `InviteToPortal/`, `MergeCustomers/`) |
+| use case ลูกค้า | `backend/src/HappyPaws.Application/Customers/` (`SearchCustomers/`, `CreateCustomer/`, `GetCustomer/`, `InviteToPortal/`, `MergeCustomers/`, `LineAddress/`) |
 | use case สัตว์ | `backend/src/HappyPaws.Application/Patients/` (`CreatePet/`, `GetPet/`, `ListPets/`, `ManageCarers/`, `RecordAllergy/`, `MarkPetDeceased/`) |
-| controller | `backend/src/HappyPaws.Api/Controllers/Staff/CustomersController.cs`, `PetsController.cs`, `PetCarersController.cs` |
+| controller | `backend/src/HappyPaws.Api/Controllers/Staff/CustomersController.cs`, `CustomerLineController.cs`, `LineFollowersController.cs`, `PetsController.cs`, `PetCarersController.cs` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Patients/` |
 | หน้าจอ | `frontend/src/app/(staff)/customers/` |
 | ค้นหา ลงทะเบียน หน้าลูกค้า คำเชิญ รวมเรกคอร์ด | `frontend/src/features/customers/` (รวมเรกคอร์ดอยู่ที่ `components/merge-*.tsx`, `actions/merge-actions.ts`) |
+| การ์ด LINE และตัวเลือกผู้ติดตาม | `frontend/src/features/customers/components/line/`, `actions/line-actions.ts`, `api/lineAddress.ts`, `content/customer-line.ts`, `frontend/src/features/integrations/api/listLineFollowers.ts` |
 | ฟอร์มเพิ่มสัตว์ | `frontend/src/features/pets/` (`components/`, `actions/pet-actions.ts`, `content/register-pet.ts`) |
 | หน้าสัตว์ | `frontend/src/app/(staff)/pets/[id]/`, `frontend/src/features/pets/components/profile/`, `lib/load-pet-profile.ts`, `content/pet-profile.ts` |
 | แยกข้อผิดพลาดตามช่อง | `frontend/src/lib/actions/field-errors.ts` |

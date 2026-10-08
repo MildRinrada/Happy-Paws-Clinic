@@ -4,13 +4,18 @@ export type InvoiceStatus = 'open' | 'partially_paid' | 'paid' | 'refunded' | 'v
 /** "เงินสด บัตร PromptPay". */
 export type PaymentMethod = 'cash' | 'card' | 'promptpay';
 
+/** What a line is for. `medicine` is a dispensed drug (or one rung up by hand); `other` claims nothing. */
+export type InvoiceLineKind = 'service' | 'treatment' | 'medicine' | 'other';
+
 export interface InvoiceLine {
   id: string;
-  kind: 'service' | 'treatment' | 'medicine' | 'other';
+  kind: InvoiceLineKind;
   description: string;
   quantity: number;
   unit_price_satang: number;
   line_total_satang: number;
+  /** The prescription a `medicine` line was charged from, when it came from a dispense. */
+  source_id?: string;
 }
 
 export interface InvoiceDiscount {
@@ -19,6 +24,7 @@ export interface InvoiceDiscount {
   percent?: number;
   reason: string;
   approved_by_staff_id: string;
+  applied_by_staff_id: string;
   applied_at: string;
 }
 
@@ -33,9 +39,12 @@ export interface InvoicePayment {
 
 export interface InvoiceRefund {
   id: string;
+  /** The tender being reversed, when the refund was tied to one. */
+  payment_id?: string;
   method: PaymentMethod;
   amount_satang: number;
   reason: string;
+  refunded_by_staff_id: string;
   refunded_at: string;
 }
 
@@ -67,6 +76,7 @@ export interface Invoice {
   pet_id?: string;
   consultation_id?: string;
   issued_at: string;
+  issued_by_staff_id: string;
   note?: string;
   subtotal_satang: number;
   discount_satang: number;
@@ -81,4 +91,12 @@ export interface Invoice {
   receipt?: Receipt;
   voided_at?: string;
   void_reason?: string;
+}
+
+/** One row of `POST /staff/invoices`. Kind defaults to `other` on the backend when left out. */
+export interface InvoiceLineInput {
+  description: string;
+  quantity: number;
+  unit_price_satang: number;
+  kind?: InvoiceLineKind;
 }

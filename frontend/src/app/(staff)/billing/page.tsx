@@ -5,6 +5,7 @@ import { buttonClass } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { InvoiceTable } from '@/features/billing/components/invoice-table';
+import { createInvoicePage } from '@/features/billing/content/create-invoice-page';
 import { loadInvoiceList, type InvoiceListView } from '@/features/billing/lib/load-billing-view';
 import type { InvoiceStatus } from '@/features/billing/types/billing.types';
 import { ApiError } from '@/lib/api/api-error';
@@ -62,9 +63,14 @@ export default async function BillingPage({
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-2xl font-semibold text-ink-900">เก็บเงิน</h1>
-        <p className="text-sm text-ink-600">{branch.name}</p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-ink-900">เก็บเงิน</h1>
+          <p className="text-sm text-ink-600">{branch.name}</p>
+        </div>
+        <Link href="/billing/new" className={buttonClass('primary', 'sm')}>
+          {createInvoicePage.openButton}
+        </Link>
       </header>
 
       <nav aria-label="กรองตามสถานะ" className="flex flex-wrap gap-2">

@@ -13,8 +13,10 @@ import { Scope } from '@/lib/auth/scopes';
 export const metadata: Metadata = { title: automationsPage.metaTitle };
 
 /**
- * The reminder rules with their history (`automation:read`); creating one and previewing who it
- * would reach need `automation:manage`. A rule made here belongs to the branch in view.
+ * The reminder rules with their history (`automation:read`); creating one, previewing who it would
+ * reach, and switching, editing or deleting one need `automation:manage` (the last three are
+ * docs/contract-extensions.md § 19). A rule made here belongs to the branch in view; a clinic-wide
+ * rule is changed only by a session no branch limits, as the backend requires.
  */
 export default async function AutomationsPage() {
   const context = await loadStaffContext();
@@ -30,7 +32,7 @@ export default async function AutomationsPage() {
   return (
     <div className="space-y-5">
       <PageHeader title={automationsPage.title} subtitle={automationsPage.subtitle} />
-      <Alert tone="info">{automationsPage.noToggle}</Alert>
+      <Alert tone="info">{automationsPage.startHint}</Alert>
 
       {canManage && <CreateAutomationForm branch={context.branch ? { id: context.branch.id, name: context.branch.name } : undefined} />}
 
@@ -44,6 +46,8 @@ export default async function AutomationsPage() {
               rule={rule}
               branchName={rule.condition.branch_id ? (branchNames.get(rule.condition.branch_id) ?? rule.condition.branch_id) : undefined}
               canSimulate={canManage}
+              canChange={canManage && (Boolean(rule.condition.branch_id) || !context.branchBound)}
+              locked={canManage && !rule.condition.branch_id && context.branchBound}
             />
           ))}
         </div>

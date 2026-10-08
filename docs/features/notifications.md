@@ -136,7 +136,7 @@ DeliveringNotificationChannel        เลือกช่องทาง ส่
 
 | ช่องทาง | มาจาก |
 |---|---|
-| LINE | `customers.line_user_id` ใหม่ในรอบนี้ ดู [LINE](line.md#ที่อยู่-line-ของลูกค้า) |
+| LINE | `customers.line_user_id` เคาน์เตอร์ผูกจากผู้ติดตาม LINE ล่าสุด ([contract-extensions.md § 18](../contract-extensions.md)) ดู [LINE](line.md#ที่อยู่-line-ของลูกค้า) |
 | SMS | `customers.phone` ส่งเป็นตัวเลขล้วน |
 | อีเมล | `customers.email` |
 

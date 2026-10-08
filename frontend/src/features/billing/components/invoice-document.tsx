@@ -1,7 +1,9 @@
 import { formatDateTime } from '@/lib/format/datetime';
 import { formatBaht } from '@/lib/format/money';
+import { invoiceDocument } from '../content/invoice-document';
 import { paymentMethodLabel } from '../lib/invoice-labels';
 import type { Invoice } from '../types/billing.types';
+import { LineKindTag } from './line-kind-tag';
 
 function Row({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
@@ -18,7 +20,7 @@ function Row({ label, value, strong = false }: { label: string; value: string; s
  * Every figure is the backend's. Nothing here adds a column up — the totals are printed from the
  * fields that carry them, so the screen cannot disagree with the receipt.
  */
-export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
+export function InvoiceDocument({ invoice, staffNames }: { invoice: Invoice; staffNames?: Map<string, string> }) {
   return (
     <div className="space-y-5">
       <table className="w-full text-sm">
@@ -33,7 +35,12 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
         <tbody className="divide-y divide-ink-100">
           {invoice.lines.map((line) => (
             <tr key={line.id}>
-              <td className="py-2.5 text-ink-900">{line.description}</td>
+              <td className="py-2.5 text-ink-900">
+                <span className="flex items-start gap-2">
+                  <LineKindTag kind={line.kind} />
+                  <span>{line.description}</span>
+                </span>
+              </td>
               <td className="py-2.5 text-right tabular-nums text-ink-700">{line.quantity}</td>
               <td className="py-2.5 text-right tabular-nums text-ink-700">{formatBaht(line.unit_price_satang)}</td>
               <td className="py-2.5 text-right tabular-nums text-ink-900">{formatBaht(line.line_total_satang)}</td>
@@ -47,7 +54,7 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
         {invoice.discount_satang > 0 && <Row label="ส่วนลด" value={`− ${formatBaht(invoice.discount_satang)}`} />}
         <Row label="ยอดรวม" value={formatBaht(invoice.total_satang)} strong />
         <Row label="ชำระแล้ว" value={formatBaht(invoice.paid_satang)} />
-        {invoice.refunded_satang > 0 && <Row label="คืนเงิน" value={formatBaht(invoice.refunded_satang)} />}
+        {invoice.refunded_satang > 0 && <Row label={invoiceDocument.refundTotal} value={`− ${formatBaht(invoice.refunded_satang)}`} />}
         {/* A voided bill is owed nothing. Its balance is still the arithmetic remainder, and printing
             that as "outstanding" would send a cashier to collect on a bill that no longer stands. */}
         {invoice.status !== 'void' && (
@@ -63,7 +70,10 @@ export function InvoiceDocument({ invoice }: { invoice: Invoice }) {
           <ul className="space-y-1 text-ink-600">
             {invoice.discounts.map((discount) => (
               <li key={discount.id}>
-                {formatBaht(discount.amount_satang)} · {discount.reason} · อนุมัติโดย {discount.approved_by_staff_id}
+                {formatBaht(discount.amount_satang)}
+                {discount.percent !== undefined && discount.percent !== null && ` ${invoiceDocument.percent(discount.percent)}`} ·{' '}
+                {discount.reason} ·{' '}
+                {invoiceDocument.approvedBy(staffNames?.get(discount.approved_by_staff_id) ?? discount.approved_by_staff_id)}
               </li>
             ))}
           </ul>

@@ -1,6 +1,6 @@
 import type { ConditionValue } from '../components/condition-fields';
 import type { TimingValue } from '../components/timing-fields';
-import type { AutomationChannel, AutomationTrigger, AutomationTriggerType } from '../types/automation.types';
+import type { Automation, AutomationChannel, AutomationTrigger, AutomationTriggerType } from '../types/automation.types';
 
 /** What the create form starts with: the contract's own example, a vaccine 14 days ahead at 09:00. */
 export const initialTiming: TimingValue = { mode: 'days', days: '14', hours: '24', time: '09:00' };
@@ -39,5 +39,50 @@ export function toCreateInput(values: CreateFormValues) {
     },
     channel: values.channel,
     enabled: values.enabled,
+  };
+}
+
+/** An existing rule's timing as the form's text fields, so an edit starts from what is saved. */
+export function timingOf(rule: Pick<Automation, 'trigger'>): TimingValue {
+  const { offset_days: days, offset_hours: hours, send_time: time } = rule.trigger;
+
+  return {
+    mode: hours !== undefined ? 'hours' : 'days',
+    days: String(days ?? initialTiming.days),
+    hours: String(hours ?? initialTiming.hours),
+    time: time ?? initialTiming.time,
+  };
+}
+
+export function conditionOf(rule: Pick<Automation, 'condition'>): ConditionValue {
+  return {
+    species: rule.condition.species ?? '',
+    vaccineName: rule.condition.vaccine_name ?? '',
+    unconfirmedOnly: rule.condition.unconfirmed_only,
+  };
+}
+
+export interface EditFormValues {
+  name: string;
+  type: AutomationTriggerType;
+  timing: TimingValue;
+  condition: ConditionValue;
+  channel: AutomationChannel;
+}
+
+/**
+ * The edit's server action input. Conditions are always sent, blank ones as an empty string,
+ * because on an edit a blank means "clear it" rather than "leave it".
+ */
+export function toUpdateValues(values: EditFormValues) {
+  return {
+    name: values.name,
+    trigger: toTrigger(values.type, values.timing),
+    condition: {
+      species: values.condition.species.trim(),
+      vaccine_name: values.type === 'vaccine_due' ? values.condition.vaccineName.trim() : undefined,
+      unconfirmed_only: values.type === 'appointment_upcoming' ? values.condition.unconfirmedOnly : undefined,
+    },
+    channel: values.channel,
   };
 }

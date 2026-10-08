@@ -121,6 +121,11 @@ public sealed class ConsultationPartsController : ControllerBase
     /// naming it in <c>details</c>. Resending with <c>acknowledge_allergy</c> proceeds and is
     /// audited; a severe allergy cannot be overridden here at all.
     /// </para>
+    /// <para>
+    /// The optional <c>inventory_item_id</c> is not in the API reference
+    /// (<c>docs/contract-extensions.md § 20</c>): an id that names no item answers <c>404</c>, a
+    /// supply answers <c>422</c>.
+    /// </para>
     /// </summary>
     /// <param name="id">Consultation id.</param>
     /// <param name="request">The drug, dose, frequency and quantity.</param>
@@ -130,7 +135,9 @@ public sealed class ConsultationPartsController : ControllerBase
     [Idempotent]
     [RequireScope(Scopes.Prescription.Write)]
     [ProducesResponseType<ConsultationDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status423Locked)]
     public async Task<ActionResult<ConsultationDto>> Prescriptions(
         string id,
@@ -146,7 +153,8 @@ public sealed class ConsultationPartsController : ControllerBase
                 request.DurationDays,
                 request.Quantity,
                 request.Instructions,
-                request.AcknowledgeAllergy),
+                request.AcknowledgeAllergy,
+                request.InventoryItemId),
             cancellationToken));
 
     /// <summary>

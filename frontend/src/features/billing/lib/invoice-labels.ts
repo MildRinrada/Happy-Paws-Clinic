@@ -19,3 +19,8 @@ export const paymentMethodLabel: Record<PaymentMethod, string> = {
 export function isCollectible(status: InvoiceStatus): boolean {
   return status === 'open' || status === 'partially_paid';
 }
+
+/** Money can go back once some has come in and the bill is not void (docs/assumptions.md § 22). */
+export function isRefundable(status: InvoiceStatus): boolean {
+  return status === 'partially_paid' || status === 'paid' || status === 'refunded';
+}

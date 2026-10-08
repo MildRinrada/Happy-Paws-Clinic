@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { clinicDay } from '@/lib/format/datetime';
 import { bookAction, holdSlotAction } from '../actions/booking-actions';
 import { bookingPage } from '../content/booking-page';
 import { suggestedTimes } from '../lib/slot-times';
@@ -28,6 +29,9 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
   const [details, setDetails] = useState(initial);
 
   const [holding, setHolding] = useState(false);
+  // The clinic day of the last time picked, so coming back to the times (a refusal on confirm, or
+  // "back") reopens that day rather than today, and the suggested times land on the right day.
+  const [day, setDay] = useState<string>();
   const [refusal, setRefusal] = useState<PickRefusal>();
   const [hold, setHold] = useState<{ value: SlotHold; key: string }>();
   const [expired, setExpired] = useState(false);
@@ -41,6 +45,7 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
   async function pick(startsAt: string, staffId?: string) {
     setHolding(true);
     setRefusal(undefined);
+    setDay(clinicDay(startsAt));
 
     try {
       const result = await holdSlotAction({ serviceId: details.serviceId, branchId: details.branchId, startsAt, staffId });
@@ -126,6 +131,7 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
           holding={holding}
           refusal={refusal}
           onBack={() => setStep(DETAILS)}
+          initialDay={day}
         />
       )}
 

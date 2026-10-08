@@ -786,6 +786,15 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("created_by_staff_id");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DeletedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deleted_by_staff_id");
+
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean")
                         .HasColumnName("enabled");
@@ -2805,6 +2814,68 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_line_channel_settings_singleton", "id = 'set_line'");
                         });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.LineFollower", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<DateTimeOffset>("FollowedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("followed_at");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<string>("LineUserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("line_user_id");
+
+                    b.Property<string>("PictureUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("picture_url");
+
+                    b.Property<DateTimeOffset?>("UnfollowedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("unfollowed_at");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_line_followers");
+
+                    b.HasIndex("LastSeenAt")
+                        .HasDatabaseName("ix_line_followers_last_seen_at");
+
+                    b.HasIndex("LineUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_line_followers_line_user_id");
+
+                    b.ToTable("line_followers", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Inventory.InventoryItem", b =>

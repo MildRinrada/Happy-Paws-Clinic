@@ -11,12 +11,20 @@ import { slotTimes, suggestedTimes, type SlotTime } from '@/features/booking/lib
 import type { Slot } from '@/features/booking/types/booking.types';
 import type { PetSummary } from '@/features/pets/types/pet.types';
 import type { PublicService } from '@/features/service-catalog/types/service.types';
+import { createRecurringSeriesAction } from '../../actions/advanced-booking-actions';
 import { createAppointmentAction } from '../../actions/calendar-actions';
+import { repeatText } from '../../content/advanced-booking';
 import { newAppointment } from '../../content/appointment-calendar';
+import { useConflictCheck, type ConflictQuery } from '../../hooks/use-conflict-check';
 import { appointmentPaths } from '../../lib/appointment-paths';
+import { defaultRepeat, expand, toRrule, type RepeatRule } from '../../lib/recurrence';
 import { refusalText } from '../../lib/refusal';
+import { seriesConflicts } from '../../lib/series-conflicts';
+import type { SeriesConflict } from '../../types/advanced-booking.types';
 import type { VetOption } from '../../types/calendar.types';
 import { PetPicker } from './pet-picker';
+import { RepeatSection } from './repeat-section';
+import { SingleConflictCheck } from './single-conflict-check';
 import { SlotPicker } from './slot-picker';
 
 interface NewAppointmentFormProps {
@@ -24,14 +32,17 @@ interface NewAppointmentFormProps {
   services: PublicService[];
   vets: VetOption[];
   initialDay: string;
+  /** `appointment:read`, which the conflict check needs. */
+  canCheck: boolean;
 }
 
 /**
- * Books on a customer's behalf. The free times come from the same availability the booking page
- * reads; the counter may also type a time, because staff are not held to the online notice
- * period. Either way the backend checks the vet is really free and answers with other times if not.
+ * Books on a customer's behalf, once or as a course. The free times come from the same availability
+ * the booking page reads; the counter may also type a time, because staff are not held to the
+ * online notice period. Either way the backend checks the vet is really free and answers with other
+ * times if not. A course is booked whole or not at all, and a refusal is shown against each date.
  */
-export function NewAppointmentForm({ branchId, services, vets, initialDay }: NewAppointmentFormProps) {
+export function NewAppointmentForm({ branchId, services, vets, initialDay, canCheck }: NewAppointmentFormProps) {
   const text = newAppointment;
   const router = useRouter();
 
@@ -43,8 +54,10 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay }: New
   const [chosen, setChosen] = useState<string>();
   const [manualTime, setManualTime] = useState('');
   const [reason, setReason] = useState('');
+  const [repeat, setRepeat] = useState<RepeatRule | null>(null);
   const [error, setError] = useState<string>();
   const [suggested, setSuggested] = useState<string[]>([]);
+  const [refused, setRefused] = useState<{ key: string; dates: Map<number, SeriesConflict> }>();
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const [loadingSlots, startLoading] = useTransition();
   const [pending, startSubmit] = useTransition();
@@ -69,27 +82,36 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay }: New
   // A typed time keeps the vet the counter picked. A chosen slot names who is free at it.
   const staffId = vetId || (manualTime ? undefined : chosenSlot?.staffIds[0]);
 
+  const expansion = repeat && startsAt ? expand(startsAt, repeat) : null;
+  const starts = repeat ? (expansion && !expansion.problem ? expansion.starts : []) : startsAt ? [startsAt] : [];
+  const query: ConflictQuery | null =
+    serviceId && starts.length > 0 ? { starts, serviceId, branchId, vetId: staffId, petId: pet?.id } : null;
+  const check = useConflictCheck(query);
+  const queryKey = JSON.stringify(query);
+  const refusals = refused?.key === queryKey ? refused.dates : new Map<number, SeriesConflict>();
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!pet || !serviceId || !startsAt) {
       setError(text.missing);
       return;
     }
+    if (expansion?.problem) {
+      setError(repeatText[expansion.problem]);
+      return;
+    }
 
     setError(undefined);
     setSuggested([]);
+    setRefused(undefined);
+
+    const common = { petId: pet.id, serviceId, branchId, staffId, reason: reason.trim() || undefined, idempotencyKey };
 
     startSubmit(async () => {
       try {
-        const result = await createAppointmentAction({
-          petId: pet.id,
-          serviceId,
-          branchId,
-          startsAt,
-          staffId,
-          reason: reason.trim() || undefined,
-          idempotencyKey,
-        });
+        const result = repeat
+          ? await createRecurringSeriesAction({ ...common, firstStartsAt: startsAt, rrule: toRrule(repeat) })
+          : await createAppointmentAction({ ...common, startsAt });
 
         if (result.ok) {
           router.push(appointmentPaths.calendar(day));
@@ -99,7 +121,8 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay }: New
         // Nothing was booked, so the next try is a new request with a key of its own.
         setIdempotencyKey(crypto.randomUUID());
         setError(refusalText(result.error));
-        setSuggested(suggestedTimes(result.error.details));
+        setSuggested(repeat ? [] : suggestedTimes(result.error.details));
+        if (repeat) setRefused({ key: queryKey, dates: seriesConflicts(result.error.details) });
       } catch {
         setError(text.unreachable);
       }
@@ -171,9 +194,23 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay }: New
         <Input id="book-reason" value={reason} placeholder={text.reason.placeholder} maxLength={1000} onChange={(event) => setReason(event.target.value)} />
       </Field>
 
+      <RepeatSection
+        rule={repeat}
+        firstDay={day}
+        expansion={expansion}
+        refusals={refusals}
+        hasVet={Boolean(staffId)}
+        canCheck={canCheck}
+        check={check}
+        onToggle={(on) => setRepeat(on ? defaultRepeat() : null)}
+        onChange={setRepeat}
+      />
+
+      {!repeat && canCheck && startsAt && <SingleConflictCheck startsAt={startsAt} hasVet={Boolean(staffId)} check={check} />}
+
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
-          {pending ? text.submitting : text.submit}
+          {pending ? text.submitting : expansion && !expansion.problem ? repeatText.submit(expansion.starts.length) : text.submit}
         </Button>
       </div>
     </form>

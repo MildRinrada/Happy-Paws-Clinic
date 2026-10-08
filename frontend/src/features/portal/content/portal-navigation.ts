@@ -23,12 +23,15 @@ export const portalPaths = {
   editPet: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/edit`,
   petDocuments: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/documents`,
   packages: '/portal/packages',
+  invoices: '/portal/invoices',
+  appointments: '/portal/appointments',
+  reschedule: (appointmentId: string) => `/portal/appointments/${encodeURIComponent(appointmentId)}/reschedule`,
 };
 
 export const portalNavLinks: PortalNavLink[] = [
   { label: 'หน้าแรก', short: 'หน้าแรก', href: PORTAL_HOME_HREF, icon: 'home' },
   { label: 'สัตว์เลี้ยงของฉัน', short: 'สัตว์เลี้ยง', href: portalPaths.pets, icon: 'paw' },
-  { label: 'นัดหมาย', short: 'นัดหมาย', href: '/portal/appointments', icon: 'calendar' },
+  { label: 'นัดหมาย', short: 'นัดหมาย', href: portalPaths.appointments, icon: 'calendar' },
   { label: 'ประวัติการรักษา', short: 'ประวัติ', href: '/portal/records', icon: 'records' },
 ];
 
@@ -41,6 +44,7 @@ export const portalHeader = {
   accountLinks: [
     { label: 'บัญชีของฉัน', href: portalPaths.account },
     { label: 'แพ็กเกจของฉัน', href: portalPaths.packages },
+    { label: 'บิลและใบเสร็จ', href: portalPaths.invoices },
     { label: 'แจ้งเตือน', href: portalPaths.notifications },
     { label: 'หน้าเว็บคลินิก', href: '/' },
   ] satisfies SiteLink[],

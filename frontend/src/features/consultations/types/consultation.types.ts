@@ -51,6 +51,11 @@ export interface Prescription {
   prescribed_at: string;
   prescribed_by_staff_id: string;
   dispensed_at?: string;
+  /**
+   * A contract extension (docs/contract-extensions.md § 20): the stock item the drug is tied to,
+   * picked when written or matched by name at dispense. Absent for a typed drug not yet dispensed.
+   */
+  inventory_item_id?: string;
 }
 
 /** A case — `con_…`. Every write in the section answers with this, and so does the read. */

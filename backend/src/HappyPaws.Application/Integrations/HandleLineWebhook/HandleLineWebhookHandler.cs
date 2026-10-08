@@ -1,4 +1,5 @@
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Domain.Integrations;
 using Microsoft.Extensions.Logging;
 
 namespace HappyPaws.Application.Integrations.HandleLineWebhook;
@@ -28,10 +29,13 @@ public enum LineWebhookOutcome
 /// </para>
 /// <list type="bullet">
 /// <item><c>follow</c> answers with a welcome, and if the address belongs to a customer who had
-/// blocked the account, starts sending to them again.</item>
+/// blocked the account, starts sending to them again. It also notes the follower, with the name
+/// and picture LINE gives, for the counter's list (<c>docs/contract-extensions.md § 18</c>).</item>
 /// <item><c>unfollow</c> stops pushes to that customer at once ("หยุดส่งเข้าแชตทันที"). LINE would
-/// refuse them anyway; marking it saves a failed call per message and shows in the log why.</item>
-/// <item><c>message</c> answers that the account sends notifications and is not staffed.</item>
+/// refuse them anyway; marking it saves a failed call per message and shows in the log why. The
+/// follower's name and picture are dropped.</item>
+/// <item><c>message</c> answers that the account sends notifications and is not staffed, and moves
+/// the writer to the top of the counter's list: how someone who followed long ago is found.</item>
 /// <item><c>postback</c> runs one of the five chat buttons through <see cref="LinePostbackExecutor"/>.</item>
 /// </list>
 /// <para>
@@ -42,6 +46,7 @@ public enum LineWebhookOutcome
 public sealed class HandleLineWebhookHandler(
     ILineGateway line,
     ILineAddressBook addresses,
+    ILineFollowerRepository followers,
     LinePostbackExecutor postbacks,
     IUnitOfWork unitOfWork,
     IClock clock,
@@ -100,6 +105,7 @@ public sealed class HandleLineWebhookHandler(
                     await unitOfWork.SaveChangesAsync(cancellationToken);
                 }
 
+                await NoteFollowerAsync(userId, followed: true, cancellationToken);
                 await ReplyAsync(item, new LineReply(returning ? LineReplies.WelcomeBack : LineReplies.Welcome), cancellationToken);
                 break;
             }
@@ -111,14 +117,20 @@ public sealed class HandleLineWebhookHandler(
                 if (customer is not null)
                 {
                     customer.MarkLineUnfollowed(clock.UtcNow);
-                    await unitOfWork.SaveChangesAsync(cancellationToken);
                 }
 
+                if (await followers.FindTrackedAsync(userId, cancellationToken) is { } follower)
+                {
+                    follower.Unfollow(clock.UtcNow);
+                }
+
+                await unitOfWork.SaveChangesAsync(cancellationToken);
                 break;
             }
 
             case "message":
                 await ReplyAsync(item, new LineReply(LineReplies.AutoReply(line.PortalUrl)), cancellationToken);
+                await NoteFollowerAsync(userId, followed: false, cancellationToken);
                 break;
 
             case "postback":
@@ -131,6 +143,60 @@ public sealed class HandleLineWebhookHandler(
                 await ReplyAsync(item, reply, cancellationToken);
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// Keeps the follower list for the counter up to date (<c>docs/contract-extensions.md § 18</c>).
+    /// <para>
+    /// A follow records the person, or brings a returning one back, with the name and picture LINE
+    /// reports. A message only moves a known follower to the top; someone not seen before is
+    /// recorded only if no customer already has the address, because they can only have followed
+    /// before the list was kept, and the counter may be waiting for them to appear.
+    /// </para>
+    /// <para>
+    /// Never fails the event: the welcome and the customer's own record matter more than the list.
+    /// </para>
+    /// </summary>
+    private async Task NoteFollowerAsync(string userId, bool followed, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var now = clock.UtcNow;
+            var follower = await followers.FindTrackedAsync(userId, cancellationToken);
+
+            if (follower is not null && !followed)
+            {
+                follower.Seen(now);
+            }
+            else
+            {
+                if (follower is null)
+                {
+                    if (!followed && await addresses.FindTrackedAsync(userId, cancellationToken) is not null)
+                    {
+                        return;
+                    }
+
+                    follower = LineFollower.Record(userId, now);
+                    followers.Add(follower);
+                }
+                else
+                {
+                    follower.Refollow(now);
+                }
+
+                if (await line.ProfileAsync(userId, cancellationToken) is { } profile)
+                {
+                    follower.UpdateProfile(profile.DisplayName, profile.PictureUrl);
+                }
+            }
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "LINE follower could not be recorded");
         }
     }
 

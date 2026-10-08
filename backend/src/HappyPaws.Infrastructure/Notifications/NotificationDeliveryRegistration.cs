@@ -34,6 +34,7 @@ internal static class NotificationDeliveryRegistration
         services.AddScoped<LineCredentialResolver>();
         services.AddScoped<ILineGateway, LineGateway>();
         services.AddScoped<ILineAddressBook, LineAddressBook>();
+        services.AddScoped<ILineFollowerRepository, LineFollowerRepository>();
 
         // Registration order is not routing order; DeliveringNotificationChannel orders them.
         services.AddScoped<IDeliveryRoute, LineDeliveryRoute>();

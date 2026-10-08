@@ -6,6 +6,9 @@ namespace HappyPaws.Infrastructure.Persistence.Configurations.Customers;
 
 internal sealed class CustomerConfiguration : EntityConfiguration<Customer>
 {
+    /// <summary>The unique LINE address. Named, because the error translator matches on it.</summary>
+    public const string LineAddressIndex = "ix_customers_line_user_id";
+
     protected override void ConfigureEntity(EntityTypeBuilder<Customer> builder)
     {
         builder.ToTable("customers");
@@ -22,7 +25,8 @@ internal sealed class CustomerConfiguration : EntityConfiguration<Customer>
         // about whose appointment a chat button means. Partial, like user_id: most have none.
         builder.HasIndex(customer => customer.LineUserId)
             .IsUnique()
-            .HasFilter("line_user_id IS NOT NULL");
+            .HasFilter("line_user_id IS NOT NULL")
+            .HasDatabaseName(LineAddressIndex);
 
         // The counter's duplicate check ("ตรวจซ้ำด้วยเบอร์โทร") is a lookup, not a constraint — two
         // people in one household legitimately share a number, and the merge endpoint exists

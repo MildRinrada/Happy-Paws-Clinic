@@ -1,6 +1,7 @@
 using HappyPaws.Api.Authorization;
 using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Application.Prescriptions.Dtos;
+using HappyPaws.Application.Prescriptions.ListDrugOptions;
 using HappyPaws.Application.Prescriptions.ListPrescriptions;
 using HappyPaws.Domain.Access;
 using Microsoft.AspNetCore.Mvc;
@@ -8,8 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace HappyPaws.Api.Controllers.Staff;
 
 /// <summary>
-/// The medication history. Writing a prescription is a consultation route
-/// (<c>POST /staff/consultations/{id}/prescriptions</c>); dispensing one is in
+/// The medication history, and the prescriber's drug picker. Writing a prescription is a
+/// consultation route (<c>POST /staff/consultations/{id}/prescriptions</c>); dispensing one is in
 /// <see cref="PrescriptionDispenseController"/>.
 /// </summary>
 [ApiController]
@@ -43,4 +44,32 @@ public sealed class PrescriptionsController : ControllerBase
         handler.HandleAsync(
             new ListPrescriptionsQuery(petId, dispensed, limit is 0 ? CursorPaging.DefaultLimit : limit, cursor),
             cancellationToken);
+
+    /// <summary>
+    /// <c>GET /staff/prescriptions/drug-options?q=&amp;branch=&amp;limit=</c> — the medicines a prescriber can
+    /// pick, with the selling price and the stock status at one branch. <b>Not in the API reference</b>
+    /// (<c>docs/contract-extensions.md § 20</c>).
+    /// <para>
+    /// <c>rx:write</c>, the scope that writes a prescription, and not <c>inventory:read</c>: a vet
+    /// needs to see which drugs are stocked, not the stock room's lots, costs and orders. The answer is
+    /// <c>{ "branch_id": "...", "data": [...] }</c>.
+    /// </para>
+    /// </summary>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="q">Part of the drug's name.</param>
+    /// <param name="branch">The branch whose stock is shown; normally the case's.</param>
+    /// <param name="limit">1 to 50; 20 when absent.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpGet("drug-options")]
+    [RequireScope(Scopes.Prescription.Write)]
+    [ProducesResponseType<DrugOptionsDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public Task<DrugOptionsDto> DrugOptions(
+        [FromServices] ListDrugOptionsHandler handler,
+        [FromQuery] string? q,
+        [FromQuery] string? branch,
+        [FromQuery] int? limit,
+        CancellationToken cancellationToken) =>
+        handler.HandleAsync(new ListDrugOptionsQuery(q, branch, limit), cancellationToken);
 }

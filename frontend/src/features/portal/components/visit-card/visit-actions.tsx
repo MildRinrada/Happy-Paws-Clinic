@@ -21,8 +21,8 @@ export function VisitActions({ appointmentId, canCheckIn, canReschedule }: Visit
       <div className="flex gap-3">
         {canCheckIn && appointmentId && <CheckInButton appointmentId={appointmentId} onError={setError} />}
 
-        {canReschedule && (
-          <Link href={visitCard.reschedule.href} className={outlineButton}>
+        {canReschedule && appointmentId && (
+          <Link href={visitCard.reschedule.href(appointmentId)} className={outlineButton}>
             {visitCard.reschedule.label}
           </Link>
         )}

@@ -81,4 +81,10 @@ public static class ErrorCodes
 
     /// <summary>409 — an issue or transfer asks for more usable units than the branch holds; <c>details.available</c> says how many.</summary>
     public const string InsufficientStock = "insufficient_stock";
+
+    /// <summary>
+    /// 409 — the LINE address is already on another customer's record; <c>details.customer_id</c>
+    /// names it when known. See <c>docs/contract-extensions.md § 18</c>.
+    /// </summary>
+    public const string LineAddressTaken = "line_address_taken";
 }

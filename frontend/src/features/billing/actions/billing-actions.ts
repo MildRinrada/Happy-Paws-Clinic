@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { runAction } from '@/lib/actions/action-result';
+import { applyDiscount } from '../api/applyDiscount';
 import { collectPayment } from '../api/collectPayment';
 import { issueReceipt } from '../api/issueReceipt';
+import { refundPayment } from '../api/refundPayment';
 import { voidInvoice } from '../api/voidInvoice';
 
 /**
@@ -70,6 +72,48 @@ const voiding = z.object({
 export async function voidInvoiceAction(input: z.infer<typeof voiding>) {
   const parsed = voiding.parse(input);
   const result = await runAction(() => voidInvoice(parsed.invoiceId, parsed.version, parsed.reason));
+
+  revalidate(parsed.invoiceId);
+
+  return result;
+}
+
+const discount = z
+  .object({
+    invoiceId: z.string().min(1),
+    version: z.number().int().nonnegative(),
+    reason: z.string().trim().min(1).max(500),
+    approvedByStaffId: z.string().trim().min(1).max(40),
+    amountSatang: z.number().int().positive().optional(),
+    percent: z.number().positive().max(100).optional(),
+  })
+  // The API's own rule, restated so a malformed call never leaves the server: one or the other.
+  .refine((value) => (value.amountSatang === undefined) !== (value.percent === undefined));
+
+export async function applyDiscountAction(input: z.infer<typeof discount>) {
+  const parsed = discount.parse(input);
+  const result = await runAction(() => applyDiscount(parsed));
+
+  // Marked stale on a refusal too: after a `version_conflict` the page re-reads the bill, so the
+  // figures beside the form are the new ones by the time the cashier reads the message.
+  revalidate(parsed.invoiceId);
+
+  return result;
+}
+
+const refund = z.object({
+  invoiceId: z.string().min(1),
+  version: z.number().int().nonnegative(),
+  amountSatang: z.number().int().positive(),
+  reason: z.string().trim().min(1).max(500),
+  method: z.enum(['cash', 'card', 'promptpay']).optional(),
+  paymentId: z.string().trim().min(1).max(40).optional(),
+  idempotencyKey: z.uuid(),
+});
+
+export async function refundPaymentAction(input: z.infer<typeof refund>) {
+  const parsed = refund.parse(input);
+  const result = await runAction(() => refundPayment(parsed));
 
   revalidate(parsed.invoiceId);
 

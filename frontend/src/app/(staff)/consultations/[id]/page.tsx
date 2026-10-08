@@ -125,7 +125,7 @@ export default async function ConsultationPage({
 
           <PartCard id="prescriptions" title={text.prescriptions.title}>
             <PrescriptionList prescriptions={consultation.prescriptions} />
-            {open && context.can(Scope.PrescriptionWrite) && <PrescriptionForm consultationId={consultation.id} />}
+            {open && context.can(Scope.PrescriptionWrite) && <PrescriptionForm consultationId={consultation.id} branchId={consultation.branch_id} />}
           </PartCard>
 
           {open && (

@@ -88,4 +88,23 @@ public class CatalogueAndOrderTests
 
         Assert.Throws<DomainException>(() => unknown.RecordDispenseOutcome(null, stockDeducted: true, chargedUnitPriceSatang: null));
     }
+
+    [Fact]
+    public void A_drug_picked_from_stock_is_linked_when_written_and_dispensed_only_against_that_item()
+    {
+        var typed = Prescription.Write("con_1", "pet_1", "stf_1", Now, "Meloxicam 1mg", "1 เม็ด", "วันละครั้ง", 5, 5);
+        Assert.False(typed.IsLinkedToStock);
+
+        var picked = Prescription.Write("con_1", "pet_1", "stf_1", Now, "Meloxicam 1 mg", "1 เม็ด", "วันละครั้ง", 5, 5, inventoryItemId: " itm_1 ");
+        Assert.True(picked.IsLinkedToStock);
+        Assert.Equal("itm_1", picked.InventoryItemId);
+
+        picked.Dispense("stf_2", Now);
+
+        Assert.Throws<DomainException>(() => picked.RecordDispenseOutcome("itm_2", stockDeducted: true, chargedUnitPriceSatang: 800));
+        Assert.Throws<DomainException>(() => picked.RecordDispenseOutcome(null, stockDeducted: false, chargedUnitPriceSatang: null));
+
+        picked.RecordDispenseOutcome("itm_1", stockDeducted: true, chargedUnitPriceSatang: 800);
+        Assert.Equal(4_000, picked.ChargedSatang);
+    }
 }

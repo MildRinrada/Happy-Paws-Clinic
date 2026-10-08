@@ -34,6 +34,8 @@ export interface AutomationStats {
 
 export interface Automation {
   id: string;
+  /** For `If-Match` on an edit or a delete (docs/contract-extensions.md § 19). */
+  version: number;
   name: string;
   enabled: boolean;
   trigger: AutomationTrigger;
@@ -51,6 +53,18 @@ export interface CreateAutomationInput {
   condition: { branch_id?: string; species?: string; vaccine_name?: string; unconfirmed_only?: boolean };
   action: { type: 'send_notification'; channel: AutomationChannel };
   enabled: boolean;
+}
+
+/**
+ * `PATCH /staff/automations/{id}` (docs/contract-extensions.md § 19). Every part optional; an
+ * empty condition string clears it. What the rule watches (`trigger.type`) cannot change.
+ */
+export interface UpdateAutomationInput {
+  name?: string;
+  trigger?: AutomationTrigger;
+  condition?: { species?: string; vaccine_name?: string; unconfirmed_only?: boolean };
+  action?: { channel: AutomationChannel };
+  enabled?: boolean;
 }
 
 export interface Reminder {

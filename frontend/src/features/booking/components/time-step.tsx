@@ -22,19 +22,24 @@ interface TimeStepProps {
   serviceId: string;
   branchId: string;
   vetNames: Record<string, string>;
-  /** Hold this time. Without a vet, the backend picks whoever is free. */
-  onPick: (startsAt: string, staffId?: string) => void;
+  /**
+   * Hold this time. Without a vet, the backend picks whoever is free. `freeStaffIds` lists every vet
+   * free at that time when it is known (a time from the grid), for a caller that picks the vet itself.
+   */
+  onPick: (startsAt: string, staffId?: string, freeStaffIds?: string[]) => void;
   holding: boolean;
   refusal?: PickRefusal;
   onBack: () => void;
+  /** The clinic day to open on (`YYYY-MM-DD`). Today when left out. */
+  initialDay?: string;
 }
 
 type SlotState = { status: 'loading' } | { status: 'ready'; slots: Slot[] } | { status: 'error'; message: string };
 
 /** Step 2: a day, optionally a vet, and one of the free times. */
-export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refusal, onBack }: TimeStepProps) {
+export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refusal, onBack, initialDay }: TimeStepProps) {
   const text = bookingPage.time;
-  const [day, setDay] = useState(() => nextClinicDays(1)[0]!);
+  const [day, setDay] = useState(() => initialDay ?? nextClinicDays(1)[0]!);
   const [vet, setVet] = useState('');
   const [state, setState] = useState<SlotState>({ status: 'loading' });
 
@@ -90,7 +95,7 @@ export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refus
         {state.status === 'loading' && <p className="text-sm text-site-muted">{text.loading}</p>}
         {state.status === 'error' && <Alert>{state.message}</Alert>}
         {state.status === 'ready' && times.length === 0 && <p className="text-sm text-site-muted">{text.none}</p>}
-        {times.length > 0 && <SlotGrid times={times} disabled={holding} onPick={(time) => onPick(time.startsAt, vet || undefined)} />}
+        {times.length > 0 && <SlotGrid times={times} disabled={holding} onPick={(time) => onPick(time.startsAt, vet || undefined, time.staffIds)} />}
         {holding && <p className="text-sm text-site-muted">{text.holding}</p>}
       </section>
 

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { CalendarBoard } from '@/features/appointments/components/calendar/calendar-board';
 import { DayNav } from '@/features/appointments/components/calendar/day-nav';
+import { waitingListText } from '@/features/appointments/content/advanced-booking';
 import { appointmentCalendar } from '@/features/appointments/content/appointment-calendar';
 import { appointmentPaths } from '@/features/appointments/lib/appointment-paths';
 import { calendarDay } from '@/features/appointments/lib/calendar-day';
@@ -58,9 +59,14 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         subtitle={`${branch.name} / ${formatLongDate(day)} / ${text.summary(view.items.length, live)}`}
         actions={
           canWrite && (
-            <Link href={appointmentPaths.book(day)} className={buttonClass()}>
-              {text.book}
-            </Link>
+            <>
+              <Link href={appointmentPaths.waitingList} className={buttonClass('secondary')}>
+                {waitingListText.link}
+              </Link>
+              <Link href={appointmentPaths.book(day)} className={buttonClass()}>
+                {text.book}
+              </Link>
+            </>
           )
         }
       />

@@ -21,6 +21,12 @@ public interface ICustomerRepository
     Task<Customer?> FindTrackedByIdAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The record carrying this LINE address, merged ones included, since the unique index covers
+    /// them too. For the link's "already someone else's" answer (<c>docs/contract-extensions.md § 18</c>).
+    /// </summary>
+    Task<Customer?> WithLineAddressAsync(string lineUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// <c>GET /staff/customers?q=</c> — "ค้นด้วยชื่อ เบอร์ HN หรือชื่อสัตว์".
     /// <para>
     /// One query across four things a counter might be told: the person's name, their phone, a

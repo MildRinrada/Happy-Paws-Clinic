@@ -6,6 +6,7 @@ namespace HappyPaws.Application.Automation.Dtos;
 
 /// <summary>A rule as <c>GET</c> and <c>POST /staff/automations</c> return it.</summary>
 /// <param name="Id"><c>atm_...</c>.</param>
+/// <param name="Version">For <c>If-Match</c> on an edit or a delete (<c>docs/contract-extensions.md § 19</c>).</param>
 /// <param name="Name">What staff call it.</param>
 /// <param name="Enabled">Whether the scheduler runs it.</param>
 /// <param name="Trigger">What it watches and when it sends.</param>
@@ -16,6 +17,7 @@ namespace HappyPaws.Application.Automation.Dtos;
 /// <param name="CreatedAt">When it was made.</param>
 public sealed record AutomationDto(
     string Id,
+    uint Version,
     string Name,
     bool Enabled,
     AutomationTriggerDto Trigger,
@@ -27,6 +29,7 @@ public sealed record AutomationDto(
 {
     public static AutomationDto From(AutomationRule rule, AutomationStats stats) => new(
         rule.Id,
+        rule.Version,
         rule.Name,
         rule.Enabled,
         new AutomationTriggerDto(

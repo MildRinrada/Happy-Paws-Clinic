@@ -59,15 +59,22 @@ public sealed record AddTreatmentRequest(
 /// <c>409 allergy_conflict</c>. Its value is the prescriber's reason, and it is stored on the
 /// prescription and written to the audit log.
 /// </para>
+/// <para>
+/// <c>inventory_item_id</c> is not in the API reference (<c>docs/contract-extensions.md § 20</c>):
+/// the drug picked from stock through <c>GET /staff/prescriptions/drug-options</c>. With it,
+/// <c>drug_name</c> may be left out and the item's name is written, and the dispense takes and
+/// charges that item whatever the name says. Without it, nothing changes.
+/// </para>
 /// </summary>
 public sealed record AddPrescriptionRequest(
-    string DrugName,
+    string? DrugName,
     string Dose,
     string Frequency,
     int DurationDays,
     int Quantity,
     string? Instructions = null,
-    string? AcknowledgeAllergy = null);
+    string? AcknowledgeAllergy = null,
+    string? InventoryItemId = null);
 
 /// <summary>
 /// <c>POST /staff/consultations/{id}/close</c>. <c>follow_up</c> is optional — "สร้างนัดติดตาม"

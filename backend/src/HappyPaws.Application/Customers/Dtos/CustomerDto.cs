@@ -1,3 +1,4 @@
+using HappyPaws.Application.Customers.LineAddress;
 using HappyPaws.Application.Patients.Dtos;
 using HappyPaws.Domain.Customers;
 
@@ -36,12 +37,17 @@ public sealed record CustomerDto(
 /// the person stands in front of them. Splitting the balance into a second call would mean a screen
 /// that renders before it knows whether to ask for money.
 /// </para>
+/// <para>
+/// <c>Line</c> is not in the API reference: where the customer's LINE messages go, added with the
+/// counter's way of setting it (<c>docs/contract-extensions.md § 18</c>).
+/// </para>
 /// </summary>
 public sealed record CustomerDetailDto(
     CustomerDto Customer,
     IReadOnlyList<PetSummaryDto> Pets,
     long OutstandingSatang,
-    InvitationDto? Invitation);
+    InvitationDto? Invitation,
+    CustomerLineDto Line);
 
 /// <summary>The state of a portal invitation, for the counter's "have we asked them yet".</summary>
 public sealed record InvitationDto(

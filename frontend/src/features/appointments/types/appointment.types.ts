@@ -41,7 +41,22 @@ export interface NewStaffAppointment {
   reason?: string;
 }
 
-/** `POST /staff/appointments/{id}/no-show` — the customer's record under the cancellation policy. */
+/**
+ * A customer's missed and late-cancelled visits, counted from the calendar. `fee_due_satang` is
+ * what the latest strike carries under the cancellation policy: reported, never charged on its own.
+ */
+export interface CustomerAttendance {
+  customer_id: string;
+  no_shows: number;
+  late_cancellations: number;
+  strikes_in_window: number;
+  window_days: number;
+  free_allowance: number;
+  fee_due_satang: number;
+}
+
+/** `POST /staff/appointments/{id}/no-show` — the changed appointment and where the customer now stands. */
 export interface NoShowResult {
   appointment: Appointment;
+  attendance: CustomerAttendance;
 }

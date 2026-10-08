@@ -9,6 +9,8 @@
 | GET | `/staff/automations` | `automation:read` | กติกาทั้งหมดพร้อมสถิติการส่งย้อนหลัง |
 | POST | `/staff/automations` | `automation:manage` | สร้างกติกา |
 | POST | `/staff/automations/{id}/simulate` | `automation:manage` | ดูว่าจะส่งถึงใคร ด้วยข้อความอะไร ก่อนเปิดใช้จริง |
+| PATCH | `/staff/automations/{id}` | `automation:manage` | เปิด ปิด หรือแก้ชื่อ เวลา เงื่อนไข และช่องทาง (ส่วนขยาย § 19) |
+| DELETE | `/staff/automations/{id}` | `automation:manage` | ลบกติกา ประวัติที่ส่งไปแล้วยังอยู่ (ส่วนขยาย § 19) |
 | GET | `/staff/reminders/upcoming` | `automation:read` | ข้อความที่กติกาซึ่งเปิดอยู่จะส่งใน 7 วันข้างหน้า |
 
 ## กติกาหนึ่งข้อ
@@ -51,7 +53,32 @@ POST /v1/staff/automations
 
 **enabled** เป็น `false` ถ้าไม่ส่ง กติกาที่เพิ่งสร้างจะส่งข้อความถึงลูกค้าจริงในรอบถัดไป ค่าเริ่มต้นที่ปลอดภัยกว่าคือปิดไว้ แล้วใช้ simulate ดูก่อน
 
-คำตอบเป็น `201` พร้อมกติกา การสร้างเขียน `automation.created` ลง audit log
+คำตอบเป็น `201` พร้อมกติกา การสร้างเขียน `automation.created` ลง audit log กติกาทุกตัวในคำตอบมี `version` ไว้ส่งเป็น `If-Match` ตอนแก้หรือลบ
+
+## แก้ เปิดปิด และลบกติกา
+
+contract มีแค่สร้าง อ่าน และ simulate สองเส้นนี้เป็นส่วนขยาย [contract-extensions.md § 19](../contract-extensions.md)
+
+```json
+PATCH /v1/staff/automations/atm_starter_visit_24h
+{ "enabled": true }
+
+PATCH /v1/staff/automations/atm_...
+{ "name": "เตือนวัคซีน 7 วัน", "trigger": { "offset_days": 7, "send_time": "10:00" }, "condition": { "species": "" }, "action": { "channel": "line" } }
+```
+
+- **รูปเดียวกับตอนสร้าง ทุกส่วนไม่บังคับ** ส่วนที่ไม่ส่งคงเดิม ระบบวางส่วนที่ส่งทับกติกาเดิม แล้วตรวจด้วย validator ตัวเดียวกับ `POST` error จึงชี้ช่องเดียวกัน
+- **`trigger.type` เปลี่ยนไม่ได้** (`422`) เทมเพลตและชนิดของเรื่องผูกกับ trigger ถ้าต้องการเตือนเรื่องอื่นให้สร้างกติกาใหม่
+- ส่ง `offset_days` หรือ `offset_hours` คือแทนเวลาทั้งชุด ส่งแค่ `send_time` คือเลื่อนเวลาของกติกาที่นับเป็นวัน
+- เงื่อนไขที่ส่งเป็นสตริงว่างคือลบเงื่อนไขนั้น `branch_id` ว่างคือทั้งคลินิก ซึ่งทำได้เฉพาะผู้ที่ไม่ถูกจำกัดสาขา
+- ส่ง `If-Match` ได้ ถ้า version ไม่ตรงตอบ `409 version_conflict`
+- การแก้เขียน `automation.updated` พร้อมรายชื่อช่องที่เปลี่ยน การลบเขียน `automation.deleted`
+
+**แก้แล้วไม่ส่งซ้ำ** กุญแจ "ส่งแล้ว" คือกติกา เรื่อง และวันครบกำหนดหรือเวลาเริ่มของเรื่อง ไม่มีเวลาส่งอยู่ในนั้น นัดที่ได้ข้อความ "ก่อน 24 ชั่วโมง" ไปแล้ว จึงไม่ได้ "ก่อน 2 ชั่วโมง" อีกจากกติกาเดิมหลังแก้ ปิดแล้วเปิดใหม่ก็ไม่ส่งซ้ำ ถ้าต้องการเตือนสองครั้ง ให้มีสองกติกา เลื่อนเวลาให้เร็วขึ้น หรือเปิดกติกาที่ปิดไว้นาน ใช้กติกาส่งตามหลัง 12 ชั่วโมงเดิม เรื่องที่จุดเตือนผ่านไปนานกว่านั้นไม่ได้ข้อความ
+
+**ลบคือซ่อนและหยุด ไม่ใช่ลบแถว** กติกาที่ลบถูกปิด มี `deleted_at` และ `deleted_by_staff_id` หายจากรายการ simulate upcoming และการรันจริง และ `PATCH` หรือ `DELETE` ซ้ำได้ `404` แต่แถวกับ `automation_dispatches` ยังอยู่ ประวัติการส่งจึงยังบอกได้ว่าข้อความเดือนก่อนมาจากกติกาไหน ไม่มีทางกู้กติกาที่ลบแล้ว
+
+รอบของตัวตั้งเวลาที่โหลดกติกาไปแล้วก่อนการปิดหรือลบ อาจส่งรอบนั้นจนจบ รอบถัดไปไม่เห็นกติกานั้นแล้ว
 
 ## ใครได้ข้อความ
 
@@ -92,7 +119,8 @@ body ไม่บังคับ `days` ได้ 1 ถึง 30 ค่าเร
 
 ### สาขา
 
-- กติกาเป็นของสาขาเดียวหรือทั้งคลินิก พนักงานที่ผูกสาขาเห็นกติกาของสาขาตัวเองกับกติกาทั้งคลินิก กติกาของสาขาอื่นได้ `403` ทั้งตอน simulate และตอนสร้าง
+- กติกาเป็นของสาขาเดียวหรือทั้งคลินิก พนักงานที่ผูกสาขาเห็นกติกาของสาขาตัวเองกับกติกาทั้งคลินิก กติกาของสาขาอื่นได้ `403` ทั้งตอน simulate ตอนสร้าง ตอนแก้ และตอนลบ
+- พนักงานที่ผูกสาขาแก้ เปิดปิด หรือลบกติกาทั้งคลินิกไม่ได้ (`403`) รวมกติกาเริ่มต้นทั้งสี่ แต่ยังดูและ simulate ได้
 - ใน simulate และ upcoming พนักงานที่ผูกสาขาเห็นเฉพาะแถวของสาขาตัวเอง และแถวที่ไม่ผูกสาขา กติกายังส่งครบ การกรองมีผลแค่สิ่งที่แสดง
 
 ## ตัวตั้งเวลา
@@ -132,7 +160,7 @@ migration ใส่กติกาให้สี่ข้อ ทั้งหม
 | `atm_starter_visit_2h` | เตือนนัดล่วงหน้า 2 ชั่วโมง |
 | `atm_starter_plan_1d` | เตือนรอบแผนการรักษาล่วงหน้า 1 วัน เวลา 09:00 |
 
-contract ไม่มีทางเปิดหรือปิดกติกาที่มีอยู่ (ไม่มี `PATCH`) ตอนนี้ทางเปิดใช้คือ simulate กติกาเริ่มต้นเพื่อดูผล แล้วสร้างกติกาเดียวกันด้วย `enabled: true` ดูหัวข้อข้อจำกัด
+ทางเปิดใช้คือ simulate กติกาเริ่มต้นเพื่อดูผลก่อน แล้วเปิดสวิตช์ (`PATCH` ด้วย `{ "enabled": true }`) กติกาเริ่มต้นเป็นของทั้งคลินิก จึงเปิดได้เฉพาะผู้ที่ไม่ถูกจำกัดสาขา
 
 ## หน้าจอ
 
@@ -146,17 +174,23 @@ contract ไม่มีทางเปิดหรือปิดกติก�
 - การ์ดของกติกาบอกเรื่อง เวลา สาขา เงื่อนไข ช่องทาง และสถิติ (ส่งแล้ว ข้าม ไม่สำเร็จ 30 วันล่าสุด ครั้งล่าสุด)
 - ปุ่ม **ดูตัวอย่างผู้รับ** เลือกดูล่วงหน้า 1 ถึง 30 วัน แสดงผู้รับ ข้อความ และสถานะของแต่ละแถว
 - กติกาที่สร้างจากหน้าเว็บผูกกับสาขาที่เลือกอยู่ในคอนโซล กติกาทั้งคลินิกสร้างได้ผ่าน API เท่านั้น
+- **สวิตช์เปิดปิด** มุมขวาบนของการ์ด ปิดกดครั้งเดียว เปิดต้องกดยืนยันอีกครั้ง เพราะกติกาจะเริ่มส่งข้อความถึงลูกค้าจริงในรอบถัดไป
+- **แก้ไข** เปิดฟอร์มในการ์ด ใช้ช่องชุดเดียวกับฟอร์มสร้าง (ชื่อ เวลา เงื่อนไข ช่องทาง) เรื่องที่เฝ้าดูแสดงไว้แต่เปลี่ยนไม่ได้
+- **ลบ** ต้องกดยืนยันอีกครั้ง กติกาหายจากรายการ ประวัติการส่งยังอยู่
+- ทั้งสามอย่างขึ้นเมื่อถือ `automation:manage` และกติกาทั้งคลินิกขึ้นเฉพาะผู้ที่ไม่ถูกจำกัดสาขา คนอื่นเห็นข้อความบอกแทน
+- ทุกอย่างส่ง `version` ของกติกาไปด้วย หน้าที่เก่าได้ข้อความให้โหลดใหม่
 - หน้าประวัติการส่งมีที่มาใหม่ `automation` (เตือนอัตโนมัติ) ไว้กรอง
 
 ## ข้อจำกัดที่รู้อยู่
 
 | เรื่อง | สถานะ |
 |---|---|
-| เปิด ปิด แก้ หรือลบกติกา | contract ไม่มี endpoint เสนอส่วนขยาย `PATCH /staff/automations/{id}` (อย่างน้อย `enabled`) ยังไม่ได้ทำ เพราะต้องได้รับอนุมัติก่อน |
+| แก้หลังส่งไปแล้ว | เรื่องที่ได้ข้อความจากกติกาไปแล้วไม่ได้ข้อความตามเวลาใหม่ ต้องสร้างกติกาที่สอง |
+| กู้กติกาที่ลบ | ทำไม่ได้ สร้างใหม่แทน |
 | ถ้อยคำของข้อความ | ใช้เทมเพลตกลางใน `NotificationTemplateCatalogue` กติกาเลือกถ้อยคำเองไม่ได้ |
 | ส่งตามหลังหลังระบบดับนาน | เกิน 12 ชั่วโมงไม่ส่ง ปรับได้ที่ `Jobs:Automations:CatchUpHours` (1 ถึง 72) |
 | ข้อความที่ worker ตายกลางทาง | บันทึกเป็น `lost` ไม่ส่งซ้ำ |
-| LINE | ยังไม่มีทางบันทึก LINE user id ของลูกค้า ข้อความจึงไปทาง SMS หรืออีเมล ดู [LINE](line.md) |
+| LINE | ข้อความไปทาง LINE เมื่อเคาน์เตอร์ผูก LINE ของลูกค้าแล้ว ลูกค้าที่ยังไม่ผูกได้ทาง SMS หรืออีเมล ดู [LINE](line.md#ที่อยู่-line-ของลูกค้า) |
 | trigger อื่น | วันเกิด ลูกค้าหายไปนาน หรือยาใกล้หมด ยังไม่มี เพิ่มได้ที่ `AutomationTrigger` และ `AutomationSubjectReader` |
 
 ## โค้ด
@@ -165,11 +199,11 @@ contract ไม่มีทางเปิดหรือปิดกติก�
 |---|---|
 | กติกา เวลา และบันทึกส่งแล้ว | `backend/src/HappyPaws.Domain/Automation/` (`AutomationRule.cs`, `AutomationTiming.cs`, `AutomationDispatch.cs`) |
 | ตัวประเมินและการรันจริง | `backend/src/HappyPaws.Application/Automation/Evaluation/AutomationEvaluator.cs`, `RunAutomations/RunAutomationsHandler.cs` |
-| use case | `backend/src/HappyPaws.Application/Automation/` (`ListAutomations/`, `CreateAutomation/`, `SimulateAutomation/`, `ListUpcomingReminders/`) |
+| use case | `backend/src/HappyPaws.Application/Automation/` (`ListAutomations/`, `CreateAutomation/`, `UpdateAutomation/`, `DeleteAutomation/`, `SimulateAutomation/`, `ListUpcomingReminders/`) |
 | ถ้อยคำที่ส่ง | `backend/src/HappyPaws.Application/Automation/AutomationMessages.cs` |
 | SQL หาเรื่องที่ต้องเตือน | `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Automation/AutomationSubjectReader.cs` |
 | การจองข้อความ | `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Automation/AutomationDispatchRepository.cs` |
 | ตัวตั้งเวลา | `backend/src/HappyPaws.Infrastructure/Jobs/` |
 | controller | `backend/src/HappyPaws.Api/Controllers/Staff/AutomationsController.cs`, `AutomationSimulationController.cs`, `RemindersController.cs` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Automation/`, `backend/tests/HappyPaws.UnitTests/Domain/Automation/`, `backend/tests/HappyPaws.UnitTests/Application/Automation/` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Automation/` (รวม `AutomationEditTests.cs`), `backend/tests/HappyPaws.UnitTests/Domain/Automation/`, `backend/tests/HappyPaws.UnitTests/Application/Automation/` |
 | หน้าเว็บ | `frontend/src/app/(staff)/notifications/automations/`, `reminders/`, `frontend/src/features/automation/` |

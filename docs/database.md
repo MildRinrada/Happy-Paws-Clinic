@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  18 migration และ model snapshot
+  Migrations/                  20 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -44,7 +44,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 
 ## ตาราง
 
-มี 62 ตาราง แบ่งตามโมดูลได้ดังนี้
+มี 67 ตาราง แบ่งตามโมดูลได้ดังนี้
 
 | โมดูล | ตาราง |
 |---|---|
@@ -52,17 +52,18 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 | คลินิก | `clinic_profile`, `branches`, `opening_hours`, `clinic_holidays`, `booking_settings`, `queue_settings`, `medical_record_settings`, `clinic_contacts` |
 | บริการและตารางงาน | `clinic_services`, `staff_shifts`, `staff_time_off`, `assignment_rules` |
 | ลูกค้าและสัตว์ | `customers`, `customer_invitations`, `pets`, `pet_ownerships`, `pet_allergies`, `pet_vaccinations`, `pet_documents`, `treatment_plans` |
-| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications`, `notification_deliveries`, `line_channel_settings` |
+| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications`, `notification_deliveries`, `line_channel_settings`, `line_followers` |
 | นัดและคิว | `appointments`, `slot_holds`, `queue_tickets`, `appointment_types`, `cancellation_policy`, `waiting_list` |
 | การตรวจ | `consultations`, `consultation_vitals`, `consultation_findings`, `consultation_diagnoses`, `consultation_treatments`, `prescriptions`, `treatment_templates` |
 | แล็บ | `lab_requests`, `lab_results` |
 | เวชระเบียน | `medical_records`, `medical_record_amendments` |
 | การเงินและแพ็กเกจ | `invoices`, `invoice_lines`, `invoice_discounts`, `invoice_payments`, `invoice_refunds`, `receipts`, `customer_packages` |
+| คลังยา | `inventory_items`, `stock_lots`, `stock_movements`, `purchase_orders`, `purchase_order_lines` |
 | เนื้อหาเว็บ | `articles` |
 | เตือนอัตโนมัติและรายงาน | `automation_rules`, `automation_dispatches`, `report_exports` |
 | ระบบ | `audit_entries`, `idempotency_records` |
 
-ยังไม่มีตารางของคลังยา ข้อความสองทาง และ webhook ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
+ยังไม่มีตารางของข้อความสองทาง และ webhook ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
 
 ### ตารางที่มีแถวเดียว
 
@@ -94,6 +95,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
            │                           │                 ├─ medical_records ── medical_record_amendments
            │                           │                 └─ invoices ─┬─ lines, discounts, payments, refunds
            │                           │                               └─ receipts (หนึ่งต่อบิล)
+           │                           │                 prescriptions ── inventory_items (เมื่อจ่ายแล้วและชื่อตรง)
            └─ customer_consents, data_subject_requests
 ```
 
@@ -102,6 +104,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 - **บัตรคิวสร้างตอนเช็กอิน** บัตร walk-in ไม่มี `appointment_id`
 - **เวชระเบียนเกิดตอนปิดเคส** หนึ่งเคสได้หนึ่งฉบับ แก้ไขด้วยการเพิ่มแถวใน `medical_record_amendments`
 - **น้ำหนักอ่านจาก `consultation_vitals`** ไม่มีตารางน้ำหนักแยก
+- **คลังยา** `inventory_items` ใช้ทั้งคลินิก `stock_lots` คือล็อตของรายการในสาขาหนึ่ง `stock_movements` คือสมุดสต๊อกที่อ้างล็อต และอ้างใบสั่งยาเมื่อเป็นการจ่ายยา `purchase_orders` เป็นของสาขาหนึ่ง แถวของใบ cascade จากใบ ดู [สต๊อกยาและเวชภัณฑ์](features/inventory.md)
 - **foreign key ส่วนใหญ่เป็น `Restrict`** ที่เป็น `Cascade` มีเฉพาะส่วนย่อยของ aggregate เช่นรายการในบิล ส่วนย่อยของเคส และเซสชันของบัญชี `medical_records` ไม่มี cascade จากที่ไหนเลย
 
 ## constraint ที่ถือกฎธุรกิจ
@@ -120,6 +123,12 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | หนึ่งเคสมีเวชระเบียนเดียว | unique index บน `medical_records.consultation_id` | `MedicalRecordConfiguration.cs` |
 | วันหยุดไม่ซ้ำ | unique `(date, branch_id)` แบบ nulls not distinct วันหยุดทั้งคลินิกสองแถวในวันเดียวจึงชนกัน | `ClinicSetupConfiguration.cs` |
 | ผู้ดูแลร่วมและแพ้ยาไม่ซ้ำ | unique `(pet_id, customer_id)` เฉพาะ `revoked_at IS NULL` และ `(pet_id, substance)` เฉพาะ `withdrawn_at IS NULL` | `PetConfiguration.cs`, `PetAllergyConfiguration.cs` |
+| ชื่อรายการในคลังไม่ซ้ำ ใบสั่งยาผูกได้ไม่เกินหนึ่งรายการ | unique index `ux_inventory_items_name_key` บนชื่อที่ตัดช่องว่างซ้ำและเป็นตัวพิมพ์เล็ก `PostgresErrorTranslator` แปลงการชนเป็น `409 inventory_item_exists` | `InventoryConfiguration.cs` |
+| สต๊อกไม่ติดลบ และไม่ถูกเปลี่ยนพร้อมกันสองคำขอ | `ck_stock_lots_quantity_not_negative` และ `pg_advisory_xact_lock` ต่อรายการต่อสาขา ก่อนอ่านล็อตทุกครั้ง การโอนล็อกสองสาขาตามลำดับเดียวกัน | `InventoryConfiguration.cs`, `Repositories/Inventory/StockLedger.cs` |
+| หนึ่งล็อตต่อเลขล็อตและวันหมดอายุในสาขา | unique `(item_id, branch_id, lot_number, expires_on)` แบบ nulls not distinct | `InventoryConfiguration.cs` |
+| รับของไม่เกินที่สั่ง | `ck_purchase_order_lines_received_within_ordered` และล็อกแถวใบสั่งซื้อ (`FOR UPDATE`) ตอนรับ | `InventoryConfiguration.cs`, `PurchaseOrderRepository.cs` |
+| ค่ายาของเคสอยู่ในบิลเสมอ แม้จ่ายยาพร้อมปิดเคส | advisory lock ต่อเคส (`case-billing:`) ที่ทั้งการปิดเคสและการจ่ายยาถือ แล้วอ่านสถานะเคสและใบสั่งยาใหม่หลังได้ lock | `Repositories/Billing/InvoiceRepository.cs` |
+| เลขใบสั่งซื้อไม่ซ้ำ | advisory lock ต่อชุดเลข `PO-YYYYMM-` แบบเดียวกับเลขบิล และ unique index บน `number` | `PurchaseOrderRepository.cs` |
 | พิกัดสาขาครบคู่ | `ck_branches_coordinates_paired` มีทั้ง latitude และ longitude หรือไม่มีเลย | `BranchConfiguration.cs` |
 
 เบอร์โทรลูกค้ามี index แต่ **ไม่ unique** เพราะคนในบ้านเดียวกันใช้เบอร์เดียวกันได้ และมี endpoint รวมรายชื่อซ้ำอยู่แล้ว
@@ -134,6 +143,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | `medical_records`, `medical_record_amendments` | ฉบับเดิมไม่ถูกแตะ การแก้คือแถวใหม่ที่มีเนื้อหาฉบับแก้และ diff |
 | `customer_consents` | หนึ่งแถวต่อการตัดสินใจหนึ่งครั้ง ค่าปัจจุบันคือแถวล่าสุดของแต่ละวัตถุประสงค์ |
 | `invoice_payments`, `invoice_refunds`, `invoice_discounts` | เป็นบัญชีแยกประเภท เงินที่เคลื่อนแล้วแก้ด้วยแถวใหม่ |
+| `stock_movements` | สมุดสต๊อก ของที่บันทึกผิดแก้ด้วยการจ่ายออกหรือปรับยอด ยอดใน `stock_lots` เท่ากับผลรวมของแถวในล็อตนั้นเสมอ |
 
 สองเรื่องที่ต้องระวังเป็นพิเศษ
 
@@ -176,6 +186,8 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 16 | `ClinicContacts` | ตาราง `clinic_contacts` (ช่องทางติดต่อของคลินิก) |
 | 17 | `NotificationDeliveryAndLineChannel` | ตาราง `notification_deliveries` (ประวัติการส่ง หนึ่งแถวต่อหนึ่งครั้งที่ลองส่ง) และ `line_channel_settings` (แถวเดียว) บน `customers` เพิ่ม `line_user_id` (ไม่ซ้ำเมื่อมีค่า) และ `line_unfollowed_at` |
 | 18 | `AutomationAndReportExports` | ตาราง `automation_rules` (กติกาเตือนอัตโนมัติ ใส่กติกาเริ่มต้นสี่ข้อแบบปิดไว้) `automation_dispatches` (บันทึกส่งแล้ว unique `(rule_id, subject_kind, subject_id, due_key)` คือสิ่งที่กันการส่งซ้ำ) และ `report_exports` (งานส่งออกรายงาน) |
+| 19 | `InventoryAndDispensing` | ตาราง `inventory_items` (ชื่อไม่ซ้ำ index trigram สำหรับค้นชื่อ) `stock_lots` (ห้ามยอดติดลบ) `stock_movements` (สมุดสต๊อก) `purchase_orders` และ `purchase_order_lines` บน `prescriptions` เพิ่ม `inventory_item_id`, `stock_deducted` (ค่าเริ่มต้น `false`) และ `charged_unit_price_satang` ใบสั่งยาเดิมจึงเป็นยาที่ไม่ได้ตัดสต๊อกและไม่มีค่ายา |
+| 20 | `LineFollowersAndAutomationEdits` | ตาราง `line_followers` (ผู้ติดตาม LINE ล่าสุดให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า unique `line_user_id` และ index `last_seen_at` แถวที่ไม่ได้ผูกถูกลบเมื่อไม่เห็นเกิน 14 วัน ดู [contract-extensions.md § 18](./contract-extensions.md)) บน `automation_rules` เพิ่ม `deleted_at` และ `deleted_by_staff_id` กติกาที่ลบแล้วเก็บแถวไว้ให้ประวัติการส่งอ้างถึงได้ ([contract-extensions.md § 19](./contract-extensions.md)) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

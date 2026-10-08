@@ -236,7 +236,8 @@ public sealed class Consultation : Entity
         int durationDays,
         int quantity,
         string? instructions = null,
-        string? allergyAcknowledgement = null)
+        string? allergyAcknowledgement = null,
+        string? inventoryItemId = null)
     {
         RequireOpen();
 
@@ -251,7 +252,8 @@ public sealed class Consultation : Entity
             durationDays,
             quantity,
             instructions,
-            allergyAcknowledgement);
+            allergyAcknowledgement,
+            inventoryItemId);
 
         _prescriptions.Add(prescription);
 

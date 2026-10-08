@@ -2,6 +2,7 @@ import { listMyAppointments } from '@/features/appointments/api/listMyAppointmen
 import type { Appointment, AppointmentStatus } from '@/features/appointments/types/appointment.types';
 import { authed } from '@/lib/auth/session';
 import { portalAppointments } from '../content/portal-appointments';
+import { canChangeOnline } from './appointment-rules';
 import { serviceNames, vetNames } from './display-names';
 import { loadPortalHome } from './load-portal-home';
 
@@ -12,6 +13,10 @@ export interface AppointmentRowView {
   status: AppointmentStatus;
   title: string;
   vet: string;
+  /** Shows the "เลื่อนนัด" and "ยกเลิกนัด" actions. */
+  canChange: boolean;
+  /** Cancelled by the owner inside the clinic's policy cut-off, which counts like a no-show. */
+  lateCancellation: boolean;
 }
 
 /** How many of each list the page shows. Older history is for the clinic to look up. */
@@ -41,6 +46,8 @@ export async function loadAppointments(): Promise<{ upcoming: AppointmentRowView
         .filter(Boolean)
         .join(' '),
       vet: (item.staff_id && vets.get(item.staff_id)) || text.vetFallback,
+      canChange: canChangeOnline(item.status, item.starts_at),
+      lateCancellation: item.status === 'cancelled' && Boolean(item.late_cancellation),
     };
   };
 

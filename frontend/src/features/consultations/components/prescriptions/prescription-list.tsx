@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { consultationPage } from '../../content/consultation-page';
 import type { Prescription } from '../../types/consultation.types';
+import { StockLinkBadge } from './stock-link-badge';
 
-/** What was prescribed, and any allergy the vet prescribed over, with their reason. */
+/** What was prescribed, whether each drug is tied to stock, and any allergy the vet prescribed over, with their reason. */
 export function PrescriptionList({ prescriptions }: { prescriptions: Prescription[] }) {
   const text = consultationPage.prescriptions;
 
@@ -14,6 +15,7 @@ export function PrescriptionList({ prescriptions }: { prescriptions: Prescriptio
         <li key={item.id} className="space-y-0.5 py-2">
           <p className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-ink-900">{item.drug_name}</span>
+            <StockLinkBadge linked={Boolean(item.inventory_item_id)} />
             {item.dispensed_at && <Badge tone="green">{text.dispensed}</Badge>}
           </p>
           <p className="text-ink-700">{text.line(item.dose, item.frequency, item.duration_days, item.quantity)}</p>

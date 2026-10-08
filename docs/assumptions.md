@@ -108,7 +108,7 @@ reference เขียน query string ไว้ในช่อง path ขอ�
 
 **สมมติไว้ตอนออกแบบ** ว่า header จำเป็นบน `POST /portal/appointments`, `POST /staff/appointments`, `POST /staff/appointments/recurring`, `POST /staff/queue/tickets`, `POST /appointments/{id}/check-in` (สร้างคิว), `POST /staff/invoices`, `POST /staff/invoices/{id}/payments`, `POST /staff/invoices/{id}/refunds` และ `POST /booking/holds`
 
-**ที่โค้ดทำจริงตอนนี้** endpoint ที่ติด `[Idempotent]` มี 13 เส้น คือ `POST /portal/appointments`, `POST /staff/appointments`, `POST /staff/appointments/recurring`, `POST /staff/pets/{id}/treatment-plans` (จองนัดทั้งคอร์ส), `POST /appointments/{id}/check-in`, `POST /staff/queue/tickets`, `POST /staff/invoices`, `POST /staff/invoices/{id}/payments`, `POST /staff/invoices/{id}/refunds` และงานตรวจอีกสี่เส้น `POST /staff/consultations`, `.../treatments`, `.../prescriptions`, `.../close` (`close` ออกใบแจ้งหนี้ใน transaction เดียวกัน) ส่วน `POST /booking/holds` ไม่ได้ติด เพราะ hold ราคาถูก หมดอายุเอง และ client ที่ส่งซ้ำแค่เสีย slot นั้นไป 10 นาที
+**ที่โค้ดทำจริงตอนนี้** endpoint ที่ติด `[Idempotent]` มี 15 เส้น คือ `POST /portal/appointments`, `POST /staff/appointments`, `POST /staff/appointments/recurring`, `POST /staff/pets/{id}/treatment-plans` (จองนัดทั้งคอร์ส), `POST /appointments/{id}/check-in`, `POST /staff/queue/tickets`, `POST /staff/invoices`, `POST /staff/invoices/{id}/payments`, `POST /staff/invoices/{id}/refunds` และงานตรวจอีกสี่เส้น `POST /staff/consultations`, `.../treatments`, `.../prescriptions`, `.../close` (`close` ออกใบแจ้งหนี้ใน transaction เดียวกัน) และสต๊อกสองเส้น `POST /staff/inventory/movements` กับ `POST /staff/inventory/purchase-orders` (ดู § 42) ส่วน `POST /booking/holds` ไม่ได้ติด เพราะ hold ราคาถูก หมดอายุเอง และ client ที่ส่งซ้ำแค่เสีย slot นั้นไป 10 นาที
 
 **ตัดสินแล้วในโค้ด** endpoint ที่ติด attribute แต่ไม่ส่ง header ถูกปฏิเสธด้วย `400 idempotency_key_required` (`Api/Idempotency/IdempotencyMiddleware.cs`) ไม่ได้ปล่อยผ่านแบบไม่มีการป้องกัน ยังควรยืนยันกับเจ้าของ contract
 
@@ -163,6 +163,10 @@ reference ตั้งชื่อรหัสไว้ห้าตัว (`unau
 | `cutoff_passed` | 409 | ลูกค้าเลื่อนนัดหลังเลยเวลาตัดรอบ (ดู § 15) |
 | `allergy_conflict` | 409 | ใบสั่งยาระบุยาที่สัตว์มีประวัติแพ้ (ดู § 19) |
 | `internal_error` | 500 | ข้อผิดพลาดที่ไม่คาดไว้ ไม่มีรายละเอียดภายในติดไปด้วย |
+
+ส่วนขยาย § 18 ([contract-extensions.md](./contract-extensions.md)) เพิ่ม `line_address_taken` (409 ที่อยู่ LINE อยู่บนลูกค้าคนอื่นแล้ว พร้อม `details.customer_id`)
+
+Inventory เพิ่มสองรหัส คือ `inventory_item_exists` (409 ชื่อรายการซ้ำ พร้อม `details.item_id`) และ `insufficient_stock` (409 จ่ายออกหรือโอนเกินของที่ใช้ได้ พร้อม `details.available`) และรหัสของ domain `invalid_inventory_item`, `invalid_movement`, `over_receipt`, `invalid_adjustment`, `invalid_purchase_order` (ดู § 42)
 
 Billing เพิ่มอีกห้ารหัส ทั้งหมดเป็น `409` และทั้งหมดเกิดจาก aggregate ใบแจ้งหนี้ปฏิเสธคำขอที่รูปแบบถูกต้องแต่ไม่เข้ากับสถานะตอนนั้น (ดู § 24) คือ `invalid_payment`, `invalid_refund`, `invalid_discount`, `invalid_receipt`, `invalid_void` ตามแบบที่ `invalid_treatment` และ `invalid_examination` วางไว้แล้ว คือรหัสของ domain ตั้งชื่อตามสิ่งที่ผิด ไม่ใช่ตาม endpoint ที่ทำให้เกิด
 
@@ -418,7 +422,7 @@ contract เขียนแค่ชื่อสามสถานะ คือ 
 | ธงค่าผิดปกติ | "ค่าที่วัดได้ + ช่วงอ้างอิง ธงค่าผิดปกติ" | คำนวณจากค่ากับช่วงอ้างอิงเมื่อเป็นตัวเลข (`low`, `normal`, `high`) ใช้ค่า `abnormal` ของผู้ส่งเฉพาะผลที่เป็นข้อความ ส่งผลซ้ำได้หลายครั้ง ผลใหม่ทำให้คำขอกลับไปเป็น "ยังไม่มีคนอ่าน" |
 | ผลที่ยังไม่มีคนอ่าน | "งานค้างของหมอ ผลที่ยังไม่มีคนอ่าน" | สามสถานะ `pending`, `resulted`, `reviewed` และส่วนขยาย `POST /staff/lab-requests/{id}/review` ([contract-extensions.md § 11](./contract-extensions.md)) |
 | ตรวจซ้ำซ้อน | "ยาที่เคยจ่ายทั้งหมด ตรวจซ้ำซ้อน" | ยาชื่อเดียวกัน (ดูคำแรกของชื่อ) ที่ช่วงใช้ยาทับกัน ใส่ใน `duplicate_of` ของแต่ละรายการ ไม่รู้จักชื่อการค้าต่างกันของยาตัวเดียวกัน เหมือนการตรวจแพ้ยา (§ 19) |
-| จ่ายยา | "จ่ายยาจริง ตัดสต๊อกและพิมพ์ฉลาก" | บันทึกว่าจ่ายแล้วและคืนข้อมูลฉลาก แต่ **ไม่ตัดสต๊อก** เพราะยังไม่มีโมดูล Inventory คำตอบมี `stock_deducted: false` จ่ายซ้ำตอบ `409` |
+| จ่ายยา | "จ่ายยาจริง ตัดสต๊อกและพิมพ์ฉลาก" | บันทึกว่าจ่ายแล้ว ตัดสต๊อกของสาขาที่เปิดเคส คิดค่ายาลงบิล และคืนข้อมูลฉลาก ใน transaction เดียว ยาที่ไม่พบในคลังหรือสต๊อกไม่พอไม่ถูกปฏิเสธ ดู § 42 จ่ายซ้ำตอบ `409` |
 | เทมเพลตแผนรักษา | "เทมเพลตแผนรักษาที่คลินิกทำไว้เอง" | contract มีแค่ `GET` ไม่มีทางสร้าง ตอนนี้ใส่เทมเพลตด้วยคำสั่ง operator `seed-treatment-templates` เทมเพลตไม่เก็บราคา หัตถการที่ชี้บริการใช้ราคาของบริการในวันที่ใช้ |
 | เอกสาร PDF | "ใบรับรองสุขภาพ ใบส่งตัว สมุดวัคซีน เป็น PDF" | ตอบเป็นไฟล์ PDF ตรง ๆ ไม่เก็บไว้ ใบรับรองและใบส่งตัวต้องออกโดยคนที่มีเลขใบอนุญาตในข้อมูลพนักงาน เพราะชื่อผู้ออกถูกพิมพ์เป็นผู้ลงนาม ทุกครั้งที่ออกเขียนลง access log |
 
@@ -490,9 +494,30 @@ contract เขียนแค่ชื่อสามสถานะ คือ 
 
 **ต้องถาม** สามเรื่อง
 
-1. ไม่มี endpoint ไหนในสัญญาที่บันทึก LINE user id ลงเรกคอร์ดลูกค้าได้ นอกจากเส้นผูกบัญชีที่ถูกตัดออกตามหัวข้อ A ระบบส่ง LINE และรับปุ่มได้ครบ แต่จะถึงลูกค้าจริงเมื่อมีทางบันทึกที่อยู่ ต้องขออนุมัติส่วนขยาย ดู [LINE](features/line.md#ที่อยู่-line-ของลูกค้า)
+1. **ตอบแล้ว** สัญญาไม่มี endpoint ที่บันทึก LINE user id ลงเรกคอร์ดลูกค้า ตอนนี้ใช้ส่วนขยาย [contract-extensions.md § 18](./contract-extensions.md) เคาน์เตอร์เลือกที่อยู่ LINE จากผู้ติดตามล่าสุด เป็นข้อมูลสำหรับส่งตามหัวข้อ A ไม่ใช่การผูกบัญชี ดู [LINE](features/line.md#ที่อยู่-line-ของลูกค้า)
 2. การอ่านเทมเพลตต้องมี `notify:manage` แต่ผู้ส่งต้องรู้ว่าเทมเพลตใช้ค่าอะไร หน้าส่งข้อความจึงเก็บสำเนารายการไว้ฝั่งหน้าเว็บ ถ้าต้องการให้ `notify:send` อ่านได้ ต้องเปลี่ยน scope ของเส้นนี้
 3. สัญญาไม่มี `GET /staff/integrations/line` ตอนนี้อ่านด้วย `PUT` body ว่าง ถ้าต้องการ `GET` ต้องเพิ่มเป็นส่วนขยาย
+
+## 42. สต๊อกยาห้าเส้น และการจ่ายยาที่ตัดสต๊อก
+
+ห้าเส้นของหมวด Inventory มีแค่บรรทัดอธิบาย ไม่มี body ไม่มีรูปคำตอบ และไม่มี endpoint สร้างรายการ ตีความดังนี้ รายละเอียดอยู่ใน [สต๊อกยาและเวชภัณฑ์](features/inventory.md)
+
+| เรื่อง | contract เขียนว่า | ตีความว่า |
+|---|---|---|
+| รายการในคลังเกิดจากไหน | ไม่มี endpoint สร้าง | เกิดครั้งแรกที่รับเข้าหรือสั่งซื้อ ด้วย `new_item` ในการรับเข้าหรือในแถวของใบสั่งซื้อ ชื่อซ้ำตอบ `409 inventory_item_exists` |
+| คงเหลือรายสาขา | "ยาและเวชภัณฑ์ คงเหลือรายสาขา" | รายการเป็นของทั้งคลินิก มีราคาขายและจุดสั่งซื้อเดียว จำนวนเก็บเป็นล็อตต่อสาขา คืนทั้งแคตตาล็อกไม่แบ่งหน้า มีแถวต่อสาขาในขอบเขตของผู้เรียก |
+| รับเข้า จ่ายออก โอนสาขา | "อ้างอิงเอกสารต้นทาง" | `type` เป็น `receive`, `issue` หรือ `transfer` หนึ่งรายการต่อคำขอ `reference` คือเลขเอกสาร ต้องส่ง `Idempotency-Key` เพราะการรับซ้ำคือของเข้าคลังสองครั้ง จ่ายเกินที่ใช้ได้ตอบ `409 insufficient_stock` |
+| ปรับยอด | "ปรับยอดหลังนับสต๊อก ต้องระบุเหตุผล" | ส่งจำนวนที่นับได้ ไม่ใช่ส่วนต่าง ระบบคิดส่วนต่างเอง ต้องระบุล็อตเมื่อสาขามีหลายล็อต ไม่ต้องส่ง `Idempotency-Key` เพราะส่งซ้ำได้ผลเดิม |
+| แจ้งเตือน | "ใกล้หมด ใกล้หมดอายุ ล็อตที่ต้องเรียกคืน" | สี่ชนิด `expired`, `out_of_stock`, `near_expiry`, `low_stock` contract ไม่มีทางบันทึกว่าผู้ผลิตเรียกคืนล็อตไหน จึงอ่าน "ล็อตที่ต้องเรียกคืน" ว่าล็อตที่หมดอายุแล้วแต่ยังอยู่ในยอด `within_days` เลือกได้ 1 ถึง 365 ค่าเริ่มต้น 90 |
+| ใบสั่งซื้อ | "รับของบางส่วนได้" | ไม่มี endpoint รับของ การรับเข้าที่ส่ง `purchase_order_id` นับเข้าแถวของใบนั้น สถานะ `ordered`, `partially_received`, `received` คำนวณจากที่รับ รับเกินตอบ `409 over_receipt` ต้องส่ง `Idempotency-Key` เพราะเป็นเงินที่คลินิกผูกพัน |
+| ผูกใบสั่งยากับรายการ | ใบสั่งยามีแค่ชื่อยา | **ข้อนี้ถูกแทนบางส่วนแล้ว** ด้วย [contract-extensions.md § 20](./contract-extensions.md) ใบสั่งยาที่หมอเลือกจากคลังมี `inventory_item_id` และการจ่ายใช้รหัสนั้นก่อน ส่วนที่ยังเป็นการตีความเดิมคือใบที่พิมพ์ชื่อเอง ซึ่งเทียบชื่อทั้งชื่อหลังตัดช่องว่างซ้ำและไม่สนตัวพิมพ์ |
+| จ่ายยาเมื่อไม่พบยาหรือของไม่พอ | ไม่ได้พูดถึง | ไม่ปฏิเสธการจ่าย เพราะยาอยู่ในมือเจ้าของแล้ว ไม่พบยา คือ `stock_deducted: false`, `stock.status: not_matched` และไม่คิดเงิน ของไม่พอ คือ `stock.status: insufficient` ไม่ตัดสต๊อก (ไม่ตัดบางส่วน) แต่คิดเงิน contract ไม่มีรูปคำตอบของเส้นนี้ จึงเพิ่ม `stock` และ `charge` ในคำตอบได้ |
+| ค่ายา | "ตัดสต๊อกเมื่อจ่ายจริง" | คิดตอนจ่าย ด้วยราคาขายของรายการ ณ ตอนนั้น ลงบิลของเคสถ้ายังเปิดรับรายการได้ ถ้าเคสยังไม่ปิดลงตอนปิดเคส ถ้าบิลของเคสรับเงินแล้วออกบิลใหม่ ไม่แก้บิลที่รับเงินแล้ว |
+| แจ้งพนักงานเมื่อใกล้หมด | event `inventory.low_stock` ในรายการ webhook | ยังไม่ทำ ระบบมีช่องทางส่งถึงลูกค้าเท่านั้น และยังไม่มีโมดูล webhook |
+
+รหัส error ที่ส่วนนี้เพิ่มอยู่ใน § 14
+
+**ต้องถาม** endpoint แก้รายการในคลัง อ่านและยกเลิกใบสั่งซื้อ อ่านสมุดสต๊อก และบันทึกการเรียกคืนล็อต (`inventory_item_id` ในคำขอสั่งยาได้รับอนุมัติแล้วเป็น § 20) ดูข้อเสนอใน [สต๊อกยาและเวชภัณฑ์](features/inventory.md#ข้อเสนอส่วนขยาย-ยังไม่ได้ขออนุมัติ-ยังไม่ได้ทำ)
 
 # การตัดสินเรื่องขอบเขต
 

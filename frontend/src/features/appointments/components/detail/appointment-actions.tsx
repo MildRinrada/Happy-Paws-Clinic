@@ -13,13 +13,16 @@ import {
   markNoShowAction,
   rescheduleAppointmentAction,
 } from '../../actions/calendar-actions';
+import { noShowText } from '../../content/advanced-booking';
 import { appointmentDetail } from '../../content/appointment-calendar';
 import { refusalText } from '../../lib/refusal';
 import { isOpen } from '../../lib/status-labels';
-import type { Appointment } from '../../types/appointment.types';
+import type { Appointment, CustomerAttendance } from '../../types/appointment.types';
 import type { VetOption } from '../../types/calendar.types';
 import type { PanelPermissions } from './appointment-panel';
 import { CancelForm } from './cancel-form';
+import { NoShowConfirm } from './no-show-confirm';
+import { NoShowOutcome } from './no-show-outcome';
 import { RescheduleForm } from './reschedule-form';
 
 interface AppointmentActionsProps {
@@ -29,7 +32,7 @@ interface AppointmentActionsProps {
   isToday: boolean;
 }
 
-type Mode = 'idle' | 'cancel' | 'reschedule';
+type Mode = 'idle' | 'cancel' | 'reschedule' | 'noShow';
 
 /**
  * What the counter can still do with this appointment. Only the actions that fit its state and
@@ -41,6 +44,7 @@ export function AppointmentActions({ appointment, vets, permissions, isToday }: 
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const [suggested, setSuggested] = useState<string[]>([]);
+  const [attendance, setAttendance] = useState<CustomerAttendance>();
   const [checkInKey, setCheckInKey] = useState(() => crypto.randomUUID());
   const [pending, startTransition] = useTransition();
 
@@ -69,10 +73,12 @@ export function AppointmentActions({ appointment, vets, permissions, isToday }: 
   if (!open) {
     const inClinic = appointment.status === 'checked_in' || appointment.status === 'in_consultation';
 
-    // A check-in just done here ends in this state; the number it gave is still worth reading.
+    // A check-in or no-show just done here ends in this state; what it gave is still worth reading.
     return (
       <div className="space-y-3">
-        {notice ? (
+        {attendance ? (
+          <NoShowOutcome attendance={attendance} />
+        ) : notice ? (
           <p role="status" className="text-sm font-medium text-emerald-700">{notice}</p>
         ) : (
           !(inClinic && permissions.canConsult) && <p className="text-sm text-ink-500">{appointmentDetail.nothingToDo}</p>
@@ -92,6 +98,19 @@ export function AppointmentActions({ appointment, vets, permissions, isToday }: 
           pending={pending}
           onBack={() => setMode('idle')}
           onCancel={(reason) => run(() => cancelAppointmentAction({ appointmentId: appointment.id, reason }))}
+        />
+      </div>
+    );
+  }
+
+  if (mode === 'noShow') {
+    return (
+      <div className="space-y-2">
+        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+        <NoShowConfirm
+          pending={pending}
+          onBack={() => setMode('idle')}
+          onConfirm={() => run(() => markNoShowAction({ appointmentId: appointment.id }), (data) => setAttendance(data.attendance))}
         />
       </div>
     );
@@ -156,7 +175,7 @@ export function AppointmentActions({ appointment, vets, permissions, isToday }: 
           </Button>
         )}
         {permissions.canWrite && started && (
-          <Button variant="secondary" size="sm" disabled={pending} onClick={() => run(() => markNoShowAction({ appointmentId: appointment.id }))}>
+          <Button variant="secondary" size="sm" disabled={pending} onClick={() => { setError(undefined); setMode('noShow'); }}>
             {text.noShow}
           </Button>
         )}
@@ -167,6 +186,7 @@ export function AppointmentActions({ appointment, vets, permissions, isToday }: 
         )}
       </div>
 
+      {permissions.canWrite && !started && <p className="text-xs text-ink-500">{noShowText.hint}</p>}
       {pending && <p className="text-sm text-ink-500">{text.working}</p>}
     </div>
   );

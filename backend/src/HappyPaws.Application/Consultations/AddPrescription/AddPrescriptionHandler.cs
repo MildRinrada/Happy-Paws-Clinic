@@ -1,9 +1,14 @@
+using FluentValidation;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Consultations.Dtos;
+using HappyPaws.Application.Inventory;
 using HappyPaws.Application.Patients;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Consultations;
+using HappyPaws.Domain.Inventory;
 using HappyPaws.Domain.Patients;
 
 namespace HappyPaws.Application.Consultations.AddPrescription;
@@ -15,16 +20,37 @@ namespace HappyPaws.Application.Consultations.AddPrescription;
 /// <c>AcknowledgeAllergy</c> carries the prescriber's stated reason for writing this drug despite a
 /// recorded allergy. It is sent only on a second attempt, after the first was refused.
 /// </para>
+/// <para>
+/// <c>InventoryItemId</c> is not in the API reference (<c>docs/contract-extensions.md § 20</c>): the
+/// drug picked from stock, so the dispense takes and charges that item instead of matching the name.
+/// With it, <c>DrugName</c> may be left out and the item's name is written; a name sent beside it is
+/// kept as written, for the label. Without it, the request is the contract's and behaves as before.
+/// </para>
 /// </summary>
 public sealed record AddPrescriptionCommand(
     string ConsultationId,
-    string DrugName,
+    string? DrugName,
     string Dose,
     string Frequency,
     int DurationDays,
     int Quantity,
     string? Instructions = null,
-    string? AcknowledgeAllergy = null);
+    string? AcknowledgeAllergy = null,
+    string? InventoryItemId = null);
+
+/// <summary>
+/// Only the extension's field is checked here. Everything else is the domain's, as before, so a
+/// request without <c>inventory_item_id</c> is refused exactly as it always was.
+/// </summary>
+public sealed class AddPrescriptionValidator : AbstractValidator<AddPrescriptionCommand>
+{
+    public AddPrescriptionValidator()
+    {
+        RuleFor(command => command.InventoryItemId)
+            .MaximumLength(40).WithMessage("inventory_item_id ไม่ถูกต้อง")
+            .When(command => command.InventoryItemId is not null);
+    }
+}
 
 /// <summary>
 /// Writes a drug on the case, after checking the patient's recorded allergies.
@@ -47,8 +73,10 @@ public sealed record AddPrescriptionCommand(
 /// </para>
 /// </summary>
 public sealed class AddPrescriptionHandler(
+    RequestValidator validator,
     ConsultationAccess access,
     IPetAllergyRepository allergies,
+    IInventoryItemRepository items,
     IAuditTrail audit,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
@@ -58,6 +86,8 @@ public sealed class AddPrescriptionHandler(
         AddPrescriptionCommand command,
         CancellationToken cancellationToken = default)
     {
+        await validator.ValidateAsync(command, cancellationToken);
+
         var staffId = currentUser.RequireStaffId();
         Consultation? updated = null;
 
@@ -65,23 +95,30 @@ public sealed class AddPrescriptionHandler(
         {
             var consultation = await access.ForStaffAsync(command.ConsultationId, token);
 
-            var conflicts = await FindConflictsAsync(consultation.PetId, command.DrugName, token);
+            var item = await PickedItemAsync(command.InventoryItemId, token);
+            var drugName = string.IsNullOrWhiteSpace(command.DrugName) && item is not null
+                ? item.Name
+                : command.DrugName ?? string.Empty;
+
+            // A drug picked from stock is checked under both names: as written, and as stocked.
+            var conflicts = await FindConflictsAsync(consultation.PetId, [drugName, item?.Name], token);
 
             if (conflicts.Count > 0)
             {
-                Refuse(command, conflicts);
+                Refuse(drugName, command.AcknowledgeAllergy, conflicts);
             }
 
             var prescription = consultation.AddPrescription(
                 staffId,
                 clock.UtcNow,
-                command.DrugName,
+                drugName,
                 command.Dose,
                 command.Frequency,
                 command.DurationDays,
                 command.Quantity,
                 command.Instructions,
-                conflicts.Count > 0 ? command.AcknowledgeAllergy : null);
+                conflicts.Count > 0 ? command.AcknowledgeAllergy : null,
+                item?.Id);
 
             audit.Record(new AuditEvent(
                 AuditActions.PrescriptionAdded,
@@ -93,6 +130,7 @@ public sealed class AddPrescriptionHandler(
                 {
                     ["prescription_id"] = prescription.Id,
                     ["drug_name"] = prescription.DrugName,
+                    ["inventory_item_id"] = prescription.InventoryItemId,
                 }));
 
             if (conflicts.Count > 0)
@@ -120,25 +158,52 @@ public sealed class AddPrescriptionHandler(
         return ConsultationDto.From(updated!);
     }
 
+    /// <summary>
+    /// The item the prescriber picked from stock, or null when the drug was typed. An id that names
+    /// no item is <c>404</c>; a supply (syringes, gauze) is never prescribed and is <c>422</c>.
+    /// The catalogue has no retired state, so every medicine in it is a valid pick.
+    /// </summary>
+    private async Task<InventoryItem?> PickedItemAsync(string? itemId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return null;
+        }
+
+        var item = await items.FindAsync(itemId.Trim(), cancellationToken)
+            ?? throw new NotFoundException("inventory_item", itemId);
+
+        if (item.Kind != InventoryItemKind.Medicine)
+        {
+            throw new ValidationFailedException(new Dictionary<string, string[]>
+            {
+                ["inventory_item_id"] = ["รายการนี้เป็นเวชภัณฑ์ ไม่ใช่ยา สั่งจ่ายไม่ได้"],
+            });
+        }
+
+        return item;
+    }
+
     private async Task<IReadOnlyList<PetAllergy>> FindConflictsAsync(
         string petId,
-        string drugName,
+        IReadOnlyList<string?> drugNames,
         CancellationToken cancellationToken)
     {
         var recorded = await allergies.ActiveForPetAsync(petId, cancellationToken);
+        var names = drugNames.OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
-        return [.. recorded.Where(allergy => allergy.Matches(drugName))];
+        return [.. recorded.Where(allergy => names.Any(allergy.Matches))];
     }
 
-    private static void Refuse(AddPrescriptionCommand command, IReadOnlyList<PetAllergy> conflicts)
+    private static void Refuse(string drugName, string? acknowledgement, IReadOnlyList<PetAllergy> conflicts)
     {
         var severe = conflicts.Any(allergy => allergy.Severity == AllergySeverity.Severe);
-        var acknowledged = !string.IsNullOrWhiteSpace(command.AcknowledgeAllergy);
+        var acknowledged = !string.IsNullOrWhiteSpace(acknowledgement);
 
         if (severe || !acknowledged)
         {
             throw new AllergyConflictException(
-                command.DrugName,
+                drugName,
                 [.. conflicts.Select(allergy => allergy.Substance)],
                 overridable: !severe);
         }
