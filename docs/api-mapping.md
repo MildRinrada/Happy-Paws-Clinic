@@ -24,7 +24,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ช่อง use case ที่เขียนเป็น `<Module>/<โฟลเดอร์>/<ชื่อ>Handler` คือ use case ที่รวมอยู่ในโฟลเดอร์ร่วม เช่น ทุกเรื่องของ portal ฝั่งสัตว์เลี้ยงอยู่ใน `Patients/Portal/`
 
-คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
+คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
 
 | API domain | Backend module | Frontend feature | Frontend routes |
 |---|---|---|---|
@@ -43,15 +43,15 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Schedules & Shifts | `Scheduling` | `scheduling` | `(staff)/schedules` |
 | Lab | `Laboratory` | `laboratory` | `(staff)/lab` |
 | Prescription | `Prescriptions` | `prescriptions` | `(staff)/prescriptions` |
-| Notifications & Messaging | `Notifications`, `Messaging` | `notifications`, `messaging` | `(staff)/messages`, `(portal)/notifications` |
-| LINE integration *(ส่งออกอย่างเดียว)* | `Integrations` | `line` | `(staff)/settings/line` |
+| Notifications & Messaging | `Notifications`, `Messaging` | `notifications`, `messaging` | `(staff)/notifications` (ประวัติ ส่ง ประกาศ เทมเพลต), `(staff)/messages`, `(portal)/notifications` |
+| LINE integration *(ส่งออกอย่างเดียว)* | `Integrations` | `integrations` | `(staff)/settings/line`, `(staff)/notifications/broadcast` |
 | Operational stats | `Analytics` | `analytics` | `(staff)/dashboard` |
-| Business dashboard | `Analytics` | `analytics` | `(staff)/analytics` |
+| Business dashboard | `Analytics` | `analytics` | `(staff)/dashboard` (แท็บธุรกิจ) |
 | Billing & Payments | `Billing` | `billing` | `(staff)/billing`, `(portal)/invoices` |
 | Inventory | `Inventory` | `inventory` | `(staff)/inventory` |
 | Loyalty & Promotions | `Crm` | `crm` | `(staff)/crm`, `(portal)/packages` |
-| Reminders & Automation | `Automation` | `automation` | `(staff)/automations` |
-| Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/reports`, `(staff)/audit` |
+| Reminders & Automation | `Automation` | `automation` | `(staff)/notifications/automations`, `(staff)/notifications/reminders` |
+| Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/dashboard` (ส่งออกรายงาน), `(staff)/audit` |
 | Webhooks & Integrations | `Integrations` | `integrations` | `(staff)/settings/integrations` |
 
 ## Authentication
@@ -321,13 +321,15 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 ## Notifications and Messaging
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| POST | `/staff/notifications/send` | `notify:send` | `Staff/NotificationsController` | `Notifications/SendNotification/` | `Notifications` |
-| GET | `/staff/notifications/templates` | `notify:manage` | `Staff/NotificationTemplatesController` | `Notifications/ListTemplates/` | `Notifications` |
-| GET | `/staff/notifications/log` | `notify:read` | `Staff/NotificationLogController` | `Notifications/GetDeliveryLog/` | `Notifications` |
-| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` |
-| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadMessagesController` | `Messaging/ReplyToThread/` | `Messaging` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| POST | `/staff/notifications/send` | `notify:send` | `Staff/NotificationsController` | `Notifications/SendNotification/` | `Notifications` | ✅ |
+| GET | `/staff/notifications/templates` | `notify:manage` | `Staff/NotificationTemplatesController` | `Notifications/ListTemplates/` | `Notifications` | ✅ |
+| GET | `/staff/notifications/log` | `notify:read` | `Staff/NotificationLogController` | `Notifications/GetDeliveryLog/` | `Notifications` | ✅ |
+| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` | |
+| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadMessagesController` | `Messaging/ReplyToThread/` | `Messaging` | |
+
+ข้อความออกจริงทาง LINE, SMS และอีเมล ทุกครั้งที่ลองส่งมีแถวในตาราง `notification_deliveries` ซึ่ง `GET /staff/notifications/log` อ่าน เทมเพลตเป็นโค้ด (`Notifications/Templates/`) เพราะสัญญามีแค่การอ่าน รายละเอียดอยู่ใน [การแจ้งเตือน](features/notifications.md)
 
 ## LINE integration
 
@@ -337,37 +339,37 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 Application -> Notification port -> Infrastructure/Notifications/Line/ -> LINE Messaging API
 ```
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| PUT | `/staff/integrations/line` | `integration:manage` | `Staff/LineIntegrationController` | `Integrations/ConfigureLineChannel/` | `Integrations` |
-| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications`, `Crm` |
-| POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| PUT | `/staff/integrations/line` | `integration:manage` | `Staff/LineIntegrationController` | `Integrations/ConfigureLineChannel/` | `Integrations` | ✅ |
+| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ เพราะยังไม่มี `Crm`) | ✅ |
+| POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` | ✅ |
 
 `POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี
 
-postback action ใน `Domain/Integrations/LinePostbackActions.cs` ทำงานกับเรกคอร์ดจริง handler จึงต้องหาที่อยู่ LINE ที่ส่งมากลับไปเป็นลูกค้าที่ลงทะเบียนที่อยู่นั้นไว้ แล้วใช้กฎสิทธิ์ของ portal ตามปกติ นี่คือการค้นจากที่อยู่ส่ง ไม่ใช่การยืนยันตัวตน เรื่องการระบุผู้ส่งยัง [เปิดอยู่](./assumptions.md) (§ B)
+postback action ใน `Domain/Integrations/LinePostbackActions.cs` ทำงานกับเรกคอร์ดจริง handler จึงต้องหาที่อยู่ LINE ที่ส่งมากลับไปเป็นลูกค้าที่ลงทะเบียนที่อยู่นั้นไว้ แล้วใช้กฎสิทธิ์ของ portal ตามปกติ นี่คือการค้นจากที่อยู่ส่ง ไม่ใช่การยืนยันตัวตน ทำตามแบบนี้แล้ว แต่ยังไม่มีทางบันทึกที่อยู่ LINE ลงเรกคอร์ดลูกค้าผ่าน API จึงยังไม่มีลูกค้าคนใดถูกพบจริง ดู [LINE](features/line.md) และ [assumptions.md](./assumptions.md) (§ B, § 41)
 
 **อยู่นอกขอบเขต มีใน reference แต่ไม่สร้าง** `POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link`, `GET /line/liff/booking-context` ทั้งสี่เส้นมีไว้เพื่อใช้ LINE เป็นตัวตนเท่านั้น ดู [assumptions.md § A](./assumptions.md)
 
 ## Operational statistics
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| GET | `/staff/dashboard/today` | `dashboard:read` | `Staff/DashboardController` | `Analytics/GetTodayDashboard/` | `Analytics` |
-| GET | `/staff/stats/appointments` | `stats:read` | `Staff/AppointmentStatsController` | `Analytics/GetAppointmentStats/` | `Analytics` |
-| GET | `/staff/stats/queue` | `stats:read` | `Staff/QueueStatsController` | `Analytics/GetQueueStats/` | `Analytics` |
-| GET | `/staff/stats/workload` | `stats:read` | `Staff/WorkloadStatsController` | `Analytics/GetWorkloadStats/` | `Analytics` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| GET | `/staff/dashboard/today` | `dashboard:read` | `Staff/DashboardController` | `Analytics/GetTodayDashboard/` | `Analytics` | ✅ |
+| GET | `/staff/stats/appointments` | `stats:read` | `Staff/StatsController` | `Analytics/GetAppointmentStats/` | `Analytics` | ✅ |
+| GET | `/staff/stats/queue` | `stats:read` | `Staff/StatsController` | `Analytics/GetQueueStats/` | `Analytics` | ✅ |
+| GET | `/staff/stats/workload` | `stats:read` | `Staff/StatsController` | `Analytics/GetWorkloadStats/` | `Analytics` | ✅ |
 
 ## Business dashboard
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| GET | `/staff/analytics/revenue` | `analytics:read` | `Staff/RevenueAnalyticsController` | `Analytics/GetRevenueAnalytics/` | `Analytics` |
-| GET | `/staff/analytics/services` | `analytics:read` | `Staff/ServiceAnalyticsController` | `Analytics/GetServiceAnalytics/` | `Analytics` |
-| GET | `/staff/analytics/retention` | `analytics:read` | `Staff/RetentionAnalyticsController` | `Analytics/GetRetentionAnalytics/` | `Analytics` |
-| GET | `/staff/analytics/staff-performance` | `analytics:hr` | `Staff/StaffPerformanceController` | `Analytics/GetStaffPerformance/` | `Analytics` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| GET | `/staff/analytics/revenue` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRevenueAnalytics/` | `Analytics` | ✅ |
+| GET | `/staff/analytics/services` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetServiceAnalytics/` | `Analytics` | ✅ |
+| GET | `/staff/analytics/retention` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRetentionAnalytics/` | `Analytics` | ✅ |
+| GET | `/staff/analytics/staff-performance` | `analytics:hr` | `Staff/AnalyticsController` | `Analytics/GetStaffPerformance/` | `Analytics` | ✅ |
 
-analytics อ่านผ่าน read model หรือ SQL projection เฉพาะ ไม่โหลด aggregate เป็นที่เดียวที่คาดว่าจะมี SQL เขียนมือใน repository และเหมาะสมที่จะมี
+analytics อ่านผ่าน SQL projection ที่เขียนมือใน `Infrastructure/Persistence/Repositories/Analytics/` ไม่โหลด aggregate เป็นที่เดียวที่มี SQL เขียนมือใน repository ทุกค่าเป็น parameter ตัวเลขแต่ละตัวนับอย่างไร โดยเฉพาะรายรับ ดู [ภาพรวมและรายงาน](features/dashboard.md)
 
 ## Billing and Payments
 
@@ -410,21 +412,23 @@ analytics อ่านผ่าน read model หรือ SQL projection เฉ
 
 ## Reminders and Automation
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| GET | `/staff/automations` | `automation:read` | `Staff/AutomationsController` | `Automation/ListAutomations/` | `Automation` |
-| POST | `/staff/automations` | `automation:manage` | `Staff/AutomationsController` | `Automation/CreateAutomation/` | `Automation` |
-| POST | `/staff/automations/{id}/simulate` | `automation:manage` | `Staff/AutomationSimulationController` | `Automation/SimulateAutomation/` | `Automation` |
-| GET | `/staff/reminders/upcoming` | `automation:read` | `Staff/RemindersController` | `Automation/ListUpcomingReminders/` | `Automation` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| GET | `/staff/automations` | `automation:read` | `Staff/AutomationsController` | `Automation/ListAutomations/` | `Automation` | ✅ |
+| POST | `/staff/automations` | `automation:manage` | `Staff/AutomationsController` | `Automation/CreateAutomation/` | `Automation` | ✅ |
+| POST | `/staff/automations/{id}/simulate` | `automation:manage` | `Staff/AutomationSimulationController` | `Automation/SimulateAutomation/` | `Automation` | ✅ |
+| GET | `/staff/reminders/upcoming` | `automation:read` | `Staff/RemindersController` | `Automation/ListUpcomingReminders/` | `Automation` | ✅ |
 
-กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (โฟลเดอร์ยังว่าง) `simulate` ใช้ตัวประเมินเดียวกันในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง
+กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (`RecurringJobHost`, งาน `AutomationJob`) `simulate` และ `upcoming` ใช้ `AutomationEvaluator` ตัวเดียวกับการรันจริงในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง ข้อความแต่ละฉบับถูกจองด้วย unique key ใน `automation_dispatches` ก่อนส่ง จึงไม่ส่งซ้ำแม้มี API หลาย instance รายละเอียดอยู่ใน [เตือนอัตโนมัติ](features/automation.md)
+
+การส่งออกรายงานเป็นงานเบื้องหลังของตัวตั้งเวลาเดียวกัน (`ReportExportJob`) worker จองงานด้วย `FOR UPDATE SKIP LOCKED` ไฟล์เป็น CSV เก็บผ่าน `LocalFileStorage` และดาวน์โหลดด้วย URL ที่ลงชื่อ อายุ 1 ชั่วโมง นอกจาก `report:export` ยังต้องมี scope ของรายงานนั้นด้วย ดู [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
 
 ## Reports and Audit
 
 | Method | Endpoint | Scope | Controller | Use case | Domain | |
 |---|---|---|---|---|---|---|
-| POST | `/staff/reports/exports` | `report:export` | `Staff/ReportExportsController` | `Reporting/StartExport/` | `Reporting` | |
-| GET | `/staff/reports/exports/{id}` | `report:export` | `Staff/ReportExportsController` | `Reporting/GetExportStatus/` | `Reporting` | |
+| POST | `/staff/reports/exports` | `report:export` | `Staff/ReportExportsController` | `Reporting/StartExport/` | `Reporting` | ✅ |
+| GET | `/staff/reports/exports/{id}` | `report:export` | `Staff/ReportExportsController` | `Reporting/GetExportStatus/` | `Reporting` | ✅ |
 | GET | `/staff/audit-logs` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` | `Auditing` | ✅ |
 | GET | `/staff/audit-logs/access` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` (ตัวกรอง access) | `Auditing` | ✅ |
 
@@ -504,7 +508,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | endpoint ใน reference | **164** |
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
-| ทำแล้วและมีเทสต์ (✅) | **123** |
+| ทำแล้วและมีเทสต์ (✅) | **137** |
 | เพิ่มนอก contract | **30** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)

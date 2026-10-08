@@ -1,3 +1,4 @@
+using HappyPaws.Domain.Inventory;
 using HappyPaws.Domain.Patients;
 using HappyPaws.Domain.Prescriptions;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,10 @@ internal sealed class PrescriptionConfiguration : EntityConfiguration<Prescripti
         builder.Property(prescription => prescription.Instructions).HasMaxLength(1_000);
         builder.Property(prescription => prescription.AllergyAcknowledgement).HasMaxLength(500);
 
+        // What the dispense did. Written once, at dispense; the charge is what the close bills.
+        builder.Property(prescription => prescription.InventoryItemId).HasMaxLength(40);
+        builder.Property(prescription => prescription.StockDeducted).HasDefaultValue(false);
+
         // "ยาที่เคยจ่ายทั้งหมด · ตรวจซ้ำซ้อน" — every drug this patient has been given, newest first.
         builder.HasIndex(prescription => new { prescription.PetId, prescription.PrescribedAt });
 
@@ -31,5 +36,7 @@ internal sealed class PrescriptionConfiguration : EntityConfiguration<Prescripti
 
         builder.HasOne<Pet>().WithMany()
             .HasForeignKey(prescription => prescription.PetId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<InventoryItem>().WithMany()
+            .HasForeignKey(prescription => prescription.InventoryItemId).OnDelete(DeleteBehavior.Restrict);
     }
 }

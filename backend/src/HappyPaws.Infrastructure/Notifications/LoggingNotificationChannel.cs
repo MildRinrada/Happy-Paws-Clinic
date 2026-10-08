@@ -4,18 +4,16 @@ using Microsoft.Extensions.Logging;
 namespace HappyPaws.Infrastructure.Notifications;
 
 /// <summary>
-/// Records what would have been sent, until the real channel adapters exist.
+/// Records what would have been sent, when no LINE, SMS or email is set up at all.
 /// <para>
-/// A placeholder, and a loud one on purpose. It logs at warning with the customer and template so
-/// that a queue call which never reached anyone is visible in the log rather than silently
-/// successful — the failure mode that makes a stub dangerous is the one where nobody notices it is
-/// still installed.
+/// The fallback <see cref="DeliveringNotificationChannel"/> hands a message to on a machine with
+/// no provider configured, which is a developer's. Loud on purpose: it logs at warning with the
+/// customer and template so that a queue call which never reached anyone is visible in the log
+/// rather than silently successful.
 /// </para>
 /// <para>
-/// It does not throw. Replace this registration when
-/// <c>Infrastructure/Notifications/{Line,Sms,Email}/</c> land; nothing above it changes, because
-/// everything above it talks to <see cref="INotificationDispatcher"/> and reaches a channel only
-/// through the consent gate.
+/// It writes the template's data too, which can include a diagnosis. Do not let logs from an
+/// instance with no channel configured leave the machine.
 /// </para>
 /// </summary>
 internal sealed class LoggingNotificationChannel(ILogger<LoggingNotificationChannel> logger)

@@ -24,7 +24,7 @@ namespace HappyPaws.IntegrationTests.Fixtures;
 /// produce. An in-memory provider would pass while all three were broken.
 /// </para>
 /// </summary>
-public sealed class ApiFixture : IAsyncLifetime
+public class ApiFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("happypaws_test")
@@ -60,7 +60,7 @@ public sealed class ApiFixture : IAsyncLifetime
     {
         await _postgres.StartAsync();
 
-        _factory = new ClinicApiFactory(_postgres.GetConnectionString());
+        _factory = new ClinicApiFactory(_postgres.GetConnectionString(), ConfigureServices);
 
         using var scope = _factory.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>().Database.MigrateAsync();
@@ -74,11 +74,18 @@ public sealed class ApiFixture : IAsyncLifetime
         }
 
         await _postgres.DisposeAsync();
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Runs after the standard test wiring, for a fixture that needs a different stand-in.</summary>
+    protected virtual void ConfigureServices(IServiceCollection services)
+    {
     }
 }
 
 /// <summary>The host itself, configured for tests.</summary>
-internal sealed class ClinicApiFactory(string connectionString) : WebApplicationFactory<Program>
+internal sealed class ClinicApiFactory(string connectionString, Action<IServiceCollection>? configure = null)
+    : WebApplicationFactory<Program>
 {
     /// <summary>Meets the 32-character minimum the options validator enforces.</summary>
     public const string SigningKey = "integration-test-signing-key-0123456789";
@@ -101,6 +108,10 @@ internal sealed class ClinicApiFactory(string connectionString) : WebApplication
                 ["Auth:Jwt:SigningKey"] = SigningKey,
                 ["Clinic:TimeZone"] = "Asia/Bangkok",
                 ["Cors:AllowedOrigins:0"] = "http://localhost:3000",
+
+                // No scheduler in tests: a reminder job firing on its own would send messages to
+                // other tests' customers at moments nobody chose. Tests drive the jobs directly.
+                ["Jobs:Enabled"] = "false",
 
                 // The assistant talks to a scripted stand-in through the real OpenAI-format adapter.
                 ["Assistant:Provider"] = "openai",
@@ -152,6 +163,8 @@ internal sealed class ClinicApiFactory(string connectionString) : WebApplication
             services.AddSingleton<ModelScript>();
             services.ConfigureHttpClientDefaults(client => client.ConfigurePrimaryHttpMessageHandler(
                 provider => new ScriptedModelHandler(provider.GetRequiredService<ModelScript>())));
+
+            configure?.Invoke(services);
         });
     }
 }

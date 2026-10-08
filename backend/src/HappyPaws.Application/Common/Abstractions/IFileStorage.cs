@@ -10,7 +10,11 @@ public sealed record UploadTicket(string Url, string Method, IReadOnlyDictionary
 public sealed record ReceivedFile(string Key, long SizeBytes);
 
 /// <summary>A stored file opened for reading.</summary>
-public sealed record StoredFile(Stream Content, string ContentType);
+public sealed record StoredFile(Stream Content, string ContentType)
+{
+    /// <summary>The name a browser should save it under, when the file was stored with one.</summary>
+    public string? FileName { get; init; }
+}
 
 /// <summary>
 /// Object storage behind pre-signed URLs — "อัปโหลดผ่าน pre-signed URL".
@@ -47,4 +51,21 @@ public interface IFileStorage
 
     /// <summary>Opens the file a download token points to, or null when the token or the file is not good.</summary>
     Task<StoredFile?> OpenAsync(string token, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stores a file the server produced itself, such as a report export, at a key a use case made.
+    /// Returns its size. The one write that does not come through an upload URL, because there is
+    /// no client to send it: the bytes are already here.
+    /// </summary>
+    /// <param name="key">Where to keep it.</param>
+    /// <param name="contentType">What a download serves it as.</param>
+    /// <param name="content">The bytes.</param>
+    /// <param name="fileName">The name a download should be saved under.</param>
+    /// <param name="cancellationToken">Aborts the write.</param>
+    Task<long> SaveAsync(
+        string key,
+        string contentType,
+        Stream content,
+        string? fileName = null,
+        CancellationToken cancellationToken = default);
 }

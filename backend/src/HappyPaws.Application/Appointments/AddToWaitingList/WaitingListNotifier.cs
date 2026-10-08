@@ -96,7 +96,7 @@ public sealed class WaitingListNotifier(
                         ["date"] = local.ToString("d MMM yyyy", CultureInfo.GetCultureInfo("th-TH")),
                         ["time"] = local.ToString("HH:mm", CultureInfo.InvariantCulture),
                         ["waiting_list_id"] = entry.Id,
-                    }),
+                    }) { BranchId = freed.BranchId },
                 cancellationToken);
         }
     }

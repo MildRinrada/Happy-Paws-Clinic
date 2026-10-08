@@ -118,7 +118,7 @@ public sealed class IssueReceiptHandler(
         try
         {
             await notifications.SendAsync(
-                new NotificationRequest(invoice.CustomerId, NotificationTemplates.ReceiptIssued, data),
+                new NotificationRequest(invoice.CustomerId, NotificationTemplates.ReceiptIssued, data) { BranchId = invoice.BranchId },
                 cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

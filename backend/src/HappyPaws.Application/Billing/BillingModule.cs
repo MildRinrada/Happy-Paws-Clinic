@@ -18,6 +18,7 @@ public static class BillingModule
     {
         services.AddScoped<InvoiceAccess>();
         services.AddScoped<ConsultationBilling>();
+        services.AddScoped<MedicineBilling>();
 
         services.AddScoped<CreateInvoiceHandler>();
         services.AddScoped<GetInvoiceHandler>();

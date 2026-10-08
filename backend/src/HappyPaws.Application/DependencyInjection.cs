@@ -1,10 +1,12 @@
 using System.Reflection;
 using FluentValidation;
 using HappyPaws.Application.Access;
+using HappyPaws.Application.Analytics;
 using HappyPaws.Application.Articles;
 using HappyPaws.Application.Appointments;
 using HappyPaws.Application.Assistant;
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Automation;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Authorization;
@@ -14,11 +16,14 @@ using HappyPaws.Application.Crm;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.Identity;
+using HappyPaws.Application.Integrations;
+using HappyPaws.Application.Inventory;
 using HappyPaws.Application.Laboratory;
 using HappyPaws.Application.MedicalRecords;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Application.Queueing;
+using HappyPaws.Application.Reporting;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.ServiceCatalog;
 using HappyPaws.Application.Staff;
@@ -68,8 +73,13 @@ public static class DependencyInjection
         services.AddLaboratoryModule();
         services.AddPrescriptionsModule();
         services.AddNotificationsModule();
+        services.AddIntegrationsModule();
         services.AddCrmModule();
         services.AddAssistantModule();
+        services.AddAnalyticsModule();
+        services.AddAutomationModule();
+        services.AddReportingModule();
+        services.AddInventoryModule();
 
         return services;
     }

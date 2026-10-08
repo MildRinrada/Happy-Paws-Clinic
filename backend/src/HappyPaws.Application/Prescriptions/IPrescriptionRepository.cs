@@ -21,6 +21,20 @@ public interface IPrescriptionRepository
         CursorPageRequest page,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Whether the case a prescription was written in is still open, read fresh from the database
+    /// rather than from anything tracked. Called under the case's billing lock.
+    /// </summary>
+    Task<bool> IsCaseOpenAsync(string consultationId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The case's dispensed prescriptions that carry a charge, read fresh — what the close bills as
+    /// medicine. Fresh, because a dispense may have committed after the closing request loaded the case.
+    /// </summary>
+    Task<IReadOnlyList<Prescription>> ChargesForConsultationAsync(
+        string consultationId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Every prescription for these patients, for checking one course against the others.</summary>
     Task<IReadOnlyList<Prescription>> ForPetsAsync(
         IReadOnlyCollection<string> petIds,

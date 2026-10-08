@@ -67,7 +67,21 @@ export const prescriptionsPage = {
     noScope: 'จ่ายยาได้เฉพาะบัญชีที่มีสิทธิ์ rx:dispense',
     unreachable: 'ติดต่อระบบไม่ได้ ลองอีกครั้ง',
     done: 'บันทึกการจ่ายยาแล้ว',
-    noStock: 'ระบบยังไม่ตัดสต๊อกและยังไม่คิดค่ายา (ยังไม่มีระบบคลังยา)',
+  },
+
+  stock: {
+    deducted: (quantity: number, unit: string, name: string) => `ตัดสต๊อกแล้ว ${quantity} ${unit} (${name})`,
+    notMatched: 'ไม่พบยานี้ในคลัง ระบบจึงไม่ได้ตัดสต๊อกและไม่ได้คิดค่ายา ชื่อยาในใบสั่งยาต้องตรงกับชื่อรายการในคลัง',
+    insufficient: (available: number, unit: string) =>
+      `สต๊อกในระบบไม่พอ (ใช้ได้ ${available} ${unit}) จึงไม่ได้ตัดสต๊อก ควรตรวจนับและปรับยอด`,
+    historyNotDeducted: 'ไม่ได้ตัดสต๊อก',
+  },
+
+  charge: {
+    invoiced: (amount: string, number: string) => `คิดค่ายา ${amount} ลงบิล ${number} แล้ว`,
+    onClose: (amount: string) => `ค่ายา ${amount} จะขึ้นบิลตอนปิดเคส`,
+    separate: (amount: string, number: string) => `บิลของเคสรับเงินแล้ว จึงออกบิลค่ายาใบใหม่ ${number} ยอด ${amount}`,
+    none: 'ไม่ได้คิดค่ายา',
   },
 
   label: {

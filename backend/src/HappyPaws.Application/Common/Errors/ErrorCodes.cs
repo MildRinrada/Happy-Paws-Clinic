@@ -69,4 +69,16 @@ public static class ErrorCodes
 
     /// <summary>409 — the email or phone number already belongs to another account.</summary>
     public const string ContactTaken = "contact_taken";
+
+    /// <summary>409 — a broadcast would pass the month's quota; <c>details</c> has the limit and what is used.</summary>
+    public const string QuotaExceeded = "quota_exceeded";
+
+    /// <summary>409 — a LINE broadcast was asked for, but LINE has no access token or is switched off.</summary>
+    public const string LineNotConfigured = "line_not_configured";
+
+    /// <summary>409 — a new inventory item has the name of one already in the catalogue; <c>details.item_id</c> is that one.</summary>
+    public const string InventoryItemExists = "inventory_item_exists";
+
+    /// <summary>409 — an issue or transfer asks for more usable units than the branch holds; <c>details.available</c> says how many.</summary>
+    public const string InsufficientStock = "insufficient_stock";
 }

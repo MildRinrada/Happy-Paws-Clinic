@@ -34,6 +34,19 @@ public sealed class Customer : Entity
     public bool IsActive { get; private set; } = true;
 
     /// <summary>
+    /// Where LINE messages go — the user id LINE gives this clinic's Official Account for this
+    /// person. <b>Delivery information, like <see cref="Email"/>.</b> It never signs anyone in,
+    /// never links an account, and is not a key: see <c>docs/assumptions.md § A</c>.
+    /// </summary>
+    public string? LineUserId { get; private set; }
+
+    /// <summary>Set when the person blocks or unfollows the account; LINE then refuses pushes to them.</summary>
+    public DateTimeOffset? LineUnfollowedAt { get; private set; }
+
+    /// <summary>True when a LINE push can reach this person.</summary>
+    public bool CanReceiveLine => LineUserId is not null && LineUnfollowedAt is null;
+
+    /// <summary>
     /// Set on the record that was absorbed by <c>POST /staff/customers/{id}/merge</c>.
     /// <para>
     /// The duplicate is kept as a tombstone rather than deleted, so an id printed on an old receipt
@@ -70,6 +83,29 @@ public sealed class Customer : Entity
 
     /// <summary>Attaches the portal account created when the customer accepts their invitation.</summary>
     public void LinkAccount(string userId) => UserId = userId;
+
+    /// <summary>
+    /// Records the LINE address to send to, or clears it with null. Nothing in the contract sets it
+    /// yet (<c>docs/features/line.md</c>); the method exists so the rule lives on the record.
+    /// </summary>
+    public void SetLineAddress(string? lineUserId)
+    {
+        var value = string.IsNullOrWhiteSpace(lineUserId) ? null : lineUserId.Trim();
+
+        if (value is { Length: > 64 })
+        {
+            throw new DomainException("invalid_customer", "LINE user id ยาวเกินไป");
+        }
+
+        LineUserId = value;
+        LineUnfollowedAt = null;
+    }
+
+    /// <summary>The person blocked the account. Pushes stop until they follow it again.</summary>
+    public void MarkLineUnfollowed(DateTimeOffset at) => LineUnfollowedAt ??= at;
+
+    /// <summary>The person followed the account again.</summary>
+    public void MarkLineFollowed() => LineUnfollowedAt = null;
 
     /// <summary>
     /// Marks this record as the duplicate absorbed into <paramref name="survivingCustomerId"/>.

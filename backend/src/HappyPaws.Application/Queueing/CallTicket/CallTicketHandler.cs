@@ -65,12 +65,13 @@ public sealed class CallTicketHandler(
         {
             ["number"] = ticket.Number,
             ["room"] = ticket.RoomId ?? string.Empty,
+            ["ticket_id"] = ticket.Id,
         };
 
         try
         {
             await notifications.SendAsync(
-                new NotificationRequest(ticket.CustomerId, NotificationTemplates.QueueCalled, data),
+                new NotificationRequest(ticket.CustomerId, NotificationTemplates.QueueCalled, data) { BranchId = ticket.BranchId },
                 cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

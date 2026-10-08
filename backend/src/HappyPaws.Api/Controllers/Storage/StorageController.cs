@@ -64,6 +64,10 @@ public sealed class StorageController : ControllerBase
         Response.Headers.CacheControl = "private, no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
 
-        return File(file.Content, file.ContentType);
+        // A file stored with a name (a report export) downloads under it; an uploaded document,
+        // whose name is the user's, keeps being served without one.
+        return file.FileName is { Length: > 0 } name
+            ? File(file.Content, file.ContentType, name)
+            : File(file.Content, file.ContentType);
     }
 }

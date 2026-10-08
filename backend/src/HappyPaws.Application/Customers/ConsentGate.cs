@@ -40,6 +40,21 @@ public sealed class ConsentGate(IConsentRepository consents)
         // The customer asked to be told. A message they requested about a visit they want is a
         // service message, not a campaign.
         ["waiting_list.slot_available"] = ConsentPurpose.ServiceMessages,
+
+        // About a visit or a dose the pet is due for: the reminder the default exists to protect.
+        ["appointment.reminder"] = ConsentPurpose.ServiceMessages,
+        ["vaccine.due"] = ConsentPurpose.ServiceMessages,
+        ["treatment_plan.session"] = ConsentPurpose.ServiceMessages,
+
+        // Free text from staff to one owner about their animal ("ผลแล็บออกแล้ว"). Classed with the
+        // care messages because that is what it is for; anything promotional belongs in a
+        // broadcast, which is marketing. A judgment the clinic should confirm — see
+        // docs/features/notifications.md.
+        ["clinic.message"] = ConsentPurpose.ServiceMessages,
+
+        // Listed although unlisted keys already default to marketing, so that nobody reads its
+        // absence as an oversight and "fixes" it into the service bucket.
+        ["clinic.announcement"] = ConsentPurpose.Marketing,
     };
 
     public static ConsentPurpose PurposeOf(string templateKey) =>

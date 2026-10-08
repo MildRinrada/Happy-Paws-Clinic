@@ -110,6 +110,18 @@ public static class AuditActions
     public const string DataRequestRaised = "data_request.raised";
     public const string DataRequestClosed = "data_request.closed";
 
+    /// <summary>
+    /// An announcement went out to a list of customers on LINE. Personal data used for a campaign,
+    /// so who sent it, to how many, and how many it actually reached are on record.
+    /// </summary>
+    public const string NotificationBroadcast = "notification.broadcast";
+
+    /// <summary>
+    /// The clinic's LINE channel credentials or switches changed. Whoever holds the access token can
+    /// message every follower in the clinic's name, so a change to it is recorded (never its value).
+    /// </summary>
+    public const string LineIntegrationConfigured = "integration.line_configured";
+
     // ---- Actions that change who can do what --------------------------------------------------
 
     public const string SignedIn = "auth.signed_in";
@@ -234,6 +246,40 @@ public static class AuditActions
     public const string ServicePricingChanged = "service.pricing_changed";
 
     /// <summary>
+    /// A charge was added to a bill that already existed — medicine dispensed after its case closed,
+    /// landing on the case's still-open invoice. The bill's total changed after it was issued.
+    /// </summary>
+    public const string InvoiceLineAdded = "invoice.line_added";
+
+    // ---- Inventory -----------------------------------------------------------------------------
+
+    /// <summary>A drug or supply entered the catalogue, with the price it will be charged at.</summary>
+    public const string InventoryItemCreated = "inventory.item_created";
+
+    /// <summary>
+    /// "ปรับยอดหลังนับสต๊อก · ต้องระบุเหตุผล" — the books were changed to match a count. The one stock
+    /// change with no document behind it, so who did it and why is the only account of it.
+    /// </summary>
+    public const string InventoryAdjusted = "inventory.adjusted";
+
+    /// <summary>An order to a supplier was raised: money the clinic has committed to spend.</summary>
+    public const string PurchaseOrderRaised = "inventory.purchase_order_raised";
+
+    // ---- Reminders and reports -----------------------------------------------------------------
+
+    /// <summary>
+    /// A reminder rule was created. From then on it messages customers by itself in the clinic's
+    /// name, so who wrote it and what it does are on record.
+    /// </summary>
+    public const string AutomationCreated = "automation.created";
+
+    /// <summary>
+    /// A report was exported to a file. Money and personal data left the system in a form that can
+    /// be forwarded, so who asked for it, of what, and for which branches is on record.
+    /// </summary>
+    public const string ReportExported = "report.exported";
+
+    /// <summary>
     /// The subset read by <c>GET /staff/audit-logs/access</c> — "การเปิดดูเวชระเบียนของคนไข้แต่ละราย".
     /// <para>
     /// Reads are separated from writes because they answer a different question. "Who changed this
@@ -263,6 +309,7 @@ public static class AuditActions
         LabRequested, LabResultsRecorded, LabResultsReviewed, PrescriptionDispensed,
         CustomerCreated, CustomerMerged,
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,
+        NotificationBroadcast, LineIntegrationConfigured,
         SignedIn, SignInFailed, PasswordChanged, SessionRevoked, AccountRegistered, PasswordReset,
         PetAccessGranted, PetAccessRevoked, CustomerInvited,
         ClinicBootstrapped, CredentialsReset,
@@ -274,6 +321,8 @@ public static class AuditActions
         PaymentCollected, PaymentRefunded, ReceiptIssued, ServicePricingChanged,
         ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced,
         AccountProfileUpdated, TwoFactorEnrolled, RecoveryCodeUsed, UserStatusChanged,
+        AutomationCreated, ReportExported,
+        InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -304,4 +353,11 @@ public static class AuditResources
     public const string Vaccination = "vaccination";
     public const string LabRequest = "lab_request";
     public const string Prescription = "prescription";
+    public const string NotificationBatch = "notification_batch";
+    public const string Integration = "integration";
+    public const string Automation = "automation";
+    public const string ReportExport = "report_export";
+    public const string InventoryItem = "inventory_item";
+    public const string StockLot = "stock_lot";
+    public const string PurchaseOrder = "purchase_order";
 }

@@ -51,7 +51,7 @@ public class PharmacyTests(ApiFixture fixture)
     }
 
     [Fact]
-    public async Task Dispensing_answers_with_the_label_and_says_stock_was_not_touched()
+    public async Task Dispensing_answers_with_the_label_and_says_an_unstocked_drug_left_stock_untouched()
     {
         var open = await OpenCaseAsync(fixture, Token);
         using var vet = fixture.Vet(open.Clinic, PharmacyScopes);
@@ -64,6 +64,8 @@ public class PharmacyTests(ApiFixture fixture)
         var label = result.GetProperty("label");
 
         Assert.False(result.GetProperty("stock_deducted").GetBoolean());
+        Assert.Equal("not_matched", result.GetProperty("stock").GetProperty("status").GetString());
+        Assert.False(result.TryGetProperty("charge", out _));
         Assert.NotNull(result.GetProperty("prescription").GetProperty("dispensed_at").GetString());
         Assert.Equal("Meloxicam", label.GetProperty("drug_name").GetString());
         Assert.Equal("ลูน่า", label.GetProperty("pet_name").GetString());

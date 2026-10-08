@@ -74,10 +74,40 @@ public static class EntityId
     public const string PhoneVerification = "otp";
     public const string PasswordReset = "pwr";
     public const string Notification = "ntf";
+
+    /// <summary>One attempt to deliver a message on one channel — a row of the delivery log.</summary>
+    public const string NotificationDelivery = "ndl";
+
+    /// <summary>A staff send or a broadcast. Not a table: the id groups the deliveries it caused.</summary>
+    public const string NotificationBatch = "nbt";
     public const string Package = "pkg";
 
     /// <summary>A course of appointments booked together. Not a table of its own: the id groups the visits.</summary>
     public const string Series = "ser";
+
+    /// <summary>A reminder rule — <c>trigger + condition + action</c>.</summary>
+    public const string Automation = "atm";
+
+    /// <summary>One reminder a rule sent, or claimed to send: the "already sent" record.</summary>
+    public const string AutomationDispatch = "ard";
+
+    /// <summary>An asynchronous report export job.</summary>
+    public const string ReportExport = "rex";
+
+    /// <summary>A drug or supply in the clinic's catalogue — "ยาและเวชภัณฑ์".</summary>
+    public const string InventoryItem = "itm";
+
+    /// <summary>One lot of one item at one branch: a lot number, an expiry date and what is left of it.</summary>
+    public const string StockLot = "lot";
+
+    /// <summary>One row of the stock ledger. Append-only.</summary>
+    public const string StockMovement = "stm";
+
+    /// <summary>A transfer between branches. Not a table: the id pairs the two ledger rows it wrote per lot.</summary>
+    public const string StockTransfer = "trf";
+
+    public const string PurchaseOrder = "po";
+    public const string PurchaseOrderLine = "pol";
 
     public static string New(string prefix)
     {

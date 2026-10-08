@@ -15,6 +15,14 @@ internal sealed class CustomerConfiguration : EntityConfiguration<Customer>
         builder.Property(customer => customer.Phone).HasMaxLength(32).IsRequired();
         builder.Property(customer => customer.Email).HasMaxLength(256);
         builder.Property(customer => customer.MergedIntoCustomerId).HasMaxLength(40);
+        builder.Property(customer => customer.LineUserId).HasMaxLength(64);
+        builder.Property(customer => customer.LineUnfollowedAt);
+
+        // One record per LINE address, so the webhook's address lookup can never be ambiguous
+        // about whose appointment a chat button means. Partial, like user_id: most have none.
+        builder.HasIndex(customer => customer.LineUserId)
+            .IsUnique()
+            .HasFilter("line_user_id IS NOT NULL");
 
         // The counter's duplicate check ("ตรวจซ้ำด้วยเบอร์โทร") is a lookup, not a constraint — two
         // people in one household legitimately share a number, and the merge endpoint exists

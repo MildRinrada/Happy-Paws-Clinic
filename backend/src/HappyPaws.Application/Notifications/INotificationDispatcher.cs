@@ -1,3 +1,5 @@
+using HappyPaws.Domain.Notifications;
+
 namespace HappyPaws.Application.Notifications;
 
 /// <summary>One message to send to a customer, on whichever channel their record allows.</summary>
@@ -11,7 +13,24 @@ namespace HappyPaws.Application.Notifications;
 public sealed record NotificationRequest(
     string CustomerId,
     string TemplateKey,
-    IReadOnlyDictionary<string, string> Data);
+    IReadOnlyDictionary<string, string> Data)
+{
+    /// <summary>The branch the message is about, for the delivery log's branch filter. Optional.</summary>
+    public string? BranchId { get; init; }
+
+    /// <summary>
+    /// <c>line</c>, <c>sms</c> or <c>email</c> to use that channel only, with no fallback; null lets
+    /// the router choose LINE, then SMS, then email.
+    /// </summary>
+    public string? Channel { get; init; }
+
+    public DeliverySource Source { get; init; } = DeliverySource.System;
+
+    /// <summary>Groups the deliveries of one staff send or broadcast.</summary>
+    public string? BatchId { get; init; }
+
+    public string? SentByStaffId { get; init; }
+}
 
 /// <summary>
 /// Sends a customer a message. The only thing Application code knows about notifications.
@@ -65,4 +84,22 @@ public static class NotificationTemplates
     /// "ยิง LINE อัตโนมัติเมื่อมีคนยกเลิก" — a slot the customer is waiting for has opened up.
     /// </summary>
     public const string WaitingListSlotAvailable = "waiting_list.slot_available";
+
+    /// <summary>"เทมเพลตพร้อมตัวแปร pet_name, vet_name, time" — a visit coming up. Staff can send it.</summary>
+    public const string AppointmentReminder = "appointment.reminder";
+
+    /// <summary>A vaccination falling due. Staff can send it.</summary>
+    public const string VaccineDue = "vaccine.due";
+
+    /// <summary>
+    /// "แผนหลายครั้ง · ผูกกับนัดและการเตือน" — a session of a treatment plan is coming up. Sent by a
+    /// reminder rule, never by hand: it names a real plan.
+    /// </summary>
+    public const string TreatmentPlanSession = "treatment_plan.session";
+
+    /// <summary>A message about the pet's care, written by staff. Staff can send it.</summary>
+    public const string ClinicMessage = "clinic.message";
+
+    /// <summary>An announcement to a list of customers. Marketing: it needs that consent.</summary>
+    public const string ClinicAnnouncement = "clinic.announcement";
 }

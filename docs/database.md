@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  11 migration และ model snapshot
+  Migrations/                  18 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -44,24 +44,25 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 
 ## ตาราง
 
-มี 56 ตาราง แบ่งตามโมดูลได้ดังนี้
+มี 62 ตาราง แบ่งตามโมดูลได้ดังนี้
 
 | โมดูล | ตาราง |
 |---|---|
 | Identity และสิทธิ์ | `user_accounts`, `user_sessions`, `staff_memberships`, `roles`, `staff_invitations`, `phone_verifications`, `password_reset_requests` |
-| คลินิก | `clinic_profile`, `branches`, `opening_hours`, `clinic_holidays`, `booking_settings`, `queue_settings`, `medical_record_settings` |
+| คลินิก | `clinic_profile`, `branches`, `opening_hours`, `clinic_holidays`, `booking_settings`, `queue_settings`, `medical_record_settings`, `clinic_contacts` |
 | บริการและตารางงาน | `clinic_services`, `staff_shifts`, `staff_time_off`, `assignment_rules` |
 | ลูกค้าและสัตว์ | `customers`, `customer_invitations`, `pets`, `pet_ownerships`, `pet_allergies`, `pet_vaccinations`, `pet_documents`, `treatment_plans` |
-| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications` |
+| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications`, `notification_deliveries`, `line_channel_settings` |
 | นัดและคิว | `appointments`, `slot_holds`, `queue_tickets`, `appointment_types`, `cancellation_policy`, `waiting_list` |
 | การตรวจ | `consultations`, `consultation_vitals`, `consultation_findings`, `consultation_diagnoses`, `consultation_treatments`, `prescriptions`, `treatment_templates` |
 | แล็บ | `lab_requests`, `lab_results` |
 | เวชระเบียน | `medical_records`, `medical_record_amendments` |
 | การเงินและแพ็กเกจ | `invoices`, `invoice_lines`, `invoice_discounts`, `invoice_payments`, `invoice_refunds`, `receipts`, `customer_packages` |
 | เนื้อหาเว็บ | `articles` |
+| เตือนอัตโนมัติและรายงาน | `automation_rules`, `automation_dispatches`, `report_exports` |
 | ระบบ | `audit_entries`, `idempotency_records` |
 
-ยังไม่มีตารางของคลังยา ข้อความสองทาง ระบบอัตโนมัติ และ webhook ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
+ยังไม่มีตารางของคลังยา ข้อความสองทาง และ webhook ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
 
 ### ตารางที่มีแถวเดียว
 
@@ -172,6 +173,9 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 13 | `StaffDepartmentsAndPublicProfiles` | `department` และโปรไฟล์สาธารณะบน `staff_memberships` ใส่แผนกให้พนักงานเดิมตาม `staff_type` |
 | 14 | `SchedulingAndAccountSelfService` | ตาราง `staff_time_off` และ `assignment_rules` (แถวเดียว) บน `user_accounts` เพิ่มภาษา ช่องทางแจ้งเตือน ความลับ 2FA ที่รอยืนยัน และ hash ของ recovery code |
 | 15 | `TierTwoClinicalAppointmentsAndPortal` | 13 ตารางของงานรักษาต่อเนื่อง นัดขั้นสูง การเข้าสู่ระบบของลูกค้า และ portal บน `appointments` เพิ่ม `type_code` (นัดเดิมเป็น `regular`) `series_id` และ `is_late_cancellation` บน `pets` เพิ่มชื่อเล่น รูป อาหาร และพฤติกรรม |
+| 16 | `ClinicContacts` | ตาราง `clinic_contacts` (ช่องทางติดต่อของคลินิก) |
+| 17 | `NotificationDeliveryAndLineChannel` | ตาราง `notification_deliveries` (ประวัติการส่ง หนึ่งแถวต่อหนึ่งครั้งที่ลองส่ง) และ `line_channel_settings` (แถวเดียว) บน `customers` เพิ่ม `line_user_id` (ไม่ซ้ำเมื่อมีค่า) และ `line_unfollowed_at` |
+| 18 | `AutomationAndReportExports` | ตาราง `automation_rules` (กติกาเตือนอัตโนมัติ ใส่กติกาเริ่มต้นสี่ข้อแบบปิดไว้) `automation_dispatches` (บันทึกส่งแล้ว unique `(rule_id, subject_kind, subject_id, due_key)` คือสิ่งที่กันการส่งซ้ำ) และ `report_exports` (งานส่งออกรายงาน) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

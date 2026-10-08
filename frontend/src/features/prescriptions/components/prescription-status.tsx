@@ -13,6 +13,7 @@ export function PrescriptionStatus({ item }: { item: PrescriptionItem }) {
       ) : (
         <Badge tone="amber">{text.status.waiting}</Badge>
       )}
+      {item.dispensed_at && item.stock_deducted === false && <Badge tone="amber">{text.stock.historyNotDeducted}</Badge>}
       {item.active && <Badge tone="blue">{text.status.active}</Badge>}
       {item.duplicate_of.length > 0 && <Badge tone="red">{text.duplicate.badge}</Badge>}
     </>

@@ -652,6 +652,219 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_entries", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Automation.AutomationDispatch", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("ClaimedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<string>("ClaimedBy")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("claimed_by");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DueKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("due_key");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("PetId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("pet_id");
+
+                    b.Property<string>("RuleId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("rule_id");
+
+                    b.Property<DateTimeOffset>("ScheduledFor")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("scheduled_for");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SubjectId")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectKind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("subject_kind");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_automation_dispatches");
+
+                    b.HasIndex("ClaimedAt")
+                        .HasDatabaseName("ix_automation_dispatches_open_claims")
+                        .HasFilter("status = 'Claimed'");
+
+                    b.HasIndex("RuleId", "ClaimedAt")
+                        .HasDatabaseName("ix_automation_dispatches_rule_id_claimed_at");
+
+                    b.HasIndex("RuleId", "SubjectKind", "SubjectId", "DueKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_automation_dispatches_reminder");
+
+                    b.ToTable("automation_dispatches", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Automation.AutomationRule", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<int?>("OffsetDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("offset_days");
+
+                    b.Property<int?>("OffsetHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("offset_hours");
+
+                    b.Property<TimeOnly?>("SendTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("send_time");
+
+                    b.Property<string>("ServiceId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("service_id");
+
+                    b.Property<string>("Species")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("species");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("template_key");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("trigger");
+
+                    b.Property<bool>("UnconfirmedOnly")
+                        .HasColumnType("boolean")
+                        .HasColumnName("unconfirmed_only");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VaccineName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("vaccine_name");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_automation_rules");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_automation_rules_branch_id");
+
+                    b.HasIndex("Enabled")
+                        .HasDatabaseName("ix_automation_rules_enabled")
+                        .HasFilter("enabled");
+
+                    b.ToTable("automation_rules", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_automation_rules_one_offset", "(offset_days IS NULL) <> (offset_hours IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Billing.Invoice", b =>
                 {
                     b.Property<string>("Id")
@@ -1960,6 +2173,15 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<DateTimeOffset?>("LineUnfollowedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("line_unfollowed_at");
+
+                    b.Property<string>("LineUserId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("line_user_id");
+
                     b.Property<string>("MergedIntoCustomerId")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
@@ -1994,6 +2216,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("DisplayName"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("DisplayName"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("LineUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customers_line_user_id")
+                        .HasFilter("line_user_id IS NOT NULL");
 
                     b.HasIndex("MergedIntoCustomerId")
                         .HasDatabaseName("ix_customers_merged_into_customer_id")
@@ -2522,6 +2749,451 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("user_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.LineChannelSettings", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BroadcastMonthlyLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("broadcast_monthly_limit");
+
+                    b.Property<string>("ChannelAccessToken")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("channel_access_token");
+
+                    b.Property<string>("ChannelId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("channel_id");
+
+                    b.Property<string>("ChannelSecret")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("channel_secret");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.PrimitiveCollection<string[]>("DisabledTemplates")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("disabled_templates");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_line_channel_settings");
+
+                    b.ToTable("line_channel_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_line_channel_settings_singleton", "id = 'set_line'");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.InventoryItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NameKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name_key");
+
+                    b.Property<int>("ReorderLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("reorder_level");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("unit");
+
+                    b.Property<long>("UnitPriceSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("unit_price_satang");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_inventory_items");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_inventory_items_name_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("NameKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_inventory_items_name_key");
+
+                    b.ToTable("inventory_items", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_inventory_items_price_not_negative", "unit_price_satang >= 0");
+
+                            t.HasCheckConstraint("ck_inventory_items_reorder_not_negative", "reorder_level >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrder", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly?>("ExpectedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("expected_on");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("number");
+
+                    b.Property<DateTimeOffset>("OrderedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("ordered_at");
+
+                    b.Property<string>("OrderedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ordered_by_staff_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SupplierName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("supplier_name");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_purchase_orders");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_purchase_orders_number");
+
+                    b.HasIndex("BranchId", "Status")
+                        .HasDatabaseName("ix_purchase_orders_branch_id_status");
+
+                    b.ToTable("purchase_orders", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrderLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ItemId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("PurchaseOrderId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("purchase_order_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("ReceivedQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("received_quantity");
+
+                    b.Property<long>("UnitCostSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("unit_cost_satang");
+
+                    b.HasKey("Id")
+                        .HasName("pk_purchase_order_lines");
+
+                    b.HasIndex("ItemId")
+                        .HasDatabaseName("ix_purchase_order_lines_item_id");
+
+                    b.HasIndex("PurchaseOrderId")
+                        .HasDatabaseName("ix_purchase_order_lines_purchase_order_id");
+
+                    b.ToTable("purchase_order_lines", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_purchase_order_lines_quantity_positive", "quantity > 0");
+
+                            t.HasCheckConstraint("ck_purchase_order_lines_received_within_ordered", "received_quantity >= 0 AND received_quantity <= quantity");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.StockLot", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly?>("ExpiresOn")
+                        .HasColumnType("date")
+                        .HasColumnName("expires_on");
+
+                    b.Property<string>("ItemId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("LotNumber")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("lot_number");
+
+                    b.Property<int>("QuantityOnHand")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity_on_hand");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("received_at");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stock_lots");
+
+                    b.HasIndex("BranchId", "ExpiresOn")
+                        .HasDatabaseName("ix_stock_lots_branch_id_expires_on");
+
+                    b.HasIndex("ItemId", "BranchId", "LotNumber", "ExpiresOn")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stock_lots_item_branch_lot");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ItemId", "BranchId", "LotNumber", "ExpiresOn"), false);
+
+                    b.ToTable("stock_lots", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_stock_lots_quantity_not_negative", "quantity_on_hand >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.StockMovement", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BalanceAfter")
+                        .HasColumnType("integer")
+                        .HasColumnName("balance_after");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ItemId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("LotId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("lot_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("PrescriptionId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("prescription_id");
+
+                    b.Property<string>("PurchaseOrderId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("purchase_order_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("RecordedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("recorded_by_staff_id");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("TransferId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("transfer_id");
+
+                    b.Property<long?>("UnitCostSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("unit_cost_satang");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stock_movements");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_stock_movements_branch_id");
+
+                    b.HasIndex("LotId")
+                        .HasDatabaseName("ix_stock_movements_lot_id");
+
+                    b.HasIndex("PrescriptionId")
+                        .HasDatabaseName("ix_stock_movements_prescription_id")
+                        .HasFilter("prescription_id IS NOT NULL");
+
+                    b.HasIndex("PurchaseOrderId")
+                        .HasDatabaseName("ix_stock_movements_purchase_order_id");
+
+                    b.HasIndex("ItemId", "BranchId", "OccurredAt")
+                        .HasDatabaseName("ix_stock_movements_item_id_branch_id_occurred_at");
+
+                    b.ToTable("stock_movements", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>
                 {
                     b.Property<string>("Id")
@@ -2899,6 +3571,106 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_inbox_notifications_customer_id_created_at");
 
                     b.ToTable("inbox_notifications", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BatchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("batch_id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("Channel")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("FallbackFrom")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("fallback_from");
+
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("SentByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("sent_by_staff_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("template_key");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_deliveries");
+
+                    b.HasIndex("BatchId")
+                        .HasDatabaseName("ix_notification_deliveries_batch_id")
+                        .HasFilter("batch_id IS NOT NULL");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_notification_deliveries_broadcasts_sent")
+                        .HasFilter("source = 'Broadcast' AND status = 'Sent'");
+
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_notification_deliveries_created_at_id");
+
+                    b.HasIndex("CustomerId", "CreatedAt")
+                        .HasDatabaseName("ix_notification_deliveries_customer_id_created_at");
+
+                    b.ToTable("notification_deliveries", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Patients.Pet", b =>
@@ -3427,6 +4199,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("allergy_acknowledgement");
 
+                    b.Property<long?>("ChargedUnitPriceSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("charged_unit_price_satang");
+
                     b.Property<string>("ConsultationId")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -3473,6 +4249,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("instructions");
 
+                    b.Property<string>("InventoryItemId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("inventory_item_id");
+
                     b.Property<string>("PetId")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -3493,6 +4274,12 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
 
+                    b.Property<bool>("StockDeducted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("stock_deducted");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
@@ -3512,6 +4299,9 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.HasIndex("DispensedAt")
                         .HasDatabaseName("ix_prescriptions_dispensed_at")
                         .HasFilter("dispensed_at IS NULL");
+
+                    b.HasIndex("InventoryItemId")
+                        .HasDatabaseName("ix_prescriptions_inventory_item_id");
 
                     b.HasIndex("PetId", "PrescribedAt")
                         .HasDatabaseName("ix_prescriptions_pet_id_prescribed_at");
@@ -3682,6 +4472,122 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_queue_tickets_branch_id_service_date_priority_skipped_at_se");
 
                     b.ToTable("queue_tickets", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Reporting.ReportExport", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllBranches")
+                        .HasColumnType("boolean")
+                        .HasColumnName("all_branches");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.PrimitiveCollection<string[]>("BranchIds")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("branch_ids");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("FileKey")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("file_key");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("format");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date")
+                        .HasColumnName("from_date");
+
+                    b.Property<string>("Report")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("report");
+
+                    b.Property<string>("RequestedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("requested_by_staff_id");
+
+                    b.Property<int?>("RowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_count");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date")
+                        .HasColumnName("to_date");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_exports");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_report_exports_queue")
+                        .HasFilter("status = 'Queued'");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("ix_report_exports_running")
+                        .HasFilter("status = 'Running'");
+
+                    b.ToTable("report_exports", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Scheduling.AssignmentRules", b =>
@@ -4229,6 +5135,16 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_waiting_list_clinic_service_service_id");
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Automation.AutomationDispatch", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Automation.AutomationRule", null)
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_automation_dispatches_automation_rule_rule_id");
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Billing.Invoice", b =>
                 {
                     b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
@@ -4455,6 +5371,86 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_user_sessions_user_accounts_user_id");
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrder", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchase_orders_branches_branch_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrderLine", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Inventory.InventoryItem", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchase_order_lines_inventory_items_item_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.PurchaseOrder", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchase_order_lines_purchase_orders_purchase_order_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.StockLot", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_lots_branches_branch_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.InventoryItem", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_lots_inventory_items_item_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.StockMovement", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_movements_branches_branch_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.InventoryItem", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_movements_inventory_items_item_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.StockLot", null)
+                        .WithMany()
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_movements_stock_lots_lot_id");
+
+                    b.HasOne("HappyPaws.Domain.Prescriptions.Prescription", null)
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_movements_prescription_prescription_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.PurchaseOrder", null)
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_movements_purchase_orders_purchase_order_id");
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>
                 {
                     b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
@@ -4517,6 +5513,16 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_inbox_notifications_customers_customer_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notification_deliveries_customers_customer_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Patients.Pet", b =>
@@ -4594,6 +5600,12 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_prescriptions_consultations_consultation_id");
+
+                    b.HasOne("HappyPaws.Domain.Inventory.InventoryItem", null)
+                        .WithMany()
+                        .HasForeignKey("InventoryItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_prescriptions_inventory_items_inventory_item_id");
 
                     b.HasOne("HappyPaws.Domain.Patients.Pet", null)
                         .WithMany()
@@ -4680,6 +5692,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.Navigation("Treatments");
 
                     b.Navigation("Vitals");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrder", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>

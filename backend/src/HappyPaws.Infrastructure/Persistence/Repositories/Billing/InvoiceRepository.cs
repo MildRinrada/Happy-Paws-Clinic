@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Domain.Billing;
@@ -32,6 +34,25 @@ internal sealed class InvoiceRepository(HappyPawsDbContext db) : IInvoiceReposit
         CancellationToken cancellationToken = default) =>
         WithParts(db.Set<Invoice>())
             .FirstOrDefaultAsync(invoice => invoice.ConsultationId == consultationId, cancellationToken);
+
+    public async Task LockConsultationAsync(string consultationId, CancellationToken cancellationToken = default)
+    {
+        // Transaction-scoped, keyed on the case and salted so it cannot collide with the stock or
+        // document-number locks that share PostgreSQL's one advisory-lock namespace.
+        var key = BitConverter.ToInt64(SHA256.HashData(Encoding.UTF8.GetBytes($"case-billing:{consultationId}")), 0);
+        await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock({0})", [key], cancellationToken);
+    }
+
+    public void MarkChanged(Invoice invoice)
+    {
+        // A modified root is written with its xmin in the WHERE clause, which is the check wanted.
+        var entry = db.Entry(invoice);
+
+        if (entry.State == EntityState.Unchanged)
+        {
+            entry.State = EntityState.Modified;
+        }
+    }
 
     public Task<CursorPage<Invoice>> ListAsync(
         InvoiceListFilter filter,

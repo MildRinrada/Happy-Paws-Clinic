@@ -1,9 +1,13 @@
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Common;
 using HappyPaws.Application.Customers;
+using HappyPaws.Application.Inventory;
+using HappyPaws.Application.Inventory.Dispensing;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Prescriptions.Dtos;
 using HappyPaws.Application.Scheduling;
@@ -19,11 +23,18 @@ public sealed record DispensePrescriptionCommand(string PrescriptionId);
 /// <summary>
 /// Hands a written prescription over to the owner.
 /// <para>
-/// <b>Two of the three things in the contract's line happen.</b> The prescription is marked as
-/// dispensed, by whom and when, and the answer carries the label. The third, "ตัดสต๊อก", needs the
-/// Inventory module, which does not exist yet: there is no stock to cut from and no item a drug name
-/// maps to. The answer says <c>stock_deducted: false</c> rather than pretending, and the drug is not
-/// billed either, for the same reason — its price lives in the inventory that is not there.
+/// <b>All three things in the contract's line, in one transaction.</b> The prescription is marked
+/// as dispensed, by whom and when; "ตัดสต๊อก" takes the quantity off the dispensing branch's stock
+/// (<see cref="StockDispenser"/>); and the answer carries the label to print. The medicine is charged
+/// at the matched item's price, on the case's bill (<see cref="MedicineBilling"/>). Either all of it
+/// commits or none of it does.
+/// </para>
+/// <para>
+/// <b>Stock problems never block the hand-over.</b> A drug that matches no inventory item is
+/// dispensed with <c>stock_deducted: false</c>, <c>stock.status: not_matched</c> and no charge; one
+/// whose branch shows too few usable units is dispensed and charged with <c>stock.status:
+/// insufficient</c> and stock untouched. The contract does not say a dispense may be refused for
+/// stock, and the drug is already in the owner's hand. See <c>docs/assumptions.md § 42</c>.
 /// </para>
 /// <para>
 /// A prescription is dispensed once. A second press answers <c>409 state_conflict</c>, which is
@@ -39,6 +50,8 @@ public sealed class DispensePrescriptionHandler(
     IClinicSettingsStore settings,
     BranchGuard branchGuard,
     ClinicDays clinicDays,
+    StockDispenser dispenser,
+    MedicineBilling billing,
     IAuditTrail audit,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
@@ -50,9 +63,12 @@ public sealed class DispensePrescriptionHandler(
     {
         var staffId = currentUser.RequireStaffId();
         PrescriptionInContext? dispensed = null;
+        DispenseStockResult? stock = null;
+        MedicineCharge? charge = null;
 
         await unitOfWork.ExecuteInTransactionAsync(async token =>
         {
+            var now = clock.UtcNow;
             var found = await prescriptions.FindTrackedAsync(command.PrescriptionId, token);
 
             if (found is null || !branchGuard.CanAccess(found.BranchId))
@@ -60,18 +76,27 @@ public sealed class DispensePrescriptionHandler(
                 throw new NotFoundException("prescription", command.PrescriptionId);
             }
 
-            found.Prescription.Dispense(staffId, clock.UtcNow);
+            var prescription = found.Prescription;
+            prescription.Dispense(staffId, now);
+
+            stock = await dispenser.TakeAsync(prescription, found.BranchId, staffId, now, token);
+            prescription.RecordDispenseOutcome(stock.Item?.Id, stock.Deducted, stock.Item?.UnitPriceSatang);
+            charge = await billing.ChargeAsync(found, staffId, now, token);
 
             audit.Record(new AuditEvent(
                 AuditActions.PrescriptionDispensed,
                 AuditResources.Prescription,
-                found.Prescription.Id,
-                found.Prescription.PetId,
+                prescription.Id,
+                prescription.PetId,
                 found.BranchId,
                 new Dictionary<string, object?>
                 {
-                    ["drug_name"] = found.Prescription.DrugName,
-                    ["quantity"] = found.Prescription.Quantity,
+                    ["drug_name"] = prescription.DrugName,
+                    ["quantity"] = prescription.Quantity,
+                    ["inventory_item_id"] = stock.Item?.Id,
+                    ["stock"] = WireEnum.Of(stock.Status),
+                    ["charged_satang"] = charge?.AmountSatang,
+                    ["invoice_id"] = charge?.Invoice?.Id,
                 }));
 
             dispensed = found;
@@ -82,8 +107,28 @@ public sealed class DispensePrescriptionHandler(
         return new DispenseResultDto(
             PrescriptionItemDto.From(dispensed!.Prescription, clock.UtcNow),
             label,
-            StockDeducted: false);
+            stock!.Deducted,
+            StockOf(stock),
+            charge is null
+                ? null
+                : new DispenseChargeDto(
+                    WireEnum.Of(charge.Placement),
+                    charge.UnitPriceSatang,
+                    charge.AmountSatang,
+                    charge.Invoice?.Id,
+                    charge.Invoice?.Number));
     }
+
+    private static DispenseStockDto StockOf(DispenseStockResult stock) =>
+        stock.Item is not { } item
+            ? new DispenseStockDto(WireEnum.Of(stock.Status))
+            : new DispenseStockDto(
+                WireEnum.Of(stock.Status),
+                item.Id,
+                item.Name,
+                item.Unit,
+                stock.Available,
+                [.. stock.Taken.Select(row => new DispensedLotDto(row.Lot.Id, row.Lot.LotNumber, row.Lot.ExpiresOn, -row.Movement.Quantity))]);
 
     private async Task<DispenseLabelDto> LabelAsync(PrescriptionInContext found, CancellationToken cancellationToken)
     {

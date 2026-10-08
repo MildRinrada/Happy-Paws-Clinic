@@ -101,15 +101,26 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 | `Messaging__Sms__Provider` | ว่าง | `thaibulksms` คือส่ง SMS ว่างคือไม่ส่ง |
 | `Messaging__Sms__ApiKey`, `ApiSecret` | ว่าง | กุญแจของ ThaiBulkSMS ตั้ง `ApiSecret` ด้วยตัวแปรแวดล้อมเท่านั้น |
 | `Messaging__Sms__Sender` | ว่าง | ชื่อผู้ส่งที่ลงทะเบียนกับ ThaiBulkSMS ว่างคือชื่อตั้งต้นของบัญชี |
+| `Messaging__Line__ChannelId` | ว่าง | Channel ID ของ LINE Official Account ดูหัวข้อ [ตั้งค่า LINE](#ตั้งค่า-line) |
+| `Messaging__Line__ChannelSecret` | ว่าง | ใช้ตรวจลายเซ็น webhook ตั้งด้วยตัวแปรแวดล้อมเท่านั้น ว่างและไม่ได้ตั้งในหน้าตั้งค่า คือ webhook ตอบ 401 ทุกครั้ง |
+| `Messaging__Line__ChannelAccessToken` | ว่าง | token แบบ long-lived สำหรับ push ตั้งด้วยตัวแปรแวดล้อมเท่านั้น ว่างและไม่ได้ตั้งในหน้าตั้งค่า คือไม่ส่ง LINE |
+| `Messaging__Line__BaseUrl` | `https://api.line.me` | เปลี่ยนเฉพาะตอนทดสอบกับเซิร์ฟเวอร์จำลอง |
+| `Messaging__Line__PortalUrl` | `http://localhost:3000/portal` | ลิงก์ portal ที่ข้อความ LINE และคำตอบในแชตใช้ |
 | `Auth__SignIn__PasswordResetUrlTemplate` | `http://localhost:3000/reset-password#token={token}` | หน้าเว็บที่ลิงก์รีเซ็ตรหัสผ่านชี้ไป |
 | `RateLimits__OtpPerPhonePer10Minutes` | 3 | จำนวนรหัส OTP ที่ขอได้ต่อเบอร์ใน 10 นาที |
 | `Storage__LocalRoot` | ว่าง (โฟลเดอร์ชั่วคราวของระบบ) | ที่เก็บไฟล์ที่อัปโหลด ต้องตั้งเป็นโฟลเดอร์ถาวรก่อนใช้งานจริง |
 | `Storage__SigningKey` | ว่าง (คำนวณจากคีย์ JWT) | คีย์ลงชื่อ URL อัปโหลดและดาวน์โหลด ถ้าตั้งเองต้องยาวอย่างน้อย 32 ตัวอักษร |
 | `Storage__PublicBaseUrl` | `http://localhost:5080/v1` | ส่วนต้นของ URL อัปโหลดและดาวน์โหลดที่ API ออกให้ |
+| `Jobs__Enabled` | `true` | ตัวตั้งเวลาเบื้องหลังทั้งหมดของ instance นี้ `false` คือปิดทุกงาน ดูหัวข้อ [ตัวตั้งเวลาเบื้องหลัง](#ตัวตั้งเวลาเบื้องหลัง) |
+| `Jobs__StartupDelaySeconds` | 10 | รอกี่วินาทีหลังเปิด API ก่อนรันงานแรก |
+| `Jobs__Automations__Enabled`, `IntervalSeconds` | `true`, 60 | งานเตือนอัตโนมัติ และรอบของมัน |
+| `Jobs__Automations__CatchUpHours` | 12 | ข้อความที่เลยเวลาส่งไปแล้วยังส่งตามหลังได้กี่ชั่วโมง (1 ถึง 72) |
+| `Jobs__ReportExports__Enabled`, `IntervalSeconds` | `true`, 15 | งานสร้างไฟล์ส่งออกรายงาน |
+| `Jobs__Housekeeping__Enabled`, `IntervalSeconds` | `true`, 3600 | งานลบ hold และ idempotency key ที่หมดอายุเกินหนึ่งวัน |
 | `HAPPYPAWS_OPERATOR_PASSWORD` | ว่าง | รหัสผ่านสำหรับ `bootstrap` และ `reset-credentials` |
 | `HAPPYPAWS_DESIGNTIME_CONNECTION` | ว่าง | ฐานข้อมูลของ `dotnet-ef` ดู [ฐานข้อมูล](database.md#migration) |
 
-ตัวแปร `LINE_CHANNEL_*` ใน `.env.example` ยังไม่มีโค้ดอ่าน
+ตัวแปร `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` ใน `.env.example` ถูกส่งต่อเป็น `Messaging__Line__*` ใน `docker-compose.yml`
 
 **ฝั่งหน้าเว็บ** เขียนใน `frontend/.env.local`
 
@@ -120,13 +131,16 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 
 ## ตั้งค่าอีเมลและ SMS
 
-ข้อความสามแบบส่งจริงเมื่อตั้งค่านี้ ถ้าไม่ตั้ง ระบบเขียนลง log แทนเหมือนเดิม
+ข้อความเหล่านี้ส่งจริงเมื่อตั้งค่านี้ ถ้าไม่ตั้ง ระบบเขียนลง log แทนเหมือนเดิม
 
 | ข้อความ | ช่องทาง |
 |---|---|
 | รหัส OTP ตอนลูกค้าสมัครหรือเข้าสู่ระบบ | SMS |
 | ลิงก์ตั้งรหัสผ่านใหม่ | อีเมลถ้าบัญชีมีอีเมลและตั้งอีเมลไว้ ไม่อย่างนั้น SMS |
 | ลิงก์คำเชิญพนักงาน | อีเมล |
+| การแจ้งเตือนถึงลูกค้า (เรียกคิว ใบเสร็จ เตือนนัด ข้อความจากพนักงาน) | LINE ก่อน แล้ว SMS แล้วอีเมล ตามที่ตั้งไว้ ดู [การแจ้งเตือน](features/notifications.md) |
+
+ถ้าไม่ได้ตั้ง LINE, SMS และอีเมลเลย การแจ้งเตือนถึงลูกค้าถูกเขียนลง log ระดับ warning และประวัติการส่ง (`GET /staff/notifications/log`) บันทึกว่า `channel_not_configured`
 
 **อีเมล** ใช้ SMTP ของผู้ให้บริการรายไหนก็ได้ ตัวอย่างกับ Google Workspace (ต้องสร้าง App Password ในบัญชี Google ก่อน)
 
@@ -154,6 +168,52 @@ $env:Messaging__Sms__Sender = "<ชื่อผู้ส่งที่ลงท
 - เมื่อตั้งค่าแล้ว ควรปิด `Auth__SignIn__LogUndeliveredSecrets` และ `Staff__Invitations__LogUndeliveredLinks` ในเครื่องที่ใช้งานจริง
 - รูปแบบคำขอไปที่ ThaiBulkSMS เขียนตาม API v2 (`POST /sms` แบบ basic auth) ทดสอบแล้วกับเซิร์ฟเวอร์จำลองเท่านั้น ควรลองส่งจริงด้วยบัญชีของคลินิกหนึ่งครั้งก่อนเปิดใช้
 
+## ตั้งค่า LINE
+
+1. สร้างช่อง Messaging API ของ LINE Official Account คลินิกที่ LINE Developers
+2. คัด Channel ID และ Channel secret จากหน้า Basic settings ออก channel access token แบบ long-lived ที่หน้า Messaging API
+3. ตั้งค่าบนเครื่องที่รัน API ด้วยตัวแปรแวดล้อม (หรือใส่ในหน้า "ตั้งค่า > LINE" ของระบบ ซึ่งเก็บในฐานข้อมูลแบบยังไม่เข้ารหัส)
+
+```powershell
+$env:Messaging__Line__ChannelId = "<channel id>"
+$env:Messaging__Line__ChannelSecret = "<channel secret>"
+$env:Messaging__Line__ChannelAccessToken = "<channel access token>"
+$env:Messaging__Line__PortalUrl = "https://yourclinic.com/portal"
+```
+
+ถ้ารันด้วย Docker Compose ให้ใส่ `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN` ใน `.env`
+
+4. ที่หน้า Messaging API ของ LINE Developers ใส่ Webhook URL เป็น URL สาธารณะของ API ต่อด้วย `/webhooks/line` เช่น `https://api.yourclinic.com/v1/webhooks/line` เปิด "Use webhook" แล้วกด Verify ต้องได้ 200 (ถ้าได้ 401 คือ secret ไม่ตรง)
+5. ปิด "Auto-reply messages" ของ LINE Official Account Manager เพราะระบบตอบข้อความเอง
+
+- ค่าที่ตั้งในหน้าตั้งค่าของระบบชนะค่าจากตัวแปรแวดล้อม ลบค่าในหน้านั้นเพื่อกลับไปใช้ตัวแปรแวดล้อม
+- ลูกค้าจะได้ข้อความทาง LINE เมื่อเรกคอร์ดมี LINE user id ซึ่งตอนนี้ยังไม่มีทางบันทึกผ่าน API ดู [LINE](features/line.md#ที่อยู่-line-ของลูกค้า)
+- client ของ LINE ทดสอบกับเซิร์ฟเวอร์จำลองเท่านั้น ควรลองส่งจริงหนึ่งครั้งก่อนเปิดใช้
+
+## ตัวตั้งเวลาเบื้องหลัง
+
+API มีงานเบื้องหลังสามงาน แต่ละงานเป็น `BackgroundService` ใน `backend/src/HappyPaws.Infrastructure/Jobs/` เปิดเองเมื่อรัน API ไม่ทำงานตอนรันคำสั่ง operator
+
+| งาน | รอบ | ทำอะไร |
+|---|---|---|
+| `automations` | 60 วินาที | รันกติกาเตือนอัตโนมัติที่เปิดอยู่ ดู [เตือนอัตโนมัติ](features/automation.md) |
+| `report-exports` | 15 วินาที | สร้างไฟล์ที่สั่งจาก `POST /staff/reports/exports` |
+| `housekeeping` | 1 ชั่วโมง | ลบ booking hold ที่หมดอายุและไม่ได้กลายเป็นนัด และ idempotency key ที่หมดอายุ เมื่อเลยมาแล้วหนึ่งวัน |
+
+**ปิดบนเครื่องตัวเอง** ตั้งตัวแปรก่อนรัน API ใน Terminal เดียวกัน
+
+```powershell
+$env:Jobs__Enabled = "false"                 # ปิดทุกงาน
+$env:Jobs__Automations__Enabled = "false"    # ปิดเฉพาะการเตือน
+```
+
+บน bash ใช้ `export Jobs__Enabled=false` หรือใส่ใน user-secrets (`dotnet user-secrets --project src/HappyPaws.Api set "Jobs:Enabled" "false"`) ตอน API เปิด log บอกว่างานไหนเปิดอยู่ (`Background job automations runs every 00:01:00`) หรือปิดอยู่
+
+- กติกาเริ่มต้นทั้งสี่ข้อปิดไว้ เปิดตัวตั้งเวลาไว้บนเครื่องตัวเองจึงไม่ส่งข้อความถึงใครจนกว่าจะสร้างกติกาที่เปิดใช้ และถ้าไม่ได้ตั้ง LINE, SMS หรืออีเมล ข้อความก็ลงแค่ log
+- ถ้าปิดงาน `report-exports` งานส่งออกจะค้างที่ `queued`
+- เปิดหลาย instance พร้อมกันได้ ข้อความเตือนจองด้วย unique key และงานส่งออกจองด้วย `FOR UPDATE SKIP LOCKED` จึงไม่ทำซ้ำ
+- ชุด integration test ตั้ง `Jobs:Enabled = false` เสมอ (`Fixtures/ApiFixture.cs`) เทสต์เรียก `RunAutomationsHandler`, `RunReportExportsHandler` และ `HousekeepingJob` เอง
+
 ## คำสั่งประจำวัน
 
 ```sh
@@ -174,12 +234,12 @@ npm run build
 
 | โปรเจกต์ | ครอบอะไร | จำนวน |
 |---|---|---|
-| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP, โควตารายวันของผู้ช่วย AI | 301 |
-| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 498 |
+| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP, โควตารายวันของผู้ช่วย AI, ช่วงเวลาและ cohort ของรายงาน, ถ้อยคำและความยาว SMS ของเทมเพลตแจ้งเตือน, การตั้งค่า LINE และข้อมูลปุ่มในแชต, การปิดบังที่อยู่ในประวัติการส่ง, กติกาเตือนอัตโนมัติและเวลาส่งตามเวลาคลินิก ผลของข้อความเตือนจากประวัติการส่ง สถานะงานส่งออก และไฟล์ CSV | 394 |
+| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 681 |
 
 integration test เป็นที่ตรวจสัญญา: status code, รูปของ error, cursor pagination, `If-Match` ที่ชน, `Idempotency-Key` และที่สำคัญที่สุดคือทุก endpoint ต้องปฏิเสธผู้เรียกที่ไม่มี scope ฝั่งหน้าเว็บยังไม่มีชุดทดสอบ หน้าคิวและหน้าเก็บเงินตรวจด้วยการใช้งานจริงในเบราว์เซอร์กับ API และฐานข้อมูลจริง แต่ไม่ได้บันทึกเป็นสคริปต์
 
-### สองกลุ่มของ integration test
+### กลุ่มของ integration test
 
 `Fixtures/ApiFixture.cs` เปิด container PostgreSQL ใหม่ รัน migration แล้วเปิด API ในโหมด Development พร้อม `ValidateOnBuild` ทำให้ DI ที่ต่อผิดล้มตั้งแต่เริ่ม
 
@@ -187,6 +247,8 @@ integration test เป็นที่ตรวจสัญญา: status code, 
 |---|---|---|
 | `ApiCollection` | เทสต์เกือบทั้งหมด (44 คลาส) | ใช้ฐานข้อมูลร่วมกัน แต่ละเทสต์สร้างข้อมูลของตัวเอง เทสต์ที่ต้องแก้ค่าระดับคลินิก (ประเภทนัด นโยบายยกเลิก ส่วนของเวชระเบียนที่เจ้าของเห็น) คืนค่าเดิมใน `finally` เพราะใน collection เดียวกันเทสต์รันทีละตัว |
 | `FreshInstanceCollection` | เทสต์ที่แก้ของที่มีชิ้นเดียวทั้ง instance (3 คลาส: `BootstrapTests`, `ClinicProfileAndBranchTests`, `ClinicSettingsTests`) | container แยกของตัวเอง สืบจาก `FreshInstanceTest` ซึ่งรัน `bootstrap` ก่อนเทสต์แรก |
+| `DeliveryCollection` | เทสต์ที่ให้ข้อความออกจริงถึงผู้ให้บริการจำลอง (`DeliveryTests`, `BroadcastTests`, `LineIntegrationTests`, `LineWebhookTests`) | container แยก ใช้ `DeliveryFixture` ซึ่งคืน `DeliveringNotificationChannel` ตัวจริง แทน transport SMS และอีเมลด้วย `FakeTransports` และชี้ HTTP client ของ LINE ไปที่ `FakeLineServer` แต่ละเทสต์ตั้ง LINE และสวิตช์ของตัวเองใน `InitializeAsync` เพราะการตั้งค่า LINE มีแถวเดียวต่อคลินิก |
+| `JobsCollection` | งานเบื้องหลัง: เตือนอัตโนมัติ ส่งออกรายงาน และ housekeeping (`AutomationEndpointTests`, `AutomationRunTests`, `HousekeepingTests`, `ReportExportTests`) | container แยก เพราะการรันจริงประเมินทุกกติกาที่เปิดอยู่กับทุกเรกคอร์ด และ worker ส่งออกหยิบทุกงานในคิว ถ้าอยู่ในฐานข้อมูลร่วมจะส่งข้อความถึงลูกค้าของเทสต์อื่น แต่ละเทสต์ยังสร้างสาขาของตัวเองและผูกกติกากับสาขานั้น `AutomationScenario` ช่วยสร้างนัด วัคซีน แผน และรันกติกา ณ เวลาที่เทสต์เลือก |
 
 ใช้ fixture class เดียวกันทั้งสองกลุ่ม xUnit สร้าง fixture หนึ่งตัวต่อ collection การประกาศ collection ที่สองจึงได้ instance ที่สองที่ไม่เห็นข้อมูลของกันเลย ถ้าเทสต์ไหนแก้เวลาทำการ การตั้งค่าคิว การตั้งค่าเวชระเบียน หรือเรื่อง "มีเจ้าของหรือยัง" ต้องอยู่ใน `FreshInstanceCollection` ไม่อย่างนั้นจะเปลี่ยนสภาพใต้เทสต์อีกสองร้อยกว่าตัว
 

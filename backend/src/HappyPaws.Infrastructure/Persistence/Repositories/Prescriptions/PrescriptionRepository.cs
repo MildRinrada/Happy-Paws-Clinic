@@ -82,6 +82,23 @@ internal sealed class PrescriptionRepository(HappyPawsDbContext db) : IPrescript
             data, hasMore ? Cursor.Encode(data[^1].PrescribedAt, data[^1].Id) : null);
     }
 
+    public Task<bool> IsCaseOpenAsync(string consultationId, CancellationToken cancellationToken = default) =>
+        db.Set<Consultation>()
+            .AsNoTracking()
+            .AnyAsync(
+                consultation => consultation.Id == consultationId && consultation.Status == ConsultationStatus.Draft,
+                cancellationToken);
+
+    public async Task<IReadOnlyList<Prescription>> ChargesForConsultationAsync(
+        string consultationId,
+        CancellationToken cancellationToken = default) =>
+        await db.Set<Prescription>()
+            .AsNoTracking()
+            .Where(prescription => prescription.ConsultationId == consultationId
+                && prescription.DispensedAt != null
+                && prescription.ChargedUnitPriceSatang != null)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Prescription>> ForPetsAsync(
         IReadOnlyCollection<string> petIds,
         CancellationToken cancellationToken = default) =>

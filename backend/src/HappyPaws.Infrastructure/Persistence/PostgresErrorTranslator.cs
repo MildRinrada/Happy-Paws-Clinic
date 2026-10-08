@@ -1,4 +1,6 @@
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Inventory;
+using HappyPaws.Infrastructure.Persistence.Configurations.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -26,16 +28,26 @@ internal static class PostgresErrorTranslator
 
     private const string AppointmentSlotConstraint = "ex_appointments_staff_slot";
 
+    /// <summary>PostgreSQL <c>unique_violation</c>.</summary>
+    private const string UniqueViolation = "23505";
+
     /// <summary>
     /// The contract error for this failure, or null when the failure is not one we planned for.
     /// </summary>
     public static Exception? Translate(DbUpdateException exception) =>
-        exception.InnerException is PostgresException postgres
-            && postgres.SqlState == ExclusionViolation
-            && postgres.ConstraintName == AppointmentSlotConstraint
-                // No suggestions: the losing request already passed its own availability check, so
-                // anything computed now would be from a view of the calendar that has just changed
-                // underneath it. An honest empty list beats a stale one.
-                ? SlotUnavailableException.AlreadyBooked([])
-                : null;
+        exception.InnerException switch
+        {
+            // No suggestions: the losing request already passed its own availability check, so
+            // anything computed now would be from a view of the calendar that has just changed
+            // underneath it. An honest empty list beats a stale one.
+            PostgresException { SqlState: ExclusionViolation, ConstraintName: AppointmentSlotConstraint } =>
+                SlotUnavailableException.AlreadyBooked([]),
+
+            // Two people adding the same new drug at the same moment: the loser is told it exists,
+            // the same answer it would have had a second later.
+            PostgresException { SqlState: UniqueViolation, ConstraintName: InventoryItemConfiguration.NameKeyIndex } =>
+                InventoryItemResolver.Exists(existingId: null),
+
+            _ => null,
+        };
 }

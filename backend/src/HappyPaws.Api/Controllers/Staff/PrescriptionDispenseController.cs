@@ -14,8 +14,9 @@ public sealed class PrescriptionDispenseController : ControllerBase
     /// <summary>
     /// <c>POST /staff/prescriptions/{id}/dispense</c> — "จ่ายยาจริง · ตัดสต๊อกและพิมพ์ฉลาก".
     /// <para>
-    /// Answers with the label to print. <c>stock_deducted</c> is false until the Inventory module
-    /// exists; see the handler. A prescription already dispensed answers <c>409</c>.
+    /// Answers with the label to print, what the dispense did to stock (<c>stock_deducted</c> and
+    /// <c>stock</c>) and what it charged (<c>charge</c>); see the handler. A prescription already
+    /// dispensed answers <c>409</c>.
     /// </para>
     /// </summary>
     /// <param name="id">Prescription id.</param>

@@ -1,5 +1,6 @@
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.Notifications;
+using HappyPaws.Application.Notifications.Delivery;
 using HappyPaws.Domain.Notifications;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +31,7 @@ public sealed class ConsentAwareNotificationDispatcher(
     INotificationChannel channel,
     ConsentGate gate,
     IInboxRepository inbox,
+    IDeliveryLog deliveryLog,
     ILogger<ConsentAwareNotificationDispatcher> logger) : INotificationDispatcher
 {
     public async Task SendAsync(NotificationRequest request, CancellationToken cancellationToken = default)
@@ -42,6 +44,9 @@ public sealed class ConsentAwareNotificationDispatcher(
                 request.CustomerId,
                 ConsentGate.PurposeOf(request.TemplateKey));
 
+            // On the delivery log too, so "why did the owner not get it" is answered on the log
+            // page and not only in the application log.
+            await RecordSuppressedAsync(request, cancellationToken);
             return;
         }
 
@@ -62,4 +67,26 @@ public sealed class ConsentAwareNotificationDispatcher(
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
+
+    private async Task RecordSuppressedAsync(NotificationRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await deliveryLog.RecordAsync(
+                NotificationDelivery.Record(
+                    request.CustomerId,
+                    request.TemplateKey,
+                    DeliveryStatus.Skipped,
+                    request.Source,
+                    errorCode: DeliveryErrors.NoConsent,
+                    batchId: request.BatchId,
+                    sentByStaffId: request.SentByStaffId,
+                    branchId: request.BranchId),
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Delivery log row for suppressed {Template} (customer {CustomerId}) was not saved", request.TemplateKey, request.CustomerId);
+        }
+    }
 }

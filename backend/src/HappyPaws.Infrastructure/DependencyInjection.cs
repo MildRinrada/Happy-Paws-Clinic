@@ -1,7 +1,9 @@
 using HappyPaws.Application.Access;
+using HappyPaws.Application.Analytics;
 using HappyPaws.Application.Appointments;
 using HappyPaws.Application.Articles;
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Automation;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
@@ -11,12 +13,14 @@ using HappyPaws.Application.Crm.GetMyPackageBalance;
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.MedicalRecords;
 using HappyPaws.Application.Identity;
+using HappyPaws.Application.Inventory;
 using HappyPaws.Application.Laboratory;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Patients.Documents;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Application.Queueing;
+using HappyPaws.Application.Reporting;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.ServiceCatalog;
 using HappyPaws.Application.Staff;
@@ -26,6 +30,7 @@ using HappyPaws.Application.MedicalRecords.GenerateDocument;
 using HappyPaws.Infrastructure.Common;
 using HappyPaws.Infrastructure.Documents;
 using HappyPaws.Infrastructure.Identity;
+using HappyPaws.Infrastructure.Jobs;
 using HappyPaws.Infrastructure.Messaging;
 using HappyPaws.Infrastructure.Notifications;
 using HappyPaws.Infrastructure.Realtime;
@@ -33,10 +38,13 @@ using HappyPaws.Infrastructure.Persistence;
 using HappyPaws.Infrastructure.Persistence.Idempotency;
 using HappyPaws.Infrastructure.Persistence.Interceptors;
 using HappyPaws.Infrastructure.Persistence.Repositories.Access;
+using HappyPaws.Infrastructure.Persistence.Repositories.Analytics;
+using HappyPaws.Infrastructure.Persistence.Repositories.Inventory;
 using HappyPaws.Infrastructure.Persistence.Repositories.Appointments;
 using HappyPaws.Infrastructure.Persistence.Repositories.Articles;
 using HappyPaws.Infrastructure.Persistence.Repositories.Scheduling;
 using HappyPaws.Infrastructure.Persistence.Repositories.Auditing;
+using HappyPaws.Infrastructure.Persistence.Repositories.Automation;
 using HappyPaws.Infrastructure.Persistence.Repositories.Billing;
 using HappyPaws.Infrastructure.Persistence.Repositories.Clinics;
 using HappyPaws.Infrastructure.Persistence.Repositories.Consultations;
@@ -49,6 +57,7 @@ using HappyPaws.Infrastructure.Persistence.Repositories.Notifications;
 using HappyPaws.Infrastructure.Persistence.Repositories.Patients;
 using HappyPaws.Infrastructure.Persistence.Repositories.Prescriptions;
 using HappyPaws.Infrastructure.Persistence.Repositories.Queueing;
+using HappyPaws.Infrastructure.Persistence.Repositories.Reporting;
 using HappyPaws.Infrastructure.Persistence.Repositories.ServiceCatalog;
 using HappyPaws.Infrastructure.Persistence.Repositories.Staff;
 using HappyPaws.Infrastructure.Staff;
@@ -144,9 +153,9 @@ public static class DependencyInjection
         services.AddScoped<IDataSubjectRequestRepository, DataSubjectRequestRepository>();
 
         // ---- Notifications ----
-        // The channel is a loud placeholder until LINE/SMS/email land. It logs at warning rather
-        // than dropping silently; see LoggingNotificationChannel.
-        services.AddSingleton<INotificationChannel, LoggingNotificationChannel>();
+        // LINE, then SMS, then email, each when configured, with every attempt in the delivery
+        // log; the loud log placeholder only when none is set up. See NotificationDeliveryRegistration.
+        services.AddNotificationDelivery(configuration);
 
         // Use cases resolve the dispatcher, and the only dispatcher there is checks consent before
         // handing anything to a channel. That is what makes the portal toggles binding: a use case
@@ -166,6 +175,12 @@ public static class DependencyInjection
         // ---- Laboratory and pharmacy ----
         services.AddScoped<ILabRequestRepository, LabRequestRepository>();
         services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+
+        // ---- Inventory ----
+        // The ledger takes the per-item, per-branch advisory lock every stock change runs under.
+        services.AddScoped<IInventoryItemRepository, InventoryItemRepository>();
+        services.AddScoped<IStockLedger, StockLedger>();
+        services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
 
         // ---- Patients ----
         // The real ownership query, replacing the fail-closed stand-in that stood here while the
@@ -203,6 +218,25 @@ public static class DependencyInjection
         // ---- Articles (contract extension) ----
         services.AddScoped<IArticleRepository, ArticleRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
+
+        // ---- Operational statistics and business dashboard ----
+        // Read models over hand-written SQL; they never load an aggregate.
+        services.AddScoped<IOperationalStatsQueries, OperationalStatsQueries>();
+        services.AddScoped<IBusinessAnalyticsQueries, BusinessAnalyticsQueries>();
+
+        // ---- Reminders and automation ----
+        // Rules, the "already sent" claims, and the subject queries the one evaluator reads.
+        services.AddScoped<IAutomationRuleRepository, AutomationRuleRepository>();
+        services.AddScoped<IAutomationDispatchRepository, AutomationDispatchRepository>();
+        services.AddScoped<IAutomationSubjectReader, AutomationSubjectReader>();
+
+        // ---- Report exports ----
+        services.AddScoped<IReportExportRepository, ReportExportRepository>();
+
+        // ---- Background scheduler ----
+        // Reminder rules, export files and housekeeping, each a BackgroundService that Jobs:Enabled
+        // (and each job's own switch) can turn off. See Jobs/JobsRegistration.
+        services.AddBackgroundJobs(configuration);
 
         // ---- Object storage ----
         // Local disk with signed URLs, standing in for S3 and its kin; see LocalFileStorage.

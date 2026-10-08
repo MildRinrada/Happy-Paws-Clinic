@@ -22,6 +22,20 @@ public interface IInvoiceRepository
     /// <summary>The bill already raised for a case, if any. Keeps closing a case idempotent.</summary>
     Task<Invoice?> FindByConsultationAsync(string consultationId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Serialises everything that bills one case — the close, and every dispense of the case's
+    /// prescriptions — until the caller's transaction ends. Whoever takes it second reads what the
+    /// first one committed, so a dispense racing a close cannot leave its medicine on neither bill.
+    /// </summary>
+    Task LockConsultationAsync(string consultationId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks a tracked bill as changed even when only a child row was added, so its version moves
+    /// and the save checks it. A line added to an open bill must collide with a payment taken against
+    /// the old total, not slip past it.
+    /// </summary>
+    void MarkChanged(Invoice invoice);
+
     Task<CursorPage<Invoice>> ListAsync(
         InvoiceListFilter filter,
         CursorPageRequest page,

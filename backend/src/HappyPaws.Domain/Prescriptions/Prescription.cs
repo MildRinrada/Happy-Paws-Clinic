@@ -14,7 +14,13 @@ namespace HappyPaws.Domain.Prescriptions;
 /// <para>
 /// Writing a prescription and dispensing it are separate events, which is why
 /// <see cref="DispensedAt"/> is nullable and stock is untouched until <c>rx:dispense</c>. A drug
-/// written but never collected must not decrement inventory.
+/// written but never collected must not decrement inventory, and is not charged for either.
+/// </para>
+/// <para>
+/// What the dispense did is kept here: which inventory item the drug was matched to, whether stock
+/// was actually taken, and the unit price charged. The price is captured at the moment of handing
+/// over, like a treatment's, so a later price change does not restate it; a dispense before the
+/// case closes is billed from this field when the case's invoice is raised.
 /// </para>
 /// </summary>
 public sealed class Prescription : Entity
@@ -56,7 +62,22 @@ public sealed class Prescription : Entity
 
     public string? DispensedByStaffId { get; private set; }
 
+    /// <summary>The inventory item this drug was matched to at dispense. Null when nothing matched.</summary>
+    public string? InventoryItemId { get; private set; }
+
+    /// <summary>True when the dispense took the quantity off the branch's stock.</summary>
+    public bool StockDeducted { get; private set; }
+
+    /// <summary>
+    /// The unit price charged for it, captured at dispense. Null when nothing was charged: the drug
+    /// matched no item, or the item is priced at zero.
+    /// </summary>
+    public long? ChargedUnitPriceSatang { get; private set; }
+
     public bool IsDispensed => DispensedAt is not null;
+
+    /// <summary>What the dispense charged in total, or zero.</summary>
+    public long ChargedSatang => (ChargedUnitPriceSatang ?? 0) * Quantity;
 
     /// <summary>When the course runs out, counting from when it was written.</summary>
     public DateTimeOffset CourseEndsAt => PrescribedAt.AddDays(DurationDays);
@@ -146,5 +167,31 @@ public sealed class Prescription : Entity
 
         DispensedAt = at;
         DispensedByStaffId = byStaffId;
+    }
+
+    /// <summary>
+    /// Records what the dispense did to stock and what it charged. Only on a prescription that has
+    /// just been dispensed, and only once.
+    /// </summary>
+    public void RecordDispenseOutcome(string? inventoryItemId, bool stockDeducted, long? chargedUnitPriceSatang)
+    {
+        if (!IsDispensed)
+        {
+            throw new StateConflictException(nameof(Prescription), "written", nameof(RecordDispenseOutcome));
+        }
+
+        if (stockDeducted && inventoryItemId is null)
+        {
+            throw new DomainException("invalid_prescription", "ตัดสต๊อกได้เฉพาะยาที่ผูกกับรายการในคลัง");
+        }
+
+        if (chargedUnitPriceSatang is <= 0)
+        {
+            chargedUnitPriceSatang = null;
+        }
+
+        InventoryItemId = inventoryItemId;
+        StockDeducted = stockDeducted;
+        ChargedUnitPriceSatang = inventoryItemId is null ? null : chargedUnitPriceSatang;
     }
 }

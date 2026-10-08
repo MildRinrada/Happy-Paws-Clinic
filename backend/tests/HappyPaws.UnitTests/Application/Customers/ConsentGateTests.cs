@@ -25,7 +25,13 @@ public class ConsentGateTests
 
             foreach (var constant in constants)
             {
-                data.Add((string)constant.GetRawConstantValue()!);
+                var key = (string)constant.GetRawConstantValue()!;
+
+                // The one template that is marketing on purpose, asserted on its own below.
+                if (key != NotificationTemplates.ClinicAnnouncement)
+                {
+                    data.Add(key);
+                }
             }
 
             return data;
@@ -49,6 +55,13 @@ public class ConsentGateTests
         // Restrictive by default. A template nobody classified must not be able to reach a customer
         // who has opted out of everything optional.
         Assert.Equal(ConsentPurpose.Marketing, ConsentGate.PurposeOf("promotions.spring_campaign"));
+    }
+
+    [Fact]
+    public void A_broadcast_announcement_needs_marketing_consent()
+    {
+        // A campaign to a list of owners is the case the marketing toggle exists for.
+        Assert.Equal(ConsentPurpose.Marketing, ConsentGate.PurposeOf(NotificationTemplates.ClinicAnnouncement));
     }
 
     [Fact]

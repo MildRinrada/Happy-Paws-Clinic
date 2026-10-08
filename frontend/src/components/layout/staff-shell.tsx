@@ -16,12 +16,15 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
+  { href: '/dashboard', label: 'ภาพรวม', scopes: [Scope.DashboardRead, Scope.StatsRead, Scope.AnalyticsRead] },
   { href: '/queue', label: 'คิววันนี้', scopes: [Scope.QueueRead] },
   { href: '/appointments', label: 'ปฏิทินนัด', scopes: [Scope.AppointmentRead] },
   { href: '/customers', label: 'ลูกค้าและสัตว์', scopes: [Scope.CustomerRead] },
   { href: '/lab', label: 'แล็บ', scopes: [Scope.LabRead, Scope.LabWrite] },
   { href: '/prescriptions', label: 'จ่ายยา', scopes: [Scope.PrescriptionDispense] },
+  { href: '/inventory', label: 'สต๊อกยา', scopes: [Scope.InventoryRead] },
   { href: '/billing', label: 'เก็บเงิน', scopes: [Scope.InvoiceWrite] },
+  { href: '/notifications', label: 'แจ้งเตือนลูกค้า', scopes: [Scope.NotifyRead, Scope.NotifySend, Scope.AutomationRead] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
   { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead] },
 ];

@@ -26,6 +26,12 @@ export interface PrescriptionItem {
   dispensed_at?: string;
   dispensed_by_staff_id?: string;
   duplicate_of: string[];
+  /** Once dispensed: the inventory item the drug matched, when it matched one. */
+  inventory_item_id?: string;
+  /** Once dispensed: whether the quantity came off the branch's stock. */
+  stock_deducted?: boolean;
+  /** Once dispensed: the unit price charged, in satang. Absent when nothing was charged. */
+  charged_unit_price_satang?: number;
 }
 
 /** "พิมพ์ฉลาก": the lines on the label stuck to the bag, as data. The screen lays them out. */
@@ -50,11 +56,43 @@ export interface DispenseLabel {
 }
 
 /**
- * `POST /staff/prescriptions/{id}/dispense`. `stock_deducted` is false until the Inventory module
- * exists: the prescription is marked dispensed, but no stock is cut and nothing is billed.
+ * What the dispense did to stock. `not_matched`: no inventory item has this drug's name, so nothing
+ * was taken and nothing charged. `insufficient`: the item matched but the branch's books show fewer
+ * usable units, so stock was left alone (the drug is still charged).
+ */
+export type DispenseStockStatus = 'deducted' | 'not_matched' | 'insufficient';
+
+export interface DispenseStock {
+  status: DispenseStockStatus;
+  item_id?: string;
+  item_name?: string;
+  unit?: string;
+  /** Usable units at the branch before the dispense. */
+  available?: number;
+  lots?: { lot_id: string; lot_number?: string; expires_on?: string; quantity: number }[];
+}
+
+/**
+ * Where the medicine's charge went. `invoiced`: on the case's bill. `on_close`: the case is still
+ * open, it lands on the bill its close raises. `separate_invoice`: the case's bill had already taken
+ * money, so the medicine got a bill of its own.
+ */
+export interface DispenseCharge {
+  placement: 'invoiced' | 'on_close' | 'separate_invoice';
+  unit_price_satang: number;
+  amount_satang: number;
+  invoice_id?: string;
+  invoice_number?: string;
+}
+
+/**
+ * `POST /staff/prescriptions/{id}/dispense`: the prescription now dispensed, its label, what was
+ * taken off the shelf, and what was charged. `charge` is absent when nothing was.
  */
 export interface DispenseResult {
   prescription: PrescriptionItem;
   label: DispenseLabel;
   stock_deducted: boolean;
+  stock: DispenseStock;
+  charge?: DispenseCharge;
 }

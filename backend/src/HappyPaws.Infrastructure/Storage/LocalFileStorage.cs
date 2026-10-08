@@ -25,6 +25,7 @@ internal sealed partial class LocalFileStorage : IFileStorage
     private const string Upload = "put";
     private const string Download = "get";
     private const string ContentTypeSuffix = ".content-type";
+    private const string FileNameSuffix = ".file-name";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -144,7 +145,53 @@ internal sealed partial class LocalFileStorage : IFileStorage
             ? await File.ReadAllTextAsync(path + ContentTypeSuffix, cancellationToken)
             : "application/octet-stream";
 
-        return new StoredFile(File.OpenRead(path), contentType);
+        var fileName = File.Exists(path + FileNameSuffix)
+            ? await File.ReadAllTextAsync(path + FileNameSuffix, cancellationToken)
+            : null;
+
+        return new StoredFile(File.OpenRead(path), contentType) { FileName = fileName };
+    }
+
+    public async Task<long> SaveAsync(
+        string key,
+        string contentType,
+        Stream content,
+        string? fileName = null,
+        CancellationToken cancellationToken = default)
+    {
+        var path = PathOf(SafeKey(key));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        // The same write-beside-and-move as an upload, so a reader never sees half a file.
+        var partial = $"{path}.{Guid.NewGuid():N}.partial";
+
+        try
+        {
+            long written;
+
+            await using (var file = File.Create(partial))
+            {
+                await content.CopyToAsync(file, cancellationToken);
+                written = file.Length;
+            }
+
+            File.Move(partial, path, overwrite: true);
+            await File.WriteAllTextAsync(path + ContentTypeSuffix, contentType, cancellationToken);
+
+            if (fileName is { Length: > 0 })
+            {
+                await File.WriteAllTextAsync(path + FileNameSuffix, fileName, cancellationToken);
+            }
+
+            return written;
+        }
+        finally
+        {
+            if (File.Exists(partial))
+            {
+                File.Delete(partial);
+            }
+        }
     }
 
     private string Sign(Grant grant)

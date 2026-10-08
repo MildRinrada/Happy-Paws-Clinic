@@ -1,0 +1,101 @@
+/** Shapes from `/staff/automations` and `/staff/reminders/upcoming`. Field names are the API's snake_case ones. */
+
+export type AutomationTriggerType = 'vaccine_due' | 'appointment_upcoming' | 'treatment_plan_session';
+
+export type AutomationChannel = 'auto' | 'line' | 'sms' | 'email';
+
+export type ReminderStatus = 'would_send' | 'would_skip' | 'already_sent';
+
+export interface AutomationTrigger {
+  type: AutomationTriggerType;
+  offset_days?: number;
+  offset_hours?: number;
+  /** `HH:mm`, clinic time, with `offset_days`. */
+  send_time?: string;
+}
+
+export interface AutomationCondition {
+  branch_id?: string;
+  species?: string;
+  vaccine_name?: string;
+  service_id?: string;
+  unconfirmed_only: boolean;
+}
+
+export interface AutomationStats {
+  total: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  lost: number;
+  last_30_days: number;
+  last_fired_at?: string;
+}
+
+export interface Automation {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger: AutomationTrigger;
+  condition: AutomationCondition;
+  action: { type: 'send_notification'; channel: AutomationChannel; template: string };
+  stats: AutomationStats;
+  /** Absent for a starter rule the clinic was given. */
+  created_by_staff_id?: string;
+  created_at: string;
+}
+
+export interface CreateAutomationInput {
+  name: string;
+  trigger: AutomationTrigger;
+  condition: { branch_id?: string; species?: string; vaccine_name?: string; unconfirmed_only?: boolean };
+  action: { type: 'send_notification'; channel: AutomationChannel };
+  enabled: boolean;
+}
+
+export interface Reminder {
+  automation_id: string;
+  automation_name: string;
+  send_at: string;
+  due_now: boolean;
+  status: ReminderStatus;
+  skip_reason?: string;
+  customer_id: string;
+  customer_name: string;
+  pet_id: string;
+  pet_name: string;
+  branch_id?: string;
+  subject: {
+    type: 'vaccination' | 'appointment' | 'treatment_plan_session';
+    id: string;
+    due_on: string;
+    starts_at?: string;
+    label?: string;
+    appointment_id?: string;
+  };
+  template: string;
+  channel: AutomationChannel;
+  message: { title: string; body: string };
+}
+
+export interface Simulation {
+  automation_id: string;
+  enabled: boolean;
+  evaluated_at: string;
+  from: string;
+  to: string;
+  due_now: number;
+  would_send: number;
+  would_skip: number;
+  already_sent: number;
+  truncated: boolean;
+  recipients: Reminder[];
+}
+
+export interface UpcomingReminders {
+  from: string;
+  to: string;
+  total: number;
+  truncated: boolean;
+  data: Reminder[];
+}

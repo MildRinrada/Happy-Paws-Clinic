@@ -45,7 +45,7 @@ Controllers/
   Staff/              /staff/* และการตั้งค่าคลินิก
   Portal/             /portal/* และ booking/holds ของลูกค้า
   Realtime/           SSE /queue/stream
-  Webhooks/           ว่าง
+  Webhooks/           LINE webhook (ยืนยันด้วยลายเซ็น ไม่ใช่ bearer token)
 Contracts/            รูปของ request และ response ฝั่ง HTTP (snake_case ตามสัญญา) และ error envelope
 Authorization/        [RequireScope], ตัวตรวจ scope และ 2FA
 Idempotency/          [Idempotent] และ middleware
@@ -85,7 +85,7 @@ Queueing/
 
 `Common/` เก็บของที่ทุกโมดูลใช้: `Abstractions/` (`IUnitOfWork`, `IClock`, `ICurrentUser`), `Authorization/` (`BranchGuard`, `PetAccessGuard`), `Concurrency/`, `Errors/`, `Pagination/`, `Validation/`
 
-โมดูลที่มีโค้ดแล้ว: `Access`, `Appointments`, `Auditing`, `Billing`, `Clinics`, `Consultations`, `Customers`, `Identity`, `MedicalRecords`, `Notifications`, `Patients`, `Queueing`, `ServiceCatalog`, `Staff` โมดูลที่ยังเป็นโฟลเดอร์ว่าง (มีแค่ `.gitkeep`): `Analytics`, `Automation`, `Crm`, `Integrations`, `Inventory`, `Laboratory`, `Messaging`, `Prescriptions`, `Reporting`, `Scheduling` การสั่งยาตอนนี้อยู่ใน `Consultations/AddPrescription/`
+โมดูลที่มีโค้ดแล้ว: `Access`, `Analytics`, `Appointments`, `Auditing`, `Automation`, `Billing`, `Clinics`, `Consultations`, `Customers`, `Identity`, `Integrations`, `MedicalRecords`, `Notifications`, `Patients`, `Queueing`, `Reporting`, `ServiceCatalog`, `Staff` ส่วนโมดูลอื่นให้ดูในโฟลเดอร์ว่ามีโค้ดหรือยังเป็น `.gitkeep` การสั่งยาตอนนี้อยู่ใน `Consultations/AddPrescription/`
 
 ### HappyPaws.Domain
 
@@ -103,8 +103,9 @@ Persistence/
   UnitOfWork.cs, PostgresErrorTranslator.cs, DocumentSequence.cs
   Idempotency/, Interceptors/, Converters/
 Identity/                       JWT, TOTP, password hasher
-Notifications/                  ประตูความยินยอม และช่องทางที่ยังเป็น stub
+Notifications/                  ประตูความยินยอม การเลือกช่องทาง และตัวส่ง Line/, Sms/, Email/
 Realtime/QueueEventBroker.cs    SSE ใน process
+Jobs/                           ตัวตั้งเวลาเบื้องหลัง: เตือนอัตโนมัติ สร้างไฟล์ส่งออก ล้าง hold และ idempotency key ที่หมดอายุ
 Auditing/AuditTrail.cs
 Staff/LoggingStaffInvitationSender.cs
 ```
@@ -121,7 +122,8 @@ frontend/
       (public)/         หน้าแรก เกี่ยวกับคลินิก ติดต่อเรา ทีม บทความ
       (auth)/           เข้าสู่ระบบ และรับคำเชิญพนักงาน
       (staff)/          queue, appointments, customers, pets, consultations, billing, schedules
-                        และ settings/ (clinic, hours, rules, services, contacts ใต้ layout แท็บเดียวกัน)
+                        และ settings/ (clinic, hours, rules, services, contacts, line ใต้ layout แท็บเดียวกัน)
+                        notifications/ (log, send, broadcast, templates ใต้ layout แท็บเดียวกัน)
       (portal)/         portal ลูกค้า
       api/queue/stream/ route handler ส่งต่อ SSE
     features/<ชื่อ>/    หนึ่งโฟลเดอร์ต่อหนึ่งเรื่อง
@@ -151,7 +153,7 @@ frontend/
 | Hook | `features/<ชื่อ>/hooks/` | logic ฝั่งเบราว์เซอร์ เช่น `use-queue-stream.ts` | ไม่มี |
 | Types | `features/<ชื่อ>/types/<ชื่อ>.types.ts` | รูปข้อมูลจาก API ชื่อฟิลด์ snake_case | DTO |
 
-feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `laboratory`, `pets`, `portal`, `prescriptions`, `privacy`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
+feature ที่มีโค้ด: `about`, `account`, `appointments`, `articles`, `assistant`, `authentication`, `billing`, `booking`, `clinic`, `consultations`, `contact`, `customers`, `home`, `integrations`, `laboratory`, `notifications`, `pets`, `portal`, `prescriptions`, `privacy`, `queue`, `schedules`, `service-catalog`, `settings`, `staff`, `team` ส่วนโฟลเดอร์อื่นใน `features/` ยังมีแค่ `.gitkeep` `home` เป็น feature เดียวที่ไม่เรียก API เนื้อหาอยู่ใน `content/` ดู [หน้าแรกสาธารณะ](features/home-page.md)
 
 ## กติกาการเขียนโค้ด
 

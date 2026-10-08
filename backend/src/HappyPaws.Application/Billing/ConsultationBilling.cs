@@ -1,4 +1,5 @@
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Prescriptions;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
 using HappyPaws.Domain.Consultations;
@@ -16,23 +17,24 @@ namespace HappyPaws.Application.Billing;
 /// follow-up and the invoice all land together or not at all.
 /// </para>
 /// <para>
-/// <b>Only treatments are billed.</b> "เข้าบิลอัตโนมัติ" is written against
-/// <c>POST /staff/consultations/{id}/treatments</c> and nowhere else, and it is the only part of a
-/// case that carries a price: a <c>Prescription</c> records a drug, a dose and a quantity, with no
-/// money on it anywhere. Medicine is charged when it is handed over — "ตัดสต๊อกเมื่อจ่ายจริง" —
-/// which needs the Inventory module for its price. Inventing a price here would put a number on a
-/// customer's bill that nothing in the system can justify.
+/// <b>Treatments, and medicine already handed over.</b> "เข้าบิลอัตโนมัติ" is written against
+/// <c>POST /staff/consultations/{id}/treatments</c>, so every treatment is billed. A prescription is
+/// billed only once it has been dispensed — "ตัดสต๊อกเมื่อจ่ายจริง" — at the inventory price captured
+/// at that moment; a drug written but not yet collected is not charged. Medicine dispensed after the
+/// close is added by <see cref="MedicineBilling"/> instead.
 /// </para>
 /// </summary>
 public sealed class ConsultationBilling(
     IInvoiceRepository invoices,
+    IPrescriptionRepository prescriptions,
     IDocumentNumberGenerator numbers,
     IAuditTrail audit)
 {
     /// <summary>
     /// Raises the bill for a case, or returns null when there is nothing to charge for.
     /// <para>
-    /// A case with no treatments produces no invoice. A ฿0 bill is not a courtesy — it is a
+    /// A case with nothing to charge — no treatments and no priced medicine dispensed — produces no
+    /// invoice. A ฿0 bill is not a courtesy — it is a
     /// document the counter has to look at, a number in the day's takings and a row in every
     /// revenue report, all to say that nothing was charged.
     /// </para>
@@ -48,7 +50,14 @@ public sealed class ConsultationBilling(
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        if (consultation.Treatments.Count == 0)
+        // Under the case's billing lock, and read fresh after taking it: a dispense that committed
+        // after this request loaded the case is on the bill, and one still running waits for it and
+        // then finds the case closed (see MedicineBilling).
+        await invoices.LockConsultationAsync(consultation.Id, cancellationToken);
+
+        var medicine = await prescriptions.ChargesForConsultationAsync(consultation.Id, cancellationToken);
+
+        if (consultation.Treatments.Count == 0 && medicine.Count == 0)
         {
             return null;
         }
@@ -77,6 +86,11 @@ public sealed class ConsultationBilling(
                 treatment.Quantity,
                 treatment.UnitPriceSatang,
                 treatment.Id);
+        }
+
+        foreach (var prescription in medicine.OrderBy(prescription => prescription.DispensedAt))
+        {
+            MedicineBilling.AddTo(invoice, prescription);
         }
 
         invoices.Add(invoice);

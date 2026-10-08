@@ -56,8 +56,8 @@ public sealed record CloseConsultationResult(
 /// <b>The invoice is part of it.</b> "ออกบิล" is in this endpoint's description and the contract's
 /// worked example ends the visit with <c>invoice.issued ฿1,460</c>, so the bill is raised in the
 /// same transaction through <see cref="ConsultationBilling"/> — a signed record whose charges never
-/// became a bill is a visit the clinic performed for free without deciding to. Only the treatments
-/// are billed; medicine is charged at dispense, for the reason given there.
+/// became a bill is a visit the clinic performed for free without deciding to. The treatments are
+/// billed, and so is medicine already dispensed; medicine dispensed later is added at dispense.
 /// </para>
 /// </summary>
 public sealed class CloseConsultationHandler(
@@ -292,7 +292,7 @@ public sealed class CloseConsultationHandler(
         {
             await notifications.SendAsync(
                 new NotificationRequest(
-                    consultation.CustomerId, NotificationTemplates.ConsultationSummary, data),
+                    consultation.CustomerId, NotificationTemplates.ConsultationSummary, data) { BranchId = consultation.BranchId },
                 cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

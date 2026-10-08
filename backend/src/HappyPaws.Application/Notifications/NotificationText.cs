@@ -1,3 +1,5 @@
+using HappyPaws.Application.Notifications.Templates;
+
 namespace HappyPaws.Application.Notifications;
 
 /// <summary>A message in words: what the inbox shows, and the record it is about for the inbox to link to.</summary>
@@ -51,6 +53,12 @@ public static class NotificationText
                 "มีคิวว่างแล้ว",
                 $"{Value("service_name")} สำหรับ {Value("pet_name")} ว่างวันที่ {Value("date")} เวลา {Value("time")} จองได้เลย ใครจองก่อนได้ก่อน",
                 Value("waiting_list_id")),
+
+            // The newer templates are worded once, in the catalogue, for every channel and the inbox.
+            _ when NotificationTemplateCatalogue.Find(request.TemplateKey) is { } template => new(
+                TemplateText.Fill(template.Title, request.Data),
+                TemplateText.Fill(template.Line, request.Data),
+                null),
 
             _ => new("ข้อความจากคลินิก", string.Join(" ", request.Data.Values), null),
         };
