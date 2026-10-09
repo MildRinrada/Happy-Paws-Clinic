@@ -17,7 +17,8 @@ namespace HappyPaws.Infrastructure.Notifications;
 /// any that cannot carry this message to this person (not set up, no address, switched off, turned
 /// off by the customer). When a channel is tried and fails, the next one is tried, and its row
 /// names the one that failed in <c>fallback_from</c> — the contract's "fallback ไป SMS เมื่อไหร่".
-/// A channel asked for by name is the only one tried.
+/// A channel asked for by name is the only one tried. A preferred channel (a thread reply's "the
+/// channel the customer used last") is tried first, with the usual order after it.
 /// </para>
 /// <para>
 /// <b>Nothing set up.</b> When no channel is configured at all, which is a developer's machine, the
@@ -56,7 +57,9 @@ internal sealed class DeliveringNotificationChannel(
         }
 
         var asked = Asked(request.Channel);
+        var preferred = asked is null ? Asked(request.PreferredChannel) : null;
         var candidates = Order
+            .OrderBy(channel => channel == preferred ? 0 : 1)
             .Where(channel => asked is null || channel == asked)
             .Select(channel => routes.First(route => route.Channel == channel))
             .ToList();

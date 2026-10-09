@@ -14,6 +14,8 @@
 | PUT | `/staff/integrations/line` | `integration:manage` | ตั้งค่า LINE ดู [LINE](line.md) |
 | POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | ประกาศทาง LINE ดู [LINE](line.md) |
 | POST | `/webhooks/line` | ลายเซ็น LINE | รับ event จาก LINE ดู [LINE](line.md) |
+| GET | `/staff/threads` | `message:read` | กล่องข้อความลูกค้า ดู [ข้อความลูกค้า](messaging.md) |
+| POST | `/staff/threads/{id}/messages` | `message:write` | ตอบลูกค้าในกล่องข้อความ ส่งผ่านเส้นทางเดียวกับข้อความอื่น ดู [ข้อความลูกค้า](messaging.md) |
 
 ### ส่งข้อความ
 
@@ -90,6 +92,7 @@ POST /v1/staff/notifications/send
 | `waiting_list.slot_available` | มีคิวว่าง | ไม่ได้ | ข้อความเรื่องการดูแล | `pet_name`, `service_name`, `date`, `time` |
 | `pet.deceased_appointments_cancelled` | ยกเลิกนัดของสัตว์ที่เสียชีวิต | ไม่ได้ | ข้อความเรื่องการดูแล | ไม่มี |
 | `customer.portal_invitation` | ชวนเปิดบัญชีออนไลน์ | ไม่ได้ | ข้อความเรื่องการดูแล | `display_name` |
+| `thread.reply` | ตอบข้อความลูกค้า | ไม่ได้ (ส่งจาก [กล่องข้อความ](messaging.md)) | ข้อความเรื่องการดูแล | `message` (ไม่เกิน 1,000 ตัวอักษร) |
 | `clinic.announcement` | ประกาศ (LINE) | ไม่ได้ (ใช้กับการประกาศ) | การตลาด | `message` |
 | `treatment_plan.session` | เตือนรอบแผนการรักษา | ไม่ได้ (ส่งโดย [เตือนอัตโนมัติ](automation.md)) | ข้อความเรื่องการดูแล | `pet_name`, `plan_title`, `session_number`, `date`, `time` (ไม่บังคับ) |
 
@@ -121,7 +124,7 @@ DeliveringNotificationChannel        เลือกช่องทาง ส่
   └─ EmailDeliveryRoute   SMTP ผ่าน MailKit (ตัวส่งเดียวกับคำเชิญพนักงาน)
 ```
 
-**เลือกช่องทาง** เมื่อไม่ระบุช่องทาง ระบบลอง LINE ก่อน แล้ว SMS แล้วอีเมล ข้ามช่องทางที่ส่งไม่ได้ เช่น ไม่ได้ตั้งค่า ลูกค้าไม่มีที่อยู่ ปิดไว้ หรือลูกค้าปิดเอง ถ้าลองแล้วล้มเหลว จะลองช่องทางถัดไป แถวของช่องทางถัดไปบอก `fallback_from` ไว้
+**เลือกช่องทาง** เมื่อไม่ระบุช่องทาง ระบบลอง LINE ก่อน แล้ว SMS แล้วอีเมล ถ้าคำขอบอกช่องทางที่อยากให้ลองก่อน (`PreferredChannel` ใช้กับคำตอบในกล่องข้อความ) ระบบลองช่องทางนั้นก่อน แล้วจึงไล่ตามลำดับปกติ ข้ามช่องทางที่ส่งไม่ได้ เช่น ไม่ได้ตั้งค่า ลูกค้าไม่มีที่อยู่ ปิดไว้ หรือลูกค้าปิดเอง ถ้าลองแล้วล้มเหลว จะลองช่องทางถัดไป แถวของช่องทางถัดไปบอก `fallback_from` ไว้
 
 **ไม่ได้ตั้งค่าเลย** (เครื่องนักพัฒนา) ข้อความไปที่ `LoggingNotificationChannel` ซึ่งเขียน log ระดับ warning เหมือนเดิม และประวัติการส่งบันทึก `skipped` `channel_not_configured` งานในเครื่อง dev จึงเดินต่อได้ และไม่มีใครเข้าใจผิดว่าส่งแล้ว
 
@@ -171,7 +174,7 @@ DeliveringNotificationChannel        เลือกช่องทาง ส่
 | เตือนนัดล่วงหน้าอัตโนมัติ | ทำแล้ว ดู [เตือนอัตโนมัติ](automation.md) ข้อความจากกติกามี `source: automation` และ `batch_id` เป็น id ของบันทึกส่งแล้ว (`ard_...`) |
 | ส่งซ้ำเมื่อล้มเหลว หรือ outbox | ไม่มี ดูหัวข้อข้างบน |
 | แก้ถ้อยคำเทมเพลต | สัญญามีแค่การอ่าน |
-| `/staff/threads` (กล่องข้อความรวมทุกช่องทาง) | นอกขอบเขตรอบนี้ |
+| `/staff/threads` (กล่องข้อความรวมทุกช่องทาง) | ทำแล้ว ดู [ข้อความลูกค้า](messaging.md) ลูกค้าเขียนเข้ามาได้ทาง LINE เท่านั้น |
 
 ## เพิ่มชนิดข้อความใหม่
 

@@ -6,7 +6,7 @@ namespace HappyPaws.Application.Reporting.Dtos;
 /// <summary>An export job as <c>POST</c> and <c>GET /staff/reports/exports</c> return it.</summary>
 /// <param name="Id"><c>rex_...</c>, the job id.</param>
 /// <param name="Report">Which report.</param>
-/// <param name="Format"><c>csv</c>.</param>
+/// <param name="Format"><c>csv</c>, <c>xlsx</c> or <c>pdf</c>.</param>
 /// <param name="Status"><c>queued</c>, <c>running</c>, <c>succeeded</c> or <c>failed</c>.</param>
 /// <param name="From">First clinic day covered.</param>
 /// <param name="To">Last clinic day covered.</param>

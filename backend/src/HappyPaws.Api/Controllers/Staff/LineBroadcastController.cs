@@ -18,11 +18,11 @@ public sealed class LineBroadcastController : ControllerBase
     /// <c>POST /staff/integrations/line/broadcast</c> — "ประกาศถึงกลุ่มลูกค้าที่คัดไว้ · จำกัดโควตา".
     /// <para>
     /// Marketing: only customers who agreed to marketing receive it, the rest are listed as
-    /// skipped. <c>409 quota_exceeded</c> when the month's quota would be passed, and
+    /// skipped. The group is <c>customer_ids</c> or a saved <c>segment_id</c>, one of the two. <c>409 quota_exceeded</c> when the month's quota would be passed, and
     /// <c>409 line_not_configured</c> when LINE cannot push.
     /// </para>
     /// </summary>
-    /// <param name="request">The customers and the message.</param>
+    /// <param name="request">The customers or the segment, and the message.</param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="cancellationToken">Aborts with the request.</param>
     [HttpPost]
@@ -37,6 +37,6 @@ public sealed class LineBroadcastController : ControllerBase
         [FromServices] BroadcastToSegmentHandler handler,
         CancellationToken cancellationToken) =>
         handler.HandleAsync(
-            new BroadcastToSegmentCommand(request.CustomerIds ?? [], request.Message ?? string.Empty),
+            new BroadcastToSegmentCommand(request.CustomerIds ?? [], request.Message ?? string.Empty, request.SegmentId),
             cancellationToken);
 }

@@ -20,6 +20,7 @@ using HappyPaws.Application.Integrations;
 using HappyPaws.Application.Inventory;
 using HappyPaws.Application.Laboratory;
 using HappyPaws.Application.MedicalRecords;
+using HappyPaws.Application.Messaging;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Application.Queueing;
@@ -80,6 +81,7 @@ public static class DependencyInjection
         services.AddAutomationModule();
         services.AddReportingModule();
         services.AddInventoryModule();
+        services.AddMessagingModule();
 
         return services;
     }

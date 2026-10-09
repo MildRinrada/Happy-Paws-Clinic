@@ -91,9 +91,9 @@ POST /v1/portal/documents
 
 ## แพ็กเกจ
 
-`GET /portal/packages` คืนแพ็กเกจที่ซื้อไว้ จำนวนครั้งทั้งหมด ใช้ไปแล้ว ที่เหลือ วันหมดอายุ และ `status` (`active`, `used_up`, `expired`) แพ็กเกจที่ใช้ได้ขึ้นก่อน
+`GET /portal/packages` คืนแพ็กเกจที่ซื้อไว้ จำนวนครั้งทั้งหมด ใช้ไปแล้ว ที่เหลือ ราคา วันหมดอายุ และ `status` (`pending_payment`, `active`, `used_up`, `expired`, `cancelled`) แพ็กเกจที่ใช้ได้ขึ้นก่อน ตามด้วยที่รอชำระ แล้วจึงเป็นที่จบแล้ว
 
-**ตอนนี้ว่างเสมอ** การขายแพ็กเกจคือ `POST /staff/packages` ของ Tier 3 ซึ่งยังไม่ได้ทำ ตารางและการอ่านพร้อมแล้ว
+แพ็กเกจมาจากการขายที่เคาน์เตอร์ (`POST /staff/packages`) ใช้ได้เมื่อบิลขายชำระครบ และถูกตัดสิทธิ์เองเมื่อออกบิลบริการที่แพ็กเกจครอบ คำตอบเป็นรูปเดียวกับที่พนักงานเห็นใน `GET /staff/loyalty/{customer_id}` ลูกค้ากับเคาน์เตอร์จึงเห็นสิทธิ์ที่เหลือตรงกันเสมอ ดู [แพ็กเกจ คูปอง และแต้มสะสม](crm.md)
 
 ## หน้าเว็บของลูกค้า
 
@@ -165,9 +165,9 @@ POST /v1/portal/documents
 
 ### แพ็กเกจ
 
-- แยกสองกลุ่ม ใช้ได้อยู่ กับ ใช้ครบหรือหมดอายุแล้ว แต่ละใบบอกครั้งที่เหลือ สัตว์ที่ใช้ได้ วันหมดอายุ (เตือน "ใกล้หมดอายุ" เมื่อเหลือไม่ถึง 30 วัน) และวันที่ซื้อ
+- แยกสองกลุ่ม ใช้ได้อยู่ (รวมแพ็กเกจที่รอชำระเงิน มีป้าย "รอชำระเงิน") กับ ใช้ครบ หมดอายุ หรือยกเลิกแล้ว แต่ละใบบอกครั้งที่เหลือ สัตว์ที่ใช้ได้ วันหมดอายุ (เตือน "ใกล้หมดอายุ" เมื่อเหลือไม่ถึง 30 วัน) และวันที่ซื้อ
 - ชื่อบริการมาจากเมนูบริการสาธารณะ บริการที่ไม่ได้เปิดจองออนไลน์จึงไม่มีชื่อ
-- ตอนนี้ทุกบัญชีจะเห็นหน้าว่าง ซึ่งอธิบายว่าแพ็กเกจจะขึ้นที่นี่เมื่อซื้อที่คลินิก พร้อมลิงก์ไปหน้าติดต่อและหน้าจองนัด
+- บัญชีที่ยังไม่มีแพ็กเกจเห็นหน้าว่าง ซึ่งอธิบายว่าแพ็กเกจจะขึ้นที่นี่เมื่อซื้อที่คลินิก พร้อมลิงก์ไปหน้าติดต่อและหน้าจองนัด
 - ลิงก์อยู่ในเมนูชื่อลูกค้า ไม่ได้อยู่ในแถบล่างจอ เพราะแถบนั้นมีที่สำหรับ 4 ปุ่มพอดี
 
 ### บิลและใบเสร็จ
@@ -217,7 +217,7 @@ POST /v1/portal/documents
 - **เช็กอินล่วงหน้า** เรียก `POST /appointments/{id}/check-in` พร้อม idempotency key การกดซ้ำไม่ทำให้ได้สองคิว ถ้า backend ปฏิเสธ เช่นยังไม่ถึงเวลา ข้อความจะขึ้นใต้ปุ่ม
 - **อัปเดตเองทุก 15 วินาที** ระหว่างที่เปิดหน้าอยู่ และหยุดเมื่อสลับแท็บหรือปิดจอ
 - ปุ่มเลื่อนนัดพาไปหน้าเลื่อนนัดของนัดนั้น ขึ้นเฉพาะนัดที่ยัง `booked` หรือ `confirmed` และยังไม่ถึงเวลานัด
-- ปุ่มแชทกับคลินิกยังชี้ไป `#` เพราะยังไม่มีหน้านั้น แก้ลิงก์ได้ที่ `frontend/src/features/portal/content/visit-card.ts`
+- ปุ่มแชทกับคลินิกพาไปหน้าติดต่อเรา (`/contact`) ซึ่งมี LINE เบอร์โทร และอีเมลของคลินิก เพราะ contract ไม่มี endpoint แชทของลูกค้า ข้อความที่ลูกค้าพิมพ์ถึงบัญชี LINE ของคลินิกจาก LINE ที่ผูกไว้แล้วจะเข้ากล่องข้อความของพนักงาน ดู [ข้อความลูกค้า](messaging.md) แก้ลิงก์ได้ที่ `frontend/src/features/portal/content/visit-card.ts`
 
 ### ประวัติการรักษา
 
@@ -227,7 +227,7 @@ POST /v1/portal/documents
 
 ## ข้อจำกัดที่รู้อยู่
 
-- แชทกับคลินิกยังไม่มีหน้าเว็บ ปุ่มแชทบนการ์ดยังชี้ไป `#`
+- แชทกับคลินิกยังไม่มีหน้าเว็บใน portal ปุ่มแชทบนการ์ดพาไปหน้าติดต่อเรา ลูกค้าคุยกับคลินิกได้ทาง LINE เมื่อเคาน์เตอร์ผูก LINE ให้แล้ว การเพิ่มแชทใน portal ต้องมี endpoint ใหม่ ดูข้อเสนอใน [ข้อความลูกค้า](messaging.md#ยังไม่ได้ทำ)
 - ลูกค้าไม่เห็นตัวเลขของนโยบายก่อนเลื่อนหรือยกเลิก (cutoff ของการเลื่อน cutoff ของการยกเลิก ค่าปรับ และจำนวนครั้งที่ยอมให้) เพราะไม่มี endpoint ที่ลูกค้าอ่านได้ การเลื่อนที่เลยเวลาจะรู้ตอนกดยืนยัน
 - การเลื่อนนัดไม่กันเวลาไว้ระหว่างที่ลูกค้าอ่านหน้ายืนยัน
 - ชำระบิลผ่านเว็บไม่ได้ เพราะ contract ไม่มี endpoint ชำระของลูกค้า และยังไม่มี payment gateway ไม่มีไฟล์ PDF ของใบเสร็จให้ดาวน์โหลด และไม่มี endpoint อ่านบิลใบเดียว
@@ -235,7 +235,6 @@ POST /v1/portal/documents
 - ไม่มีรายการไฟล์ที่ลูกค้าส่งไปแล้ว ไฟล์จะเห็นในประวัติการรักษาเฉพาะเมื่อคลินิกเปิดส่วนไฟล์แนบให้เจ้าของเห็น
 - หน้าส่งไฟล์และหน้าแพ็กเกจยังไม่ได้ทดสอบในเบราว์เซอร์ด้วยบัญชีลูกค้า ผ่านแค่ typecheck และ lint
 - กล่องแจ้งเตือนไม่ถูกลบ
-- ยังขายและตัดสิทธิ์แพ็กเกจไม่ได้
 - ดาวน์โหลดไฟล์ด้วยลิงก์ที่ใครได้ไปก็เปิดได้จนหมดอายุ 10 นาที
 
 ## โค้ด
@@ -245,7 +244,7 @@ POST /v1/portal/documents
 | use case ฝั่งสัตว์และหน้าแรก | `backend/src/HappyPaws.Application/Patients/Portal/` |
 | ประวัติที่เจ้าของเห็น | `backend/src/HappyPaws.Application/MedicalRecords/GetOwnerVisibleRecords/` |
 | กล่องแจ้งเตือน | `backend/src/HappyPaws.Domain/Notifications/InboxNotification.cs`, `backend/src/HappyPaws.Application/Notifications/` (`NotificationText.cs`, `ListMyNotifications`), `backend/src/HappyPaws.Infrastructure/Notifications/ConsentAwareNotificationDispatcher.cs` |
-| แพ็กเกจ | `backend/src/HappyPaws.Domain/Crm/CustomerPackage.cs`, `backend/src/HappyPaws.Application/Crm/GetMyPackageBalance/` |
+| แพ็กเกจ | `backend/src/HappyPaws.Domain/Crm/CustomerPackage.cs`, `backend/src/HappyPaws.Application/Crm/GetMyPackageBalance/`, `backend/src/HappyPaws.Application/Crm/Dtos/CrmDtos.cs` |
 | เลื่อนและยกเลิกนัด | `backend/src/HappyPaws.Application/Appointments/RescheduleAppointment/`, `CancelAppointment/`, หน้าเว็บ `frontend/src/features/portal/components/reschedule/`, `components/appointments/` |
 | บิลของลูกค้า | `backend/src/HappyPaws.Application/Billing/ListMyInvoices/`, หน้าเว็บ `frontend/src/features/portal/components/invoices/` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Portal/` |

@@ -36,8 +36,10 @@ public sealed class LogoutHandler(
                 await repository.RevokeOtherSessionsAsync(session.UserId, session.Id, now, cancellationToken);
             }
         }
-        else if (command.AllDevices && currentUser.UserId is { } userId)
+        else if (command.AllDevices && currentUser.ApiKeyId is null && currentUser.UserId is { } userId)
         {
+            // Not for an API key: it acts as its creator, but ending the creator's sessions on every
+            // device is not something a machine client may do in their name.
             await repository.RevokeOtherSessionsAsync(userId, exceptSessionId: string.Empty, now, cancellationToken);
         }
 

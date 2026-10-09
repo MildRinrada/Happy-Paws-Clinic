@@ -65,6 +65,7 @@ use case ──► INotificationDispatcher ──► ConsentAwareNotificationDis
 | `pet.deceased_appointments_cancelled` | `service_messages` |
 | `receipt.issued` | `service_messages` ใบเสร็จคือบันทึกธุรกรรมที่ลูกค้าทำ ไม่ใช่ข้อความที่คลินิกเลือกส่ง ถ้าระงับเพราะลูกค้าปฏิเสธการตลาดจะเท่ากับระงับเอกสารภาษี |
 | `customer.portal_invitation` | `service_messages` เป็นเรื่องความสัมพันธ์การดูแลที่มีอยู่แล้ว ส่งครั้งเดียวต่อคำเชิญ ไม่ใช่แคมเปญ |
+| `thread.reply` | `service_messages` คำตอบของพนักงานต่อข้อความที่ลูกค้าเขียนถึงคลินิกเองเรื่องสัตว์ของเขา |
 | อื่น ๆ | `marketing` |
 
 - **ข้อความที่ถูกระงับถูกบันทึก log ระดับ information** พร้อม template ลูกค้า และวัตถุประสงค์ เพราะเคาน์เตอร์จะถามว่า "ทำไมเจ้าของไม่ได้ข้อความ"

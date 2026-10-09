@@ -24,6 +24,10 @@ namespace HappyPaws.Infrastructure.Jobs;
 /// whose address is on no customer's record is deleted; the counter's list never looks further back.
 /// A linked one stays while it is linked, so the customer's page can show whose LINE it is.
 /// </para>
+/// <para>
+/// Webhook events older than <see cref="WebhookEvent.Retention"/> go too, with their deliveries
+/// (the foreign key cascades).
+/// </para>
 /// </summary>
 public sealed class HousekeepingJob(HappyPawsDbContext db, IClock clock, ILogger<HousekeepingJob> logger) : IScheduledJob
 {
@@ -47,13 +51,21 @@ public sealed class HousekeepingJob(HappyPawsDbContext db, IClock clock, ILogger
                 && !db.Set<Customer>().Any(customer => customer.LineUserId == follower.LineUserId))
             .ExecuteDeleteAsync(cancellationToken);
 
-        if (holds > 0 || keys > 0 || followers > 0)
+        // Webhook events and their deliveries, once the delivery log has been kept long enough to
+        // answer "did you send it?". Every retry is over within a day, so nothing pending goes.
+        var sentBefore = clock.UtcNow - WebhookEvent.Retention;
+        var webhookEvents = await db.Set<WebhookEvent>()
+            .Where(webhookEvent => webhookEvent.DispatchedAt != null && webhookEvent.OccurredAt < sentBefore)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (holds > 0 || keys > 0 || followers > 0 || webhookEvents > 0)
         {
             logger.LogInformation(
-                "Housekeeping removed {Holds} expired hold(s), {Keys} expired idempotency key(s) and {Followers} old LINE follower(s)",
+                "Housekeeping removed {Holds} expired hold(s), {Keys} expired idempotency key(s), {Followers} old LINE follower(s) and {WebhookEvents} old webhook event(s)",
                 holds,
                 keys,
-                followers);
+                followers,
+                webhookEvents);
         }
     }
 }

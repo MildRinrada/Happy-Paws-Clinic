@@ -1,11 +1,12 @@
-import type { ExportStatus, ReportKind } from '../types/report-export.types';
+import type { ExportStatus, ReportFormat, ReportKind } from '../types/report-export.types';
 
 /** The export control on the dashboard. */
 export const reportExport = {
   button: 'ส่งออกรายงาน',
   starting: 'กำลังส่งคำขอ…',
   report: 'รายงาน',
-  range: (from: string, to: string) => `ช่วง ${from} ถึง ${to} ของสาขาที่เลือก เป็นไฟล์ CSV เปิดด้วย Excel ได้`,
+  format: 'ไฟล์',
+  range: (from: string, to: string) => `ช่วง ${from} ถึง ${to} ของสาขาที่เลือก`,
   download: (fileName: string) => `ดาวน์โหลด ${fileName}`,
   rows: (count: number) => `${count} แถว`,
   expires: 'ลิงก์ใช้ได้ 1 ชั่วโมง ถ้าหมดอายุให้กดดูสถานะอีกครั้ง',
@@ -23,6 +24,19 @@ export const reportExport = {
     queue: 'สถิติคิว',
     workload: 'ภาระงานของสัตวแพทย์',
   } satisfies Record<ReportKind, string>,
+
+  formats: {
+    xlsx: 'Excel (.xlsx)',
+    csv: 'CSV',
+    pdf: 'PDF',
+  } satisfies Record<ReportFormat, string>,
+
+  /** One line under the control about the format chosen. */
+  formatHints: {
+    xlsx: 'เปิดด้วย Excel ได้ทันที ตัวเลข เงิน และวันที่พร้อมคำนวณ',
+    csv: 'ไฟล์ข้อความ เปิดได้ทุกโปรแกรมตาราง',
+    pdf: 'พร้อมพิมพ์ กระดาษ A4 แนวนอน',
+  } satisfies Record<ReportFormat, string>,
 
   statuses: {
     queued: 'รอคิวสร้างไฟล์',

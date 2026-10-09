@@ -2085,12 +2085,215 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("consultation_vitals", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Crm.Coupon", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<long?>("AmountSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_satang");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_redemptions");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<int?>("PerCustomerLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("per_customer_limit");
+
+                    b.Property<decimal?>("Percent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("percent");
+
+                    b.Property<int>("RedeemedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("redeemed_count");
+
+                    b.PrimitiveCollection<string[]>("ServiceIds")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("service_ids");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateOnly?>("ValidUntil")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_until");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_coupons");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_coupons_branch_id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_coupons_code");
+
+                    b.ToTable("coupons", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_coupons_one_kind", "(percent IS NULL) <> (amount_satang IS NULL)");
+
+                            t.HasCheckConstraint("ck_coupons_redeemed", "redeemed_count >= 0 AND (max_redemptions IS NULL OR redeemed_count <= max_redemptions)");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.CouponRedemption", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_satang");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("CouponId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("coupon_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DiscountId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("discount_id");
+
+                    b.Property<string>("InvoiceId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<DateTimeOffset>("RedeemedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("redeemed_at");
+
+                    b.Property<string>("RedeemedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("redeemed_by_staff_id");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("released_at");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_coupon_redemptions");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_coupon_redemptions_customer_id");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_coupon_redemptions_invoice_id");
+
+                    b.HasIndex("CouponId", "CustomerId")
+                        .HasDatabaseName("ix_coupon_redemptions_coupon_id_customer_id");
+
+                    b.HasIndex("CouponId", "InvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_coupon_redemptions_coupon_id_invoice_id")
+                        .HasFilter("released_at IS NULL");
+
+                    b.ToTable("coupon_redemptions", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Crm.CustomerPackage", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("activated_at");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cancelled_at");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
@@ -2106,6 +2309,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("expires_on");
 
+                    b.Property<string>("InvoiceId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invoice_id");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -2117,6 +2325,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("pet_id");
 
+                    b.Property<long>("PriceSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("price_satang");
+
                     b.Property<DateTimeOffset>("PurchasedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("purchased_at");
@@ -2125,6 +2337,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("service_ids");
+
+                    b.Property<string>("SoldByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("sold_by_staff_id");
 
                     b.Property<int>("TotalUses")
                         .HasColumnType("integer")
@@ -2147,13 +2364,261 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_customer_packages");
 
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_customer_packages_branch_id");
+
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_customer_packages_customer_id");
 
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_customer_packages_invoice_id")
+                        .HasFilter("invoice_id IS NOT NULL");
+
                     b.ToTable("customer_packages", null, t =>
                         {
+                            t.HasCheckConstraint("ck_customer_packages_price", "price_satang >= 0");
+
                             t.HasCheckConstraint("ck_customer_packages_uses", "used_count >= 0 AND used_count <= total_uses");
                         });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.LoyaltyEntry", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DiscountId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("discount_id");
+
+                    b.Property<string>("InvoiceId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
+
+                    b.Property<string>("StaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("staff_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_loyalty_entries");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_loyalty_entries_earn_per_invoice")
+                        .HasFilter("kind = 'Earn'");
+
+                    b.HasIndex("CustomerId", "OccurredAt")
+                        .HasDatabaseName("ix_loyalty_entries_customer_id_occurred_at");
+
+                    b.ToTable("loyalty_entries", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.PackageUse", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("InvoiceId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("InvoiceLineId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invoice_line_id");
+
+                    b.Property<string>("PackageId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("package_id");
+
+                    b.Property<string>("PetId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("pet_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("released_at");
+
+                    b.Property<string>("ServiceId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("service_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<DateTimeOffset>("UsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("used_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_package_uses");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_package_uses_invoice_id");
+
+                    b.HasIndex("PackageId")
+                        .HasDatabaseName("ix_package_uses_package_id");
+
+                    b.ToTable("package_uses", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_package_uses_quantity", "quantity > 0");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.Segment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<int>("CustomerCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_count");
+
+                    b.Property<bool?>("HasActivePackage")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_active_package");
+
+                    b.Property<int?>("InactiveDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("inactive_days");
+
+                    b.Property<long?>("MinSpendSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("min_spend_satang");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("ReachableCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("reachable_count");
+
+                    b.PrimitiveCollection<string[]>("Species")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("species");
+
+                    b.PrimitiveCollection<string[]>("Tiers")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tiers");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int?>("VisitedWithinDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("visited_within_days");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_segments");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_customer_segments_branch_id");
+
+                    b.ToTable("customer_segments", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Customers.Customer", b =>
@@ -2758,6 +3223,204 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("user_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.ApiKey", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<string[]>("BranchIds")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("branch_ids");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("prefix");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.PrimitiveCollection<string[]>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("scopes");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("secret_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_api_keys");
+
+                    b.HasIndex("Prefix")
+                        .IsUnique()
+                        .HasDatabaseName("ix_api_keys_prefix");
+
+                    b.HasIndex("SecretHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_api_keys_secret_hash");
+
+                    b.ToTable("api_keys", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.CalendarFeed", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("StaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("staff_id");
+
+                    b.Property<string>("TokenCiphertext")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("token_ciphertext");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_calendar_feeds");
+
+                    b.HasIndex("StaffId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_calendar_feeds_staff_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_calendar_feeds_token_hash");
+
+                    b.ToTable("calendar_feeds", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.LabProviderSettings", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("ApiKeyCiphertext")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("api_key_ciphertext");
+
+                    b.Property<string>("BaseUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("base_url");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("provider");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lab_provider_settings");
+
+                    b.ToTable("lab_provider_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_lab_provider_settings_singleton", "id = 'set_lab'");
+                        });
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Integrations.LineChannelSettings", b =>
                 {
                     b.Property<string>("Id")
@@ -2876,6 +3539,271 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_line_followers_line_user_id");
 
                     b.ToTable("line_followers", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.PaymentProviderSettings", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("mode");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("PublicKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("public_key");
+
+                    b.Property<string>("SecretKeyCiphertext")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("secret_key_ciphertext");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("WebhookSecretCiphertext")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("webhook_secret_ciphertext");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payment_provider_settings");
+
+                    b.ToTable("payment_provider_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_payment_provider_settings_singleton", "id = 'set_payment'");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.WebhookDelivery", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("event_type");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_attempt_at");
+
+                    b.Property<int?>("LastDurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_duration_ms");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("LastResponseBody")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_response_body");
+
+                    b.Property<int?>("LastStatusCode")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_status_code");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SubscriptionId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("subscription_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_webhook_deliveries");
+
+                    b.HasIndex("NextAttemptAt")
+                        .HasDatabaseName("ix_webhook_deliveries_due")
+                        .HasFilter("status = 'Pending'");
+
+                    b.HasIndex("EventId", "SubscriptionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_webhook_deliveries_event_id_subscription_id");
+
+                    b.HasIndex("SubscriptionId", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_webhook_deliveries_subscription_id_created_at_id");
+
+                    b.ToTable("webhook_deliveries", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.WebhookEvent", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("dispatched_at");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_webhook_events");
+
+                    b.HasIndex("OccurredAt")
+                        .HasDatabaseName("ix_webhook_events_undispatched")
+                        .HasFilter("dispatched_at IS NULL");
+
+                    b.ToTable("webhook_events", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.WebhookSubscription", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("description");
+
+                    b.PrimitiveCollection<string[]>("Events")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("events");
+
+                    b.Property<string>("SecretCiphertext")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("secret_ciphertext");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("url");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_webhook_subscriptions");
+
+                    b.ToTable("webhook_subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Inventory.InventoryItem", b =>
@@ -3575,6 +4503,163 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_medical_record_amendments_medical_record_id_created_at");
 
                     b.ToTable("medical_record_amendments", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Messaging.MessageThread", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTimeOffset?>("LastInboundAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_inbound_at");
+
+                    b.Property<string>("LastInboundChannel")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("last_inbound_channel");
+
+                    b.Property<DateTimeOffset>("LastMessageAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_message_at");
+
+                    b.Property<DateTimeOffset?>("LastReplyAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_reply_at");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_message_threads");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_message_threads_branch_id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_message_threads_customer_id");
+
+                    b.HasIndex("LastMessageAt")
+                        .HasDatabaseName("ix_message_threads_last_message_at");
+
+                    b.ToTable("message_threads", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Messaging.ThreadMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Channel")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeliveryErrorCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("delivery_error_code");
+
+                    b.Property<string>("DeliveryStatus")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("direction");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("FallbackFrom")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("fallback_from");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("SentByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("sent_by_staff_id");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasColumnName("text");
+
+                    b.Property<string>("ThreadId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("thread_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_thread_messages");
+
+                    b.HasIndex("Channel", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_thread_messages_channel_external_id")
+                        .HasFilter("external_id IS NOT NULL");
+
+                    b.HasIndex("ThreadId", "SentAt")
+                        .HasDatabaseName("ix_thread_messages_thread_id_sent_at");
+
+                    b.ToTable("thread_messages", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Notifications.InboxNotification", b =>
@@ -5382,14 +6467,101 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_consultation_vitals_consultations_consultation_id");
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Crm.Coupon", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_coupons_branches_branch_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.CouponRedemption", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Crm.Coupon", null)
+                        .WithMany()
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_coupon_redemptions_coupons_coupon_id");
+
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_coupon_redemptions_customer_customer_id");
+
+                    b.HasOne("HappyPaws.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_coupon_redemptions_invoices_invoice_id");
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Crm.CustomerPackage", b =>
                 {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_packages_branches_branch_id");
+
                     b.HasOne("HappyPaws.Domain.Customers.Customer", null)
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_customer_packages_customer_customer_id");
+
+                    b.HasOne("HappyPaws.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_packages_invoices_invoice_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.LoyaltyEntry", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_loyalty_entries_customer_customer_id");
+
+                    b.HasOne("HappyPaws.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_loyalty_entries_invoices_invoice_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.PackageUse", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_package_uses_invoices_invoice_id");
+
+                    b.HasOne("HappyPaws.Domain.Crm.CustomerPackage", null)
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_package_uses_customer_packages_package_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.Segment", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_segments_branches_branch_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Customers.CustomerConsent", b =>
@@ -5440,6 +6612,23 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_sessions_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Integrations.WebhookDelivery", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Integrations.WebhookEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_webhook_deliveries_webhook_event_event_id");
+
+                    b.HasOne("HappyPaws.Domain.Integrations.WebhookSubscription", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_webhook_deliveries_webhook_subscription_subscription_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Inventory.PurchaseOrder", b =>
@@ -5574,6 +6763,26 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_medical_record_amendments_medical_record_medical_record_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Messaging.MessageThread", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_message_threads_customers_customer_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Messaging.ThreadMessage", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Messaging.MessageThread", null)
+                        .WithMany()
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_thread_messages_message_threads_thread_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Notifications.InboxNotification", b =>

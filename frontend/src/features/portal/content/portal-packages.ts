@@ -6,12 +6,14 @@ export const portalPackages = {
   intro: 'แพ็กเกจที่ซื้อไว้กับคลินิก ใช้ไปแล้วกี่ครั้ง เหลืออีกกี่ครั้ง และใช้ได้ถึงวันไหน',
 
   usable: 'ใช้ได้อยู่',
-  finished: 'ใช้ครบหรือหมดอายุแล้ว',
+  finished: 'ใช้ครบ หมดอายุ หรือยกเลิกแล้ว',
 
   status: {
+    pending_payment: 'รอชำระเงิน',
     active: 'ใช้ได้',
     used_up: 'ใช้ครบแล้ว',
     expired: 'หมดอายุ',
+    cancelled: 'ยกเลิกแล้ว',
   } satisfies Record<PackageStatus, string>,
 
   remaining: (left: number, total: number) => `เหลือ ${left} จาก ${total} ครั้ง`,

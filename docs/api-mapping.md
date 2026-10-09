@@ -24,7 +24,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ช่อง use case ที่เขียนเป็น `<Module>/<โฟลเดอร์>/<ชื่อ>Handler` คือ use case ที่รวมอยู่ในโฟลเดอร์ร่วม เช่น ทุกเรื่องของ portal ฝั่งสัตว์เลี้ยงอยู่ใน `Patients/Portal/`
 
-คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(staff)/inventory` (รายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ), `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
+คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/settings/integrations` (webhook, API key, ผู้ให้บริการชำระเงิน แล็บภายนอก ลิงก์ปฏิทิน), `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(staff)/inventory` (รายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ), `(staff)/crm` (ขายแพ็กเกจ คูปอง กลุ่มลูกค้า แต้ม), `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
 
 | API domain | Backend module | Frontend feature | Frontend routes |
 |---|---|---|---|
@@ -49,7 +49,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Business dashboard | `Analytics` | `analytics` | `(staff)/dashboard` (แท็บธุรกิจ) |
 | Billing & Payments | `Billing` | `billing` | `(staff)/billing`, `(portal)/invoices` |
 | Inventory | `Inventory` | `inventory` | `(staff)/inventory` (แท็บรายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ) |
-| Loyalty & Promotions | `Crm` | `crm` | `(staff)/crm`, `(portal)/packages` |
+| Loyalty & Promotions | `Crm` | `crm` | `(staff)/crm` (ขายแพ็กเกจ สร้างคูปอง กลุ่มลูกค้า แต้มและสมาชิก), `(portal)/packages` |
 | Reminders & Automation | `Automation` | `automation` | `(staff)/notifications/automations`, `(staff)/notifications/reminders` |
 | Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/dashboard` (ส่งออกรายงาน), `(staff)/audit` |
 | Webhooks & Integrations | `Integrations` | `integrations` | `(staff)/settings/integrations` |
@@ -256,7 +256,7 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 `PATCH /portal/pets/{id}` รับเฉพาะรูป ชื่อเล่น อาหาร และพฤติกรรม ฟิลด์ทางคลินิกถูกปฏิเสธที่ขอบ DTO คือ DTO ฝั่งเจ้าของไม่มีฟิลด์เหล่านั้นอยู่เลย คำขอที่ปลอมขึ้นจึงเข้าไม่ถึง
 
-ข้อความทุกฉบับที่ผ่านด่านความยินยอมถูกเก็บลงกล่องแจ้งเตือนในเว็บด้วย (`ConsentAwareNotificationDispatcher`) การกดว่าอ่านแล้วเป็นส่วนขยาย `POST /portal/notifications/read` ส่วน `/portal/packages` อ่านได้แล้ว แต่จะว่างจนกว่าจะมี `POST /staff/packages` ของ Tier 3 รายละเอียดอยู่ใน [portal ลูกค้า](features/portal.md)
+ข้อความทุกฉบับที่ผ่านด่านความยินยอมถูกเก็บลงกล่องแจ้งเตือนในเว็บด้วย (`ConsentAwareNotificationDispatcher`) การกดว่าอ่านแล้วเป็นส่วนขยาย `POST /portal/notifications/read` ส่วน `/portal/packages` แสดงแพ็กเกจที่ขายผ่าน `POST /staff/packages` ในรูปเดียวกับที่พนักงานเห็น รายละเอียดอยู่ใน [portal ลูกค้า](features/portal.md)
 
 ## Schedules and Shifts
 
@@ -326,10 +326,12 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 | POST | `/staff/notifications/send` | `notify:send` | `Staff/NotificationsController` | `Notifications/SendNotification/` | `Notifications` | ✅ |
 | GET | `/staff/notifications/templates` | `notify:manage` | `Staff/NotificationTemplatesController` | `Notifications/ListTemplates/` | `Notifications` | ✅ |
 | GET | `/staff/notifications/log` | `notify:read` | `Staff/NotificationLogController` | `Notifications/GetDeliveryLog/` | `Notifications` | ✅ |
-| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` | |
-| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadMessagesController` | `Messaging/ReplyToThread/` | `Messaging` | |
+| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` | ✅ |
+| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadsController` | `Messaging/ReplyToThread/` | `Messaging` | ✅ |
 
 ข้อความออกจริงทาง LINE, SMS และอีเมล ทุกครั้งที่ลองส่งมีแถวในตาราง `notification_deliveries` ซึ่ง `GET /staff/notifications/log` อ่าน เทมเพลตเป็นโค้ด (`Notifications/Templates/`) เพราะสัญญามีแค่การอ่าน รายละเอียดอยู่ใน [การแจ้งเตือน](features/notifications.md)
+
+กล่องข้อความลูกค้ามีหนึ่งกล่องต่อลูกค้าหนึ่งคน (`message_threads`, `thread_messages`) กล่องเริ่มเมื่อลูกค้าที่ผูก LINE แล้วพิมพ์ถึงบัญชี LINE ของคลินิก (event `message` ของ `POST /webhooks/line` เรียก `Messaging/ReceiveMessage/`) คำตอบของพนักงานส่งผ่าน `INotificationDispatcher` ด้วยเทมเพลต `thread.reply` ลองช่องทางที่ลูกค้าใช้ล่าสุดก่อน ทั้งสองเส้นอยู่ใน controller เดียว รายละเอียดอยู่ใน [ข้อความลูกค้า](features/messaging.md)
 
 ## LINE integration
 
@@ -342,10 +344,10 @@ Application -> Notification port -> Infrastructure/Notifications/Line/ -> LINE M
 | Method | Endpoint | Scope | Controller | Use case | Domain | |
 |---|---|---|---|---|---|---|
 | PUT | `/staff/integrations/line` | `integration:manage` | `Staff/LineIntegrationController` | `Integrations/ConfigureLineChannel/` | `Integrations` | ✅ |
-| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ เพราะยังไม่มี `Crm`) | ✅ |
+| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ หรือ `segment_id` ของ `Crm`) | ✅ |
 | POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` | ✅ |
 
-`POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี `follow` และ `message` ยังจดผู้ติดตามล่าสุดไว้ให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](./contract-extensions.md))
+`POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี `follow` และ `message` ยังจดผู้ติดตามล่าสุดไว้ให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](./contract-extensions.md)) `message` จากที่อยู่ที่ผูกกับลูกค้าแล้วเข้ากล่องข้อความของลูกค้าคนนั้น ([ข้อความลูกค้า](features/messaging.md))
 
 postback action ใน `Domain/Integrations/LinePostbackActions.cs` ทำงานกับเรกคอร์ดจริง handler จึงต้องหาที่อยู่ LINE ที่ส่งมากลับไปเป็นลูกค้าที่ลงทะเบียนที่อยู่นั้นไว้ แล้วใช้กฎสิทธิ์ของ portal ตามปกติ นี่คือการค้นจากที่อยู่ส่ง ไม่ใช่การยืนยันตัวตน ทำตามแบบนี้แล้ว แต่ยังไม่มีทางบันทึกที่อยู่ LINE ลงเรกคอร์ดลูกค้าผ่าน API จึงยังไม่มีลูกค้าคนใดถูกพบจริง ดู [LINE](features/line.md) และ [assumptions.md](./assumptions.md) (§ B, § 41)
 
@@ -406,13 +408,15 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 ## Loyalty, Packages and Promotions
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| POST | `/staff/segments` | `crm:manage` | `Staff/SegmentsController` | `Crm/CreateSegment/` | `Crm` |
-| POST | `/staff/packages` | `crm:manage` | `Staff/PackagesController` | `Crm/CreatePackage/` | `Crm` |
-| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` (✅ อยู่ในตาราง Customer portal) |
-| POST | `/staff/coupons` | `crm:manage` | `Staff/CouponsController` | `Crm/CreateCoupon/` | `Crm` |
-| GET | `/staff/loyalty/{customer_id}` | `crm:read` | `Staff/LoyaltyController` | `Crm/GetLoyaltyAccount/` | `Crm` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| POST | `/staff/segments` | `crm:manage` | `Staff/SegmentsController` | `Crm/CreateSegment/` | `Crm` (`Segment`) | ✅ |
+| POST | `/staff/packages` | `crm:manage` | `Staff/PackagesController` | `Crm/CreatePackage/` | `Crm` (`CustomerPackage`), `Billing` | ✅ |
+| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` (อยู่ในตาราง Customer portal ด้วย) | ✅ |
+| POST | `/staff/coupons` | `crm:manage` | `Staff/CouponsController` | `Crm/CreateCoupon/` | `Crm` (`Coupon`) | ✅ |
+| GET | `/staff/loyalty/{customer_id}` | `crm:read` | `Staff/LoyaltyController` | `Crm/GetLoyaltyAccount/` | `Crm` (`LoyaltyEntry`) | ✅ |
+
+ขายแพ็กเกจคือออกบิลหนึ่งใบในจังหวะเดียวกัน (ต้องส่ง `Idempotency-Key`) แพ็กเกจใช้ได้เมื่อบิลนั้นชำระครบ แล้วถูกตัดสิทธิ์เองเมื่อบิลมีบริการที่แพ็กเกจครอบ ส่วนนั้นลงบิลเป็นรายการราคา 0 คูปองและแต้มใช้ผ่าน `POST /staff/invoices/{id}/discounts` ด้วยช่อง `coupon_code` หรือ `points` แต้มได้ 1 แต้มต่อ ฿100 ที่จ่ายจริงเมื่อบิลชำระครบ และถูกหักคืนตามเงินที่คืน กลุ่มลูกค้าเก็บเป็นเงื่อนไข และใช้ส่งประกาศ LINE ด้วย `segment_id` ไม่มี endpoint อ่านหรือแก้คูปองและกลุ่มลูกค้า เพราะ contract ไม่มี รายละเอียดอยู่ใน [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) และการตีความใน [assumptions.md § 43](./assumptions.md)
 
 ## Reminders and Automation
 
@@ -425,7 +429,7 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (`RecurringJobHost`, งาน `AutomationJob`) `simulate` และ `upcoming` ใช้ `AutomationEvaluator` ตัวเดียวกับการรันจริงในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง ข้อความแต่ละฉบับถูกจองด้วย unique key ใน `automation_dispatches` ก่อนส่ง จึงไม่ส่งซ้ำแม้มี API หลาย instance การแก้ เปิดปิด และลบกติกา (`PATCH` และ `DELETE /staff/automations/{id}`) ไม่อยู่ใน contract ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) § 19 รายละเอียดอยู่ใน [เตือนอัตโนมัติ](features/automation.md)
 
-การส่งออกรายงานเป็นงานเบื้องหลังของตัวตั้งเวลาเดียวกัน (`ReportExportJob`) worker จองงานด้วย `FOR UPDATE SKIP LOCKED` ไฟล์เป็น CSV เก็บผ่าน `LocalFileStorage` และดาวน์โหลดด้วย URL ที่ลงชื่อ อายุ 1 ชั่วโมง นอกจาก `report:export` ยังต้องมี scope ของรายงานนั้นด้วย ดู [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
+การส่งออกรายงานเป็นงานเบื้องหลังของตัวตั้งเวลาเดียวกัน (`ReportExportJob`) worker จองงานด้วย `FOR UPDATE SKIP LOCKED` ไฟล์เป็น CSV, Excel หรือ PDF ตามช่อง `format` (สองแบบหลังเป็นส่วนขยาย § 21) เก็บผ่าน `LocalFileStorage` และดาวน์โหลดด้วย URL ที่ลงชื่อ อายุ 1 ชั่วโมง นอกจาก `report:export` ยังต้องมี scope ของรายงานนั้นด้วย ดู [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
 
 ## Reports and Audit
 
@@ -442,16 +446,20 @@ handler ตัวเดียวรับทั้งสอง route แยก�
 
 ## Webhooks and Integrations
 
-| Method | Endpoint | Scope | Controller | Use case | Domain |
-|---|---|---|---|---|---|
-| POST | `/staff/webhooks` | *(ไม่ระบุ)* | `Staff/WebhooksController` | `Integrations/CreateWebhookSubscription/` | `Integrations` |
-| GET | `/staff/webhooks/{id}/deliveries` | *(ไม่ระบุ)* | `Staff/WebhookDeliveriesController` | `Integrations/ListWebhookDeliveries/` | `Integrations` |
-| POST | `/staff/api-keys` | *(ไม่ระบุ)* | `Staff/ApiKeysController` | `Integrations/CreateApiKey/` | `Integrations` |
-| PUT | `/staff/integrations/payment` | *(ไม่ระบุ)* | `Staff/PaymentIntegrationController` | `Integrations/ConfigurePaymentProvider/` | `Integrations` |
-| PUT | `/staff/integrations/lab` | *(ไม่ระบุ)* | `Staff/LabIntegrationController` | `Integrations/ConfigureLabProvider/` | `Integrations` |
-| GET | `/staff/integrations/calendar/ics` | *(ไม่ระบุ)* | `Staff/CalendarFeedController` | `Integrations/GetCalendarFeed/` | `Integrations` |
+| Method | Endpoint | Scope | Controller | Use case | Domain | |
+|---|---|---|---|---|---|---|
+| POST | `/staff/webhooks` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhooksController` | `Integrations/CreateWebhookSubscription/` | `Integrations` | ✅ |
+| GET | `/staff/webhooks/{id}/deliveries` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/ListWebhookDeliveries/` | `Integrations` | ✅ |
+| POST | `/staff/api-keys` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/ApiKeysController` | `Integrations/CreateApiKey/` | `Integrations` | ✅ |
+| PUT | `/staff/integrations/payment` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/PaymentIntegrationController` | `Integrations/ConfigurePaymentProvider/` | `Integrations` (ไม่มี gateway ภายนอก) | ✅ |
+| PUT | `/staff/integrations/lab` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/LabIntegrationController` | `Integrations/ConfigureLabProvider/` | `Integrations` (ไม่มีตัวเชื่อมแล็บ) | ✅ |
+| GET | `/staff/integrations/calendar/ics` | *(ไม่ระบุ)* พนักงานทุกคน หรือ token ในลิงก์ | `Staff/CalendarFeedController` | `Integrations/GetCalendarFeed/` | `Integrations` | ✅ |
 
-event ของ webhook ขาออก (`appointment.created` ถึง `pet.created`) ประกาศไว้ใน `Domain/Integrations/WebhookEventTypes.cs` แผนคือส่งจาก `Infrastructure/Webhooks/` พร้อม HMAC-SHA256 ใน `X-Signature` และลองใหม่แบบ exponential ห้าครั้งภายใน 24 ชั่วโมง ตอนนี้โฟลเดอร์ `Infrastructure/Webhooks/` ยังว่าง
+scope ที่เลือกและเหตุผลอยู่ใน [assumptions.md § 2](./assumptions.md) รายละเอียดทั้งหมด (รูปร่างคำขอและคำตอบ สิ่งที่ event แต่ละตัวพาไป และข้อเสนอ endpoint ที่ยังขาด) อยู่ใน [การเชื่อมต่อระบบ](features/integrations.md)
+
+**event ของ webhook ขาออก** 16 ตัวใน `Domain/Integrations/WebhookEventTypes.cs` ถูกเขียนลงตาราง outbox `webhook_events` ใน transaction เดียวกับการเปลี่ยนแปลงทางธุรกิจ (`IWebhookOutbox`) งานเบื้องหลัง `webhooks` แตกเป็น `webhook_deliveries` หนึ่งแถวต่อ webhook แล้วส่งจาก `Infrastructure/Webhooks/` พร้อม HMAC-SHA256 ใน `X-Signature` ส่งไม่สำเร็จลองใหม่อีก 5 ครั้งห่างกัน 1, 5, 25, 125 และ 625 นาที (ครั้งสุดท้ายราว 13 ชั่วโมงหลังเหตุการณ์ ภายใน 24 ชั่วโมงตาม contract)
+
+**API key** ส่งเป็น `Authorization: Bearer hp_...` header เดียวกับ access token ของคน เพราะ contract ไม่ได้กำหนด header อื่น ระบบแยกจากคำนำหน้า `hp_` key ใช้ได้เฉพาะ endpoint ที่ประกาศ `RequireScope` เท่านั้น
 
 ## ส่วนขยาย contract
 
@@ -500,6 +508,8 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 
 § 20 เพิ่ม `inventory_item_id` ที่ไม่บังคับในคำขอ `POST /staff/consultations/{id}/prescriptions` และช่องเดียวกันในใบสั่งยาของคำตอบเคส คำขอที่มีแค่ชื่อยาทำงานเหมือนเดิมทุกอย่าง
 
+§ 21 เพิ่มค่า `xlsx` และ `pdf` ให้ช่อง `format` ที่ไม่บังคับของ `POST /staff/reports/exports` ค่าเริ่มต้นยังเป็น `csv` ไม่มี endpoint ใหม่
+
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
 ส่วนขยายด้านบิลทั้งสามใช้ `invoice:write` เพราะรายการ scope ของ contract ปิดตาย `PUT /staff/roles/{id}/permissions` ถูกกำหนดให้ปฏิเสธ scope ที่ไม่รู้จัก ถ้าคิด `invoice:read` หรือ `invoice:void` ขึ้นมาเอง endpoint นั้นจะไม่มี role ใดใน reference เรียกได้เลย นี่คือทางที่ประดิษฐ์น้อยที่สุด ไม่ใช่ทางที่ดีที่สุด
@@ -522,7 +532,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | endpoint ใน reference | **164** |
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
-| ทำแล้วและมีเทสต์ (✅) | **137** |
+| ทำแล้วและมีเทสต์ (✅) | **141** |
 | เพิ่มนอก contract | **36** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
@@ -531,7 +541,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-36 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19 และ § 20) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด
+36 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19 และ § 20) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
 
 ## โค้ด
 

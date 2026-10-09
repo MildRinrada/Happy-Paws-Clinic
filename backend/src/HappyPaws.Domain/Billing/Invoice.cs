@@ -120,7 +120,13 @@ public sealed class Invoice : Entity
         long unitPriceSatang,
         string? sourceId = null)
     {
-        RequireStatus(InvoiceStatus.Open, nameof(AddLine));
+        // "Open" here means nothing collected and not voided. A bill whose lines so far cost
+        // nothing (a service covered by a package, say) computes as paid at ฿0, but it has taken
+        // no money and is still being written.
+        if (VoidedAt is not null || _payments.Count > 0)
+        {
+            throw new StateConflictException(nameof(Invoice), Status.ToString(), nameof(AddLine));
+        }
 
         var line = InvoiceLine.Create(Id, kind, description, quantity, unitPriceSatang, sourceId);
         _lines.Add(line);

@@ -60,7 +60,7 @@ public class ApiFixture : IAsyncLifetime
     {
         await _postgres.StartAsync();
 
-        _factory = new ClinicApiFactory(_postgres.GetConnectionString(), ConfigureServices);
+        _factory = new ClinicApiFactory(_postgres.GetConnectionString(), ConfigureServices, Settings);
 
         using var scope = _factory.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>().Database.MigrateAsync();
@@ -81,10 +81,16 @@ public class ApiFixture : IAsyncLifetime
     protected virtual void ConfigureServices(IServiceCollection services)
     {
     }
+
+    /// <summary>Configuration added after the standard test settings, for a fixture that needs another value.</summary>
+    protected virtual IReadOnlyDictionary<string, string?>? Settings => null;
 }
 
 /// <summary>The host itself, configured for tests.</summary>
-internal sealed class ClinicApiFactory(string connectionString, Action<IServiceCollection>? configure = null)
+internal sealed class ClinicApiFactory(
+    string connectionString,
+    Action<IServiceCollection>? configure = null,
+    IReadOnlyDictionary<string, string?>? settings = null)
     : WebApplicationFactory<Program>
 {
     /// <summary>Meets the 32-character minimum the options validator enforces.</summary>
@@ -121,6 +127,11 @@ internal sealed class ClinicApiFactory(string connectionString, Action<IServiceC
                 ["Assistant:MessagesPerMinute"] = "1000",
                 ["Assistant:DailyConversationTurns"] = "0",
             }));
+
+        if (settings is not null)
+        {
+            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(settings));
+        }
 
         // Unhandled faults become a 500 with no detail in the body, by design. Without a log sink
         // the test run would report "expected OK, got InternalServerError" and nothing else, so

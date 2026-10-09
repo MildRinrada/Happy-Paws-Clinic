@@ -1,13 +1,14 @@
 import { formatLongDate } from '@/lib/format/datetime';
 import { portalPackages } from '../../content/portal-packages';
 import type { PackageView } from '../../lib/load-packages';
+import { isUsablePackage } from '../../lib/package-rules';
 import { PackageStatusBadge } from './package-status-badge';
 import { PackageUsesMeter } from './package-uses-meter';
 
 /** One package: its name and state, what is left, who and what it covers, and until when. */
 export function PackageCard({ item }: { item: PackageView }) {
   const text = portalPackages;
-  const finished = item.status !== 'active';
+  const finished = !isUsablePackage(item.status);
 
   return (
     <article className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">

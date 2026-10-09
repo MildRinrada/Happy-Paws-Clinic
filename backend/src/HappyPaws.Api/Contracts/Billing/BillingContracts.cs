@@ -19,14 +19,18 @@ public sealed record CreateInvoiceRequest(
     string? Note = null);
 
 /// <summary>
-/// <c>POST /staff/invoices/{id}/discounts</c>. Exactly one of <c>amount_satang</c> and
-/// <c>percent</c>; <c>approved_by_staff_id</c> is required and is not assumed to be the caller.
+/// <c>POST /staff/invoices/{id}/discounts</c>. Exactly one of <c>amount_satang</c>, <c>percent</c>,
+/// <c>coupon_code</c> and <c>points</c>. For an amount or a percentage, <c>reason</c> and
+/// <c>approved_by_staff_id</c> are required and the approver is not assumed to be the caller; a
+/// coupon or points fill in their own.
 /// </summary>
 public sealed record ApplyDiscountRequest(
-    string Reason,
-    string ApprovedByStaffId,
+    string? Reason = null,
+    string? ApprovedByStaffId = null,
     long? AmountSatang = null,
-    decimal? Percent = null);
+    decimal? Percent = null,
+    string? CouponCode = null,
+    int? Points = null);
 
 /// <summary>
 /// <c>POST /staff/invoices/{id}/payments</c>. One call is one tender — "แบ่งจ่ายหลายวิธีได้" is

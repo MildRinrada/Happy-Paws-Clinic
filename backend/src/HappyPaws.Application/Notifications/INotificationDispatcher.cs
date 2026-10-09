@@ -24,6 +24,12 @@ public sealed record NotificationRequest(
     /// </summary>
     public string? Channel { get; init; }
 
+    /// <summary>
+    /// <c>line</c>, <c>sms</c> or <c>email</c> to try first, then the usual order as fallback. A thread
+    /// reply uses it for "ระบบเลือกช่องทางที่ลูกค้าใช้ล่าสุด". Ignored when <see cref="Channel"/> is set.
+    /// </summary>
+    public string? PreferredChannel { get; init; }
+
     public DeliverySource Source { get; init; } = DeliverySource.System;
 
     /// <summary>Groups the deliveries of one staff send or broadcast.</summary>
@@ -99,6 +105,12 @@ public static class NotificationTemplates
 
     /// <summary>A message about the pet's care, written by staff. Staff can send it.</summary>
     public const string ClinicMessage = "clinic.message";
+
+    /// <summary>
+    /// "ตอบกลับ" — staff answering a customer's message in their thread (<c>POST /staff/threads/{id}/messages</c>).
+    /// Not sendable from the notifications page: it belongs to a thread.
+    /// </summary>
+    public const string ThreadReply = "thread.reply";
 
     /// <summary>An announcement to a list of customers. Marketing: it needs that consent.</summary>
     public const string ClinicAnnouncement = "clinic.announcement";

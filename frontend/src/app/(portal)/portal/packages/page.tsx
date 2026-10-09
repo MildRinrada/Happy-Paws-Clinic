@@ -4,6 +4,7 @@ import { PackagesEmpty } from '@/features/portal/components/packages/packages-em
 import { PageHeading } from '@/features/portal/components/shared/page-heading';
 import { portalPackages } from '@/features/portal/content/portal-packages';
 import { loadPackages } from '@/features/portal/lib/load-packages';
+import { isUsablePackage } from '@/features/portal/lib/package-rules';
 
 export const metadata: Metadata = { title: `${portalPackages.title} · Happy Paws Clinic` };
 
@@ -20,8 +21,8 @@ export default async function PortalPackagesPage() {
         <PackagesEmpty />
       ) : (
         <>
-          <PackageGroup title={text.usable} items={packages.filter((item) => item.status === 'active')} />
-          <PackageGroup title={text.finished} items={packages.filter((item) => item.status !== 'active')} />
+          <PackageGroup title={text.usable} items={packages.filter((item) => isUsablePackage(item.status))} />
+          <PackageGroup title={text.finished} items={packages.filter((item) => !isUsablePackage(item.status))} />
         </>
       )}
     </div>

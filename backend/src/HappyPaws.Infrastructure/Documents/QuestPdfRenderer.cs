@@ -1,5 +1,4 @@
 using HappyPaws.Application.MedicalRecords.GenerateDocument;
-using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -16,31 +15,17 @@ namespace HappyPaws.Infrastructure.Documents;
 /// </para>
 /// <para>
 /// Used under QuestPDF's Community licence, which covers organisations under its revenue threshold.
-/// A clinic above it needs a commercial licence; see <c>docs/features/documents.md</c>.
+/// A clinic above it needs a commercial licence; see <c>docs/features/clinical-records.md</c>. The setup is
+/// shared with the report exports (<see cref="QuestPdfSetup"/>).
 /// </para>
 /// </summary>
 internal sealed class QuestPdfRenderer : IDocumentRenderer
 {
-    private const string Font = "Sarabun";
-
-    private static readonly Lazy<bool> Setup = new(() =>
-    {
-        QuestPDF.Settings.License = LicenseType.Community;
-
-        var assembly = typeof(QuestPdfRenderer).Assembly;
-
-        foreach (var name in assembly.GetManifestResourceNames().Where(resource => resource.EndsWith(".ttf", StringComparison.Ordinal)))
-        {
-            using var stream = assembly.GetManifestResourceStream(name)!;
-            FontManager.RegisterFontFromStream(stream);
-        }
-
-        return true;
-    });
+    private const string Font = QuestPdfSetup.Font;
 
     public byte[] RenderPdf(PrintableDocument document)
     {
-        _ = Setup.Value;
+        QuestPdfSetup.EnsureReady();
 
         return Document.Create(container => container.Page(page =>
         {

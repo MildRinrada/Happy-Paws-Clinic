@@ -3,15 +3,22 @@ using System.Text.Json;
 namespace HappyPaws.Application.Integrations.HandleLineWebhook;
 
 /// <summary>
-/// The parts of a LINE webhook event this system reads. Everything else LINE sends (the message
-/// content, timestamps, delivery context) is ignored rather than stored.
+/// The parts of a LINE webhook event this system reads. Everything else LINE sends (timestamps,
+/// delivery context, the content of a picture or a file) is ignored rather than stored.
 /// </summary>
 internal sealed record LineWebhookEvent(
     string Type,
     string? UserId,
     string? ReplyToken,
     string? Mode,
-    string? PostbackData);
+    string? PostbackData,
+    LineIncomingMessage? Message = null);
+
+/// <summary>
+/// The message of a <c>message</c> event: LINE's id for it, its type (<c>text</c>, <c>image</c>,
+/// <c>sticker</c>...), and its words: the text, a file's name, or a location's title and address.
+/// </summary>
+internal sealed record LineIncomingMessage(string? Id, string Type, string? Text);
 
 internal static class LineWebhookPayload
 {
@@ -38,7 +45,10 @@ internal static class LineWebhookPayload
                             : null,
                         Text(item, "replyToken"),
                         Text(item, "mode"),
-                        item.TryGetProperty("postback", out var postback) ? Text(postback, "data") : null)),
+                        item.TryGetProperty("postback", out var postback) ? Text(postback, "data") : null,
+                        item.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.Object
+                            ? new LineIncomingMessage(Text(message, "id"), Text(message, "type") ?? string.Empty, Words(message))
+                            : null)),
             ];
         }
         catch (JsonException)
@@ -46,6 +56,14 @@ internal static class LineWebhookPayload
             return null;
         }
     }
+
+    private static string? Words(JsonElement message) => Text(message, "type") switch
+    {
+        "text" => Text(message, "text"),
+        "file" => Text(message, "fileName"),
+        "location" => string.Join(" ", new[] { Text(message, "title"), Text(message, "address") }.Where(part => !string.IsNullOrWhiteSpace(part))),
+        _ => null,
+    };
 
     private static string? Text(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object

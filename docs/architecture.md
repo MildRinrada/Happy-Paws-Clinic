@@ -103,7 +103,8 @@ handler เป็นคลาสธรรมดาที่ลงทะเบี
 | LINE, SMS, อีเมลถึงลูกค้า | ยังไม่มี ใช้ `LoggingNotificationChannel` เขียน log ระดับ warning แทน | `Infrastructure/Notifications/` (โฟลเดอร์ `Line`, `Sms`, `Email` ว่าง) |
 | อีเมลเชิญพนักงาน | ยังไม่มี ใช้ `LoggingStaffInvitationSender` ในโหมด dev เขียนลิงก์ลง log ได้ | `Infrastructure/Staff/` |
 | payment gateway | ยังไม่มี การรับบัตรคือบันทึกเลขสลิปใน `reference` | ไม่มี |
-| แล็บภายนอก, ที่เก็บไฟล์, webhook ขาออก | ยังไม่มี | โฟลเดอร์ว่างใน `Infrastructure/` |
+| webhook ขาออก | ส่งจริงจาก outbox ลงนาม HMAC-SHA256 ลองใหม่ 5 ครั้ง ตรวจที่อยู่กัน SSRF ดู [การเชื่อมต่อระบบ](features/integrations.md) | `Infrastructure/Webhooks/` |
+| แล็บภายนอก, payment gateway | เก็บค่าตั้งได้ (`PUT /staff/integrations/lab`, `/payment`) แต่ยังไม่มีตัวเชื่อม | ไม่มี |
 
 ## การตัดสินใจสำคัญ
 

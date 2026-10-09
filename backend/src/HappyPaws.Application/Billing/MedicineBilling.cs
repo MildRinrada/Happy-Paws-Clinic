@@ -1,7 +1,9 @@
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Prescriptions;
 
 namespace HappyPaws.Application.Billing;
@@ -59,6 +61,7 @@ public sealed class MedicineBilling(
     IInvoiceRepository invoices,
     IPrescriptionRepository prescriptions,
     IDocumentNumberGenerator numbers,
+    IWebhookOutbox webhooks,
     IAuditTrail audit)
 {
     /// <summary>Call inside the dispense's transaction, after the charge is recorded on the prescription.</summary>
@@ -124,6 +127,7 @@ public sealed class MedicineBilling(
 
         AddTo(invoice, prescription);
         invoices.Add(invoice);
+        webhooks.Enqueue(WebhookEventTypes.InvoiceIssued, WebhookPayloads.Invoice(invoice));
 
         audit.Record(new AuditEvent(
             AuditActions.InvoiceIssued,

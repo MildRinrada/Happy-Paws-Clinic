@@ -209,21 +209,29 @@ POST /v1/staff/reports/exports
 - **ต้องมีสิทธิ์ดูรายงานนั้นบนหน้าจอด้วย** contract ใส่แค่ `report:export` แต่ไฟล์รายรับคือข้อมูลชุดเดียวกับ `GET /staff/analytics/revenue` คนที่ดูหน้านั้นไม่ได้จึงต้องไม่ได้ไฟล์นั้นแทน ขาดได้ `403 insufficient_scope` บอก scope ที่ขาด
 - `from`, `to`, `branch_id` ใช้กติกาเดียวกับหน้ารายงาน ค่าเริ่มต้นเท่ากับของหน้านั้น (30 วัน ลูกค้าใหม่และกลับมาได้ 6 เดือน) ยาวไม่เกิน 366 วัน สาขาที่ไม่ได้ประจำได้ `403`
 - **ขอบเขตถูกตรึงตอนสั่ง** วันและสาขาที่คิดจาก token ของผู้สั่งถูกเก็บในงาน (`branch_ids`) worker ที่สร้างไฟล์ไม่มีผู้ใช้ จึงไม่มีทางขยายไฟล์ของผู้จัดการสาขาให้กลายเป็นทั้งคลินิก
-- ไฟล์เป็น CSV แบบ UTF-8 มี BOM เปิดด้วย Excel ได้ภาษาไทยถูกต้อง หัวคอลัมน์เป็นภาษาไทย เงินเป็นบาทสองตำแหน่ง ข้อความที่ขึ้นต้นด้วย `=` `+` `-` `@` ถูกเติม `'` ข้างหน้า กันสูตรที่แฝงมาในชื่อคน ยังไม่มี XLSX เพราะต้องเพิ่มไลบรารี
+- `format` เป็น `csv` (ค่าเริ่มต้น) `xlsx` หรือ `pdf` ค่าอื่นได้ `422` ที่ช่อง `format` contract ไม่ได้บอกรูปแบบไฟล์ `xlsx` และ `pdf` จึงเป็นส่วนขยายที่เจ้าของงานขอ ดู [contract-extensions.md § 21](../contract-extensions.md) ทุกรูปแบบมีแถวและหัวคอลัมน์ภาษาไทยชุดเดียวกัน เงินเป็นบาทสองตำแหน่ง
+
+| `format` | ไฟล์ | หน้าตา |
+|---|---|---|
+| `csv` | `.csv` (`text/csv`) | UTF-8 มี BOM เปิดด้วย Excel ได้ภาษาไทยถูกต้อง ข้อความที่ขึ้นต้นด้วย `=` `+` `-` `@` ถูกเติม `'` ข้างหน้า กันสูตรที่แฝงมาในชื่อคน |
+| `xlsx` | `.xlsx` (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) | Excel หนึ่งชีตตั้งชื่อตามรายงาน แถวแรกเป็นหัวคอลัมน์ตัวหนาที่ตรึงไว้ ความกว้างคอลัมน์ตามข้อมูล ช่องมีชนิด คือ จำนวนเป็นตัวเลข เงินเป็นตัวเลขแบบ `#,##0.00` วันที่เป็นวันที่จริงแบบ `yyyy-mm-dd` เดือนแบบ `yyyy-mm` ค่าใช่หรือไม่เป็น TRUE FALSE ทุกช่องเขียนเป็นค่า ไม่มีสูตรเลย ข้อความที่ขึ้นต้นด้วย `=` จึงอยู่ตามที่พิมพ์โดยไม่ต้องเติม `'` ชื่อคลินิก สาขา และช่วงวันอยู่ใน properties ของไฟล์ |
+| `pdf` | `.pdf` (`application/pdf`) | ตาราง A4 แนวนอนพร้อมพิมพ์ หัวทุกหน้ามีชื่อคลินิก ชื่อรายงาน สาขา และช่วงวัน ท้ายทุกหน้ามีเวลาที่สร้างและ "หน้า 1 / 3" ตารางยาวขึ้นหน้าใหม่โดยหัวคอลัมน์ซ้ำทุกหน้า วันที่เป็นภาษาไทยแบบปีพุทธศักราช ตัวเลขชิดขวา ช่องว่างแสดงเป็น `-` ใช้ QuestPDF และฟอนต์ Sarabun ชุดเดียวกับเอกสารของสัตว์ (สัญญาอนุญาต Community ดู [งานรักษาต่อเนื่อง](clinical-records.md)) |
+
 - แถวในไฟล์เป็นแถวละเอียดสุดที่ query ของรายงานคืน เช่น รายรับหนึ่งแถวต่อวัน สาขา และช่องทาง ไม่ใช่ยอดรวมบนหน้าจอ ให้ spreadsheet รวมเอง ตัวเลขจึงมาจาก query ชุดเดียวกับหน้ารายงาน
 - **อ่านได้เฉพาะคนที่สั่ง** คนอื่นได้ `404` เพราะไฟล์ถูกตัดตามสาขาและสิทธิ์ของผู้สั่ง
-- ลิงก์ดาวน์โหลดเป็น URL ที่ลงชื่อของที่เก็บไฟล์ (`/storage/files/{token}`) ไม่ต้องมีเซสชัน หมดอายุใน 1 ชั่วโมง เรียก `GET` อีกครั้งได้ลิงก์ใหม่ ไฟล์ดาวน์โหลดตามชื่อเช่น `revenue_2026-09-01_2026-09-30.csv` ไฟล์เก็บผ่าน `LocalFileStorage` ตัวเดียวกับเอกสารของสัตว์ ดู [contract-extensions.md § 12](../contract-extensions.md)
+- ลิงก์ดาวน์โหลดเป็น URL ที่ลงชื่อของที่เก็บไฟล์ (`/storage/files/{token}`) ไม่ต้องมีเซสชัน หมดอายุใน 1 ชั่วโมง เรียก `GET` อีกครั้งได้ลิงก์ใหม่ ไฟล์ดาวน์โหลดตามชื่อเช่น `revenue_2026-09-01_2026-09-30.csv` นามสกุลตามรูปแบบที่สั่ง ไฟล์เก็บผ่าน `LocalFileStorage` ตัวเดียวกับเอกสารของสัตว์ ดู [contract-extensions.md § 12](../contract-extensions.md)
 - การสั่งเขียน `report.exported` ลง audit log พร้อมรายงาน ช่วงวัน และสาขา
 
 **สถานะ** `queued` แล้ว `running` แล้ว `succeeded` หรือ `failed` งานสร้างโดยตัวตั้งเวลาเบื้องหลัง (งาน `report-exports` ทุก 15 วินาที และถูกปลุกทันทีเมื่อมีคำขอใหม่ใน instance เดียวกัน) worker จองงานด้วย `FOR UPDATE SKIP LOCKED` API หลาย instance จึงไม่สร้างไฟล์เดียวกันซ้ำ งานที่ค้าง `running` เกิน 10 นาทีถูกคืนเข้าคิว ลองได้สามครั้งแล้วเป็น `failed` (`export_timed_out`) ถ้าปิดตัวตั้งเวลาไว้ (`Jobs:Enabled = false`) งานจะค้าง `queued` จนกว่าจะมี instance ที่เปิดอยู่
 
-**บนหน้าเว็บ** บัญชีที่ถือ `report:export` เห็นกล่อง **ส่งออกรายงาน** ใต้ช่วงวันที่ เลือกได้เฉพาะรายงานที่ตัวเองมีสิทธิ์ดู ใช้ช่วงวันที่และสาขาที่แสดงอยู่ กดแล้วหน้าเว็บถามสถานะทุก 2 วินาทีจนไฟล์พร้อม แล้วแสดงลิงก์ดาวน์โหลด ถ้านานเกินหนึ่งนาทีจะหยุดถามและให้ปุ่มดูสถานะอีกครั้งแทน
+**บนหน้าเว็บ** บัญชีที่ถือ `report:export` เห็นกล่อง **ส่งออกรายงาน** ใต้ช่วงวันที่ เลือกได้เฉพาะรายงานที่ตัวเองมีสิทธิ์ดู เลือกไฟล์เป็น Excel (ค่าเริ่มต้น) CSV หรือ PDF ใต้ปุ่มมีคำอธิบายสั้น ๆ ของไฟล์ที่เลือก ใช้ช่วงวันที่และสาขาที่แสดงอยู่ กดแล้วหน้าเว็บถามสถานะทุก 2 วินาทีจนไฟล์พร้อม แล้วแสดงลิงก์ดาวน์โหลด ถ้านานเกินหนึ่งนาทีจะหยุดถามและให้ปุ่มดูสถานะอีกครั้งแทน
 
 ## ข้อจำกัดที่รู้อยู่
 
 - **ยังไม่มีกำไรจริง** ต้องรอต้นทุนยาจากโมดูลคลังยา
 - **ยังไม่มีคะแนนรีวิว** ไม่มีที่เก็บรีวิว
-- **ส่งออกได้แค่ CSV** และไฟล์ที่สร้างแล้วยังไม่มีงานลบทิ้ง ไฟล์อยู่ในที่เก็บไฟล์จนกว่าจะลบเอง
+- **ไฟล์ที่สร้างแล้วยังไม่มีงานลบทิ้ง** ไฟล์อยู่ในที่เก็บไฟล์จนกว่าจะลบเอง
+- **PDF ของช่วงยาวอาจหลายสิบหน้า** เพราะเป็นแถวละเอียดสุดชุดเดียวกับ CSV ไม่ใช่ยอดรวม เช่นคิวรายชั่วโมงทั้งปี ไม่มีกราฟในไฟล์ทุกรูปแบบ
 - **คำนวณสดทุกครั้ง** ไม่มีตารางสรุปล่วงหน้า ข้อมูลของคลินิกขนาดหนึ่งถึงสองสาขาเร็วพอ ถ้าข้อมูลโตมาก ดู index ที่แนะนำด้านล่าง
 - **นัดที่จองออนไลน์** แยกจากการที่ไม่มีพนักงานเป็นผู้จอง นัดที่สร้างด้วยวิธีอื่นในอนาคตที่ไม่ใส่ผู้จองจะถูกนับเป็นออนไลน์ด้วย
 
@@ -248,6 +256,6 @@ POST /v1/staff/reports/exports
 | controller | `backend/src/HappyPaws.Api/Controllers/Staff/DashboardController.cs`, `StatsController.cs`, `AnalyticsController.cs` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Analytics/`, `backend/tests/HappyPaws.UnitTests/Domain/Analytics/` |
 | หน้าเว็บ | `frontend/src/app/(staff)/dashboard/page.tsx`, `frontend/src/features/analytics/` |
-| ส่งออกรายงาน | `backend/src/HappyPaws.Domain/Reporting/`, `backend/src/HappyPaws.Application/Reporting/` (`StartExport/`, `GetExportStatus/`, `RunExports/`, `Tables/`, `Csv/`), `backend/src/HappyPaws.Api/Controllers/Staff/ReportExportsController.cs`, `frontend/src/features/reporting/` |
-| เทสต์ส่งออก | `backend/tests/HappyPaws.IntegrationTests/Api/Reporting/`, `backend/tests/HappyPaws.UnitTests/Domain/Reporting/`, `backend/tests/HappyPaws.UnitTests/Application/Reporting/` |
+| ส่งออกรายงาน | `backend/src/HappyPaws.Domain/Reporting/`, `backend/src/HappyPaws.Application/Reporting/` (`StartExport/`, `GetExportStatus/`, `RunExports/`, `Tables/`, `Files/`, `Csv/`), `backend/src/HappyPaws.Infrastructure/Reporting/` (ตัวเขียน Excel และ PDF), `backend/src/HappyPaws.Api/Controllers/Staff/ReportExportsController.cs`, `frontend/src/features/reporting/` |
+| เทสต์ส่งออก | `backend/tests/HappyPaws.IntegrationTests/Api/Reporting/`, `backend/tests/HappyPaws.IntegrationTests/Reporting/` (ตัวเขียน Excel และ PDF), `backend/tests/HappyPaws.UnitTests/Domain/Reporting/`, `backend/tests/HappyPaws.UnitTests/Application/Reporting/` |
 | ข้อความบนหน้าเว็บ | `frontend/src/features/analytics/content/` |

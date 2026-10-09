@@ -52,6 +52,8 @@ export const Scope = {
   ServiceManage: 'service:manage',
   ScheduleRead: 'schedule:read',
   ScheduleWrite: 'schedule:write',
+  CrmRead: 'crm:read',
+  CrmManage: 'crm:manage',
   MessageRead: 'message:read',
   MessageWrite: 'message:write',
   NotifySend: 'notify:send',

@@ -1,5 +1,6 @@
 import { parseBahtToSatang } from '@/lib/format/money';
 import type { InvoiceLineInput, InvoiceLineKind } from '../types/billing.types';
+import { serviceIdOf } from './catalogue-entry';
 
 /** One line of a hand-raised bill, as typed. `key` keeps React's rows stable; it is never drawn. */
 export interface InvoiceLineDraft {
@@ -35,7 +36,11 @@ export function toLineInput(line: InvoiceLineDraft): InvoiceLineInput | null {
     return null;
   }
 
-  return { description, quantity, unit_price_satang: unitPrice, kind: line.kind };
+  // A line picked from the services names the service, so a package can cover it and the service
+  // revenue report can count it. Only while it is still billed as a service.
+  const serviceId = line.kind === 'service' ? serviceIdOf(line.source) : undefined;
+
+  return { description, quantity, unit_price_satang: unitPrice, kind: line.kind, ...(serviceId && { source_id: serviceId }) };
 }
 
 /**

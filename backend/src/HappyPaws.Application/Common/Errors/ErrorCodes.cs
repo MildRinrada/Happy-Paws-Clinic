@@ -87,4 +87,7 @@ public static class ErrorCodes
     /// names it when known. See <c>docs/contract-extensions.md § 18</c>.
     /// </summary>
     public const string LineAddressTaken = "line_address_taken";
+
+    /// <summary>409 — a new coupon asks for a code another coupon already has.</summary>
+    public const string CouponCodeTaken = "coupon_code_taken";
 }

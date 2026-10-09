@@ -17,6 +17,7 @@ export const settingsTabs: SettingsTab[] = [
   { href: '/settings/staff', label: 'พนักงานและสิทธิ์', scope: Scope.StaffRead },
   { href: '/settings/contacts', label: 'ข้อมูลติดต่อ', scope: Scope.SettingsWrite },
   { href: '/settings/line', label: 'LINE', scope: Scope.IntegrationManage },
+  { href: '/settings/integrations', label: 'เชื่อมต่อระบบ', scope: Scope.IntegrationManage },
 ];
 
 export const settingsArea = {

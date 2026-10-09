@@ -52,6 +52,7 @@ export const mergeCustomer = {
       invoices: 'ใบแจ้งหนี้',
       customer_consents: 'ความยินยอม',
       data_subject_requests: 'คำขอเรื่องข้อมูลส่วนบุคคล',
+      thread_messages: 'ข้อความลูกค้า',
     } as Record<string, string>,
   },
 

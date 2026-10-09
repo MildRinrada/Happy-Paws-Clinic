@@ -33,10 +33,12 @@ public static class JobsRegistration
         services.AddScoped<AutomationJob>();
         services.AddScoped<ReportExportJob>();
         services.AddScoped<HousekeepingJob>();
+        services.AddScoped<WebhookJob>();
 
         AddHost<AutomationJob>(services, "automations", options => options.Automations);
         AddHost<ReportExportJob>(services, JobSignal.ReportExports, options => options.ReportExports);
         AddHost<HousekeepingJob>(services, "housekeeping", options => options.Housekeeping);
+        AddHost<WebhookJob>(services, "webhooks", options => options.Webhooks);
 
         return services;
     }

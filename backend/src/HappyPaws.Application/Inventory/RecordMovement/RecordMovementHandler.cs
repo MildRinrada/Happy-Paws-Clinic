@@ -2,9 +2,11 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Inventory.Dtos;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Common;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Inventory;
 
 namespace HappyPaws.Application.Inventory.RecordMovement;
@@ -35,6 +37,7 @@ public sealed class RecordMovementHandler(
     StockView view,
     ClinicDays clinicDays,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock,
     RequestValidator validator)
@@ -175,6 +178,7 @@ public sealed class RecordMovementHandler(
         await ledger.LockAsync([key], cancellationToken);
 
         var lots = await ledger.LotsForUpdateAsync(key, cancellationToken);
+        var before = StockAllocation.Available(lots, today);
 
         foreach (var take in StockTakes.Choose(lots, command.LotId, command.Quantity!.Value, today))
         {
@@ -182,6 +186,8 @@ public sealed class RecordMovementHandler(
             ledger.Append(movement);
             written.Add((movement, take.Lot));
         }
+
+        LowStockWebhook.Report(webhooks, item, branchId, before, StockAllocation.Available(lots, today));
     }
 
     private async Task TransferAsync(
@@ -202,6 +208,7 @@ public sealed class RecordMovementHandler(
         var source = await ledger.LotsForUpdateAsync(from, cancellationToken);
         var destination = (await ledger.LotsForUpdateAsync(to, cancellationToken)).ToList();
         var transferId = EntityId.New(EntityId.StockTransfer);
+        var sourceBefore = StockAllocation.Available(source, today);
 
         foreach (var take in StockTakes.Choose(source, command.LotId, command.Quantity!.Value, today))
         {
@@ -227,6 +234,8 @@ public sealed class RecordMovementHandler(
             written.Add((outgoing, take.Lot));
             written.Add((incoming, landing));
         }
+
+        LowStockWebhook.Report(webhooks, item, fromBranchId, sourceBefore, StockAllocation.Available(source, today));
     }
 
     private static ValidationFailedException Invalid(string field, string message) =>

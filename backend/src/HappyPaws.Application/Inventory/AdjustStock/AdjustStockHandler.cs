@@ -3,8 +3,11 @@ using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Inventory.Dtos;
+using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Inventory;
 
 namespace HappyPaws.Application.Inventory.AdjustStock;
@@ -67,8 +70,10 @@ public sealed class AdjustStockHandler(
     StockView view,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock,
+    ClinicDays clinicDays,
     RequestValidator validator)
 {
     public async Task<StockChangeDto> HandleAsync(AdjustStockCommand command, CancellationToken cancellationToken = default)
@@ -86,20 +91,22 @@ public sealed class AdjustStockHandler(
         {
             var now = clock.UtcNow;
 
-            if (await items.FindAsync(itemId, token) is null)
-            {
-                throw new NotFoundException("inventory_item", itemId);
-            }
+            var item = await items.FindAsync(itemId, token)
+                ?? throw new NotFoundException("inventory_item", itemId);
 
             var key = new StockKey(itemId, branchId);
             await ledger.LockAsync([key], token);
 
             var lots = await ledger.LotsForUpdateAsync(key, token);
+            var today = clinicDays.Today;
+            var available = StockAllocation.Available(lots, today);
             var lot = Pick(lots, command.LotId, itemId, branchId, now);
             var before = lot.QuantityOnHand;
 
             var movement = StockMovement.Adjust(lot, command.CountedQuantity!.Value, command.Reason!, staffId, now);
             ledger.Append(movement);
+
+            LowStockWebhook.Report(webhooks, item, branchId, available, StockAllocation.Available(lots, today));
 
             audit.Record(new AuditEvent(
                 AuditActions.InventoryAdjusted,

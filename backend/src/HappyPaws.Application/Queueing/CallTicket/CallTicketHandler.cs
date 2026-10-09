@@ -1,7 +1,9 @@
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Concurrency;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Application.Queueing.Dtos;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Queueing;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +32,7 @@ public sealed class CallTicketHandler(
     IQueueEventStream events,
     INotificationDispatcher notifications,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock,
     ILogger<CallTicketHandler> logger)
@@ -48,6 +51,7 @@ public sealed class CallTicketHandler(
             ConcurrencyGuard.Ensure(ticket, command.IfMatchVersion);
 
             ticket.Call(staffId, clock.UtcNow);
+            webhooks.Enqueue(WebhookEventTypes.QueueTicketCalled, WebhookPayloads.Ticket(ticket));
             called = ticket;
         }, cancellationToken);
 

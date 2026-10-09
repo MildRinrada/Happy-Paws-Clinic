@@ -56,6 +56,15 @@ public static class NotificationTemplateCatalogue
             "{clinic}: {message}"),
 
         new(
+            NotificationTemplates.ThreadReply,
+            "ตอบข้อความลูกค้า",
+            StaffSendable: false,
+            [new("message", MaxLength: 1_000)],
+            "ข้อความตอบกลับจากคลินิก",
+            "{message}",
+            "{clinic}: {message}"),
+
+        new(
             NotificationTemplates.QueueCalled,
             "เรียกคิว",
             StaffSendable: false,

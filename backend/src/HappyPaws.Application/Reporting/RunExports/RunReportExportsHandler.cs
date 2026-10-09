@@ -1,5 +1,7 @@
 using System.Globalization;
+using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Reporting.Files;
 using HappyPaws.Application.Reporting.Tables;
 using HappyPaws.Domain.Reporting;
 using Microsoft.Extensions.Logging;
@@ -19,10 +21,18 @@ namespace HappyPaws.Application.Reporting.RunExports;
 /// stopped; it goes back to the queue, and fails for good after
 /// <see cref="ReportExport.MaxAttempts"/> tries so a report that crashes its worker cannot loop.
 /// </para>
+/// <para>
+/// <b>Formats.</b> The same table goes to the writer of the format the job stored
+/// (<see cref="IReportFileWriter"/>): CSV, XLSX or PDF. Only the bytes, the extension and the media
+/// type differ; claiming, retries and storage are the same for all three.
+/// </para>
 /// </summary>
 public sealed class RunReportExportsHandler(
     IReportExportRepository exports,
     ReportTableBuilder tables,
+    IEnumerable<IReportFileWriter> writers,
+    IClinicSettingsStore settings,
+    IBranchRepository branches,
     IFileStorage storage,
     IUnitOfWork unitOfWork,
     IClock clock,
@@ -75,15 +85,18 @@ public sealed class RunReportExportsHandler(
 
         try
         {
-            var table = await tables.BuildAsync(export, cancellationToken);
-            var bytes = table.ToBytes();
+            var writer = writers.FirstOrDefault(candidate => candidate.Format == export.Format)
+                ?? throw new InvalidOperationException($"no writer for {export.Format}");
 
-            fileKey = $"exports/{export.Id}.csv";
-            fileName = FileNameOf(export);
+            var table = await tables.BuildAsync(export, cancellationToken);
+            var bytes = writer.Write(table, await HeadingAsync(export, cancellationToken));
+
+            fileKey = $"exports/{export.Id}.{writer.Extension}";
+            fileName = FileNameOf(export, writer.Extension);
             rows = table.RowCount;
 
             await using var content = new MemoryStream(bytes, writable: false);
-            size = await storage.SaveAsync(fileKey, "text/csv; charset=utf-8", content, fileName, cancellationToken);
+            size = await storage.SaveAsync(fileKey, writer.ContentType, content, fileName, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -123,8 +136,33 @@ public sealed class RunReportExportsHandler(
         }, cancellationToken);
     }
 
-    /// <summary><c>revenue_2026-09-01_2026-09-30.csv</c>.</summary>
-    private static string FileNameOf(ReportExport export) => string.Create(
+    /// <summary>
+    /// What the file says about itself. Branch names are read now, as the file is built; a branch
+    /// closed since is named by its id rather than left out, because the rows still count it.
+    /// </summary>
+    private async Task<ReportFileHeading> HeadingAsync(ReportExport export, CancellationToken cancellationToken)
+    {
+        var profile = await settings.ProfileAsync(cancellationToken);
+        var covered = export.BranchIds;
+        var names = covered.Count == 0
+            ? new Dictionary<string, string>(StringComparer.Ordinal)
+            : (await branches.ListActiveAsync(cancellationToken)).ToDictionary(branch => branch.Id, branch => branch.Name, StringComparer.Ordinal);
+
+        var label = export.AllBranches
+            ? "ทุกสาขา"
+            : string.Join(", ", covered.Select(id => names.GetValueOrDefault(id) ?? id));
+
+        return new ReportFileHeading(
+            ReportCatalogue.Of(export.Report).DisplayName,
+            profile.Name,
+            label,
+            export.FromDate,
+            export.ToDate,
+            TimeZoneInfo.ConvertTime(clock.UtcNow, clock.ClinicTimeZone));
+    }
+
+    /// <summary><c>revenue_2026-09-01_2026-09-30.csv</c>, or <c>.xlsx</c> or <c>.pdf</c>.</summary>
+    private static string FileNameOf(ReportExport export, string extension) => string.Create(
         CultureInfo.InvariantCulture,
-        $"{ReportCatalogue.Of(export.Report).Title}_{export.FromDate:yyyy-MM-dd}_{export.ToDate:yyyy-MM-dd}.csv");
+        $"{ReportCatalogue.Of(export.Report).Title}_{export.FromDate:yyyy-MM-dd}_{export.ToDate:yyyy-MM-dd}.{extension}");
 }

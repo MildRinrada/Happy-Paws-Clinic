@@ -4,9 +4,11 @@ using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Patients;
 using HappyPaws.Domain.Appointments;
 using HappyPaws.Domain.Common;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Scheduling;
 
 namespace HappyPaws.Application.Appointments.CreateRecurringSeries;
@@ -51,6 +53,7 @@ public sealed class CreateRecurringSeriesHandler(
     IPetRepository pets,
     IClinicSettingsStore settings,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -83,6 +86,11 @@ public sealed class CreateRecurringSeriesHandler(
             (seriesId, visits) = await booker.BookAsync(
                 new SeriesRequest(pet, command.ServiceId, starts, type, staffId, command.StaffId, command.BranchId, command.Reason),
                 token);
+
+            foreach (var visit in visits)
+            {
+                webhooks.Enqueue(WebhookEventTypes.AppointmentCreated, WebhookPayloads.Appointment(visit));
+            }
         }, cancellationToken);
 
         return new RecurringSeriesDto(seriesId, [.. visits.Select(AppointmentDto.From)]);

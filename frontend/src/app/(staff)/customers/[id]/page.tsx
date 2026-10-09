@@ -5,6 +5,7 @@ import { BackLink } from '@/components/ui/back-link';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { CustomerLoyaltyCard } from '@/features/crm/components/customer/customer-loyalty-card';
 import { getCustomer } from '@/features/customers/api/getCustomer';
 import { BalanceCard } from '@/features/customers/components/balance-card';
 import { ContactCard } from '@/features/customers/components/contact-card';
@@ -94,6 +95,7 @@ export default async function CustomerPage({
         <div className="space-y-6">
           <ContactCard customer={customer} />
           <BalanceCard outstandingSatang={detail.outstanding_satang} canOpenBilling={context.can(Scope.InvoiceWrite)} />
+          {context.can(Scope.CrmRead) && <CustomerLoyaltyCard customerId={customer.id} />}
           <PortalInviteCard
             customer={customer}
             invitation={detail.invitation}

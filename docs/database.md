@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  20 migration และ model snapshot
+  Migrations/                  23 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -44,7 +44,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 
 ## ตาราง
 
-มี 67 ตาราง แบ่งตามโมดูลได้ดังนี้
+มี 76 ตาราง แบ่งตามโมดูลได้ดังนี้
 
 | โมดูล | ตาราง |
 |---|---|
@@ -52,18 +52,20 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 | คลินิก | `clinic_profile`, `branches`, `opening_hours`, `clinic_holidays`, `booking_settings`, `queue_settings`, `medical_record_settings`, `clinic_contacts` |
 | บริการและตารางงาน | `clinic_services`, `staff_shifts`, `staff_time_off`, `assignment_rules` |
 | ลูกค้าและสัตว์ | `customers`, `customer_invitations`, `pets`, `pet_ownerships`, `pet_allergies`, `pet_vaccinations`, `pet_documents`, `treatment_plans` |
-| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications`, `notification_deliveries`, `line_channel_settings`, `line_followers` |
+| ความยินยอมและข้อความ | `customer_consents`, `data_subject_requests`, `inbox_notifications`, `notification_deliveries`, `line_channel_settings`, `line_followers`, `message_threads`, `thread_messages` |
 | นัดและคิว | `appointments`, `slot_holds`, `queue_tickets`, `appointment_types`, `cancellation_policy`, `waiting_list` |
 | การตรวจ | `consultations`, `consultation_vitals`, `consultation_findings`, `consultation_diagnoses`, `consultation_treatments`, `prescriptions`, `treatment_templates` |
 | แล็บ | `lab_requests`, `lab_results` |
 | เวชระเบียน | `medical_records`, `medical_record_amendments` |
-| การเงินและแพ็กเกจ | `invoices`, `invoice_lines`, `invoice_discounts`, `invoice_payments`, `invoice_refunds`, `receipts`, `customer_packages` |
+| การเงิน | `invoices`, `invoice_lines`, `invoice_discounts`, `invoice_payments`, `invoice_refunds`, `receipts` |
+| แพ็กเกจ คูปอง และแต้ม | `customer_packages`, `package_uses`, `coupons`, `coupon_redemptions`, `loyalty_entries`, `customer_segments` |
 | คลังยา | `inventory_items`, `stock_lots`, `stock_movements`, `purchase_orders`, `purchase_order_lines` |
 | เนื้อหาเว็บ | `articles` |
 | เตือนอัตโนมัติและรายงาน | `automation_rules`, `automation_dispatches`, `report_exports` |
+| การเชื่อมต่อระบบ | `webhook_subscriptions`, `webhook_events` (outbox), `webhook_deliveries`, `api_keys`, `payment_provider_settings`, `lab_provider_settings`, `calendar_feeds` |
 | ระบบ | `audit_entries`, `idempotency_records` |
 
-ยังไม่มีตารางของข้อความสองทาง และ webhook ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
+ไฟล์ที่อัปโหลดไม่อยู่ในฐานข้อมูล `pet_documents` เก็บแค่ข้อมูลของไฟล์และ key ในที่เก็บไฟล์
 
 ### ตารางที่มีแถวเดียว
 
@@ -79,6 +81,8 @@ backend/src/HappyPaws.Infrastructure/Persistence/
 | `assignment_rules` | `set_assignment` | `ck_assignment_rules_singleton` |
 | `appointment_types` | `set_appointment_types` | `ck_appointment_types_singleton` |
 | `cancellation_policy` | `set_cancellation_policy` | `ck_cancellation_policy_singleton` |
+| `payment_provider_settings` | `set_payment` | `ck_payment_provider_settings_singleton` |
+| `lab_provider_settings` | `set_lab` | `ck_lab_provider_settings_singleton` |
 
 แถวเดียวหมายถึง `xmin` เดียว จึงใช้ `If-Match` บอกได้ว่า "ทั้งสัปดาห์ถูกแก้ระหว่างที่คุณกำลังแก้" ถ้าแยกเจ็ดแถวจะบอกแบบนี้ไม่ได้ migration `BookingAndAppointments` ใส่แถว `set_booking` ให้ตั้งแต่แรก (ช่องนัด 30 นาที จองล่วงหน้าอย่างน้อย 120 นาที ยกเลิกได้ก่อน 12 ชั่วโมง จองได้ไกลสุด 60 วัน)
 
@@ -96,7 +100,8 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
            │                           │                 └─ invoices ─┬─ lines, discounts, payments, refunds
            │                           │                               └─ receipts (หนึ่งต่อบิล)
            │                           │                 prescriptions ── inventory_items (เมื่อจ่ายแล้วและชื่อตรง)
-           └─ customer_consents, data_subject_requests
+           ├─ customer_consents, data_subject_requests
+           └─ message_threads ── thread_messages (หนึ่งกล่องต่อลูกค้า)
 ```
 
 - **ลูกค้ากับสัตว์เป็นแบบหลายต่อหลาย** ผ่าน `pet_ownerships` และ `pets.primary_customer_id` บอกเจ้าของหลัก
@@ -128,6 +133,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | หนึ่งล็อตต่อเลขล็อตและวันหมดอายุในสาขา | unique `(item_id, branch_id, lot_number, expires_on)` แบบ nulls not distinct | `InventoryConfiguration.cs` |
 | รับของไม่เกินที่สั่ง | `ck_purchase_order_lines_received_within_ordered` และล็อกแถวใบสั่งซื้อ (`FOR UPDATE`) ตอนรับ | `InventoryConfiguration.cs`, `PurchaseOrderRepository.cs` |
 | ค่ายาของเคสอยู่ในบิลเสมอ แม้จ่ายยาพร้อมปิดเคส | advisory lock ต่อเคส (`case-billing:`) ที่ทั้งการปิดเคสและการจ่ายยาถือ แล้วอ่านสถานะเคสและใบสั่งยาใหม่หลังได้ lock | `Repositories/Billing/InvoiceRepository.cs` |
+| คูปองใช้ได้ครั้งเดียวไม่ถูกใช้สองครั้ง แต้มไม่ถูกแลกซ้ำ สิทธิ์แพ็กเกจไม่ถูกใช้เกิน | advisory lock ต่อคูปอง (`crm-coupon:`) และต่อลูกค้า (`crm-customer:`) แล้วอ่านจำนวนใหม่หลังได้ lock ฐานข้อมูลกันอีกชั้นด้วย check `ck_coupons_redeemed` และ `ck_customer_packages_uses` | `Repositories/Crm/CrmRepositories.cs` |
 | เลขใบสั่งซื้อไม่ซ้ำ | advisory lock ต่อชุดเลข `PO-YYYYMM-` แบบเดียวกับเลขบิล และ unique index บน `number` | `PurchaseOrderRepository.cs` |
 | พิกัดสาขาครบคู่ | `ck_branches_coordinates_paired` มีทั้ง latitude และ longitude หรือไม่มีเลย | `BranchConfiguration.cs` |
 
@@ -188,6 +194,9 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 18 | `AutomationAndReportExports` | ตาราง `automation_rules` (กติกาเตือนอัตโนมัติ ใส่กติกาเริ่มต้นสี่ข้อแบบปิดไว้) `automation_dispatches` (บันทึกส่งแล้ว unique `(rule_id, subject_kind, subject_id, due_key)` คือสิ่งที่กันการส่งซ้ำ) และ `report_exports` (งานส่งออกรายงาน) |
 | 19 | `InventoryAndDispensing` | ตาราง `inventory_items` (ชื่อไม่ซ้ำ index trigram สำหรับค้นชื่อ) `stock_lots` (ห้ามยอดติดลบ) `stock_movements` (สมุดสต๊อก) `purchase_orders` และ `purchase_order_lines` บน `prescriptions` เพิ่ม `inventory_item_id`, `stock_deducted` (ค่าเริ่มต้น `false`) และ `charged_unit_price_satang` ใบสั่งยาเดิมจึงเป็นยาที่ไม่ได้ตัดสต๊อกและไม่มีค่ายา |
 | 20 | `LineFollowersAndAutomationEdits` | ตาราง `line_followers` (ผู้ติดตาม LINE ล่าสุดให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า unique `line_user_id` และ index `last_seen_at` แถวที่ไม่ได้ผูกถูกลบเมื่อไม่เห็นเกิน 14 วัน ดู [contract-extensions.md § 18](./contract-extensions.md)) บน `automation_rules` เพิ่ม `deleted_at` และ `deleted_by_staff_id` กติกาที่ลบแล้วเก็บแถวไว้ให้ประวัติการส่งอ้างถึงได้ ([contract-extensions.md § 19](./contract-extensions.md)) |
+| 21 | `CustomerMessageThreads` | ตาราง `message_threads` (หนึ่งแถวต่อลูกค้า unique `customer_id` เวลาข้อความล่าสุด เวลาที่ลูกค้าเขียนล่าสุดและช่องทาง เวลาที่พนักงานตอบล่าสุด สาขาที่ลูกค้าจองล่าสุด) และ `thread_messages` (ข้อความทั้งสองทาง ชนิดข้อความ ข้อความที่พิมพ์ ผู้ตอบ และผลการส่งของคำตอบ unique `(channel, external_id)` กัน webhook ที่ส่งซ้ำ) ดู [ข้อความลูกค้า](features/messaging.md) |
+| 22 | `LoyaltyPackagesAndPromotions` | ช่องใหม่ใน `customer_packages` (ราคา สาขา บิลที่ขาย ผู้ขาย เวลาที่จ่ายครบ เวลาและเหตุผลที่ยกเลิก) และใส่ `activated_at` ให้แถวเดิมเพื่อให้ยังใช้ได้ ตาราง `package_uses` (การตัดสิทธิ์ต่อรายการบิล) `coupons` (unique `code` check ว่าเป็นเปอร์เซ็นต์หรือจำนวนเงินอย่างใดอย่างหนึ่ง และจำนวนที่ใช้ไม่เกินจำนวนรวม) `coupon_redemptions` (unique `(coupon_id, invoice_id)` เฉพาะแถวที่ยังไม่คืน) `loyalty_entries` (สมุดแต้ม unique `invoice_id` เฉพาะชนิด `Earn`) และ `customer_segments` ดู [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) |
+| 23 | `WebhooksAndIntegrations` | ตาราง `webhook_subscriptions` (URL รายการ event `text[]` และ secret ที่เข้ารหัสแล้ว) `webhook_events` (outbox ข้อความ body เป็น `text` เพื่อให้ไบต์ที่ลงนามคงเดิม index เฉพาะแถวที่ยังไม่แตก) `webhook_deliveries` (unique `(event_id, subscription_id)` index คิวเฉพาะแถว `Pending` ลบตาม event และ webhook) `api_keys` (unique `prefix` และ `secret_hash` ไม่มีคอลัมน์ที่เก็บ key) `payment_provider_settings` และ `lab_provider_settings` (แถวเดียว ความลับเป็น ciphertext) และ `calendar_feeds` (หนึ่งแถวต่อพนักงาน unique `token_hash`) ดู [การเชื่อมต่อระบบ](features/integrations.md) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

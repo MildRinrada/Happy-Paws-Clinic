@@ -60,6 +60,7 @@ export const templateLabels: Record<string, string> = {
   'waiting_list.slot_available': 'มีคิวว่าง',
   'pet.deceased_appointments_cancelled': 'ยกเลิกนัดของสัตว์ที่เสียชีวิต',
   'customer.portal_invitation': 'ชวนเปิดบัญชีออนไลน์',
+  'thread.reply': 'ตอบข้อความลูกค้า',
 };
 
 export const labelOf = (labels: Record<string, string>, key: string | undefined) => (key ? (labels[key] ?? key) : '-');

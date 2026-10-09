@@ -1,6 +1,6 @@
 # LINE
 
-คลินิกส่งการแจ้งเตือนผ่าน LINE Official Account ของคลินิกเอง (ช่อง Messaging API) **LINE เป็นช่องทางส่งข้อความออกเท่านั้น** ไม่ใช้เข้าสู่ระบบ ไม่ผูกบัญชี และไม่ใช้ยืนยันตัวตน ที่อยู่ LINE ของลูกค้าเป็นข้อมูลสำหรับส่ง เหมือนอีเมล ดู [assumptions.md](../assumptions.md) หัวข้อ A และ B
+คลินิกส่งการแจ้งเตือนผ่าน LINE Official Account ของคลินิกเอง (ช่อง Messaging API) **LINE เป็นช่องทางส่งข้อความเท่านั้น** ไม่ใช้เข้าสู่ระบบ ไม่ผูกบัญชี และไม่ใช้ยืนยันตัวตน ที่อยู่ LINE ของลูกค้าเป็นข้อมูลสำหรับส่ง เหมือนอีเมล ดู [assumptions.md](../assumptions.md) หัวข้อ A และ B ข้อความที่ลูกค้าซึ่งผูกที่อยู่ไว้แล้วพิมพ์เข้ามาไปอยู่ในกล่องข้อความของลูกค้า เหมือนอีเมลตอบกลับที่ระบบรู้จากที่อยู่ผู้ส่ง ดู [ข้อความลูกค้า](messaging.md)
 
 endpoint ของ LINE ใน contract ที่ทำแล้วมีสามเส้น บวกส่วนขยายสามเส้นที่ให้เคาน์เตอร์ผูกที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](../contract-extensions.md)) ส่วนสี่เส้นที่ใช้ LINE เป็นตัวตน (`POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link`, `GET /line/liff/booking-context`) ตั้งใจไม่ทำ
 
@@ -54,9 +54,10 @@ LINE นับ push ทุกข้อความ (รวมการเรี�
 
 ```json
 { "customer_ids": ["cus_1", "cus_2"], "message": "คลินิกหยุดวันจันทร์ที่ 13 ต.ค." }
+{ "segment_id": "seg_...", "message": "เดือนนี้ฉีดวัคซีนลด 10%" }
 ```
 
-- **กลุ่มลูกค้าคือรายชื่อในคำขอ** สัญญาบอกว่า "ประกาศถึงกลุ่มลูกค้าที่คัดไว้" แต่กลุ่มที่บันทึกไว้ (`POST /staff/segments`) เป็นของโมดูล CRM ซึ่งยังไม่มี จึงยังไม่รับ `segment_id` เมื่อมีโมดูล CRM กลุ่มจะถูกแปลงเป็นรายชื่อแบบเดียวกันนี้
+- **กลุ่มลูกค้าคือรายชื่อในคำขอ หรือกลุ่มที่บันทึกไว้** ส่ง `customer_ids` หรือ `segment_id` อย่างใดอย่างหนึ่ง กลุ่มมาจาก `POST /staff/segments` และถูกคำนวณใหม่ตอนส่ง ผู้รับคือสมาชิกที่ยอมรับข่าวสารการตลาดและมี LINE ที่ยังติดตามอยู่ ไม่มีสมาชิกที่ส่งถึงได้หรือเกิน 200 คนตอบ `422` บน `segment_id` ไม่มีกลุ่มนี้ตอบ `404` กลุ่มของสาขาอื่นตอบ `403` audit เก็บ `segment_id` ด้วย ดู [แพ็กเกจ คูปอง และแต้มสะสม](crm.md#กลุ่มลูกค้า)
 - หนึ่งถึง 200 คนต่อครั้ง ข้อความไม่เกิน 1,000 ตัวอักษร ระบบ push ทีละคนในคำขอเดียว
 - **เป็นข้อความการตลาด** ใช้เทมเพลต `clinic.announcement` ลูกค้าที่ไม่ได้ยินยอมรับการตลาดถูกข้าม (`no_consent`) ค่าเริ่มต้นของการตลาดคือไม่ยินยอม
 - **LINE เท่านั้น ไม่ส่ง SMS แทน** ลูกค้าที่ไม่มี LINE ถูกข้าม (`no_address`)
@@ -77,7 +78,7 @@ LINE นับ push ทุกข้อความ (รวมการเรี�
 |---|---|
 | `follow` | ตอบข้อความต้อนรับ ถ้าที่อยู่นี้เป็นของลูกค้าที่เคยบล็อก จะเริ่มส่งถึงเขาอีกครั้ง และจดผู้ติดตามพร้อมชื่อและรูปจาก LINE ไว้ให้เคาน์เตอร์เลือก ไม่สร้างลูกค้าและไม่ผูกอะไรเอง |
 | `unfollow` | ถ้าที่อยู่นี้เป็นของลูกค้า หยุด push ถึงเขาทันที ประวัติการส่งจะบอก `unfollowed` และข้อความไปทาง SMS แทน ผู้ติดตามคนนี้หายจากรายชื่อ และชื่อกับรูปถูกลบ |
-| `message` | ตอบอัตโนมัติว่าบัญชีนี้ใช้ส่งการแจ้งเตือนเท่านั้น พร้อมลิงก์ portal ไม่เก็บข้อความ แต่เลื่อนคนที่พิมพ์ขึ้นบนสุดของรายชื่อผู้ติดตาม (คนที่ยังไม่อยู่ในรายชื่อและยังไม่ได้ผูกกับลูกค้าถูกจดใหม่) |
+| `message` | ถ้าที่อยู่นี้ผูกกับลูกค้าแล้ว เก็บข้อความลงกล่องข้อความของลูกค้าคนนั้น (`GET /staff/threads`) ข้อความแรกหลังพนักงานตอบครั้งล่าสุดได้คำตอบว่า "คลินิกได้รับข้อความแล้ว" ข้อความถัดไปไม่ได้คำตอบซ้ำ ดู [ข้อความลูกค้า](messaging.md) ถ้ายังไม่ผูก ไม่เก็บข้อความ และตอบว่าข้อความยังไม่ถึงเจ้าหน้าที่ ให้ขอเคาน์เตอร์ผูก LINE พร้อมลิงก์ portal ทั้งสองกรณีเลื่อนคนที่พิมพ์ขึ้นบนสุดของรายชื่อผู้ติดตาม (คนที่ยังไม่อยู่ในรายชื่อและยังไม่ได้ผูกกับลูกค้าถูกจดใหม่) |
 | `postback` | ทำตามปุ่ม ดูข้างล่าง |
 
 event จากกลุ่มหรือห้องแชต และ event โหมด `standby` ถูกข้าม คำตอบใช้ reply API (`/v2/bot/message/reply`) ซึ่งไม่นับโควตา
@@ -114,7 +115,7 @@ handler ของ portal ไม่ถูกเรียกตรง เพรา
 - `message` เลื่อน `last_seen_at` ขึ้นมา คนที่เพิ่มเพื่อนไว้ก่อนมีตารางนี้จึงพิมพ์ข้อความอะไรก็ได้ แล้วจะขึ้นบนสุด
 - `unfollow` ตั้ง `unfollowed_at` และลบชื่อกับรูป แถวนั้นไม่ขึ้นในรายชื่อ
 - งาน `housekeeping` ลบแถวที่ไม่ได้ผูกกับลูกค้าคนใดเมื่อไม่เห็นเกิน 14 วัน แถวที่ผูกแล้วเก็บไว้ตราบที่ยังผูก เพื่อให้หน้าลูกค้าบอกได้ว่าเป็น LINE ของใคร
-- ไม่เก็บข้อความที่พิมพ์ และไม่เก็บ status message รูปต้องเป็น `https`
+- ไม่เก็บข้อความที่คนที่ยังไม่ได้ผูกพิมพ์มา และไม่เก็บ status message รูปต้องเป็น `https` ข้อความของลูกค้าที่ผูกแล้วเก็บในกล่องข้อความ ([ข้อความลูกค้า](messaging.md))
 
 **การผูก** ต้องเป็นผู้ติดตามที่อยู่ในรายชื่อ 14 วันล่าสุดและยังติดตามอยู่ (ไม่อย่างนั้น `422`) ที่อยู่ที่ผูกกับลูกค้าคนอื่นแล้วได้ `409 line_address_taken` พร้อม `details.customer_id` การผูกและยกเลิกบันทึก audit `customer.line_linked` และ `customer.line_unlinked` ลูกค้าที่ผูกแล้วบล็อกบัญชีทีหลัง webhook ตั้ง `line_unfollowed_at` ตามเดิม และ `follow` ครั้งใหม่ทำให้ส่งได้อีก
 
@@ -141,7 +142,7 @@ handler ของ portal ไม่ถูกเรียกตรง เพรา
 | ส่วน | ไฟล์ |
 |---|---|
 | การตั้งค่า | `backend/src/HappyPaws.Domain/Integrations/LineChannelSettings.cs`, `backend/src/HappyPaws.Application/Integrations/ConfigureLineChannel/` |
-| webhook | `backend/src/HappyPaws.Api/Controllers/Webhooks/LineWebhookController.cs`, `backend/src/HappyPaws.Application/Integrations/HandleLineWebhook/` |
+| webhook | `backend/src/HappyPaws.Api/Controllers/Webhooks/LineWebhookController.cs`, `backend/src/HappyPaws.Application/Integrations/HandleLineWebhook/` ข้อความของลูกค้าที่ผูกแล้วส่งต่อให้ `backend/src/HappyPaws.Application/Messaging/ReceiveMessage/` |
 | ข้อมูลปุ่ม | `backend/src/HappyPaws.Application/Integrations/LinePostbackData.cs`, `backend/src/HappyPaws.Domain/Integrations/LinePostbackActions.cs` |
 | ประกาศ | `backend/src/HappyPaws.Application/Notifications/BroadcastToSegment/`, `backend/src/HappyPaws.Api/Controllers/Staff/LineBroadcastController.cs` |
 | ผู้ติดตามและการผูก | `backend/src/HappyPaws.Domain/Integrations/LineFollower.cs`, `backend/src/HappyPaws.Application/Integrations/ListLineFollowers/`, `backend/src/HappyPaws.Application/Customers/LineAddress/`, `backend/src/HappyPaws.Api/Controllers/Staff/LineFollowersController.cs`, `CustomerLineController.cs` |

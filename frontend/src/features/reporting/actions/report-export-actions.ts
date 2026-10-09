@@ -12,6 +12,7 @@ const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const startInput = z.object({
   report: z.enum(['revenue', 'services', 'retention', 'staff_performance', 'appointments', 'queue', 'workload']),
+  format: z.enum(['csv', 'xlsx', 'pdf']),
   from: day,
   to: day,
   branch_id: z.string().max(40).optional(),
@@ -20,7 +21,7 @@ const startInput = z.object({
 export async function startExportAction(values: z.infer<typeof startInput>): Promise<ActionResult<ReportExport>> {
   const input = startInput.parse(values);
 
-  return runAction(() => startReportExport({ ...input, format: 'csv' }));
+  return runAction(() => startReportExport(input));
 }
 
 const statusInput = z.object({ id: z.string().min(1).max(40) });

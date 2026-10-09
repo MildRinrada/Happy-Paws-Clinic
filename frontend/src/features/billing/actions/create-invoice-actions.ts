@@ -61,6 +61,7 @@ const line = z.object({
   // Never negative: a negative line is a discount that skipped its approval.
   unit_price_satang: z.number().int().nonnegative(),
   kind: z.enum(['service', 'treatment', 'medicine', 'other']).optional(),
+  source_id: z.string().trim().min(1).max(40).optional(),
 });
 
 const createInput = z.object({

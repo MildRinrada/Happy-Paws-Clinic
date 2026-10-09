@@ -16,6 +16,7 @@ import { refundForm } from '@/features/billing/content/refund-form';
 import { invoiceStatusLabel, isCollectible, isRefundable } from '@/features/billing/lib/invoice-labels';
 import { loadInvoiceDetail, type InvoiceDetailView } from '@/features/billing/lib/load-billing-view';
 import { loadStaffOptions } from '@/features/billing/lib/load-staff-options';
+import { loadPointsBalance } from '@/features/crm/lib/load-points-balance';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -66,6 +67,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
       ? await authed(() => loadStaffOptions(invoice.branch_id, context.can(Scope.StaffRead)))
       : null;
   const staffNames = new Map(staff?.map((member) => [member.id, member.name]));
+  // The points hint beside "แลกแต้ม", for a session that may read them. A failed read leaves it out.
+  const pointsBalance = canDiscount && context.can(Scope.CrmRead) ? await loadPointsBalance(invoice.customer_id) : undefined;
 
   return (
     <div className="space-y-6">
@@ -118,7 +121,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               <CardHeader title={discountForm.heading} />
               <CardBody>
                 {/* Not keyed by version: after a conflict the form keeps what was typed and the message. */}
-                <DiscountForm invoice={invoice} self={{ id: context.staffId, name: context.me.display_name }} staff={staff} />
+                <DiscountForm
+                  invoice={invoice}
+                  self={{ id: context.staffId, name: context.me.display_name }}
+                  staff={staff}
+                  pointsBalance={pointsBalance}
+                />
               </CardBody>
             </Card>
           )}

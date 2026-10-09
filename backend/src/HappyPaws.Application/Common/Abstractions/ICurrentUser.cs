@@ -39,6 +39,13 @@ public interface ICurrentUser
     bool TwoFactorSatisfied { get; }
 
     bool IsAuthenticated { get; }
+
+    /// <summary>
+    /// The API key (<c>key_…</c>) this request authenticated with, or null for a person's token.
+    /// A key acts as its creator, with its own narrower scopes and branches; this is how the audit
+    /// log and the handlers that are for people only tell the difference.
+    /// </summary>
+    string? ApiKeyId => null;
 }
 
 /// <summary>

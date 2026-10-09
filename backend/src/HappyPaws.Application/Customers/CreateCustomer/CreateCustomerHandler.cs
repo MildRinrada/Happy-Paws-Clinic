@@ -4,8 +4,10 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Customers.Dtos;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Customers;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Customers.CreateCustomer;
 
@@ -55,8 +57,10 @@ public sealed class CreateCustomerValidator : AbstractValidator<CreateCustomerCo
 public sealed class CreateCustomerHandler(
     ICustomerRepository customers,
     IAuditTrail audit,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
-    RequestValidator validator)
+    RequestValidator validator,
+    IClock clock)
 {
     public async Task<CustomerDto> HandleAsync(
         CreateCustomerCommand command,
@@ -75,6 +79,7 @@ public sealed class CreateCustomerHandler(
 
             created = Customer.Create(command.DisplayName, command.Phone, command.Email);
             customers.Add(created);
+            webhooks.Enqueue(WebhookEventTypes.CustomerCreated, WebhookPayloads.Customer(created, clock.UtcNow));
 
             audit.Record(new AuditEvent(
                 AuditActions.CustomerCreated,

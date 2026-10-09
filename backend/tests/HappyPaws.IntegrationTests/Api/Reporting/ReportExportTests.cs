@@ -1,7 +1,10 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using HappyPaws.Application.Reporting.RunExports;
 using HappyPaws.Domain.Access;
 using HappyPaws.Domain.Auditing;
@@ -64,7 +67,7 @@ public class ReportExportTests(ApiFixture fixture)
     {
         { "report", """{"report":"everything"}""" },
         { "report", """{}""" },
-        { "format", """{"report":"revenue","format":"xlsx"}""" },
+        { "format", """{"report":"revenue","format":"docx"}""" },
         { "to", """{"report":"revenue","from":"2026-10-10","to":"2026-10-01"}""" },
         { "to", """{"report":"revenue","from":"2025-01-01","to":"2026-10-01"}""" },
     };
@@ -148,6 +151,74 @@ public class ReportExportTests(ApiFixture fixture)
         var db = scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>();
         Assert.True(await db.Set<AuditEntry>().AsNoTracking()
             .AnyAsync(entry => entry.Action == AuditActions.ReportExported && entry.ResourceId == id, Token));
+    }
+
+    [Theory]
+    [InlineData("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("pdf", "application/pdf")]
+    public async Task An_export_can_be_a_workbook_or_a_printable_pdf_through_the_same_queue(string format, string mediaType)
+    {
+        var clinic = await ClinicSeed.ClinicAsync(fixture, cancellationToken: Token);
+        var day = ClinicToday.AddDays(3);
+        await AppointmentAsync(fixture, clinic, ClinicTime(day, 10), cancellationToken: Token);
+        await AppointmentAsync(fixture, clinic, ClinicTime(day, 11), appointment => appointment.Cancel(DateTimeOffset.UtcNow, "usr_test", "ติดธุระ"), cancellationToken: Token);
+        using var client = ExporterOf(clinic);
+
+        var response = await client.PostAsJsonAsync(
+            "/staff/reports/exports",
+            new { report = "appointments", format, from = day.ToString("yyyy-MM-dd"), to = day.ToString("yyyy-MM-dd"), branch_id = clinic.BranchId },
+            Token);
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var queued = await response.Content.ReadFromJsonAsync<JsonElement>(Token);
+        Assert.Equal(format, queued.GetProperty("format").GetString());
+        var id = queued.GetProperty("id").GetString()!;
+
+        await RunExportsAsync();
+
+        var done = await client.GetFromJsonAsync<JsonElement>($"/staff/reports/exports/{id}", Token);
+        var fileName = $"appointments_{day:yyyy-MM-dd}_{day:yyyy-MM-dd}.{format}";
+        Assert.Equal("succeeded", done.GetProperty("status").GetString());
+        Assert.Equal(format, done.GetProperty("format").GetString());
+        Assert.Equal(2, done.GetProperty("row_count").GetInt32());
+        Assert.Equal(fileName, done.GetProperty("file_name").GetString());
+
+        using var anonymous = fixture.CreateClient();
+        var download = await anonymous.GetAsync(new Uri(done.GetProperty("download_url").GetString()!).PathAndQuery, Token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(mediaType, download.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(fileName, download.Content.Headers.ContentDisposition!.FileName?.Trim('"'));
+
+        var bytes = await download.Content.ReadAsByteArrayAsync(Token);
+        Assert.Equal(bytes.LongLength, done.GetProperty("size_bytes").GetInt64());
+
+        if (format == "pdf")
+        {
+            Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(bytes[..5]));
+            return;
+        }
+
+        using var workbook = SpreadsheetDocument.Open(new MemoryStream(bytes), isEditable: false);
+        var sheet = workbook.WorkbookPart!.WorksheetParts.Single().Worksheet!;
+        var rows = sheet.Descendants<Row>().ToList();
+        Assert.Equal(3, rows.Count);
+
+        var header = rows[0].Elements<Cell>().Select(cell => cell.InlineString!.Text!.Text).ToList();
+        Assert.Equal(["วันที่", "สถานะ", "walk-in", "ยกเลิกกระชั้นชิด", "จองออนไลน์", "จำนวนนัด"], header);
+
+        var statuses = rows.Skip(1).Select(row => row.Elements<Cell>().ElementAt(1).InlineString!.Text!.Text).Order().ToList();
+        Assert.Equal(["booked", "cancelled"], statuses);
+
+        foreach (var row in rows.Skip(1))
+        {
+            var cells = row.Elements<Cell>().ToList();
+            Assert.Equal(day.ToDateTime(TimeOnly.MinValue), DateTime.FromOADate(double.Parse(cells[0].CellValue!.Text, CultureInfo.InvariantCulture)));
+            Assert.Equal(CellValues.Boolean, cells[2].DataType?.Value);
+            Assert.Equal(CellValues.Number, cells[5].DataType?.Value);
+            Assert.Equal("1", cells[5].CellValue!.Text);
+        }
+
+        Assert.Empty(sheet.Descendants<CellFormula>());
     }
 
     [Fact]

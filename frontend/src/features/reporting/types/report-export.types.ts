@@ -4,10 +4,13 @@ export type ReportKind = 'revenue' | 'services' | 'retention' | 'staff_performan
 
 export type ExportStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
+/** `xlsx` and `pdf` are not in the API reference; see docs/contract-extensions.md § 21. */
+export type ReportFormat = 'csv' | 'xlsx' | 'pdf';
+
 export interface ReportExport {
   id: string;
   report: ReportKind;
-  format: 'csv';
+  format: ReportFormat;
   status: ExportStatus;
   from: string;
   to: string;
@@ -27,7 +30,7 @@ export interface ReportExport {
 
 export interface StartExportInput {
   report: ReportKind;
-  format: 'csv';
+  format: ReportFormat;
   from: string;
   to: string;
   branch_id?: string;

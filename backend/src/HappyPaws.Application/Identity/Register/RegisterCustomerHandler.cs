@@ -7,9 +7,11 @@ using HappyPaws.Application.Customers;
 using HappyPaws.Application.Identity.Dtos;
 using HappyPaws.Application.Identity.RequestOtp;
 using HappyPaws.Application.Identity.Sessions;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Customers;
 using HappyPaws.Domain.Identity;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Identity.Register;
 
@@ -62,6 +64,7 @@ public sealed class RegisterCustomerHandler(
     IPasswordHasher passwordHasher,
     SessionIssuer sessionIssuer,
     IAuditTrail audit,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -146,6 +149,7 @@ public sealed class RegisterCustomerHandler(
 
         var created = Customer.Create(account.DisplayName, phone, account.Email, account.Id);
         customers.Add(created);
+        webhooks.Enqueue(WebhookEventTypes.CustomerCreated, WebhookPayloads.Customer(created, clock.UtcNow));
 
         return (created, false);
     }

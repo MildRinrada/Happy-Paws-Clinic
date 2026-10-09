@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 36 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 และ 16 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 36 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 และ 21 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -29,8 +29,9 @@
 | 18 | ระบบส่ง LINE ได้ แต่ไม่มีทางบันทึกที่อยู่ LINE ของลูกค้า ข้อความจึงไม่เคยไปทาง LINE | `GET /staff/integrations/line/followers`, `PUT` และ `DELETE /staff/customers/{id}/line` | **ทำแล้ว** |
 | 19 | กติกาเตือนอัตโนมัติมีแค่สร้างและดูตัวอย่าง เปิด ปิด แก้ หรือลบไม่ได้ กติกาเริ่มต้นสี่ข้อจึงปิดตลอดไป | `PATCH` และ `DELETE /staff/automations/{id}` | **ทำแล้ว** |
 | 20 | ใบสั่งยามีแค่ชื่อยาที่พิมพ์เอง ชื่อต่างจากคลังนิดเดียวก็จ่ายไปโดยไม่ตัดสต๊อกและไม่คิดเงิน และสัตวแพทย์ดูคลังยาไม่ได้ | `GET /staff/prescriptions/drug-options` และ `inventory_item_id` ที่ไม่บังคับในคำขอสั่งยา | **ทำแล้ว** |
+| 21 | ส่งออกรายงานได้แค่ CSV contract ไม่ได้บอกรูปแบบไฟล์ | ค่า `xlsx` และ `pdf` ของช่อง `format` บน `POST /staff/reports/exports` | **ทำแล้ว** |
 
-endpoint ใหม่ 36 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 137 เส้น มีสองข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ และ § 6 เป็นกฎ ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 36 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 137 เส้น มีสามข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ และ § 21 เป็นค่าใหม่ของช่องเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -312,7 +313,7 @@ contract แยกพนักงานได้สองแบบ คือ `st
 
 สองเส้นนี้ **ไม่ใช่ API ของคลินิก** แต่เป็นตัวแทนของที่เก็บไฟล์ ไม่มี scope ไม่มีเซสชัน เพราะ token ใน path คือสิทธิ์ทั้งหมด เหมือน pre-signed URL ของ S3 ถ้าเปลี่ยนไปใช้ S3 จริง URL จะชี้ไปที่ bucket และสองเส้นนี้จะไม่ถูกใช้อีก use case ทุกตัวไม่ต้องแก้
 
-ไฟล์ส่งออกรายงาน (`POST /staff/reports/exports`) ใช้ที่เก็บเดียวกัน ไฟล์ถูกเขียนโดย API เองผ่าน `IFileStorage.SaveAsync` ที่ key `exports/{id}.csv` และลิงก์ดาวน์โหลดเป็น `/storage/files/{token}` อายุ 1 ชั่วโมงตาม contract ไฟล์ที่เก็บพร้อมชื่อ (เฉพาะไฟล์ส่งออก) ถูกส่งพร้อม `Content-Disposition` ชื่อไฟล์นั้น ส่วนเอกสารที่อัปโหลดยังส่งแบบไม่มีชื่อเหมือนเดิม ไม่มี endpoint ใหม่
+ไฟล์ส่งออกรายงาน (`POST /staff/reports/exports`) ใช้ที่เก็บเดียวกัน ไฟล์ถูกเขียนโดย API เองผ่าน `IFileStorage.SaveAsync` ที่ key `exports/{id}.csv` (หรือ `.xlsx` `.pdf` ตามรูปแบบ ดู § 21) และลิงก์ดาวน์โหลดเป็น `/storage/files/{token}` อายุ 1 ชั่วโมงตาม contract ไฟล์ที่เก็บพร้อมชื่อ (เฉพาะไฟล์ส่งออก) ถูกส่งพร้อม `Content-Disposition` ชื่อไฟล์นั้น ส่วนเอกสารที่อัปโหลดยังส่งแบบไม่มีชื่อเหมือนเดิม ไม่มี endpoint ใหม่
 
 **สิ่งที่ตั้งใจไม่ทำ** ไม่รับไฟล์ผ่าน endpoint ของ contract เอง (multipart) เพราะ contract บอกวิธีไว้แล้วว่าเป็น pre-signed URL และไม่ใส่ชื่อไฟล์ของผู้ใช้ลงใน path ของไฟล์
 
@@ -422,7 +423,7 @@ contract ให้ `POST /staff/services` สร้างบริการ `PAT
 - งาน `housekeeping` (ทุกชั่วโมง) ลบผู้ติดตามที่ไม่ได้ผูกกับลูกค้าคนใด เมื่อไม่เห็นเกิน 14 วัน รายชื่อก็มองย้อนได้ไม่เกินนั้น
 - `unfollow` ลบชื่อและรูปทันที และแถวนั้นไม่ขึ้นในรายชื่ออีก
 - แถวของผู้ติดตามที่ผูกแล้วเก็บไว้ตราบที่ยังผูกอยู่ หน้าลูกค้าจึงบอกได้ว่าเป็น LINE ของใคร พอยกเลิกการผูก แถวนั้นนับอายุ 14 วันเหมือนแถวอื่น
-- ไม่เก็บข้อความที่ลูกค้าพิมพ์ ไม่เก็บ status message ของ LINE และรูปต้องเป็น `https` เท่านั้น
+- ไม่เก็บข้อความที่คนที่ยังไม่ได้ผูกพิมพ์มา (ข้อความของลูกค้าที่ผูกแล้วเข้ากล่องข้อความตาม contract ดู [ข้อความลูกค้า](features/messaging.md)) ไม่เก็บ status message ของ LINE และรูปต้องเป็น `https` เท่านั้น
 - หน้าเว็บโหลดรายชื่อเมื่อพนักงานกดเปิดตัวเลือกเท่านั้น ไม่โหลดมาพร้อมหน้าลูกค้าทุกครั้ง
 
 **ตั้งใจไม่ทำ**
@@ -547,6 +548,54 @@ POST /staff/consultations/con_.../prescriptions                   rx:write
 
 **หน้าจอ** ช่องชื่อยาในฟอร์มสั่งยาของหน้าตรวจค้นยาในคลังของสาขาของเคสขณะพิมพ์ แต่ละตัวมีป้าย มีของ ใกล้หมด หรือหมด พร้อมจำนวนที่เหลือและราคาต่อหน่วย เลือกแล้วชื่อถูกเติมและผูกกับรายการ พิมพ์ชื่อเองยังได้ และใต้ช่องขึ้นว่า "ไม่ผูกกับสต๊อก ตอนจ่ายจะจับคู่ด้วยชื่อ ถ้าชื่อไม่ตรงกับในคลังทุกตัวอักษร จะไม่ตัดสต๊อกและไม่คิดเงิน" (ใบแบบนี้ยังตัดสต๊อกได้ถ้าชื่อตรงกับรายการทุกตัวอักษร แต่หน้าจอไม่สัญญาสิ่งที่ไม่แน่นอน) พิมพ์ทับชื่อที่เลือกไว้คือยกเลิกการผูก รายการยาของเคสมีป้ายผูกหรือไม่ผูกกับสต๊อกทุกแถว และหน้าจ่ายยามีป้ายเดียวกันที่ใบที่รอจ่าย รายละเอียดอยู่ใน [สต๊อกยาและเวชภัณฑ์](features/inventory.md#เลือกยาจากคลังตอนสั่งยา) และ [งานรักษาต่อเนื่อง](features/clinical-records.md)
 
+## 21. ส่งออกรายงานได้แค่ CSV
+
+`POST /staff/reports/exports` ใน contract บรรยายแค่ "งานส่งออกแบบ async คืน job id" ไม่ได้บอกรูปแบบไฟล์ ระบบจึงเริ่มด้วย CSV อย่างเดียว ([ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)) เจ้าของงานขอให้ส่งออกเป็น Excel และ PDF ได้ด้วย (2026-10-09)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่มเหมือน § 9 ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**คำตอบ** ไม่มี endpoint ใหม่ ช่อง `format` ที่ไม่บังคับในคำขอเดิมรับเพิ่มสองค่า
+
+| `format` | ไฟล์ | เหมาะกับ |
+|---|---|---|
+| `csv` (ค่าเริ่มต้น เหมือนเดิม) | `.csv` | นำเข้าโปรแกรมอื่น |
+| `xlsx` | `.xlsx` | เปิดใน Excel แล้วรวม กรอง หรือทำ pivot ต่อได้ทันที |
+| `pdf` | `.pdf` | พิมพ์ หรือแนบส่งให้เจ้าของคลินิก |
+
+```http
+POST /staff/reports/exports            report:export
+{ "report": "revenue", "format": "xlsx", "from": "2026-09-01", "to": "2026-09-30" }
+```
+
+คำตอบรูปเดิม ช่อง `format` ตอบค่าที่สั่ง `file_name` ลงท้ายตามรูปแบบ และลิงก์ดาวน์โหลดส่งไฟล์พร้อม media type ของรูปแบบนั้น ค่าอื่นได้ `422` ที่ช่อง `format` เหมือนเดิม
+
+**สิ่งที่ไม่เปลี่ยน** การจองงาน การลองใหม่ ที่เก็บไฟล์ ลิงก์อายุ 1 ชั่วโมง scope ของรายงาน และการตรึงสาขาตอนสั่ง เป็นทางเดียวกันทั้งสามรูปแบบ ทุกรูปแบบเขียนจากตารางเดียวกัน (`ReportTable`) แถวและหัวคอลัมน์จึงตรงกันทุกไฟล์ ต่างกันแค่ตัวเขียนไฟล์ (`IReportFileWriter`) ไม่มี migration เพราะคอลัมน์ `format` เก็บชื่อเป็นข้อความอยู่แล้ว
+
+**การตัดสิน**
+
+- **Excel เขียนทุกช่องเป็นค่า ไม่มีสูตรเลย** ข้อความเป็น inline string ซึ่ง Excel แสดงแต่ไม่รัน ชื่อที่พิมพ์ว่า `=HYPERLINK(...)` จึงเป็นตัวอักษรตามนั้น ไม่ต้องเติม `'` แบบ CSV ข้อมูลจึงตรงกับที่พิมพ์ทุกตัว ตัวอักษรที่ XML เก็บไม่ได้ (อักขระควบคุม) ถูกตัดทิ้ง
+- **ช่องใน Excel มีชนิด** จำนวนเป็นตัวเลข เงินเป็นบาทสองตำแหน่ง วันที่เป็นวันที่จริง ค่าใช่หรือไม่เป็น TRUE FALSE รวมและกรองได้โดยไม่ต้องแปลง ชนิดมาจากคอลัมน์ของตาราง ไม่ได้เดาจากหัวคอลัมน์ และตารางไม่ยอมรับค่าผิดชนิดตั้งแต่ตอนสร้างแถว
+- **แถวแรกของ Excel คือหัวคอลัมน์ที่ตรึงไว้** ชื่อคลินิก สาขา และช่วงวันอยู่ใน properties ของไฟล์ ไม่อยู่เหนือตาราง เพราะ pivot และตัวกรองหาหัวตารางที่แถวแรก
+- **PDF มีหัวและท้ายทุกหน้า** ชื่อคลินิก ชื่อรายงาน สาขา ช่วงวัน เวลาที่สร้าง และเลขหน้า หน้าที่หลุดจากแฟ้มยังบอกได้ว่าเป็นอะไร หัวคอลัมน์ซ้ำทุกหน้า วันที่เป็นภาษาไทยแบบปีพุทธศักราชเหมือนเอกสารของสัตว์
+
+**ไลบรารี** Excel ใช้ `DocumentFormat.OpenXml` (Open XML SDK ของ Microsoft สัญญาอนุญาต MIT) ซึ่งพาแค่ `DocumentFormat.OpenXml.Framework` และ `System.IO.Packaging` มาด้วย (MIT ทั้งคู่) PDF ใช้ QuestPDF ตัวเดิมของเอกสารของสัตว์ สัญญาอนุญาต Community มีเงื่อนไขเรื่องรายได้ขององค์กรเหมือนเดิม ดู [งานรักษาต่อเนื่อง](features/clinical-records.md)
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ClosedXML | เขียนง่ายกว่า แต่พาแพ็กเกจทางอ้อมมาหลายตัว รวมไลบรารีวัดฟอนต์ที่รุ่นใหม่เปลี่ยนสัญญาอนุญาตแล้ว ต้องคอยตรวจทุกครั้งที่อัปเกรด งานนี้ต้องการแค่ชีตเดียว จึงใช้ SDK ตรง |
+| endpoint แยกต่อรูปแบบ เช่น `/exports/xlsx` | มีเส้นเดียวและช่อง `format` อยู่แล้ว การเพิ่มค่าคือการเปลี่ยนที่เล็กที่สุด |
+| สร้าง PDF จาก HTML ด้วยเบราว์เซอร์บนเซิร์ฟเวอร์ | ต้องมี Chromium ใน image ทั้งที่ระบบมี QuestPDF ที่จัดภาษาไทยถูกอยู่แล้ว |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่ทำกราฟใน Excel หรือ PDF ไฟล์เป็นแถวละเอียดสุดชุดเดียวกับ CSV ให้ spreadsheet รวมเอง
+- ไม่ย่อแถวใน PDF ช่วงยาวของรายงานที่ละเอียดมาก เช่นคิวรายชั่วโมงทั้งปี จึงอาจได้หลายสิบหน้า
+- ไม่เพิ่ม scope ใหม่ และยังไม่มีงานลบไฟล์เก่า เหมือน CSV
+
+**หน้าจอ** กล่องส่งออกรายงานบนหน้าภาพรวมมีตัวเลือกไฟล์ Excel (ค่าเริ่มต้น) CSV หรือ PDF รายละเอียดอยู่ใน [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -563,6 +612,7 @@ POST /staff/consultations/con_.../prescriptions                   rx:write
 | ระยะเก็บผู้ติดตาม LINE 14 วัน (§ 18) เหมาะไหม และควรให้ลูกค้าผูก LINE เองจาก portal ด้วยรหัสยืนยันหรือไม่ | ตอนนี้ผูกได้ที่เคาน์เตอร์เท่านั้น |
 | `line_address_taken` และช่อง `version` ของกติกาเตือน (§ 18 และ § 19) ได้รับรองไหม | ทำงานอยู่ ดู [assumptions.md § 14](./assumptions.md) |
 | คลังยาควรมีการปิดรายการไหม (§ 20 ถือว่ายาทุกตัวในคลังใช้งานอยู่) | ตอนนี้ไม่มี endpoint แก้หรือปิดรายการในคลัง |
+| รูปแบบไฟล์ส่งออก `xlsx` และ `pdf` (§ 21) ควรเป็นส่วนหนึ่งของ contract ไหม | ทำงานอยู่ ค่าเริ่มต้นยังเป็น `csv` |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -589,3 +639,4 @@ POST /staff/consultations/con_.../prescriptions                   rx:write
 | ผู้ติดตาม LINE และที่อยู่ LINE ของลูกค้า | `backend/src/HappyPaws.Domain/Integrations/LineFollower.cs`, `backend/src/HappyPaws.Application/Integrations/ListLineFollowers/`, `HandleLineWebhook/HandleLineWebhookHandler.cs`, `backend/src/HappyPaws.Application/Customers/LineAddress/`, `backend/src/HappyPaws.Api/Controllers/Staff/LineFollowersController.cs`, `CustomerLineController.cs`, `backend/src/HappyPaws.Infrastructure/Jobs/HousekeepingJob.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/LineFollowerTests.cs` |
 | เลือกยาจากคลังตอนสั่งยา | `backend/src/HappyPaws.Application/Prescriptions/ListDrugOptions/`, `backend/src/HappyPaws.Application/Consultations/AddPrescription/AddPrescriptionHandler.cs`, `backend/src/HappyPaws.Application/Inventory/Dispensing/StockDispenser.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/PrescriptionsController.cs`, `frontend/src/features/consultations/components/prescriptions/drug-search-field.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Prescriptions/DrugPickerTests.cs` |
 | แก้ เปิดปิด และลบกติกาเตือน | `backend/src/HappyPaws.Domain/Automation/AutomationRule.cs`, `backend/src/HappyPaws.Application/Automation/UpdateAutomation/`, `DeleteAutomation/`, `AutomationAccess.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/AutomationsController.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Automation/AutomationEditTests.cs` |
+| ส่งออกรายงานเป็น Excel และ PDF | `backend/src/HappyPaws.Application/Reporting/Tables/ReportTable.cs`, `Files/IReportFileWriter.cs`, `Csv/CsvReportWriter.cs`, `RunExports/RunReportExportsHandler.cs`, `backend/src/HappyPaws.Infrastructure/Reporting/XlsxReportWriter.cs`, `PdfReportWriter.cs`, `frontend/src/features/reporting/components/export-format-select.tsx`, `backend/tests/HappyPaws.IntegrationTests/Reporting/`, `Api/Reporting/ReportExportTests.cs` |

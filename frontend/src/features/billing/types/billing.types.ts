@@ -99,4 +99,6 @@ export interface InvoiceLineInput {
   quantity: number;
   unit_price_satang: number;
   kind?: InvoiceLineKind;
+  /** The catalogue service a `service` line was picked from. Lets a package cover it. */
+  source_id?: string;
 }

@@ -3,6 +3,12 @@ import type { Invoice } from '../types/billing.types';
 
 export type DiscountMode = 'amount' | 'percent';
 
+/** Every way the discount form can take money off: the two manual modes, a coupon code, or points. */
+export type DiscountKind = DiscountMode | 'coupon' | 'points';
+
+/** What one loyalty point takes off a bill: ฿1. */
+export const POINT_VALUE_SATANG = 100;
+
 export interface DiscountPreview {
   /** What would come off, in satang, or null while the input is not a number the API takes. */
   amountSatang: number | null;
@@ -52,4 +58,19 @@ export function previewDiscount(invoice: Invoice, mode: DiscountMode, input: str
   }
 
   return { amountSatang, percent, roomSatang };
+}
+
+/**
+ * "แลกแต้ม": whole points, worth `POINT_VALUE_SATANG` each, checked against the same room as any
+ * other discount. Whether the customer has that many points is the backend's to answer.
+ */
+export function previewPoints(invoice: Invoice, input: string): DiscountPreview & { points?: number } {
+  const cleaned = input.replace(/[,\s]/g, '');
+  const points = /^\d+$/.test(cleaned) && Number(cleaned) > 0 ? Number(cleaned) : undefined;
+
+  if (points === undefined) {
+    return { ...previewDiscount(invoice, 'amount', ''), problem: 'format' };
+  }
+
+  return { ...previewDiscount(invoice, 'amount', ((points * POINT_VALUE_SATANG) / 100).toFixed(2)), points };
 }

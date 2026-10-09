@@ -27,10 +27,11 @@ namespace HappyPaws.Api.Controllers.Staff;
 public sealed class InvoiceTransactionsController : ControllerBase
 {
     /// <summary>
-    /// <c>POST /staff/invoices/{id}/discounts</c> — "ส่วนลดต้องมีเหตุผลและผู้อนุมัติ".
+    /// <c>POST /staff/invoices/{id}/discounts</c> — "ส่วนลดต้องมีเหตุผลและผู้อนุมัติ". Also where a
+    /// coupon code (<c>coupon_code</c>) or loyalty points (<c>points</c>) are redeemed.
     /// </summary>
     /// <param name="id">Invoice id.</param>
-    /// <param name="request">The amount or rate, the reason, and who approved it.</param>
+    /// <param name="request">The amount or rate with the reason and approver, or a coupon code, or points.</param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="cancellationToken">Aborts with the request.</param>
     [HttpPost("discounts")]
@@ -49,7 +50,9 @@ public sealed class InvoiceTransactionsController : ControllerBase
                 request.ApprovedByStaffId,
                 request.AmountSatang,
                 request.Percent,
-                IfMatch.Parse(Request.Headers.IfMatch)),
+                IfMatch.Parse(Request.Headers.IfMatch),
+                request.CouponCode,
+                request.Points),
             cancellationToken));
 
     /// <summary>

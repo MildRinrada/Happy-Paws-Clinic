@@ -4,8 +4,10 @@ using HappyPaws.Application.Billing.Dtos;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Concurrency;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Billing.CollectPayment;
 
@@ -47,8 +49,10 @@ public sealed class CollectPaymentValidator : AbstractValidator<CollectPaymentCo
 /// </summary>
 public sealed class CollectPaymentHandler(
     InvoiceAccess access,
+    IInvoiceRewards rewards,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -71,6 +75,11 @@ public sealed class CollectPaymentHandler(
             ConcurrencyGuard.Ensure(invoice, command.IfMatchVersion);
 
             var payment = invoice.Pay(method, command.AmountSatang, staffId, clock.UtcNow, command.Reference);
+
+            // Points, packages and coupons that follow this bill's money. See IInvoiceRewards.
+            await rewards.PaymentCollectedAsync(invoice, clock.UtcNow, token);
+
+            webhooks.Enqueue(WebhookEventTypes.PaymentSucceeded, WebhookPayloads.Payment(invoice, payment));
 
             audit.Record(new AuditEvent(
                 AuditActions.PaymentCollected,

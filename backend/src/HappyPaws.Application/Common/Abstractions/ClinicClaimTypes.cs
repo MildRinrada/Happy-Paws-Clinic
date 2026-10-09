@@ -33,4 +33,10 @@ public static class ClinicClaimTypes
 
     /// <summary>Session id, so a token can be tied back to a revocable device session.</summary>
     public const string SessionId = "sid";
+
+    /// <summary>
+    /// The API key a request authenticated with, e.g. <c>key_01J…</c>. Present only on an API key's
+    /// principal, never on a person's access token.
+    /// </summary>
+    public const string ApiKey = "key";
 }

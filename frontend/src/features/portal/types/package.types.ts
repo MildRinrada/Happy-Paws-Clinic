@@ -1,4 +1,5 @@
-export type PackageStatus = 'active' | 'used_up' | 'expired';
+/** `pending_payment` until its sale bill is paid; `cancelled` when that bill was voided or refunded. */
+export type PackageStatus = 'pending_payment' | 'active' | 'used_up' | 'expired' | 'cancelled';
 
 /** One package and what is left of it — an entry of `GET /portal/packages`. */
 export interface PackageBalance {

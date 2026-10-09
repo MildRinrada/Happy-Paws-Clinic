@@ -5,8 +5,10 @@ using HappyPaws.Application.Appointments.GetAppointment;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Concurrency;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Access;
 using HappyPaws.Domain.Appointments;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Appointments.RescheduleAppointment;
 
@@ -41,6 +43,7 @@ public sealed class RescheduleAppointmentHandler(
     AppointmentAccess access,
     BookingSlotResolver resolver,
     IBookingCatalog catalog,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -68,6 +71,8 @@ public sealed class RescheduleAppointmentHandler(
                 await EnsureBeforeCutoffAsync(appointment, token);
             }
 
+            var previousStartsAt = appointment.StartsAt;
+
             var slot = await resolver.ResolveAsync(
                 new SlotRequest(
                     appointment.ServiceId,
@@ -84,6 +89,10 @@ public sealed class RescheduleAppointmentHandler(
                 token);
 
             appointment.Reschedule(slot.StartsAt, slot.EndsAt, slot.StaffId);
+
+            webhooks.Enqueue(
+                WebhookEventTypes.AppointmentRescheduled,
+                WebhookPayloads.Appointment(appointment, previousStartsAt: previousStartsAt));
             rescheduled = appointment;
         }, cancellationToken);
 

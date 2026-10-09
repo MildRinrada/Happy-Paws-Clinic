@@ -1,11 +1,12 @@
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
+using HappyPaws.Application.Common;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
-using HappyPaws.Application.Common;
 using HappyPaws.Application.Customers;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Inventory;
 using HappyPaws.Application.Inventory.Dispensing;
 using HappyPaws.Application.Patients;
@@ -13,6 +14,7 @@ using HappyPaws.Application.Prescriptions.Dtos;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.Staff;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Prescriptions;
 
 namespace HappyPaws.Application.Prescriptions.DispensePrescription;
@@ -54,6 +56,7 @@ public sealed class DispensePrescriptionHandler(
     MedicineBilling billing,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock)
 {
@@ -82,6 +85,8 @@ public sealed class DispensePrescriptionHandler(
             stock = await dispenser.TakeAsync(prescription, found.BranchId, staffId, now, token);
             prescription.RecordDispenseOutcome(stock.Item?.Id, stock.Deducted, stock.Item?.UnitPriceSatang);
             charge = await billing.ChargeAsync(found, staffId, now, token);
+
+            webhooks.Enqueue(WebhookEventTypes.PrescriptionDispensed, WebhookPayloads.Dispensed(prescription, found.BranchId));
 
             audit.Record(new AuditEvent(
                 AuditActions.PrescriptionDispensed,

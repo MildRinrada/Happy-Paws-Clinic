@@ -35,8 +35,16 @@ public static class RateLimitingExtensions
 
         services.AddRateLimiter(options =>
         {
+            // Read when the options are first built rather than at registration, so it sees every
+            // configuration source the host ends up with.
+            var perApiKey = configuration.GetValue("RateLimits:PerApiKeyPerMinute", perToken);
+
+            // An API key gets its own window, apart from the person who made it: a sync job
+            // running hot must not lock its creator out of the counter screen, nor the reverse.
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
-                context => Partition(context, perToken));
+                context => context.User.FindFirst(ClinicClaimTypes.ApiKey) is not null
+                    ? Partition(context, perApiKey)
+                    : Partition(context, perToken));
 
             options.AddPolicy(MessagingPolicy, context =>
                 Partition(context, messaging, suffix: ":messaging"));
@@ -68,7 +76,8 @@ public static class RateLimitingExtensions
 
     private static RateLimitPartition<string> Partition(HttpContext context, int permitPerMinute, string suffix = "")
     {
-        var subject = context.User.FindFirst(ClinicClaimTypes.Subject)?.Value
+        var subject = context.User.FindFirst(ClinicClaimTypes.ApiKey)?.Value
+            ?? context.User.FindFirst(ClinicClaimTypes.Subject)?.Value
             ?? context.Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
 

@@ -41,6 +41,7 @@ public sealed class VoidInvoiceValidator : AbstractValidator<VoidInvoiceCommand>
 /// </summary>
 public sealed class VoidInvoiceHandler(
     InvoiceAccess access,
+    IInvoiceRewards rewards,
     IAuditTrail audit,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
@@ -63,6 +64,9 @@ public sealed class VoidInvoiceHandler(
             ConcurrencyGuard.Ensure(invoice, command.IfMatchVersion);
 
             invoice.Void(command.Reason, staffId, clock.UtcNow);
+
+            // Points, packages and coupons that follow this bill's money. See IInvoiceRewards.
+            await rewards.VoidedAsync(invoice, clock.UtcNow, token);
 
             audit.Record(new AuditEvent(
                 AuditActions.InvoiceVoided,

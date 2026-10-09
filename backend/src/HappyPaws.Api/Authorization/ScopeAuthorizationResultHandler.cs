@@ -59,6 +59,18 @@ public sealed class ScopeAuthorizationResultHandler(ICurrentUser currentUser) : 
                 return;
             }
 
+            if (policy.Requirements.OfType<InteractiveCallerRequirement>().Any() && currentUser.ApiKeyId is not null)
+            {
+                await ApiErrorWriter.WriteAsync(
+                    context,
+                    HttpStatus.Forbidden,
+                    ErrorCodes.Forbidden,
+                    "ใช้ API key กับส่วนนี้ไม่ได้ ต้องเข้าสู่ระบบด้วยบัญชีพนักงาน",
+                    messageEn: "API keys cannot call this endpoint; it is for signed-in people.",
+                    details: new Dictionary<string, object> { ["required"] = "interactive_session" });
+                return;
+            }
+
             // Scopes were fine, so the refusal came from another requirement on the policy —
             // today that means 2FA. Say so, because "forbidden" alone leaves the user with no
             // action to take, whereas this tells them to enrol.

@@ -4,8 +4,10 @@ using HappyPaws.Application.Billing.Dtos;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Concurrency;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Billing.RefundPayment;
 
@@ -49,8 +51,10 @@ public sealed class RefundPaymentValidator : AbstractValidator<RefundPaymentComm
 /// </summary>
 public sealed class RefundPaymentHandler(
     InvoiceAccess access,
+    IInvoiceRewards rewards,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -77,6 +81,11 @@ public sealed class RefundPaymentHandler(
                 staffId,
                 clock.UtcNow,
                 command.PaymentId);
+
+            // Points, packages and coupons that follow this bill's money. See IInvoiceRewards.
+            await rewards.RefundedAsync(invoice, clock.UtcNow, token);
+
+            webhooks.Enqueue(WebhookEventTypes.PaymentRefunded, WebhookPayloads.Refund(invoice, refund));
 
             audit.Record(new AuditEvent(
                 AuditActions.PaymentRefunded,

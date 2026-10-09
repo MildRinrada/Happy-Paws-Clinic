@@ -1,0 +1,127 @@
+using HappyPaws.Domain.Crm;
+
+namespace HappyPaws.Application.Crm;
+
+/// <summary>Persistence port for customers' packages and the uses spent from them.</summary>
+public interface ICustomerPackageRepository
+{
+    void Add(CustomerPackage package);
+
+    void AddUse(PackageUse use);
+
+    /// <summary>Every package a customer has bought, newest first. Not tracked.</summary>
+    Task<IReadOnlyList<CustomerPackage>> ForCustomerAsync(string customerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The customer's paid, uncancelled packages, tracked, for spending a use. Call under
+    /// <see cref="ICrmLocks.LockCustomerAsync"/>.
+    /// </summary>
+    Task<IReadOnlyList<CustomerPackage>> SpendableForCustomerTrackedAsync(string customerId, CancellationToken cancellationToken = default);
+
+    /// <summary>The packages sold on a bill, tracked.</summary>
+    Task<IReadOnlyList<CustomerPackage>> SoldOnInvoiceTrackedAsync(string invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>The uses a bill spent and has not given back, tracked.</summary>
+    Task<IReadOnlyList<PackageUse>> OpenUsesForInvoiceTrackedAsync(string invoiceId, CancellationToken cancellationToken = default);
+
+    Task<CustomerPackage?> FindTrackedAsync(string packageId, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Persistence port for coupons and their redemptions.</summary>
+public interface ICouponRepository
+{
+    void Add(Coupon coupon);
+
+    void AddRedemption(CouponRedemption redemption);
+
+    Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default);
+
+    /// <summary>The coupon's id for a normalized code, or null. A plain read, taken before the lock.</summary>
+    Task<string?> IdForCodeAsync(string code, CancellationToken cancellationToken = default);
+
+    /// <summary>Read fresh and tracked. Call under <see cref="ICrmLocks.LockCouponAsync"/>.</summary>
+    Task<Coupon?> FindTrackedAsync(string couponId, CancellationToken cancellationToken = default);
+
+    /// <summary>Uses of this coupon by this customer that a void has not released.</summary>
+    Task<int> StandingRedemptionsAsync(string couponId, string customerId, CancellationToken cancellationToken = default);
+
+    Task<bool> IsRedeemedOnInvoiceAsync(string couponId, string invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>Redemptions on a bill that a void has not released, tracked.</summary>
+    Task<IReadOnlyList<CouponRedemption>> OpenRedemptionsForInvoiceTrackedAsync(string invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>A customer's redemptions, newest first, with the bill number.</summary>
+    Task<IReadOnlyList<CouponRedemptionRow>> HistoryForCustomerAsync(string customerId, int limit, CancellationToken cancellationToken = default);
+}
+
+/// <summary>A redemption as the loyalty page lists it.</summary>
+public sealed record CouponRedemptionRow(CouponRedemption Redemption, string? InvoiceNumber);
+
+/// <summary>The points ledger. Append-only.</summary>
+public interface ILoyaltyLedger
+{
+    void Add(LoyaltyEntry entry);
+
+    /// <summary>The ledger rows written for one bill.</summary>
+    Task<IReadOnlyList<LoyaltyEntry>> ForInvoiceAsync(string invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>Spendable points, and lifetime points (earned less reversed).</summary>
+    Task<LoyaltyTotals> TotalsAsync(string customerId, CancellationToken cancellationToken = default);
+
+    /// <summary>The latest rows, newest first, with the bill number.</summary>
+    Task<IReadOnlyList<LoyaltyEntryRow>> HistoryAsync(string customerId, int limit, CancellationToken cancellationToken = default);
+}
+
+public sealed record LoyaltyTotals(int Balance, int Lifetime);
+
+public sealed record LoyaltyEntryRow(LoyaltyEntry Entry, string? InvoiceNumber);
+
+public interface ISegmentRepository
+{
+    void Add(Segment segment);
+
+    Task<Segment?> FindByIdAsync(string segmentId, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Works out who is in a customer group, in SQL. One query shape serves both the count shown when
+/// the group is created and the list a broadcast sends to, so the two cannot disagree.
+/// </summary>
+public interface ISegmentQuery
+{
+    /// <summary>Members today, and how many of them a LINE broadcast could reach.</summary>
+    Task<SegmentCounts> CountAsync(SegmentCriteria criteria, DateOnly today, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The members who agreed to marketing and have a LINE address that still follows the clinic,
+    /// at most <paramref name="limit"/> of them.
+    /// </summary>
+    Task<IReadOnlyList<string>> ReachableMembersAsync(
+        SegmentCriteria criteria,
+        DateOnly today,
+        int limit,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed record SegmentCounts(int Customers, int Reachable);
+
+/// <summary>
+/// Transaction-scoped locks that serialise the CRM writes that check a number before changing it:
+/// a customer's points and package uses, and one coupon's count.
+/// </summary>
+public interface ICrmLocks
+{
+    Task LockCustomerAsync(string customerId, CancellationToken cancellationToken = default);
+
+    Task LockCouponAsync(string couponId, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Which catalogue service each line of a saved bill is for: the treatment's service on a case
+/// bill, or the service id itself on a counter bill. The same derivation the service revenue report
+/// uses.
+/// </summary>
+public interface IBilledServiceLookup
+{
+    Task<IReadOnlyDictionary<string, string>> ServiceIdsByLineAsync(string invoiceId, CancellationToken cancellationToken = default);
+}

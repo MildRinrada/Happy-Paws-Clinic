@@ -3,8 +3,9 @@ namespace HappyPaws.Application.Integrations.HandleLineWebhook;
 /// <summary>
 /// What the clinic's LINE account says back in the chat, in Thai.
 /// <para>
-/// The account sends notifications; it is not staffed. The automatic answer to a typed message
-/// says so plainly, so an owner does not wait for a reply nobody will write.
+/// A message from a customer whose record carries this LINE address goes to their thread, and the
+/// first one since staff last answered is acknowledged. Anyone else is told plainly that the
+/// message did not reach anyone, so an owner does not wait for a reply nobody will write.
 /// </para>
 /// </summary>
 internal static class LineReplies
@@ -15,7 +16,10 @@ internal static class LineReplies
     public const string WelcomeBack = "ยินดีต้อนรับกลับมา คลินิกจะส่งการแจ้งเตือนถึงคุณทางนี้อีกครั้ง";
 
     public static string AutoReply(string portalUrl) =>
-        $"บัญชีนี้ใช้ส่งการแจ้งเตือนเท่านั้น ยังตอบแชตไม่ได้ ดูนัดหมายและติดต่อคลินิกได้ที่ {portalUrl}";
+        $"LINE นี้ยังไม่ได้ผูกกับข้อมูลลูกค้าของคลินิก ข้อความจึงยังไม่ถึงเจ้าหน้าที่ ขอให้เคาน์เตอร์ผูก LINE ให้เมื่อมาคลินิก หรือดูนัดหมายและติดต่อคลินิกได้ที่ {portalUrl}";
+
+    /// <summary>The answer to a customer's first message since staff last replied: it reached the clinic.</summary>
+    public const string Received = "คลินิกได้รับข้อความแล้ว เจ้าหน้าที่จะตอบกลับทางแชตนี้ในเวลาทำการ";
 
     public static string NotRegistered(string portalUrl) =>
         $"คลินิกยังไม่ได้บันทึก LINE นี้ไว้กับข้อมูลลูกค้า จึงทำรายการจากแชตไม่ได้ ทำรายการได้ที่ {portalUrl} หรือติดต่อคลินิก";

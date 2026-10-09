@@ -1,3 +1,4 @@
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Inventory;
 using HappyPaws.Domain.Prescriptions;
@@ -46,7 +47,7 @@ public sealed record DispenseStockResult(
 /// the second finds nothing left and reports <see cref="DispenseStockStatus.Insufficient"/>.
 /// </para>
 /// </summary>
-public sealed class StockDispenser(IInventoryItemRepository items, IStockLedger ledger, ClinicDays clinicDays)
+public sealed class StockDispenser(IInventoryItemRepository items, IStockLedger ledger, ClinicDays clinicDays, IWebhookOutbox webhooks)
 {
     /// <summary>Call inside the dispense's transaction, after the prescription is marked dispensed.</summary>
     public async Task<DispenseStockResult> TakeAsync(
@@ -86,6 +87,8 @@ public sealed class StockDispenser(IInventoryItemRepository items, IStockLedger 
             ledger.Append(movement);
             taken.Add((movement, take.Lot));
         }
+
+        LowStockWebhook.Report(webhooks, item, branchId, available, StockAllocation.Available(lots, today));
 
         return new DispenseStockResult(DispenseStockStatus.Deducted, item, available, taken);
     }

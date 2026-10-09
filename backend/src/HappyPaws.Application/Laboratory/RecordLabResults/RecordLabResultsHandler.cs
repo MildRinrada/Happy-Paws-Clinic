@@ -2,8 +2,10 @@ using FluentValidation;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Laboratory.Dtos;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Laboratory;
 
 namespace HappyPaws.Application.Laboratory.RecordLabResults;
@@ -39,6 +41,7 @@ public sealed class RecordLabResultsHandler(
     LabRequestAccess access,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -56,6 +59,8 @@ public sealed class RecordLabResultsHandler(
         {
             var request = await access.ForStaffAsync(command.LabRequestId, token);
             var added = request.RecordResults(command.Results, staffId, clock.UtcNow);
+
+            webhooks.Enqueue(WebhookEventTypes.LabResultReady, WebhookPayloads.LabResult(request));
 
             audit.Record(new AuditEvent(
                 AuditActions.LabResultsRecorded,

@@ -6,6 +6,7 @@ using HappyPaws.Domain.Consultations;
 using HappyPaws.Domain.Customers;
 using HappyPaws.Domain.Identity;
 using HappyPaws.Domain.MedicalRecords;
+using HappyPaws.Domain.Messaging;
 using HappyPaws.Domain.Patients;
 using HappyPaws.Domain.Queueing;
 using Microsoft.EntityFrameworkCore;
@@ -176,7 +177,45 @@ internal sealed class CustomerRepository(HappyPawsDbContext db) : ICustomerRepos
                 .Where(request => request.CustomerId == duplicateId)
                 .ExecuteUpdateAsync(
                     set => set.SetProperty(request => request.CustomerId, survivingId), cancellationToken),
+
+            ["thread_messages"] = await FoldThreadAsync(duplicateId, survivingId, cancellationToken),
         };
+
+    /// <summary>
+    /// One person, one conversation: the duplicate's thread becomes the survivor's, or, when both
+    /// wrote to the clinic, its messages move into the survivor's thread and it is removed.
+    /// </summary>
+    private async Task<int> FoldThreadAsync(string duplicateId, string survivingId, CancellationToken cancellationToken)
+    {
+        var duplicate = await db.Set<MessageThread>().FirstOrDefaultAsync(thread => thread.CustomerId == duplicateId, cancellationToken);
+
+        if (duplicate is null)
+        {
+            return 0;
+        }
+
+        var moved = await db.Set<ThreadMessage>().CountAsync(message => message.ThreadId == duplicate.Id, cancellationToken);
+        var surviving = await db.Set<MessageThread>().FirstOrDefaultAsync(thread => thread.CustomerId == survivingId, cancellationToken);
+
+        if (surviving is null)
+        {
+            await db.Set<MessageThread>()
+                .Where(thread => thread.Id == duplicate.Id)
+                .ExecuteUpdateAsync(set => set.SetProperty(thread => thread.CustomerId, survivingId), cancellationToken);
+
+            db.Entry(duplicate).State = EntityState.Detached;
+            return moved;
+        }
+
+        await db.Set<ThreadMessage>()
+            .Where(message => message.ThreadId == duplicate.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(message => message.ThreadId, surviving.Id), cancellationToken);
+
+        surviving.Absorb(duplicate);
+        db.Set<MessageThread>().Remove(duplicate);
+
+        return moved;
+    }
 }
 
 /// <summary>EF Core implementation of the portal-invitation port.</summary>

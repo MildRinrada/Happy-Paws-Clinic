@@ -47,7 +47,7 @@ Controllers/
   Realtime/           SSE /queue/stream
   Webhooks/           LINE webhook (ยืนยันด้วยลายเซ็น ไม่ใช่ bearer token)
 Contracts/            รูปของ request และ response ฝั่ง HTTP (snake_case ตามสัญญา) และ error envelope
-Authorization/        [RequireScope], ตัวตรวจ scope และ 2FA
+Authorization/        [RequireScope], ตัวตรวจ scope และ 2FA, การยืนยันตัวด้วย API key
 Idempotency/          [Idempotent] และ middleware
 Errors/               แปลง exception และ model state เป็น error envelope
 Http/                 ICurrentUser, If-Match, คุกกี้ refresh, path base /v1
@@ -105,7 +105,9 @@ Persistence/
 Identity/                       JWT, TOTP, password hasher
 Notifications/                  ประตูความยินยอม การเลือกช่องทาง และตัวส่ง Line/, Sms/, Email/
 Realtime/QueueEventBroker.cs    SSE ใน process
-Jobs/                           ตัวตั้งเวลาเบื้องหลัง: เตือนอัตโนมัติ สร้างไฟล์ส่งออก ล้าง hold และ idempotency key ที่หมดอายุ
+Jobs/                           ตัวตั้งเวลาเบื้องหลัง: เตือนอัตโนมัติ สร้างไฟล์ส่งออก ส่ง webhook ล้าง hold และ idempotency key ที่หมดอายุ
+Webhooks/                       ตัวส่ง webhook ขาออก การตรวจที่อยู่กัน SSRF และการเข้ารหัสความลับด้วย Data Protection
+Reporting/                      ตัวเขียนไฟล์ส่งออกรายงานแบบ Excel และ PDF (CSV อยู่ใน Application)
 Auditing/AuditTrail.cs
 Staff/LoggingStaffInvitationSender.cs
 ```

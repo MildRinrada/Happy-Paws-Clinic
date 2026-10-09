@@ -34,6 +34,19 @@ public class InvoiceTests
     }
 
     [Fact]
+    public void A_free_first_line_does_not_stop_the_bill_taking_more_lines()
+    {
+        var invoice = Invoice.Raise("INV-202608-0002", "brn_1", "cus_1180", "stf_204", At);
+
+        invoice.AddLine(InvoiceLineKind.Service, "ตรวจสุขภาพ (ใช้สิทธิ์แพ็กเกจ)", 1, 0);
+        Assert.Equal(InvoiceStatus.Paid, invoice.Status);
+
+        invoice.AddLine(InvoiceLineKind.Other, "ค่าอุปกรณ์", 1, 20_000);
+        Assert.Equal(InvoiceStatus.Open, invoice.Status);
+        Assert.Equal(20_000, invoice.Total.Satang);
+    }
+
+    [Fact]
     public void Splitting_a_payment_walks_open_to_partially_paid_to_paid()
     {
         var invoice = Bill();

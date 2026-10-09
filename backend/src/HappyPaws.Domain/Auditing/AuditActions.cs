@@ -132,6 +132,30 @@ public static class AuditActions
     /// </summary>
     public const string LineIntegrationConfigured = "integration.line_configured";
 
+    /// <summary>
+    /// An outbound webhook was created. From then on events about appointments, bills and pets
+    /// leave the system for that URL, so who pointed them there is on record (never the secret).
+    /// </summary>
+    public const string WebhookCreated = "integration.webhook_created";
+
+    /// <summary>
+    /// An API key was issued. It acts with its scopes until it expires, without a person signing
+    /// in, so who made it, with which scopes, for which branches and until when is on record.
+    /// </summary>
+    public const string ApiKeyCreated = "integration.api_key_created";
+
+    /// <summary>The payment provider settings changed: which fields, never the secret values.</summary>
+    public const string PaymentIntegrationConfigured = "integration.payment_configured";
+
+    /// <summary>The lab provider settings changed: which fields, never the key.</summary>
+    public const string LabIntegrationConfigured = "integration.lab_configured";
+
+    /// <summary>
+    /// A staff member's calendar link was made. Anyone holding the link sees that person's
+    /// appointments, so when it came into being is on record.
+    /// </summary>
+    public const string CalendarFeedCreated = "integration.calendar_feed_created";
+
     // ---- Actions that change who can do what --------------------------------------------------
 
     public const string SignedIn = "auth.signed_in";
@@ -275,6 +299,23 @@ public static class AuditActions
     /// <summary>An order to a supplier was raised: money the clinic has committed to spend.</summary>
     public const string PurchaseOrderRaised = "inventory.purchase_order_raised";
 
+    // ---- Loyalty, packages and promotions ------------------------------------------------------
+
+    /// <summary>A package was sold to a customer, on a bill raised in the same step.</summary>
+    public const string PackageSold = "package.sold";
+
+    /// <summary>Uses of a package were spent on a bill line, which was charged at zero.</summary>
+    public const string PackageUsed = "package.used";
+
+    /// <summary>A package was cancelled because the bill it was sold on was voided or refunded.</summary>
+    public const string PackageCancelled = "package.cancelled";
+
+    /// <summary>A discount code was created. It is a standing approval to take money off bills.</summary>
+    public const string CouponCreated = "coupon.created";
+
+    /// <summary>A customer group was saved. It decides who campaigns reach.</summary>
+    public const string SegmentCreated = "segment.created";
+
     // ---- Reminders and reports -----------------------------------------------------------------
 
     /// <summary>
@@ -329,6 +370,7 @@ public static class AuditActions
         CustomerCreated, CustomerMerged, CustomerLineLinked, CustomerLineUnlinked,
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,
         NotificationBroadcast, LineIntegrationConfigured,
+        WebhookCreated, ApiKeyCreated, PaymentIntegrationConfigured, LabIntegrationConfigured, CalendarFeedCreated,
         SignedIn, SignInFailed, PasswordChanged, SessionRevoked, AccountRegistered, PasswordReset,
         PetAccessGranted, PetAccessRevoked, CustomerInvited,
         ClinicBootstrapped, CredentialsReset,
@@ -342,6 +384,7 @@ public static class AuditActions
         AccountProfileUpdated, TwoFactorEnrolled, RecoveryCodeUsed, UserStatusChanged,
         AutomationCreated, AutomationUpdated, AutomationDeleted, ReportExported,
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
+        PackageSold, PackageUsed, PackageCancelled, CouponCreated, SegmentCreated,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -374,9 +417,14 @@ public static class AuditResources
     public const string Prescription = "prescription";
     public const string NotificationBatch = "notification_batch";
     public const string Integration = "integration";
+    public const string Webhook = "webhook";
+    public const string ApiKey = "api_key";
     public const string Automation = "automation";
     public const string ReportExport = "report_export";
     public const string InventoryItem = "inventory_item";
     public const string StockLot = "stock_lot";
     public const string PurchaseOrder = "purchase_order";
+    public const string Package = "package";
+    public const string Coupon = "coupon";
+    public const string Segment = "segment";
 }

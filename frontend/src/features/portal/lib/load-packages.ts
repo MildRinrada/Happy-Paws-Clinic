@@ -4,6 +4,7 @@ import { clinicDay } from '@/lib/format/datetime';
 import { listMyPackages } from '../api/listMyPackages';
 import type { PackageBalance, PackageStatus } from '../types/package.types';
 import { loadPortalHome } from './load-portal-home';
+import { isUsablePackage } from './package-rules';
 
 /** One package on the page, with the pet's and the services' names already looked up. */
 export interface PackageView {
@@ -51,7 +52,7 @@ export async function loadPackages(): Promise<PackageView[]> {
     petName: item.pet_id ? pets.get(item.pet_id) : undefined,
     serviceNames: item.service_ids.map((id) => services.get(id)).filter((name): name is string => Boolean(name)),
     expiresOn: item.expires_on ?? undefined,
-    expiresSoon: item.status === 'active' && Boolean(item.expires_on && item.expires_on <= soon),
+    expiresSoon: isUsablePackage(item.status) && Boolean(item.expires_on && item.expires_on <= soon),
     purchasedAt: item.purchased_at,
   }));
 }

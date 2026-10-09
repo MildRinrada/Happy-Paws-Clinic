@@ -26,6 +26,8 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
 
     public string? SessionId => Claim(ClinicClaimTypes.SessionId);
 
+    public string? ApiKeyId => Claim(ClinicClaimTypes.ApiKey);
+
     public IReadOnlyCollection<string> BranchIds => Claims(ClinicClaimTypes.Branch);
 
     public ScopeSet Scopes => new(Claims(ClinicClaimTypes.Scope));

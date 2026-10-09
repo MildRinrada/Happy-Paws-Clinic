@@ -4,12 +4,13 @@ using HappyPaws.Application.Appointments;
 using HappyPaws.Application.Articles;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Automation;
+using HappyPaws.Application.Messaging;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Consultations;
-using HappyPaws.Application.Crm.GetMyPackageBalance;
+using HappyPaws.Application.Crm;
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.MedicalRecords;
 using HappyPaws.Application.Identity;
@@ -45,6 +46,7 @@ using HappyPaws.Infrastructure.Persistence.Repositories.Articles;
 using HappyPaws.Infrastructure.Persistence.Repositories.Scheduling;
 using HappyPaws.Infrastructure.Persistence.Repositories.Auditing;
 using HappyPaws.Infrastructure.Persistence.Repositories.Automation;
+using HappyPaws.Infrastructure.Persistence.Repositories.Messaging;
 using HappyPaws.Infrastructure.Persistence.Repositories.Billing;
 using HappyPaws.Infrastructure.Persistence.Repositories.Clinics;
 using HappyPaws.Infrastructure.Persistence.Repositories.Consultations;
@@ -62,6 +64,7 @@ using HappyPaws.Infrastructure.Persistence.Repositories.ServiceCatalog;
 using HappyPaws.Infrastructure.Persistence.Repositories.Staff;
 using HappyPaws.Infrastructure.Staff;
 using HappyPaws.Infrastructure.Storage;
+using HappyPaws.Infrastructure.Webhooks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -166,6 +169,12 @@ public static class DependencyInjection
 
         // ---- Loyalty and packages (the read half; selling is Tier 3) ----
         services.AddScoped<ICustomerPackageRepository, CustomerPackageRepository>();
+        services.AddScoped<ICouponRepository, CouponRepository>();
+        services.AddScoped<ILoyaltyLedger, LoyaltyLedger>();
+        services.AddScoped<ISegmentRepository, SegmentRepository>();
+        services.AddScoped<ISegmentQuery, SegmentQuery>();
+        services.AddScoped<ICrmLocks, CrmLocks>();
+        services.AddScoped<IBilledServiceLookup, BilledServiceLookup>();
 
         // ---- Consultation and medical record ----
         services.AddScoped<IConsultationRepository, ConsultationRepository>();
@@ -230,6 +239,9 @@ public static class DependencyInjection
         services.AddScoped<IAutomationDispatchRepository, AutomationDispatchRepository>();
         services.AddScoped<IAutomationSubjectReader, AutomationSubjectReader>();
 
+        // ---- Customer threads ----
+        services.AddScoped<IMessageThreadRepository, MessageThreadRepository>();
+
         // ---- Report exports ----
         services.AddScoped<IReportExportRepository, ReportExportRepository>();
 
@@ -246,8 +258,16 @@ public static class DependencyInjection
         // ---- Printed documents ----
         services.AddSingleton<IDocumentRenderer, QuestPdfRenderer>();
 
-        // The notification adapters (LINE/SMS/email), the payment and lab gateways
-        // and the outbound webhook dispatcher register here as each module is implemented.
+        // ---- Report export files: XLSX and PDF (CSV is registered with the Reporting module) ----
+        services.AddSingleton<HappyPaws.Application.Reporting.Files.IReportFileWriter, HappyPaws.Infrastructure.Reporting.XlsxReportWriter>();
+        services.AddSingleton<HappyPaws.Application.Reporting.Files.IReportFileWriter, HappyPaws.Infrastructure.Reporting.PdfReportWriter>();
+
+        // ---- Webhooks and integrations ----
+        // The secret protector and its key ring, the outbound webhook sender (its HTTP client
+        // follows no redirects and connects only to public addresses), and the repositories for
+        // webhooks, API keys and calendar links. Payment and lab settings go through the clinic
+        // settings store; no gateway or lab connector exists. See Webhooks/IntegrationsRegistration.
+        services.AddIntegrationAdapters(configuration);
 
         return services;
     }

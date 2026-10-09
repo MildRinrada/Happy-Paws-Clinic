@@ -33,10 +33,18 @@ export interface LineSettingsInput {
   broadcast_monthly_limit?: number;
 }
 
-/** `POST /staff/integrations/line/broadcast`. */
-export interface LineBroadcastInput {
-  customer_ids: string[];
-  message: string;
+/**
+ * `POST /staff/integrations/line/broadcast`: to customers picked one by one, or to a CRM segment's
+ * members, resolved by the backend at send time. Exactly one of the two.
+ */
+export type LineBroadcastInput = { message: string; customer_ids: string[] } | { message: string; segment_id: string };
+
+/** The segment a broadcast was opened for, as the link from `/crm/segments` carries it. */
+export interface BroadcastSegment {
+  id: string;
+  name: string;
+  /** About how many members a broadcast would reach, when the link said. */
+  reachable?: number;
 }
 
 /**

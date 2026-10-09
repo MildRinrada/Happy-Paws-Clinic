@@ -27,6 +27,8 @@
 | รหัส OTP ของลูกค้า | 6 หลัก | SHA-256 ของ "เบอร์:รหัส" ใน `phone_verifications.code_hash` | เทียบ hash เดาผิดได้ 5 ครั้งต่อรหัส อายุ 5 นาที |
 | token ในลิงก์รีเซ็ตรหัสผ่าน | 32 ไบต์ | SHA-256 ใน `password_reset_requests.token_hash` | ค้นด้วย hash ใช้ได้ครั้งเดียว อายุ 30 นาที |
 | access token | ไม่เก็บ | JWT ลงนาม ตรวจด้วยกุญแจ | ลายเซ็น |
+| API key | 32 ไบต์ และ prefix 10 ตัว | SHA-256 ของ key ทั้งก้อนใน `api_keys.secret_hash` | หาด้วย prefix แล้ว `FixedTimeEquals` |
+| token ของลิงก์ปฏิทิน | 32 ไบต์ | SHA-256 ใน `calendar_feeds.token_hash` และ ciphertext ไว้แสดงลิงก์เดิม | ค้นด้วย hash |
 | URL อัปโหลดและดาวน์โหลดไฟล์ | ไม่เก็บ | ลงชื่อด้วย HMAC-SHA256 บอกสิทธิ์ key ชนิด ขนาด และเวลาหมดอายุไว้ในตัว | `FixedTimeEquals` |
 
 รหัส OTP มีแค่ล้านแบบ hash จึงกันการเดาไม่ได้ถ้าใครได้สำเนาฐานข้อมูลไป สิ่งที่กันจริงคืออายุ 5 นาที และการใช้ได้ครั้งเดียว ลิงก์รีเซ็ตวาง token ไว้หลัง `#` เหมือนลิงก์คำเชิญ
@@ -34,6 +36,19 @@
 **กุญแจลงชื่อ URL ของไฟล์** อยู่ที่ `Storage:SigningKey` ถ้าไม่ตั้ง คำนวณจากกุญแจ JWT ด้วย HMAC จึงไม่ใช่กุญแจเดียวกัน ใครได้ URL ไปก็โหลดไฟล์ได้จนกว่าจะหมดอายุ 10 นาที เหมือน pre-signed URL ของ S3
 
 ลิงก์คำเชิญวาง token ไว้หลัง `#` (`AcceptUrlTemplate` เป็น `.../invitations/{id}#token={token}`) เบราว์เซอร์ไม่ส่งส่วนนี้ไปเซิร์ฟเวอร์ token จึงไม่อยู่ใน access log และ header `Referer`
+
+## ความลับที่เข้ารหัสด้วย Data Protection
+
+ค่าที่ระบบต้องอ่านกลับเพื่อใช้งานเก็บเป็น hash ไม่ได้ จึงเข้ารหัสด้วย ASP.NET Core Data Protection ผ่าน `ISecretProtector` (`Infrastructure/Webhooks/DataProtectionSecretProtector.cs`) แต่ละชนิดมี purpose ของตัวเอง ciphertext ที่คัดลอกข้ามคอลัมน์จึงถอดไม่ได้
+
+| ค่า | คอลัมน์ |
+|---|---|
+| secret ลงนาม webhook | `webhook_subscriptions.secret_ciphertext` |
+| secret key และ webhook secret ของผู้ให้บริการชำระเงิน | `payment_provider_settings.secret_key_ciphertext`, `webhook_secret_ciphertext` |
+| API key ของแล็บ | `lab_provider_settings.api_key_ciphertext` |
+| token ของลิงก์ปฏิทิน | `calendar_feeds.token_ciphertext` |
+
+กุญแจอยู่ที่ `DataProtection:KeysDirectory` นอกฐานข้อมูล หมุนเองทุก 90 วันและเก็บกุญแจเก่าไว้ถอด ต้องเป็นโฟลเดอร์ถาวรตอนติดตั้งจริง ดู [development.md](../development.md#กุญแจเข้ารหัสความลับ) ใครได้ทั้งสำเนาฐานข้อมูลและโฟลเดอร์กุญแจไปจะถอดได้ทั้งหมด จึงควรสำรองสองอย่างนี้แยกกัน
 
 ## ความลับ TOTP
 
@@ -69,7 +84,7 @@
 
 - `.gitignore` กัน `.env`, `.env.local`, `.env.*.local`, `*.pfx`, `*.key`
 - ความลับของการเชื่อมต่อภายนอก (LINE ช่องทางชำระเงิน แล็บ) ตั้งใจให้อยู่ในค่าตั้งค่า ไม่ใช่คอลัมน์ในฐานข้อมูล แต่ตอนนี้ยังไม่มีการเชื่อมต่อใดเลย
-- ไม่มีการเข้ารหัสระดับแอปพลิเคชันกับคอลัมน์ใดในฐานข้อมูล การเข้ารหัสดิสก์และสำเนาสำรองเป็นหน้าที่ของโครงสร้างพื้นฐานที่ติดตั้ง
+- การเข้ารหัสระดับแอปพลิเคชันมีเฉพาะคอลัมน์ในหัวข้อ [ความลับที่เข้ารหัสด้วย Data Protection](#ความลับที่เข้ารหัสด้วย-data-protection) คอลัมน์อื่น รวมถึงความลับ TOTP และของ LINE ยังไม่เข้ารหัส การเข้ารหัสดิสก์และสำเนาสำรองเป็นหน้าที่ของโครงสร้างพื้นฐานที่ติดตั้ง
 
 ## ค่าตั้งค่าที่มีผลจริง
 

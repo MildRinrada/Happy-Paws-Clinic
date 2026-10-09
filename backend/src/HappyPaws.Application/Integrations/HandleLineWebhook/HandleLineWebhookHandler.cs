@@ -1,5 +1,8 @@
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Messaging.ReceiveMessage;
 using HappyPaws.Domain.Integrations;
+using HappyPaws.Domain.Messaging;
+using HappyPaws.Domain.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace HappyPaws.Application.Integrations.HandleLineWebhook;
@@ -34,8 +37,10 @@ public enum LineWebhookOutcome
 /// <item><c>unfollow</c> stops pushes to that customer at once ("หยุดส่งเข้าแชตทันที"). LINE would
 /// refuse them anyway; marking it saves a failed call per message and shows in the log why. The
 /// follower's name and picture are dropped.</item>
-/// <item><c>message</c> answers that the account sends notifications and is not staffed, and moves
-/// the writer to the top of the counter's list: how someone who followed long ago is found.</item>
+/// <item><c>message</c> from an address on a customer's record goes into that customer's thread
+/// (<c>GET /staff/threads</c>), and the first one since staff last answered is acknowledged. From
+/// anyone else it is not kept, and the answer says it reached nobody. Either way the writer moves to
+/// the top of the counter's list: how someone who followed long ago is found.</item>
 /// <item><c>postback</c> runs one of the five chat buttons through <see cref="LinePostbackExecutor"/>.</item>
 /// </list>
 /// <para>
@@ -48,6 +53,7 @@ public sealed class HandleLineWebhookHandler(
     ILineAddressBook addresses,
     ILineFollowerRepository followers,
     LinePostbackExecutor postbacks,
+    ReceiveCustomerMessageHandler threads,
     IUnitOfWork unitOfWork,
     IClock clock,
     ILogger<HandleLineWebhookHandler> logger)
@@ -129,9 +135,28 @@ public sealed class HandleLineWebhookHandler(
             }
 
             case "message":
-                await ReplyAsync(item, new LineReply(LineReplies.AutoReply(line.PortalUrl)), cancellationToken);
+            {
+                var customer = await addresses.FindTrackedAsync(userId, cancellationToken);
+
+                if (customer is not null && item.Message is { } incoming)
+                {
+                    var outcome = await threads.HandleAsync(
+                        new CustomerMessage(customer.Id, DeliveryChannel.Line, KindOf(incoming.Type), incoming.Text, incoming.Id),
+                        cancellationToken);
+
+                    if (outcome == CustomerMessageOutcome.Opened)
+                    {
+                        await ReplyAsync(item, new LineReply(LineReplies.Received), cancellationToken);
+                    }
+                }
+                else
+                {
+                    await ReplyAsync(item, new LineReply(LineReplies.AutoReply(line.PortalUrl)), cancellationToken);
+                }
+
                 await NoteFollowerAsync(userId, followed: false, cancellationToken);
                 break;
+            }
 
             case "postback":
             {
@@ -199,6 +224,18 @@ public sealed class HandleLineWebhookHandler(
             logger.LogError(exception, "LINE follower could not be recorded");
         }
     }
+
+    private static MessageKind KindOf(string type) => type switch
+    {
+        "text" => MessageKind.Text,
+        "image" => MessageKind.Image,
+        "video" => MessageKind.Video,
+        "audio" => MessageKind.Audio,
+        "file" => MessageKind.File,
+        "location" => MessageKind.Location,
+        "sticker" => MessageKind.Sticker,
+        _ => MessageKind.Other,
+    };
 
     private Task ReplyAsync(LineWebhookEvent item, LineReply reply, CancellationToken cancellationToken) =>
         item.ReplyToken is { Length: > 0 } token

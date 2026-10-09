@@ -58,6 +58,7 @@ public async Task<IActionResult> IssueTicket(...)
 | `GET /booking/availability` | ดูช่วงว่างก่อนเข้าสู่ระบบ | ไม่มี |
 | `POST /auth/staff/login`, `/auth/2fa/verify`, `/auth/refresh`, `/auth/logout` | ยังไม่มี token | รหัสผ่าน challenge หรือ refresh token |
 | `POST /staff/members/invitations/{id}/accept` | ผู้ถูกเชิญยังไม่มีบัญชี | token ในลิงก์ |
+| `GET /staff/integrations/calendar/ics` | แอปปฏิทินส่ง bearer token ไม่ได้ | token ในลิงก์ หรือพนักงานที่เข้าสู่ระบบอยู่ ตรวจใน `CalendarFeedHandler` ดู [การเชื่อมต่อระบบ](features/integrations.md) |
 
 ### Endpoint ที่ยืนยันตัวตนแล้วแต่ไม่มี `RequireScope`
 
@@ -71,6 +72,15 @@ public async Task<IActionResult> IssueTicket(...)
 | `GET`/`PUT /portal/consents`, `POST /portal/data-requests` | ใช้รหัสลูกค้าจาก token (`RequireCustomerId`) ไม่รับจาก request |
 
 ข้อสังเกต endpoint กลุ่มนี้ไม่ผ่านด่าน 2FA เพราะด่าน 2FA ติดมากับ policy ของ `RequireScope` เท่านั้น
+
+### API key
+
+เครื่องที่เรียกด้วย API key (`Authorization: Bearer hp_...`) ได้ principal รูปเดียวกับ token ของพนักงาน คือบัญชีและสมาชิกพนักงานของผู้สร้าง scope และสาขาของ key ที่ผู้สร้างยังถืออยู่ และ claim `key` ที่บอกว่าเป็น key ไหน ด่านทั้งสามทำงานเหมือนเดิม ต่างกันสองข้อ
+
+- **key ใช้ได้เฉพาะ endpoint ที่มี `RequireScope`** default policy และ fallback policy มี `InteractiveCallerRequirement` ที่ปฏิเสธ key ด้วย `403 forbidden` (`details.required = interactive_session`) endpoint ในตารางข้างบนจึงใช้ key ไม่ได้ ไม่อย่างนั้น key ที่มี scope เดียวก็แก้โปรไฟล์หรือเพิกถอนเซสชันของผู้สร้างได้
+- **key ไม่มี 2FA** จึงถือ scope ระดับ 2FA ไม่ได้ตั้งแต่ตอนสร้าง (`ApiKeyScopeRules`) แทนที่จะได้รับการยกเว้น
+
+รายละเอียดอยู่ใน [การเชื่อมต่อระบบภายนอก](security/integrations.md)
 
 ## 2FA เป็นเงื่อนไขของสิทธิ์
 

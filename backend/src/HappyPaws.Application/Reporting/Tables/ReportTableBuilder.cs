@@ -1,7 +1,6 @@
 using HappyPaws.Application.Analytics;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Common;
-using HappyPaws.Application.Reporting.Csv;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Analytics;
 using HappyPaws.Domain.Reporting;
@@ -29,7 +28,7 @@ public sealed class ReportTableBuilder(
     IOperationalStatsQueries operational,
     ClinicDays days)
 {
-    public async Task<CsvTable> BuildAsync(ReportExport export, CancellationToken cancellationToken = default)
+    public async Task<ReportTable> BuildAsync(ReportExport export, CancellationToken cancellationToken = default)
     {
         var window = new ReportWindow(
             export.FromDate,
@@ -51,10 +50,20 @@ public sealed class ReportTableBuilder(
         };
     }
 
-    private static CsvTable Revenue(IReadOnlyList<RevenueRow> rows)
+    private static ReportTable Revenue(IReadOnlyList<RevenueRow> rows)
     {
-        var table = new CsvTable(
-            ["วันที่", "รหัสสาขา", "สาขา", "ช่องทางชำระ", "รับเงิน (บาท)", "จำนวนรายการรับ", "คืนเงิน (บาท)", "จำนวนรายการคืน", "สุทธิ (บาท)"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Day("วันที่"),
+            ReportColumn.Text("รหัสสาขา"),
+            ReportColumn.Text("สาขา"),
+            ReportColumn.Text("ช่องทางชำระ"),
+            ReportColumn.Baht("รับเงิน (บาท)"),
+            ReportColumn.Count("จำนวนรายการรับ"),
+            ReportColumn.Baht("คืนเงิน (บาท)"),
+            ReportColumn.Count("จำนวนรายการคืน"),
+            ReportColumn.Baht("สุทธิ (บาท)"),
+        ]);
 
         foreach (var row in rows.OrderBy(row => row.Day).ThenBy(row => row.BranchId, StringComparer.Ordinal).ThenBy(row => row.Method))
         {
@@ -63,20 +72,30 @@ public sealed class ReportTableBuilder(
                 row.BranchId,
                 row.BranchName,
                 BillingWire.ToWire(row.Method),
-                CsvTable.Baht(row.CollectedSatang),
+                ReportTable.Baht(row.CollectedSatang),
                 row.Payments,
-                CsvTable.Baht(row.RefundedSatang),
+                ReportTable.Baht(row.RefundedSatang),
                 row.Refunds,
-                CsvTable.Baht(row.CollectedSatang - row.RefundedSatang));
+                ReportTable.Baht(row.CollectedSatang - row.RefundedSatang));
         }
 
         return table;
     }
 
-    private static CsvTable Services(IReadOnlyList<ServiceRevenueRow> rows)
+    private static ReportTable Services(IReadOnlyList<ServiceRevenueRow> rows)
     {
-        var table = new CsvTable(
-            ["รหัสบริการ", "บริการ", "ประเภทรายการ", "จำนวน", "จำนวนใบแจ้งหนี้", "ยอดตามราคา (บาท)", "รายได้ (บาท)", "ค่ายาในบิลเดียวกัน (บาท)", "รายได้หลังหักยา (บาท)"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Text("รหัสบริการ"),
+            ReportColumn.Text("บริการ"),
+            ReportColumn.Text("ประเภทรายการ"),
+            ReportColumn.Count("จำนวน"),
+            ReportColumn.Count("จำนวนใบแจ้งหนี้"),
+            ReportColumn.Baht("ยอดตามราคา (บาท)"),
+            ReportColumn.Baht("รายได้ (บาท)"),
+            ReportColumn.Baht("ค่ายาในบิลเดียวกัน (บาท)"),
+            ReportColumn.Baht("รายได้หลังหักยา (บาท)"),
+        ]);
 
         foreach (var row in rows.OrderByDescending(row => row.RevenueSatang).ThenBy(row => row.Name, StringComparer.Ordinal))
         {
@@ -86,18 +105,23 @@ public sealed class ReportTableBuilder(
                 BillingWire.ToWire(row.Kind),
                 row.Quantity,
                 row.Invoices,
-                CsvTable.Baht(row.BilledSatang),
-                CsvTable.Baht(row.RevenueSatang),
-                CsvTable.Baht(row.MedicineSatang),
-                CsvTable.Baht(row.RevenueSatang - row.MedicineSatang));
+                ReportTable.Baht(row.BilledSatang),
+                ReportTable.Baht(row.RevenueSatang),
+                ReportTable.Baht(row.MedicineSatang),
+                ReportTable.Baht(row.RevenueSatang - row.MedicineSatang));
         }
 
         return table;
     }
 
-    private static CsvTable Retention(IReadOnlyList<RetentionCell> cells)
+    private static ReportTable Retention(IReadOnlyList<RetentionCell> cells)
     {
-        var table = new CsvTable(["เดือน", "เดือนที่มาครั้งแรก", "จำนวนลูกค้า"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Month("เดือน"),
+            ReportColumn.Month("เดือนที่มาครั้งแรก"),
+            ReportColumn.Count("จำนวนลูกค้า"),
+        ]);
 
         foreach (var cell in cells.OrderBy(cell => cell.Cohort).ThenBy(cell => cell.Month))
         {
@@ -107,10 +131,19 @@ public sealed class ReportTableBuilder(
         return table;
     }
 
-    private static CsvTable Staff(IReadOnlyList<StaffPerformanceRow> rows)
+    private static ReportTable Staff(IReadOnlyList<StaffPerformanceRow> rows)
     {
-        var table = new CsvTable(
-            ["รหัสพนักงาน", "ชื่อ", "ประเภท", "เคสที่ปิด", "เวลาเฉลี่ยต่อเคส (นาที)", "หัตถการ", "รายได้จากเคส (บาท)", "รับเงินที่เคาน์เตอร์ (บาท)"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Text("รหัสพนักงาน"),
+            ReportColumn.Text("ชื่อ"),
+            ReportColumn.Text("ประเภท"),
+            ReportColumn.Count("เคสที่ปิด"),
+            ReportColumn.Minutes("เวลาเฉลี่ยต่อเคส (นาที)"),
+            ReportColumn.Count("หัตถการ"),
+            ReportColumn.Baht("รายได้จากเคส (บาท)"),
+            ReportColumn.Baht("รับเงินที่เคาน์เตอร์ (บาท)"),
+        ]);
 
         foreach (var row in rows.OrderByDescending(row => row.Cases).ThenBy(row => row.DisplayName, StringComparer.Ordinal))
         {
@@ -121,16 +154,24 @@ public sealed class ReportTableBuilder(
                 row.Cases,
                 ReportMath.AverageMinutes(row.CaseSeconds, row.Cases),
                 row.Treatments,
-                CsvTable.Baht(row.AttributedRevenueSatang),
-                CsvTable.Baht(row.CollectedSatang));
+                ReportTable.Baht(row.AttributedRevenueSatang),
+                ReportTable.Baht(row.CollectedSatang));
         }
 
         return table;
     }
 
-    private static CsvTable Appointments(IReadOnlyList<AppointmentCountRow> rows)
+    private static ReportTable Appointments(IReadOnlyList<AppointmentCountRow> rows)
     {
-        var table = new CsvTable(["วันที่", "สถานะ", "walk-in", "ยกเลิกกระชั้นชิด", "จองออนไลน์", "จำนวนนัด"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Day("วันที่"),
+            ReportColumn.Text("สถานะ"),
+            ReportColumn.Flag("walk-in"),
+            ReportColumn.Flag("ยกเลิกกระชั้นชิด"),
+            ReportColumn.Flag("จองออนไลน์"),
+            ReportColumn.Count("จำนวนนัด"),
+        ]);
 
         foreach (var row in rows.OrderBy(row => row.Day).ThenBy(row => row.Status))
         {
@@ -140,10 +181,19 @@ public sealed class ReportTableBuilder(
         return table;
     }
 
-    private static CsvTable Queue(IReadOnlyList<QueueCountRow> rows)
+    private static ReportTable Queue(IReadOnlyList<QueueCountRow> rows)
     {
-        var table = new CsvTable(
-            ["วันที่", "ชั่วโมงที่ออกบัตร", "สถานะ", "จำนวนบัตร", "ถูกเรียกแล้ว", "เวลารอเฉลี่ย (นาที)", "เข้าห้องตรวจ", "เวลาในห้องเฉลี่ย (นาที)"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Day("วันที่"),
+            ReportColumn.Count("ชั่วโมงที่ออกบัตร"),
+            ReportColumn.Text("สถานะ"),
+            ReportColumn.Count("จำนวนบัตร"),
+            ReportColumn.Count("ถูกเรียกแล้ว"),
+            ReportColumn.Minutes("เวลารอเฉลี่ย (นาที)"),
+            ReportColumn.Count("เข้าห้องตรวจ"),
+            ReportColumn.Minutes("เวลาในห้องเฉลี่ย (นาที)"),
+        ]);
 
         foreach (var row in rows.OrderBy(row => row.Day).ThenBy(row => row.Hour).ThenBy(row => row.Status))
         {
@@ -161,10 +211,18 @@ public sealed class ReportTableBuilder(
         return table;
     }
 
-    private static CsvTable Workload(IReadOnlyList<WorkloadRow> rows)
+    private static ReportTable Workload(IReadOnlyList<WorkloadRow> rows)
     {
-        var table = new CsvTable(
-            ["รหัสพนักงาน", "ชื่อ", "เคสที่ปิด", "เวลาเฉลี่ยต่อเคส (นาที)", "เคสที่เปิดอยู่", "คิวที่รออยู่วันนี้", "นัดในช่วงนี้"]);
+        var table = new ReportTable(
+        [
+            ReportColumn.Text("รหัสพนักงาน"),
+            ReportColumn.Text("ชื่อ"),
+            ReportColumn.Count("เคสที่ปิด"),
+            ReportColumn.Minutes("เวลาเฉลี่ยต่อเคส (นาที)"),
+            ReportColumn.Count("เคสที่เปิดอยู่"),
+            ReportColumn.Count("คิวที่รออยู่วันนี้"),
+            ReportColumn.Count("นัดในช่วงนี้"),
+        ]);
 
         foreach (var row in rows.OrderByDescending(row => row.Cases).ThenBy(row => row.DisplayName, StringComparer.Ordinal))
         {

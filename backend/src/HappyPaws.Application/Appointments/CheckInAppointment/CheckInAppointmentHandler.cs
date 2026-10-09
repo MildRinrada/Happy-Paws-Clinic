@@ -2,9 +2,11 @@ using HappyPaws.Application.Appointments.Dtos;
 using HappyPaws.Application.Appointments.GetAppointment;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Queueing;
 using HappyPaws.Application.Queueing.Dtos;
 using HappyPaws.Domain.Access;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Queueing;
 
 namespace HappyPaws.Application.Appointments.CheckInAppointment;
@@ -37,6 +39,7 @@ public sealed class CheckInAppointmentHandler(
     IQueueEventStream events,
     IClinicSettingsStore settings,
     AppointmentAccess access,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock)
 {
@@ -88,6 +91,10 @@ public sealed class CheckInAppointmentHandler(
                 type is null ? null : $"ประเภทนัด: {type.Name}");
 
             tickets.Add(ticket);
+
+            webhooks.Enqueue(
+                WebhookEventTypes.AppointmentCheckedIn,
+                WebhookPayloads.Appointment(appointment, queueTicketId: ticket.Id));
             admitted = appointment;
         }, cancellationToken);
 

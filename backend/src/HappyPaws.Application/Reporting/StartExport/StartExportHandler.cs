@@ -12,7 +12,7 @@ namespace HappyPaws.Application.Reporting.StartExport;
 
 /// <summary><c>POST /staff/reports/exports</c>.</summary>
 /// <param name="Report"><c>revenue</c>, <c>services</c>, <c>retention</c>, <c>staff_performance</c>, <c>appointments</c>, <c>queue</c> or <c>workload</c>.</param>
-/// <param name="Format"><c>csv</c> (the default and only one).</param>
+/// <param name="Format"><c>csv</c> (the default), <c>xlsx</c> or <c>pdf</c>. The last two are not in the API reference; see <c>docs/contract-extensions.md § 21</c>.</param>
 /// <param name="From">First clinic day; the report's own default span back from <paramref name="To"/> when absent.</param>
 /// <param name="To">Last clinic day; today when absent.</param>
 /// <param name="BranchId">One branch; every branch the caller may see when absent.</param>

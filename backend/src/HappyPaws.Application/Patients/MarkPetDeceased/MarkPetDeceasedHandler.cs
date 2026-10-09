@@ -2,8 +2,10 @@ using HappyPaws.Application.Appointments;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 using Microsoft.Extensions.Logging;
 
 namespace HappyPaws.Application.Patients.MarkPetDeceased;
@@ -43,6 +45,7 @@ public sealed class MarkPetDeceasedHandler(
     INotificationDispatcher notifications,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock,
     ILogger<MarkPetDeceasedHandler> logger)
@@ -76,6 +79,7 @@ public sealed class MarkPetDeceasedHandler(
             {
                 appointment.Cancel(now, userId, "สัตว์เลี้ยงเสียชีวิต");
                 cancelled.Add(appointment.Id);
+                webhooks.Enqueue(WebhookEventTypes.AppointmentCancelled, WebhookPayloads.Appointment(appointment));
 
                 audit.Record(new AuditEvent(
                     AuditActions.AppointmentCancelled,

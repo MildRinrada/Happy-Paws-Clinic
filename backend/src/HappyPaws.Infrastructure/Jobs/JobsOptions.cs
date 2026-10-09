@@ -8,7 +8,8 @@ namespace HappyPaws.Infrastructure.Jobs;
 ///   "StartupDelaySeconds": 10,
 ///   "Automations":   { "Enabled": true, "IntervalSeconds": 60, "CatchUpHours": 12 },
 ///   "ReportExports": { "Enabled": true, "IntervalSeconds": 15 },
-///   "Housekeeping":  { "Enabled": true, "IntervalSeconds": 3600 }
+///   "Housekeeping":  { "Enabled": true, "IntervalSeconds": 3600 },
+///   "Webhooks":      { "Enabled": true, "IntervalSeconds": 10 }
 /// }
 /// </code>
 /// <para>
@@ -32,6 +33,9 @@ public sealed class JobsOptions
     public JobSchedule ReportExports { get; set; } = new() { IntervalSeconds = 15 };
 
     public JobSchedule Housekeeping { get; set; } = new() { IntervalSeconds = 3_600 };
+
+    /// <summary>The webhook outbox and its deliveries. Each claims its rows, so instances share the work.</summary>
+    public JobSchedule Webhooks { get; set; } = new() { IntervalSeconds = 10 };
 }
 
 /// <summary>One job's switch and how often it runs.</summary>

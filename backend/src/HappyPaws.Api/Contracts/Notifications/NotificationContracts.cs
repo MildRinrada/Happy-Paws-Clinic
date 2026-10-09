@@ -20,7 +20,7 @@ public sealed record SendNotificationRequest(
 /// <c>POST /staff/integrations/line/broadcast</c> — "ประกาศถึงกลุ่มลูกค้าที่คัดไว้ · จำกัดโควตา".
 /// The group is the list of customers given; see <c>docs/features/line.md</c> on saved segments.
 /// </summary>
-public sealed record LineBroadcastRequest(IReadOnlyList<string>? CustomerIds = null, string? Message = null);
+public sealed record LineBroadcastRequest(IReadOnlyList<string>? CustomerIds = null, string? Message = null, string? SegmentId = null);
 
 /// <summary>
 /// <c>PUT /staff/integrations/line</c> — "channel id/secret · เปิดปิดชนิดการแจ้งเตือน". Every field

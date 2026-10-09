@@ -93,7 +93,8 @@
 | policy | เพดาน | ใช้กับ |
 |---|---|---|
 | global | 600 ครั้งต่อนาที (`RateLimits:PerTokenPerMinute`) | ทุก endpoint |
-| `messaging` | 60 ครั้งต่อนาที (`RateLimits:MessagingPerMinute`) | ยังไม่มี endpoint ใดใส่ `[EnableRateLimiting]` |
+| `messaging` | 60 ครั้งต่อนาที (`RateLimits:MessagingPerMinute`) | `POST /staff/notifications/send` และ `POST /staff/threads/{id}/messages` |
+| API key | 600 ครั้งต่อนาที (`RateLimits:PerApiKeyPerMinute` ค่าเริ่มต้นเท่ากับ global) | ทุก endpoint เมื่อเรียกด้วย API key แยกถังต่อ key ไม่ใช้ถังของผู้สร้าง |
 
 - แยกถังตาม `sub` ของ token เพราะทั้งคลินิกมักออกอินเทอร์เน็ตผ่าน IP เดียว ถ้านับตาม IP สคริปต์ตัวเดียวจะทำให้ทุกคนที่เคาน์เตอร์ใช้งานไม่ได้
 - คำขอที่ไม่มี token ใช้ IP ของ connection

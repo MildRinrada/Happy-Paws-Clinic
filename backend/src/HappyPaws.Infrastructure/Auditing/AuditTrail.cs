@@ -62,7 +62,27 @@ public sealed class AuditTrail(
             ipAddress: requestContext.IpAddress,
             userAgent: Truncate(requestContext.UserAgent, 400),
             requestId: requestContext.RequestId,
-            detailsJson: Serialise(auditEvent.Details));
+            detailsJson: Serialise(WithApiKey(auditEvent.Details)));
+
+    /// <summary>
+    /// A row caused through an API key says which key, beside its creator as the actor, so "who did
+    /// this" has two answers when it should: the person who made the key, and the key itself.
+    /// </summary>
+    private IReadOnlyDictionary<string, object?>? WithApiKey(IReadOnlyDictionary<string, object?>? details)
+    {
+        if (currentUser.ApiKeyId is not { } keyId)
+        {
+            return details;
+        }
+
+        var merged = details is null
+            ? new Dictionary<string, object?>(StringComparer.Ordinal)
+            : new Dictionary<string, object?>(details, StringComparer.Ordinal);
+
+        merged["via_api_key"] = keyId;
+
+        return merged;
+    }
 
     private static string? Serialise(IReadOnlyDictionary<string, object?>? details) =>
         details is null || details.Count == 0 ? null : JsonSerializer.Serialize(details, Options);

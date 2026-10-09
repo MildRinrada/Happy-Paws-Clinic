@@ -1,5 +1,6 @@
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Customers.LineAddress;
+using HappyPaws.Infrastructure.Persistence.Configurations.Crm;
 using HappyPaws.Infrastructure.Persistence.Configurations.Customers;
 using HappyPaws.Application.Inventory;
 using HappyPaws.Infrastructure.Persistence.Configurations.Inventory;
@@ -54,6 +55,14 @@ internal static class PostgresErrorTranslator
             // (docs/contract-extensions.md § 18): the loser hears what it would have a second later.
             PostgresException { SqlState: UniqueViolation, ConstraintName: CustomerConfiguration.LineAddressIndex } =>
                 LineAddressConflict.Taken(customerId: null),
+
+            // Two clerks choosing the same coupon code at the same moment: the loser hears what it
+            // would have a second later.
+            PostgresException { SqlState: UniqueViolation, ConstraintName: CouponConfiguration.CodeIndex } =>
+                new ConflictException(ErrorCodes.CouponCodeTaken, "มีคูปองโค้ดนี้อยู่แล้ว")
+                {
+                    MessageEn = "A coupon with this code already exists.",
+                },
 
             _ => null,
         };

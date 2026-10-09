@@ -82,6 +82,21 @@ public static class EntityId
     public const string NotificationBatch = "nbt";
     public const string Package = "pkg";
 
+    /// <summary>One use of a package, spent on one bill line.</summary>
+    public const string PackageUse = "pku";
+
+    /// <summary>A discount code: "โค้ดส่วนลด · จำกัดบริการ จำนวน และช่วงเวลา".</summary>
+    public const string Coupon = "cpn";
+
+    /// <summary>One coupon used on one bill.</summary>
+    public const string CouponRedemption = "cpr";
+
+    /// <summary>One row of the loyalty points ledger. Append-only.</summary>
+    public const string LoyaltyEntry = "lpt";
+
+    /// <summary>A saved customer group: "กลุ่มลูกค้าจากเงื่อนไข".</summary>
+    public const string Segment = "seg";
+
     /// <summary>A course of appointments booked together. Not a table of its own: the id groups the visits.</summary>
     public const string Series = "ser";
 
@@ -114,6 +129,27 @@ public static class EntityId
     /// counter can pick them as a customer's LINE address (<c>docs/contract-extensions.md § 18</c>).
     /// </summary>
     public const string LineFollower = "lfw";
+
+    /// <summary>One customer's conversation with the clinic, across every channel: "กล่องข้อความรวมทุกช่องทางต่อลูกค้าหนึ่งคน".</summary>
+    public const string MessageThread = "thr";
+
+    /// <summary>One message in a thread, from the customer or from staff.</summary>
+    public const string ThreadMessage = "msg";
+
+    /// <summary>An outbound webhook: a URL, the events it wants and its signing secret.</summary>
+    public const string WebhookSubscription = "whk";
+
+    /// <summary>One event in the webhook outbox. Also sent to receivers as <c>X-Webhook-Id</c>.</summary>
+    public const string WebhookEvent = "evt";
+
+    /// <summary>One event on its way to one webhook, with its attempts.</summary>
+    public const string WebhookDelivery = "whd";
+
+    /// <summary>A machine client's key. Not the key itself, which starts <c>hp_</c>.</summary>
+    public const string ApiKey = "key";
+
+    /// <summary>A staff member's calendar subscription link.</summary>
+    public const string CalendarFeed = "cal";
 
     public static string New(string prefix)
     {

@@ -29,12 +29,20 @@ public enum ReportKind
 }
 
 /// <summary>
-/// The file an export produces. CSV only: UTF-8 with a byte-order mark, which Excel, Numbers and
-/// Google Sheets all open with Thai intact, and no spreadsheet library to carry.
+/// The file an export produces. The contract names no format; <c>xlsx</c> and <c>pdf</c> were
+/// asked for by the clinic on top of the original CSV (<c>docs/contract-extensions.md § 21</c>).
+/// Stored by name, so adding one needs no migration.
 /// </summary>
 public enum ReportFormat
 {
+    /// <summary>UTF-8 with a byte-order mark, which Excel, Numbers and Google Sheets all open with Thai intact.</summary>
     Csv,
+
+    /// <summary>An Excel workbook: one sheet, typed cells, a frozen header row.</summary>
+    Xlsx,
+
+    /// <summary>A printable A4 landscape table with the clinic, the branches and the span on every page.</summary>
+    Pdf,
 }
 
 /// <summary><c>queued → running → succeeded | failed</c>.</summary>

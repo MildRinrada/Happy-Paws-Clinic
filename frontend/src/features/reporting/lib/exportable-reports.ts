@@ -1,5 +1,5 @@
 import { Scope } from '@/lib/auth/scopes';
-import type { ReportKind } from '../types/report-export.types';
+import type { ReportFormat, ReportKind } from '../types/report-export.types';
 
 /**
  * Which reports a session may export: each needs `report:export` and the scope of the screen it
@@ -21,6 +21,9 @@ export function exportableReports(can: (scope: string) => boolean): ReportKind[]
 
   return (Object.keys(READ_SCOPE) as ReportKind[]).filter((report) => can(READ_SCOPE[report]));
 }
+
+/** The file formats, in the order the control offers them. Excel first: it is what most clinics open. */
+export const REPORT_FORMATS: ReportFormat[] = ['xlsx', 'csv', 'pdf'];
 
 /** How long the control waits between status checks, and how many it makes before handing over to a button. */
 export const POLL_INTERVAL_MS = 2_000;

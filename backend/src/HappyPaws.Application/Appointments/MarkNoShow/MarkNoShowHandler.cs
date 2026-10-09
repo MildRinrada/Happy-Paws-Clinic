@@ -4,8 +4,10 @@ using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Appointments;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Appointments.MarkNoShow;
 
@@ -30,6 +32,7 @@ public sealed class MarkNoShowHandler(
     BranchGuard branchGuard,
     IClinicSettingsStore settings,
     IAuditTrail audit,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock)
 {
@@ -44,6 +47,8 @@ public sealed class MarkNoShowHandler(
             branchGuard.EnsureCanAccess(appointment.BranchId);
 
             appointment.MarkNoShow(now);
+
+            webhooks.Enqueue(WebhookEventTypes.AppointmentNoShow, WebhookPayloads.Appointment(appointment));
 
             audit.Record(new AuditEvent(
                 AuditActions.AppointmentNoShow,

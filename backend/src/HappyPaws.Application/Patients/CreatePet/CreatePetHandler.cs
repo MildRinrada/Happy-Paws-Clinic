@@ -4,8 +4,10 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Customers;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Patients.Dtos;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.Patients;
 
 namespace HappyPaws.Application.Patients.CreatePet;
@@ -55,6 +57,7 @@ public sealed class CreatePetHandler(
     ICustomerRepository customers,
     IHospitalNumberGenerator hospitalNumbers,
     IAuditTrail audit,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -83,6 +86,7 @@ public sealed class CreatePetHandler(
                 command.MicrochipNumber);
 
             pets.Add(created);
+            webhooks.Enqueue(WebhookEventTypes.PetCreated, WebhookPayloads.Pet(created, clock.UtcNow));
 
             // The access-control half. Primary, and able to read the history — this is the person
             // who brought the animal in.

@@ -6,8 +6,10 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Patients;
 using HappyPaws.Domain.Appointments;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Appointments.BookAppointment;
 
@@ -51,6 +53,7 @@ public sealed class BookAppointmentHandler(
     PetAccessGuard petAccess,
     IClinicSettingsStore settings,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock)
@@ -118,6 +121,8 @@ public sealed class BookAppointmentHandler(
                 typeCode: type.Code);
 
             appointments.Add(appointment);
+
+            webhooks.Enqueue(WebhookEventTypes.AppointmentCreated, WebhookPayloads.Appointment(appointment));
         }, cancellationToken);
 
         return AppointmentDto.From(appointment!);

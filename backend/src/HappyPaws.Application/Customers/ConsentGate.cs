@@ -52,6 +52,10 @@ public sealed class ConsentGate(IConsentRepository consents)
         // docs/features/notifications.md.
         ["clinic.message"] = ConsentPurpose.ServiceMessages,
 
+        // An answer to a message the customer wrote to the clinic. They started the conversation
+        // about their own animal; the answer is a care message like clinic.message.
+        ["thread.reply"] = ConsentPurpose.ServiceMessages,
+
         // Listed although unlisted keys already default to marketing, so that nobody reads its
         // absence as an oversight and "fixes" it into the service bucket.
         ["clinic.announcement"] = ConsentPurpose.Marketing,

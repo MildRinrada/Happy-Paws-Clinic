@@ -30,10 +30,13 @@ export async function configureLineAction(payload: z.infer<typeof settingsInput>
   return result;
 }
 
-const broadcastInput = z.object({
-  customer_ids: z.array(z.string().min(1).max(40)).min(1).max(200),
-  message: z.string().trim().min(1).max(1000),
-});
+const message = z.string().trim().min(1).max(1000);
+
+// Exactly one audience: customers picked one by one, or a segment the backend resolves at send time.
+const broadcastInput = z.union([
+  z.object({ customer_ids: z.array(z.string().min(1).max(40)).min(1).max(200), message }),
+  z.object({ segment_id: z.string().trim().min(1).max(40), message }),
+]);
 
 export async function broadcastLineAction(values: z.infer<typeof broadcastInput>): Promise<ActionResult<SendResult>> {
   const input = broadcastInput.parse(values);

@@ -7,8 +7,11 @@ using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Customers;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
+using HappyPaws.Domain.Common;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Billing.CreateInvoice;
 
@@ -62,6 +65,8 @@ public sealed class CreateInvoiceHandler(
     IDocumentNumberGenerator numbers,
     ICustomerRepository customers,
     IBookingCatalog catalog,
+    IInvoiceRewards rewards,
+    IWebhookOutbox webhooks,
     IAuditTrail audit,
     BranchGuard branchGuard,
     ICurrentUser currentUser,
@@ -103,15 +108,27 @@ public sealed class CreateInvoiceHandler(
 
             foreach (var line in command.Lines)
             {
-                invoice.AddLine(
-                    BillingWire.ParseLineKind(line.Kind),
-                    line.Description,
-                    line.Quantity,
-                    line.UnitPriceSatang,
-                    line.SourceId);
+                var kind = BillingWire.ParseLineKind(line.Kind);
+
+                if (kind == InvoiceLineKind.Service && IsCatalogueService(line.SourceId))
+                {
+                    // A service picked from the catalogue: a package the customer holds for it is
+                    // spent here, the same as on a bill raised when a case closes.
+                    await rewards.AddServiceLineAsync(
+                        invoice,
+                        new ServiceLineRequest(line.SourceId!, line.Description, line.Quantity, line.UnitPriceSatang, line.SourceId),
+                        now,
+                        token);
+                }
+                else
+                {
+                    invoice.AddLine(kind, line.Description, line.Quantity, line.UnitPriceSatang, line.SourceId);
+                }
             }
 
             invoices.Add(invoice);
+
+            webhooks.Enqueue(WebhookEventTypes.InvoiceIssued, WebhookPayloads.Invoice(invoice));
 
             audit.Record(new AuditEvent(
                 AuditActions.InvoiceIssued,
@@ -129,6 +146,9 @@ public sealed class CreateInvoiceHandler(
 
         return InvoiceDto.From(invoice!);
     }
+
+    private static bool IsCatalogueService(string? sourceId) =>
+        sourceId is { Length: > 0 } && sourceId.StartsWith(EntityId.Service + "_", StringComparison.Ordinal);
 
     private async Task EnsureCaseHasNoInvoiceAsync(string? consultationId, CancellationToken cancellationToken)
     {

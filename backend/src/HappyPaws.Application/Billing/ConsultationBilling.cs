@@ -1,8 +1,10 @@
 using HappyPaws.Application.Auditing;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
 using HappyPaws.Domain.Consultations;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Billing;
 
@@ -28,6 +30,8 @@ public sealed class ConsultationBilling(
     IInvoiceRepository invoices,
     IPrescriptionRepository prescriptions,
     IDocumentNumberGenerator numbers,
+    IInvoiceRewards rewards,
+    IWebhookOutbox webhooks,
     IAuditTrail audit)
 {
     /// <summary>
@@ -80,12 +84,25 @@ public sealed class ConsultationBilling(
 
         foreach (var treatment in consultation.Treatments.OrderBy(treatment => treatment.PerformedAt))
         {
-            invoice.AddLine(
-                treatment.ServiceId is { Length: > 0 } ? InvoiceLineKind.Service : InvoiceLineKind.Treatment,
-                treatment.Name,
-                treatment.Quantity,
-                treatment.UnitPriceSatang,
-                treatment.Id);
+            if (treatment.ServiceId is { Length: > 0 } serviceId)
+            {
+                // A catalogue service may be paid for by one of the customer's packages: the
+                // covered part goes on at zero and spends the package's uses.
+                await rewards.AddServiceLineAsync(
+                    invoice,
+                    new ServiceLineRequest(serviceId, treatment.Name, treatment.Quantity, treatment.UnitPriceSatang, treatment.Id),
+                    now,
+                    cancellationToken);
+            }
+            else
+            {
+                invoice.AddLine(
+                    InvoiceLineKind.Treatment,
+                    treatment.Name,
+                    treatment.Quantity,
+                    treatment.UnitPriceSatang,
+                    treatment.Id);
+            }
         }
 
         foreach (var prescription in medicine.OrderBy(prescription => prescription.DispensedAt))
@@ -94,6 +111,7 @@ public sealed class ConsultationBilling(
         }
 
         invoices.Add(invoice);
+        webhooks.Enqueue(WebhookEventTypes.InvoiceIssued, WebhookPayloads.Invoice(invoice));
 
         audit.Record(new AuditEvent(
             AuditActions.InvoiceIssued,

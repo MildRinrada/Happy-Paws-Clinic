@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import type { ActionError } from '@/lib/actions/action-result';
 import { exportStatusAction, startExportAction } from '../actions/report-export-actions';
 import { POLL_ATTEMPTS, POLL_INTERVAL_MS } from '../lib/exportable-reports';
-import type { ReportExport, ReportKind } from '../types/report-export.types';
+import type { ReportExport, ReportFormat, ReportKind } from '../types/report-export.types';
 
 interface ExportRequest {
   report: ReportKind;
+  format: ReportFormat;
   from: string;
   to: string;
   branchId?: string;
@@ -58,7 +59,13 @@ export function useExportJob() {
 
     startTransition(async () => {
       try {
-        const result = await startExportAction({ report: request.report, from: request.from, to: request.to, branch_id: request.branchId });
+        const result = await startExportAction({
+          report: request.report,
+          format: request.format,
+          from: request.from,
+          to: request.to,
+          branch_id: request.branchId,
+        });
         if (!result.ok) {
           setError(result.error);
           return;

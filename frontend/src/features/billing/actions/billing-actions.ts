@@ -101,6 +101,38 @@ export async function applyDiscountAction(input: z.infer<typeof discount>) {
   return result;
 }
 
+const coupon = z.object({
+  invoiceId: z.string().min(1),
+  version: z.number().int().nonnegative(),
+  couponCode: z.string().trim().min(1).max(20),
+});
+
+/** "ใช้คูปอง": the code alone. The backend checks it and fills in the reason and approver. */
+export async function applyCouponAction(input: z.infer<typeof coupon>) {
+  const parsed = coupon.parse(input);
+  const result = await runAction(() => applyDiscount(parsed));
+
+  revalidate(parsed.invoiceId);
+
+  return result;
+}
+
+const points = z.object({
+  invoiceId: z.string().min(1),
+  version: z.number().int().nonnegative(),
+  points: z.number().int().positive(),
+});
+
+/** "แลกแต้ม": whole points, 1 point = ฿1. The backend refuses more than the customer holds. */
+export async function redeemPointsAction(input: z.infer<typeof points>) {
+  const parsed = points.parse(input);
+  const result = await runAction(() => applyDiscount(parsed));
+
+  revalidate(parsed.invoiceId);
+
+  return result;
+}
+
 const refund = z.object({
   invoiceId: z.string().min(1),
   version: z.number().int().nonnegative(),

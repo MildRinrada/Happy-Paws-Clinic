@@ -2,13 +2,16 @@ using FluentValidation;
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Crm;
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.Integrations;
 using HappyPaws.Application.Notifications.Delivery;
 using HappyPaws.Application.Notifications.Dtos;
 using HappyPaws.Application.Notifications.SendNotification;
+using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Common;
 using HappyPaws.Domain.Integrations;
@@ -20,12 +23,13 @@ namespace HappyPaws.Application.Notifications.BroadcastToSegment;
 /// <summary>
 /// <c>POST /staff/integrations/line/broadcast</c> — "ประกาศถึงกลุ่มลูกค้าที่คัดไว้ · จำกัดโควตา".
 /// <para>
-/// The group is the list of customers in the request. The contract's saved segments
-/// (<c>POST /staff/segments</c>) belong to the CRM module, which does not exist yet; when it
-/// does, a <c>segment_id</c> can resolve to this same list. See <c>docs/features/line.md</c>.
+/// The group is either a list of customers in the request or a saved segment
+/// (<c>POST /staff/segments</c>), exactly one of the two. A segment is worked out at send time and
+/// narrowed to its members who agreed to marketing and have a LINE address, so its size is the
+/// number of people who can actually receive it. See <c>docs/features/line.md</c>.
 /// </para>
 /// </summary>
-public sealed record BroadcastToSegmentCommand(IReadOnlyList<string> CustomerIds, string Message);
+public sealed record BroadcastToSegmentCommand(IReadOnlyList<string> CustomerIds, string Message, string? SegmentId = null);
 
 public sealed class BroadcastToSegmentValidator : AbstractValidator<BroadcastToSegmentCommand>
 {
@@ -40,9 +44,18 @@ public sealed class BroadcastToSegmentValidator : AbstractValidator<BroadcastToS
     public BroadcastToSegmentValidator()
     {
         RuleFor(command => command.CustomerIds)
-            .NotEmpty().WithMessage("ต้องเลือกลูกค้าอย่างน้อยหนึ่งคน")
+            .NotEmpty().WithMessage("ต้องเลือกลูกค้าอย่างน้อยหนึ่งคน หรือเลือกกลุ่มลูกค้า")
+            .When(command => command.SegmentId is null);
+
+        RuleFor(command => command.CustomerIds)
             .Must(ids => ids is null || ids.Count <= MaxRecipients)
             .WithMessage($"ประกาศได้ไม่เกิน {MaxRecipients} คนต่อครั้ง");
+
+        RuleFor(command => command.CustomerIds)
+            .Empty().WithMessage("เลือกกลุ่มลูกค้าหรือรายชื่อลูกค้าอย่างใดอย่างหนึ่ง")
+            .When(command => command.SegmentId is not null);
+
+        RuleFor(command => command.SegmentId).NotEmpty().MaximumLength(40).When(command => command.SegmentId is not null);
 
         RuleForEach(command => command.CustomerIds).NotEmpty().MaximumLength(40);
 
@@ -75,6 +88,10 @@ public sealed class BroadcastToSegmentHandler(
     IDeliveryLog deliveryLog,
     IClinicSettingsStore settings,
     ILineGateway line,
+    ISegmentRepository segments,
+    ISegmentQuery segmentQuery,
+    BranchGuard branchGuard,
+    ClinicDays clinicDays,
     IAuditTrail audit,
     ICurrentUser currentUser,
     IClock clock,
@@ -97,7 +114,10 @@ public sealed class BroadcastToSegmentHandler(
             };
         }
 
-        var customerIds = command.CustomerIds.Select(id => id.Trim()).Distinct(StringComparer.Ordinal).ToList();
+        var customerIds = command.SegmentId is { } segmentId
+            ? await SegmentRecipientsAsync(segmentId, cancellationToken)
+            : command.CustomerIds.Select(id => id.Trim()).Distinct(StringComparer.Ordinal).ToList();
+
         await SendNotificationHandler.EnsureCustomersExistAsync(customers, customerIds, cancellationToken);
 
         var limit = (await settings.ReadAsync(
@@ -154,6 +174,7 @@ public sealed class BroadcastToSegmentHandler(
                 batchId,
                 Details: new Dictionary<string, object?>
                 {
+                    ["segment_id"] = command.SegmentId,
                     ["recipients"] = customerIds.Count,
                     ["sent"] = result.Sent,
                     ["failed"] = result.Failed,
@@ -163,6 +184,43 @@ public sealed class BroadcastToSegmentHandler(
 
         return result;
     }
+
+    /// <summary>
+    /// The segment's members who can receive a LINE announcement, worked out now. One more than the
+    /// cap is asked for, so a group that is too big is refused whole instead of cut off silently.
+    /// </summary>
+    private async Task<List<string>> SegmentRecipientsAsync(string segmentId, CancellationToken cancellationToken)
+    {
+        var segment = await segments.FindByIdAsync(segmentId, cancellationToken)
+            ?? throw new NotFoundException("segment", segmentId);
+
+        if (segment.BranchId is { } branchId)
+        {
+            branchGuard.EnsureCanAccess(branchId);
+        }
+        else if (branchGuard.VisibleBranchIds is not null)
+        {
+            throw new ForbiddenException("a branch-bound staff member cannot broadcast to a segment over every branch");
+        }
+
+        var members = await segmentQuery.ReachableMembersAsync(
+            segment.Criteria, clinicDays.Today, BroadcastToSegmentValidator.MaxRecipients + 1, cancellationToken);
+
+        if (members.Count == 0)
+        {
+            throw Invalid("ไม่มีลูกค้าในกลุ่มนี้ที่ยอมรับข่าวสารและมี LINE");
+        }
+
+        if (members.Count > BroadcastToSegmentValidator.MaxRecipients)
+        {
+            throw Invalid($"กลุ่มนี้มีผู้รับเกิน {BroadcastToSegmentValidator.MaxRecipients} คน แบ่งกลุ่มให้เล็กลงก่อนส่ง");
+        }
+
+        return [.. members];
+    }
+
+    private static ValidationFailedException Invalid(string message) =>
+        new(new Dictionary<string, string[]> { ["segment_id"] = [message] });
 
     private DateTimeOffset StartOfMonth()
     {

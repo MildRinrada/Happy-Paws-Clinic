@@ -3,8 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using HappyPaws.Application.Notifications;
-using HappyPaws.Domain.Crm;
-using HappyPaws.Infrastructure.Persistence;
 using HappyPaws.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using static HappyPaws.IntegrationTests.Fixtures.ConsultationScenario;
@@ -147,15 +145,12 @@ public class PortalTests(ApiFixture fixture)
     public async Task Packages_show_what_is_left_and_when_it_runs_out()
     {
         var clinic = await ClinicSeed.ClinicAsync(fixture, cancellationToken: Token);
+        using var desk = fixture.CrmDesk(clinic);
 
-        using (var scope = fixture.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>();
-            var package = CustomerPackage.Sell(clinic.CustomerId, "ตรวจสุขภาพ 4 ครั้ง", [clinic.ServiceId], 4, DateTimeOffset.UtcNow, DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)));
-            package.Use(DateOnly.FromDateTime(DateTime.UtcNow));
-            db.Set<CustomerPackage>().Add(package);
-            await db.SaveChangesAsync(Token);
-        }
+        // Sold and paid at the counter, then one use spent on a bill for the covered service.
+        var expires = ClinicSeed.ClinicDate(DateTimeOffset.UtcNow.AddMonths(6));
+        await CrmScenario.SellPaidAsync(desk, clinic, Token, CrmScenario.Package(clinic, expiresOn: expires));
+        await BillingScenario.RaiseAsync(desk, clinic, Token, CrmScenario.ServiceBill(clinic));
 
         using var customer = fixture.CustomerOf(clinic);
         var packages = await customer.GetFromJsonAsync<JsonElement>("/portal/packages", Token);
@@ -163,6 +158,11 @@ public class PortalTests(ApiFixture fixture)
 
         Assert.Equal(3, first.GetProperty("remaining").GetInt32());
         Assert.Equal("active", first.GetProperty("status").GetString());
+        Assert.Equal(expires, first.GetProperty("expires_on").GetString());
+
+        // The owner and the counter read the same balance.
+        var staffView = await CrmScenario.LoyaltyAsync(desk, clinic.CustomerId, Token);
+        Assert.Equal(3, staffView.GetProperty("packages")[0].GetProperty("remaining").GetInt32());
     }
 
     [Fact]

@@ -3,7 +3,7 @@ import { listServices } from '@/features/service-catalog/api/listServices';
 import { listManagedServices } from '@/features/service-catalog/api/manage-services';
 import { formatBaht } from '@/lib/format/money';
 import { createInvoicePage } from '../content/create-invoice-page';
-import type { CatalogueEntry } from './catalogue-entry';
+import { SERVICE_ENTRY_PREFIX, type CatalogueEntry } from './catalogue-entry';
 
 interface CatalogueAccess {
   branchId: string;
@@ -43,7 +43,7 @@ export async function loadCatalogue({ branchId, canManageServices, canReadInvent
 
   return [
     ...services.map<CatalogueEntry>((service) => ({
-      value: `service:${service.id}`,
+      value: `${SERVICE_ENTRY_PREFIX}${service.id}`,
       group: 'service',
       label: text.serviceOption(service.name, formatBaht(service.price_satang)),
       description: service.name,

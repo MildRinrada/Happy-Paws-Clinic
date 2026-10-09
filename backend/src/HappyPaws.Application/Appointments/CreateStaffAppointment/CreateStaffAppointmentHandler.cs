@@ -6,8 +6,10 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.Patients;
 using HappyPaws.Domain.Appointments;
+using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Appointments.CreateStaffAppointment;
 
@@ -55,6 +57,7 @@ public sealed class CreateStaffAppointmentHandler(
     IClinicSettingsStore settings,
     BranchGuard branchGuard,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator)
 {
@@ -111,6 +114,8 @@ public sealed class CreateStaffAppointmentHandler(
                 typeCode: type.Code);
 
             appointments.Add(appointment);
+
+            webhooks.Enqueue(WebhookEventTypes.AppointmentCreated, WebhookPayloads.Appointment(appointment));
         }, cancellationToken);
 
         return AppointmentDto.From(appointment!);

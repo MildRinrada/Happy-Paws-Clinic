@@ -26,22 +26,7 @@ public sealed class TwoFactorAuthorizationHandler(ICurrentUser currentUser)
     /// Scopes that read or write clinical and financial records. Holding any of them means the
     /// session must be second-factor authenticated.
     /// </summary>
-    private static readonly string[] SensitiveScopes =
-    [
-        Scopes.Record.Read,
-        Scopes.Record.Write,
-        Scopes.Record.Sign,
-        Scopes.Record.Amend,
-        Scopes.Record.Audit,
-        Scopes.Consult.Write,
-        Scopes.Prescription.Write,
-        Scopes.Prescription.Dispense,
-        Scopes.Payment.Refund,
-        Scopes.Payment.Payout,
-        Scopes.Settings.Danger,
-        Scopes.User.Manage,
-        Scopes.Role.Manage,
-    ];
+    private static readonly IReadOnlyList<string> SensitiveScopes = SecondFactorScopes.All;
 
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
@@ -13,10 +14,24 @@ import { formMessages } from '@/features/settings/content/form-messages';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { broadcastLineAction } from '../actions/line-actions';
 import { lineBroadcastPage } from '../content/line-broadcast';
+import type { BroadcastSegment } from '../types/line.types';
+import { BroadcastSegmentTarget } from './broadcast-segment-target';
 
-/** The customers to announce to, and the message. A refusal (quota, LINE off) shows beside the button. */
-export function LineBroadcastForm({ canSearchCustomers }: { canSearchCustomers: boolean }) {
+interface Props {
+  canSearchCustomers: boolean;
+  /** A CRM segment the page was opened for (`?segment_id=`). It replaces the customer picker until cleared. */
+  segment?: BroadcastSegment;
+}
+
+/**
+ * The customers to announce to, or a segment, and the message. A refusal (quota, LINE off, a
+ * segment too large or with nobody reachable) shows beside the button.
+ */
+export function LineBroadcastForm({ canSearchCustomers, segment: initialSegment }: Props) {
   const text = lineBroadcastPage;
+  const router = useRouter();
+  const pathname = usePathname();
+  const [segment, setSegment] = useState(initialSegment);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState<SendResult>();
@@ -26,7 +41,21 @@ export function LineBroadcastForm({ canSearchCustomers }: { canSearchCustomers: 
   function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setResult(undefined);
-    submit(() => broadcastLineAction({ customer_ids: recipients.map((item) => item.id), message }), setResult);
+    submit(
+      () =>
+        segment
+          ? broadcastLineAction({ segment_id: segment.id, message })
+          : broadcastLineAction({ customer_ids: recipients.map((item) => item.id), message }),
+      setResult,
+    );
+  }
+
+  /** Back to picking customers. The address loses the segment too, so a reload does not bring it back. */
+  function clearSegment() {
+    touch();
+    setResult(undefined);
+    setSegment(undefined);
+    router.replace(pathname);
   }
 
   return (
@@ -34,20 +63,26 @@ export function LineBroadcastForm({ canSearchCustomers }: { canSearchCustomers: 
       <Card>
         <CardHeader title={text.recipients} />
         <CardBody className="space-y-3">
-          <p className="text-sm text-ink-500">{text.segmentNote}</p>
-          {canSearchCustomers ? (
-            <RecipientSearch
-              chosen={recipients.map((item) => item.id)}
-              onAdd={(recipient) => {
-                touch();
-                setRecipients((current) => (current.some((item) => item.id === recipient.id) || full ? current : [...current, recipient]));
-              }}
-            />
+          {segment ? (
+            <BroadcastSegmentTarget segment={segment} onClear={clearSegment} />
           ) : (
-            <p className="text-sm text-ink-600">{text.noCustomerSearch}</p>
+            <>
+              <p className="text-sm text-ink-500">{text.segmentNote}</p>
+              {canSearchCustomers ? (
+                <RecipientSearch
+                  chosen={recipients.map((item) => item.id)}
+                  onAdd={(recipient) => {
+                    touch();
+                    setRecipients((current) => (current.some((item) => item.id === recipient.id) || full ? current : [...current, recipient]));
+                  }}
+                />
+              ) : (
+                <p className="text-sm text-ink-600">{text.noCustomerSearch}</p>
+              )}
+              <ChosenRecipients recipients={recipients} onRemove={(id) => setRecipients((current) => current.filter((item) => item.id !== id))} />
+              {full && <p className="text-sm text-amber-800">{text.tooMany}</p>}
+            </>
           )}
-          <ChosenRecipients recipients={recipients} onRemove={(id) => setRecipients((current) => current.filter((item) => item.id !== id))} />
-          {full && <p className="text-sm text-amber-800">{text.tooMany}</p>}
         </CardBody>
       </Card>
 
@@ -69,8 +104,8 @@ export function LineBroadcastForm({ canSearchCustomers }: { canSearchCustomers: 
               />
             </Field>
             <div className="flex flex-wrap items-center justify-end gap-3">
-              <FormStatus message={refusal ?? errors.customer_ids} savedText="" />
-              <Button type="submit" disabled={pending || recipients.length === 0 || !message.trim()}>
+              <FormStatus message={refusal ?? errors.customer_ids ?? errors.segment_id} savedText="" />
+              <Button type="submit" disabled={pending || (!segment && recipients.length === 0) || !message.trim()}>
                 {pending ? text.sending : text.submit}
               </Button>
             </div>

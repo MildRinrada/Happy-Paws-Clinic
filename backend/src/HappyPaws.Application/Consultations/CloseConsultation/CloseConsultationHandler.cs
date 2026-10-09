@@ -8,6 +8,7 @@ using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Concurrency;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Consultations.Dtos;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Application.MedicalRecords;
 using HappyPaws.Application.MedicalRecords.Dtos;
 using HappyPaws.Application.Notifications;
@@ -16,6 +17,7 @@ using HappyPaws.Domain.Appointments;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
 using HappyPaws.Domain.Consultations;
+using HappyPaws.Domain.Integrations;
 using HappyPaws.Domain.MedicalRecords;
 using HappyPaws.Domain.Queueing;
 using Microsoft.Extensions.Logging;
@@ -72,6 +74,7 @@ public sealed class CloseConsultationHandler(
     INotificationDispatcher notifications,
     IAuditTrail audit,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     IClock clock,
     ILogger<CloseConsultationHandler> logger)
@@ -115,6 +118,14 @@ public sealed class CloseConsultationHandler(
             await CompleteAppointmentAsync(consultation, token);
             followUp = await BookFollowUpAsync(consultation, command.FollowUp, staffId, token);
             invoice = await billing.RaiseAsync(consultation, staffId, now, token);
+
+            webhooks.Enqueue(WebhookEventTypes.ConsultationClosed, WebhookPayloads.Consultation(consultation));
+            webhooks.Enqueue(WebhookEventTypes.RecordSigned, WebhookPayloads.Record(signed));
+
+            if (followUp is not null)
+            {
+                webhooks.Enqueue(WebhookEventTypes.AppointmentCreated, WebhookPayloads.Appointment(followUp));
+            }
 
             audit.Record(new AuditEvent(
                 AuditActions.ConsultationClosed,

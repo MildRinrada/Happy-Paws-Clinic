@@ -117,6 +117,11 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 | `Jobs__Automations__CatchUpHours` | 12 | ข้อความที่เลยเวลาส่งไปแล้วยังส่งตามหลังได้กี่ชั่วโมง (1 ถึง 72) |
 | `Jobs__ReportExports__Enabled`, `IntervalSeconds` | `true`, 15 | งานสร้างไฟล์ส่งออกรายงาน |
 | `Jobs__Housekeeping__Enabled`, `IntervalSeconds` | `true`, 3600 | งานลบ hold และ idempotency key ที่หมดอายุเกินหนึ่งวัน |
+| `Jobs__Webhooks__Enabled`, `IntervalSeconds` | `true`, 10 | งานแตก outbox เป็น delivery และส่ง webhook |
+| `Webhooks__TimeoutSeconds` | 10 | เวลาสูงสุดของการส่ง webhook หนึ่งครั้ง (1 ถึง 30) |
+| `Webhooks__AllowLocalhostInDevelopment` | `true` | ให้ webhook และ URL ของแล็บเป็น `http://localhost` ได้ใน Development เท่านั้น นอก Development ไม่มีผล ช่วงส่วนตัวและ metadata ถูกปฏิเสธเสมอ |
+| `RateLimits__PerApiKeyPerMinute` | เท่ากับ `PerTokenPerMinute` (600) | จำนวนคำขอต่อนาทีของ API key หนึ่งอัน นับแยกจากผู้สร้าง |
+| `DataProtection__KeysDirectory` | ว่าง (ค่าเริ่มต้นของ ASP.NET Core) | โฟลเดอร์เก็บกุญแจที่เข้ารหัส secret ของ webhook ค่าความลับของผู้ให้บริการ และ token ของลิงก์ปฏิทิน ดูหัวข้อ [กุญแจเข้ารหัสความลับ](#กุญแจเข้ารหัสความลับ) |
 | `HAPPYPAWS_OPERATOR_PASSWORD` | ว่าง | รหัสผ่านสำหรับ `bootstrap` และ `reset-credentials` |
 | `HAPPYPAWS_DESIGNTIME_CONNECTION` | ว่าง | ฐานข้อมูลของ `dotnet-ef` ดู [ฐานข้อมูล](database.md#migration) |
 
@@ -127,7 +132,7 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 | ตัวแปร | ค่าตัวอย่าง | ความหมาย |
 |---|---|---|
 | `API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่เซิร์ฟเวอร์ Next.js เรียก ไม่มีแล้วทุกคำขอที่เรียก API ล้ม |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5080/v1` | ประกาศไว้สำหรับการอ่านสาธารณะจากเบราว์เซอร์ แต่ตอนนี้ไม่มีโค้ดใช้ |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่คนนอกเข้าถึงได้ หน้าลิงก์ปฏิทินใช้ประกอบ URL ที่แอปปฏิทินดึง ต้องเป็นที่อยู่สาธารณะตอนติดตั้งจริง |
 
 ## ตั้งค่าอีเมลและ SMS
 
@@ -192,13 +197,14 @@ $env:Messaging__Line__PortalUrl = "https://yourclinic.com/portal"
 
 ## ตัวตั้งเวลาเบื้องหลัง
 
-API มีงานเบื้องหลังสามงาน แต่ละงานเป็น `BackgroundService` ใน `backend/src/HappyPaws.Infrastructure/Jobs/` เปิดเองเมื่อรัน API ไม่ทำงานตอนรันคำสั่ง operator
+API มีงานเบื้องหลังสี่งาน แต่ละงานเป็น `BackgroundService` ใน `backend/src/HappyPaws.Infrastructure/Jobs/` เปิดเองเมื่อรัน API ไม่ทำงานตอนรันคำสั่ง operator
 
 | งาน | รอบ | ทำอะไร |
 |---|---|---|
 | `automations` | 60 วินาที | รันกติกาเตือนอัตโนมัติที่เปิดอยู่ ดู [เตือนอัตโนมัติ](features/automation.md) |
 | `report-exports` | 15 วินาที | สร้างไฟล์ที่สั่งจาก `POST /staff/reports/exports` |
-| `housekeeping` | 1 ชั่วโมง | ลบ booking hold ที่หมดอายุและไม่ได้กลายเป็นนัด และ idempotency key ที่หมดอายุ เมื่อเลยมาแล้วหนึ่งวัน |
+| `housekeeping` | 1 ชั่วโมง | ลบ booking hold ที่หมดอายุและไม่ได้กลายเป็นนัด และ idempotency key ที่หมดอายุ เมื่อเลยมาแล้วหนึ่งวัน และ event ของ webhook พร้อมประวัติการส่งที่เก่ากว่า 30 วัน |
+| `webhooks` | 10 วินาที | แตก event ใน outbox เป็น delivery แล้วส่งที่ถึงเวลา ดู [การเชื่อมต่อระบบ](features/integrations.md) |
 
 **ปิดบนเครื่องตัวเอง** ตั้งตัวแปรก่อนรัน API ใน Terminal เดียวกัน
 
@@ -211,8 +217,23 @@ $env:Jobs__Automations__Enabled = "false"    # ปิดเฉพาะการ
 
 - กติกาเริ่มต้นทั้งสี่ข้อปิดไว้ เปิดตัวตั้งเวลาไว้บนเครื่องตัวเองจึงไม่ส่งข้อความถึงใครจนกว่าจะสร้างกติกาที่เปิดใช้ และถ้าไม่ได้ตั้ง LINE, SMS หรืออีเมล ข้อความก็ลงแค่ log
 - ถ้าปิดงาน `report-exports` งานส่งออกจะค้างที่ `queued`
-- เปิดหลาย instance พร้อมกันได้ ข้อความเตือนจองด้วย unique key และงานส่งออกจองด้วย `FOR UPDATE SKIP LOCKED` จึงไม่ทำซ้ำ
-- ชุด integration test ตั้ง `Jobs:Enabled = false` เสมอ (`Fixtures/ApiFixture.cs`) เทสต์เรียก `RunAutomationsHandler`, `RunReportExportsHandler` และ `HousekeepingJob` เอง
+- ถ้าปิดงาน `webhooks` event จะค้างใน outbox และส่งเมื่อเปิดอีกครั้ง
+- เปิดหลาย instance พร้อมกันได้ ข้อความเตือนจองด้วย unique key งานส่งออกและ webhook จองด้วย `FOR UPDATE SKIP LOCKED` จึงไม่ทำซ้ำ
+- ชุด integration test ตั้ง `Jobs:Enabled = false` เสมอ (`Fixtures/ApiFixture.cs`) เทสต์เรียก `RunAutomationsHandler`, `RunReportExportsHandler`, `DispatchWebhooksHandler` และ `HousekeepingJob` เอง
+
+## กุญแจเข้ารหัสความลับ
+
+secret ของ webhook ค่าความลับของผู้ให้บริการชำระเงินและแล็บ และ token ของลิงก์ปฏิทิน ต้องอ่านกลับได้ (ใช้ลงนามหรือเรียกผู้ให้บริการ) จึงเก็บเป็น hash ไม่ได้ ระบบเข้ารหัสด้วย ASP.NET Core Data Protection (`Infrastructure/Webhooks/DataProtectionSecretProtector.cs`) กุญแจอยู่นอกฐานข้อมูล สำเนาฐานข้อมูลอย่างเดียวจึงถอดไม่ได้
+
+| เรื่อง | กติกา |
+|---|---|
+| ที่เก็บกุญแจ | `DataProtection__KeysDirectory` ถ้าไม่ตั้ง ใช้ค่าเริ่มต้น บน Windows คือ `%LOCALAPPDATA%\ASP.NET\DataProtection-Keys` ใน container คือโฟลเดอร์ใน container ซึ่งหายเมื่อสร้าง container ใหม่ |
+| ติดตั้งจริง | ตั้งเป็นโฟลเดอร์ถาวร (volume) ที่สำรองแยกจากฐานข้อมูล และจำกัดสิทธิ์ให้ process ของ API อ่านเขียนได้คนเดียว หลาย instance ต้องชี้ไปที่โฟลเดอร์เดียวกัน (ชื่อแอปตั้งไว้เป็น `HappyPaws.Api` แล้ว) |
+| หมุนกุญแจ | กุญแจใหม่ถูกสร้างเองทุก 90 วัน กุญแจเก่าเก็บไว้ถอดค่าที่เข้ารหัสไว้ก่อน อย่าลบไฟล์กุญแจเก่า |
+| กุญแจหาย | ค่าที่เข้ารหัสไว้อ่านไม่ได้อีก webhook ส่งไม่สำเร็จด้วย `secret_unavailable` ต้องสร้าง webhook ใหม่ และตั้งความลับของผู้ให้บริการใหม่ ลิงก์ปฏิทินยังใช้ได้ (ค้นด้วย hash) แต่หน้าเว็บแสดงลิงก์เดิมไม่ได้ |
+| เทสต์ | `IntegrationsFixture` ตั้งโฟลเดอร์ชั่วคราวของตัวเอง |
+
+ความลับ TOTP และความลับของ LINE ยังเก็บแบบไม่เข้ารหัส เป็นงานที่รู้อยู่และแยกจากนี้ ([system-overview.md § 5 A](./system-overview.md))
 
 ## คำสั่งประจำวัน
 
@@ -234,8 +255,8 @@ npm run build
 
 | โปรเจกต์ | ครอบอะไร | จำนวน |
 |---|---|---|
-| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP, โควตารายวันของผู้ช่วย AI, ช่วงเวลาและ cohort ของรายงาน, ถ้อยคำและความยาว SMS ของเทมเพลตแจ้งเตือน, การตั้งค่า LINE และข้อมูลปุ่มในแชต, การปิดบังที่อยู่ในประวัติการส่ง, กติกาเตือนอัตโนมัติและเวลาส่งตามเวลาคลินิก ผลของข้อความเตือนจากประวัติการส่ง สถานะงานส่งออก และไฟล์ CSV, ล็อตและสมุดสต๊อก การหยิบล็อตที่หมดอายุก่อน การรับของตามใบสั่งซื้อ การผูกชื่อยากับรายการในคลัง และแจ้งเตือนสต๊อก, การแก้และลบกติกาเตือน, ผู้ติดตาม LINE | 428 |
-| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 761 |
+| `tests/HappyPaws.UnitTests` | state machine ของนัดและคิว, ใบแจ้งหนี้, การตรวจ, เวชระเบียน, การรวมลูกค้า, scope, การคำนวณช่องนัด, cursor, `ConcurrencyGuard`, ประตูความยินยอม, แผนกและโปรไฟล์สาธารณะ, RRULE ของกะ การตัดกะด้วยวันลา กติกาจ่ายเคส, โปรไฟล์ตัวเองและ recovery code, วัคซีน ธงผลแล็บ ยาซ้ำซ้อน, ไม่มาตามนัด นโยบายยกเลิก ประเภทนัด คิวรอ, รหัส OTP, โควตารายวันของผู้ช่วย AI, ช่วงเวลาและ cohort ของรายงาน, ถ้อยคำและความยาว SMS ของเทมเพลตแจ้งเตือน, การตั้งค่า LINE และข้อมูลปุ่มในแชต, การปิดบังที่อยู่ในประวัติการส่ง, กติกาเตือนอัตโนมัติและเวลาส่งตามเวลาคลินิก ผลของข้อความเตือนจากประวัติการส่ง สถานะงานส่งออก และไฟล์ CSV, ล็อตและสมุดสต๊อก การหยิบล็อตที่หมดอายุก่อน การรับของตามใบสั่งซื้อ การผูกชื่อยากับรายการในคลัง และแจ้งเตือนสต๊อก, การแก้และลบกติกาเตือน, ผู้ติดตาม LINE, กติกาที่อยู่กัน SSRF และรูปแบบ URL ของ webhook ตารางลองใหม่ ลายเซ็น HMAC API key และ scope ที่ key ถือได้ ไฟล์ iCalendar | 564 |
+| `tests/HappyPaws.IntegrationTests` | ยิง HTTP เข้า API จริงผ่าน `WebApplicationFactory` กับ PostgreSQL 17 ใน Testcontainers | 923 |
 
 integration test เป็นที่ตรวจสัญญา: status code, รูปของ error, cursor pagination, `If-Match` ที่ชน, `Idempotency-Key` และที่สำคัญที่สุดคือทุก endpoint ต้องปฏิเสธผู้เรียกที่ไม่มี scope ฝั่งหน้าเว็บยังไม่มีชุดทดสอบ หน้าคิวและหน้าเก็บเงินตรวจด้วยการใช้งานจริงในเบราว์เซอร์กับ API และฐานข้อมูลจริง แต่ไม่ได้บันทึกเป็นสคริปต์
 
@@ -249,6 +270,8 @@ integration test เป็นที่ตรวจสัญญา: status code, 
 | `FreshInstanceCollection` | เทสต์ที่แก้ของที่มีชิ้นเดียวทั้ง instance (3 คลาส: `BootstrapTests`, `ClinicProfileAndBranchTests`, `ClinicSettingsTests`) | container แยกของตัวเอง สืบจาก `FreshInstanceTest` ซึ่งรัน `bootstrap` ก่อนเทสต์แรก |
 | `DeliveryCollection` | เทสต์ที่ให้ข้อความออกจริงถึงผู้ให้บริการจำลอง (`DeliveryTests`, `BroadcastTests`, `LineIntegrationTests`, `LineWebhookTests`) | container แยก ใช้ `DeliveryFixture` ซึ่งคืน `DeliveringNotificationChannel` ตัวจริง แทน transport SMS และอีเมลด้วย `FakeTransports` และชี้ HTTP client ของ LINE ไปที่ `FakeLineServer` แต่ละเทสต์ตั้ง LINE และสวิตช์ของตัวเองใน `InitializeAsync` เพราะการตั้งค่า LINE มีแถวเดียวต่อคลินิก |
 | `JobsCollection` | งานเบื้องหลัง: เตือนอัตโนมัติ ส่งออกรายงาน และ housekeeping (`AutomationEndpointTests`, `AutomationRunTests`, `HousekeepingTests`, `ReportExportTests`) | container แยก เพราะการรันจริงประเมินทุกกติกาที่เปิดอยู่กับทุกเรกคอร์ด และ worker ส่งออกหยิบทุกงานในคิว ถ้าอยู่ในฐานข้อมูลร่วมจะส่งข้อความถึงลูกค้าของเทสต์อื่น แต่ละเทสต์ยังสร้างสาขาของตัวเองและผูกกติกากับสาขานั้น `AutomationScenario` ช่วยสร้างนัด วัคซีน แผน และรันกติกา ณ เวลาที่เทสต์เลือก |
+
+| `IntegrationsCollection` | webhook API key ค่าตั้งผู้ให้บริการ และฟีดปฏิทิน (`WebhookSubscriptionTests`, `WebhookDeliveryTests`, `WebhookOutboxTests`, `ApiKeyTests`, `ProviderSettingsTests`, `CalendarFeedTests`) | container แยก ใช้ `IntegrationsFixture` ซึ่งชี้ HTTP client ของ webhook ไปที่ `FakeWebhookReceiver` ให้ชื่อโฮสต์ resolve ตามที่เทสต์กำหนด (`ScriptedResolver`) ใช้กติกาที่อยู่แบบ production (ไม่มี localhost) timeout หนึ่งวินาที rate limit ของ API key ห้าครั้งต่อนาที และโฟลเดอร์กุญแจ Data Protection ชั่วคราว แต่ละเทสต์ใช้โฮสต์ปลายทางของตัวเอง เพราะ webhook ทุกตัวได้ event ทุกตัวที่ตรงชนิด |
 
 ใช้ fixture class เดียวกันทั้งสองกลุ่ม xUnit สร้าง fixture หนึ่งตัวต่อ collection การประกาศ collection ที่สองจึงได้ instance ที่สองที่ไม่เห็นข้อมูลของกันเลย ถ้าเทสต์ไหนแก้เวลาทำการ การตั้งค่าคิว การตั้งค่าเวชระเบียน หรือเรื่อง "มีเจ้าของหรือยัง" ต้องอยู่ใน `FreshInstanceCollection` ไม่อย่างนั้นจะเปลี่ยนสภาพใต้เทสต์อีกสองร้อยกว่าตัว
 
@@ -268,6 +291,7 @@ integration test เป็นที่ตรวจสัญญา: status code, 
 | ทุกโปรเจกต์ใช้แพ็กเกจรุ่นเดียวกัน | `ManagePackageVersionsCentrally` และ `CentralPackageTransitivePinningEnabled` ใน `Directory.Packages.props` |
 | Domain ไม่พึ่งแพ็กเกจภายนอก | `HappyPaws.Domain.csproj` ไม่มี `PackageReference` |
 | ตัวสร้าง PDF อยู่ใน Infrastructure เท่านั้น | QuestPDF อ้างอิงเฉพาะใน `HappyPaws.Infrastructure.csproj` ฟอนต์ Sarabun ฝังเป็น resource ของโปรเจกต์นั้น |
+| ตัวเขียน Excel อยู่ใน Infrastructure เท่านั้น | `DocumentFormat.OpenXml` (Open XML SDK ของ Microsoft สัญญาอนุญาต MIT พาแค่ `DocumentFormat.OpenXml.Framework` และ `System.IO.Packaging` ซึ่ง MIT ทั้งคู่) อ้างอิงเฉพาะใน `HappyPaws.Infrastructure.csproj` ใช้กับไฟล์ส่งออก `xlsx` |
 | XML doc ที่เขียนต้องถูกรูปแบบ เช่น `cref` ที่ชี้ไปของที่ไม่มีเป็น error แต่ไม่บังคับให้มีทุก member | `GenerateDocumentationFile` โดยปิด CS1591 |
 | ตัวตรวจ code style รันตอน build | `EnforceCodeStyleInBuild` ยังไม่มี `.editorconfig` จึงมีแค่กฎตั้งต้นของ SDK |
 | ห้าม `fetch` นอก `src/lib/api` | ESLint `no-restricted-globals` ใน `frontend/eslint.config.mjs` |

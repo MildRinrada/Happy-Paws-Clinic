@@ -6,7 +6,9 @@ using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
+using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Access;
+using HappyPaws.Domain.Integrations;
 using Microsoft.Extensions.Logging;
 
 namespace HappyPaws.Application.Appointments.CancelAppointment;
@@ -44,6 +46,7 @@ public sealed class CancelAppointmentHandler(
     IClinicSettingsStore settings,
     WaitingListNotifier waitingList,
     ICurrentUser currentUser,
+    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
     IClock clock,
@@ -67,6 +70,7 @@ public sealed class CancelAppointmentHandler(
             && (await settings.CancellationPolicyAsync(cancellationToken)).IsLate(now, appointment.StartsAt);
 
         appointment.Cancel(now, userId, command.Reason, isLate);
+        webhooks.Enqueue(WebhookEventTypes.AppointmentCancelled, WebhookPayloads.Appointment(appointment));
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
