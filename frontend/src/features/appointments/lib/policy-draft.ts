@@ -11,11 +11,6 @@ export interface PolicyDraft {
 
 export type PolicyField = keyof PolicyDraft;
 
-/** The backend's defaults (`CancellationPolicy`): 24 hours, no fee, one forgiven, a year back. */
-export function defaultPolicy(): PolicyDraft {
-  return { cutoffHours: '24', feeBaht: '0', freeAllowance: '1', windowDays: '365' };
-}
-
 export function draftFrom(policy: CancellationPolicy): PolicyDraft {
   return {
     cutoffHours: String(policy.cutoff_hours),

@@ -20,6 +20,10 @@ public sealed class InventoryController : ControllerBase
     /// <param name="q">Part of the item's name.</param>
     /// <param name="branch">One branch.</param>
     /// <param name="status"><c>ok</c>, <c>low</c> or <c>out</c>.</param>
+    /// <param name="active">
+    /// <c>true</c> for items in use, <c>false</c> for retired ones; both when absent. Not in the API
+    /// reference: <c>docs/contract-extensions.md § 25</c>.
+    /// </param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="cancellationToken">Aborts with the request.</param>
     [HttpGet("items")]
@@ -29,9 +33,10 @@ public sealed class InventoryController : ControllerBase
         [FromQuery] string? q,
         [FromQuery] string? branch,
         [FromQuery] string? status,
+        [FromQuery] bool? active,
         [FromServices] ListItemsHandler handler,
         CancellationToken cancellationToken) =>
-        ListResponse.Of(await handler.HandleAsync(new ListItemsQuery(q, branch, status), cancellationToken));
+        ListResponse.Of(await handler.HandleAsync(new ListItemsQuery(q, branch, status, active), cancellationToken));
 
     /// <summary>
     /// <c>GET /staff/inventory/alerts</c> — "ใกล้หมด ใกล้หมดอายุ ล็อตที่ต้องเรียกคืน", worst first.

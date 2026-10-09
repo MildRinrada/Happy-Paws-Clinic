@@ -2,8 +2,9 @@ import { getPet } from '@/features/pets/api/getPet';
 import { listServices } from '@/features/service-catalog/api/listServices';
 import { listStaffMembers } from '@/features/staff/api/listStaffMembers';
 import { optional } from '@/lib/api/api-error';
-import { getQueueBoard } from '../api/getQueueBoard';
+import { getQueueBoard, type QueueBoardQuery } from '../api/getQueueBoard';
 import type { QueueView, TicketView } from '../types/queue.types';
+import { vetOptions } from './vet-options';
 
 /**
  * The board, with the names a person reads.
@@ -13,9 +14,11 @@ import type { QueueView, TicketView } from '../types/queue.types';
  * parallel, and every one of those reads is optional. A vet assistant holds `queue:read` and
  * `patient:read` but not `staff:read`; their board names the patients and shows the vet as an id.
  * The board itself is the one read that is not optional — without it there is no page.
+ *
+ * `query` picks another day or adds finished tickets; the history view uses both.
  */
-export async function loadQueueView(branchId: string): Promise<QueueView> {
-  const board = await getQueueBoard(branchId);
+export async function loadQueueView(branchId: string, query: QueueBoardQuery = {}): Promise<QueueView> {
+  const board = await getQueueBoard(branchId, query);
 
   const petIds = [...new Set(board.tickets.map((ticket) => ticket.pet_id))];
 
@@ -46,5 +49,5 @@ export async function loadQueueView(branchId: string): Promise<QueueView> {
     };
   });
 
-  return { board, tickets };
+  return { board, tickets, vets: vetOptions(staff ?? [], branchId) };
 }

@@ -6,11 +6,12 @@ import type { WebhookDelivery } from '../types/integration.types';
  * receiver's answer is shown as plain text, never as markup; it comes from outside the clinic.
  */
 export function WebhookDeliveryResult({ delivery }: { delivery: WebhookDelivery }) {
-  if (delivery.attempts === 0) {
-    return <span className="text-ink-400">-</span>;
-  }
-
   const error = delivery.last_error ? (deliveryErrorLabels[delivery.last_error] ?? delivery.last_error) : undefined;
+
+  if (delivery.attempts === 0) {
+    // A delivery stopped before its first attempt (its webhook was switched off) still says why.
+    return error ? <p className="text-xs text-red-700">{error}</p> : <span className="text-ink-400">-</span>;
+  }
 
   return (
     <div className="space-y-1">

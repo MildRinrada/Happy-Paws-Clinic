@@ -23,7 +23,7 @@ export interface AppointmentTypeInput {
   queue_priority: QueuePriority;
 }
 
-/** `PUT /staff/appointment-types` answers with the whole set and its version. */
+/** `GET` and `PUT /staff/appointment-types` answer with the whole set and its version. */
 export interface AppointmentTypes {
   version: number;
   types: AppointmentTypeInput[];

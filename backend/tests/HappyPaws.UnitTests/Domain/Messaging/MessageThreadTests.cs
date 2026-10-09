@@ -15,10 +15,10 @@ public class MessageThreadTests
         var thread = MessageThread.Open("cus_1", null, Noon);
         Assert.False(thread.AwaitingReply);
 
-        var inbound = thread.Receive(DeliveryChannel.Line, MessageKind.Text, "  สวัสดีค่ะ  ", "m1", "brn_1", Noon);
+        var inbound = thread.Receive(MessageChannel.Line, MessageKind.Text, "  สวัสดีค่ะ  ", "m1", "brn_1", Noon);
 
         Assert.True(thread.AwaitingReply);
-        Assert.Equal(DeliveryChannel.Line, thread.LastInboundChannel);
+        Assert.Equal(MessageChannel.Line, thread.LastInboundChannel);
         Assert.Equal("brn_1", thread.BranchId);
         Assert.Equal(("สวัสดีค่ะ", MessageDirection.Inbound, thread.Id), (inbound.Text, inbound.Direction, inbound.ThreadId));
 
@@ -29,7 +29,7 @@ public class MessageThreadTests
         Assert.Equal((MessageDirection.Outbound, "stf_1"), (reply.Direction, reply.SentByStaffId));
         Assert.Null(reply.Channel);
 
-        thread.Receive(DeliveryChannel.Line, MessageKind.Sticker, null, "m2", null, Noon.AddMinutes(9));
+        thread.Receive(MessageChannel.Line, MessageKind.Sticker, null, "m2", null, Noon.AddMinutes(9));
         Assert.True(thread.AwaitingReply);
         Assert.Equal("brn_1", thread.BranchId);
     }
@@ -57,12 +57,12 @@ public class MessageThreadTests
     public void A_delivery_outcome_belongs_to_replies_only()
     {
         var thread = MessageThread.Open("cus_1", null, Noon);
-        var inbound = thread.Receive(DeliveryChannel.Line, MessageKind.Text, "hi", null, null, Noon);
+        var inbound = thread.Receive(MessageChannel.Line, MessageKind.Text, "hi", null, null, Noon);
         var reply = thread.Reply("stf_1", "hello", Noon);
 
         reply.RecordDelivery(DeliveryStatus.Sent, DeliveryChannel.Sms, null, DeliveryChannel.Line);
 
-        Assert.Equal((DeliveryStatus.Sent, DeliveryChannel.Sms, DeliveryChannel.Line), (reply.DeliveryStatus!.Value, reply.Channel!.Value, reply.FallbackFrom!.Value));
+        Assert.Equal((DeliveryStatus.Sent, MessageChannel.Sms, DeliveryChannel.Line), (reply.DeliveryStatus!.Value, reply.Channel!.Value, reply.FallbackFrom!.Value));
         Assert.Throws<DomainException>(() => inbound.RecordDelivery(DeliveryStatus.Sent, DeliveryChannel.Line, null, null));
     }
 
@@ -70,17 +70,32 @@ public class MessageThreadTests
     public void Absorbing_a_merged_records_thread_keeps_the_latest_of_each_and_the_channel_of_the_latest_message()
     {
         var surviving = MessageThread.Open("cus_1", null, Noon);
-        surviving.Receive(DeliveryChannel.Line, MessageKind.Text, "a", null, null, Noon);
+        surviving.Receive(MessageChannel.Line, MessageKind.Text, "a", null, null, Noon);
         surviving.Reply("stf_1", "b", Noon.AddMinutes(1));
 
         var duplicate = MessageThread.Open("cus_2", "brn_2", Noon);
-        duplicate.Receive(DeliveryChannel.Sms, MessageKind.Text, "c", null, null, Noon.AddMinutes(2));
+        duplicate.Receive(MessageChannel.Sms, MessageKind.Text, "c", null, null, Noon.AddMinutes(2));
 
         surviving.Absorb(duplicate);
 
         Assert.True(surviving.AwaitingReply);
-        Assert.Equal(DeliveryChannel.Sms, surviving.LastInboundChannel);
+        Assert.Equal(MessageChannel.Sms, surviving.LastInboundChannel);
         Assert.Equal(Noon.AddMinutes(2), surviving.LastMessageAt);
         Assert.Equal("brn_2", surviving.BranchId);
+    }
+
+    [Fact]
+    public void A_message_from_the_portal_is_a_thread_channel_but_not_a_delivery_channel()
+    {
+        var thread = MessageThread.Open("cus_1", null, Noon);
+
+        var inbound = thread.Receive(MessageChannel.Portal, MessageKind.Text, "ขอสอบถามค่ะ", null, null, Noon);
+
+        Assert.True(thread.AwaitingReply);
+        Assert.Equal(MessageChannel.Portal, thread.LastInboundChannel);
+        Assert.Equal(MessageChannel.Portal, inbound.Channel);
+        Assert.Null(MessageChannel.Portal.ToDelivery());
+        Assert.Equal(DeliveryChannel.Sms, MessageChannel.Sms.ToDelivery());
+        Assert.All(Enum.GetValues<DeliveryChannel>(), channel => Assert.Equal(channel, MessageChannels.From(channel).ToDelivery()));
     }
 }

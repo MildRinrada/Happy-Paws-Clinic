@@ -9,11 +9,16 @@
 | Method | Endpoint | สิทธิ์ | ทำอะไร |
 |---|---|---|---|
 | POST | `/staff/appointments/{id}/no-show` | `appointment:write` | บันทึกว่าไม่มาตามนัด และคืนสถิติของลูกค้า |
+| GET | `/staff/policies/cancellation` | `settings:read` | อ่านนโยบายยกเลิกตามที่เก็บ (ส่วนขยาย § 23) |
 | PUT | `/staff/policies/cancellation` | `settings:write` | ตั้งนโยบายยกเลิกและค่าปรับ |
+| GET | `/staff/appointment-types` | `appointment:read` | อ่านประเภทนัดทั้งชุดพร้อมกติกา (ส่วนขยาย § 23) |
 | PUT | `/staff/appointment-types` | `settings:write` | ตั้งประเภทนัดและกติกาของแต่ละประเภท |
+| GET | `/portal/appointment-types` | `portal` | ประเภทที่ลูกค้าจองออนไลน์ได้ (ส่วนขยาย § 23) |
 | GET | `/staff/appointments/conflicts` | `appointment:read` | ตรวจว่าเวลาหรือวันนั้นมีปัญหาอะไร |
 | POST | `/staff/appointments/recurring` | `appointment:write` | จองคอร์สหลายครั้งด้วย RRULE |
 | POST | `/staff/waiting-list` | `appointment:write` | ใส่สัตว์ในคิวรอคิวว่าง |
+| GET | `/staff/waiting-list` | `appointment:write` | ดูรายการคิวรอ (ส่วนขยาย § 23) |
+| DELETE | `/staff/waiting-list/{id}` | `appointment:write` | ถอนออกจากคิวรอ (ส่วนขยาย § 23) |
 | POST | `/staff/pets/{id}/treatment-plans` | `consult:write` | วางแผนการรักษาหลายครั้งและจองนัด |
 
 ## หน้าจอ
@@ -22,7 +27,9 @@
 |---|---|---|
 | ไม่มาตามนัด | ปฏิทินนัด เปิดนัดแล้วกด "ไม่มาตามนัด" | `appointment:write` |
 | นโยบายยกเลิกและประเภทนัด | ตั้งค่า แท็บ "นโยบายยกเลิกและประเภทนัด" (`/settings/appointments`) | `settings:write` |
+| ประเภทนัดตอนจอง | หน้าจองนัด (`/appointments/new`) ช่อง "ประเภทนัด" และหน้าจองของลูกค้า | `appointment:read` และ `portal` |
 | ตรวจนัดชน | หน้าจองนัด (`/appointments/new`) ปุ่ม "ตรวจนัดชน" | `appointment:read` |
+| ตรวจนัดชนทั้งวัน | ปฏิทินนัด ปุ่ม "ตรวจนัดชนทั้งวัน" | `appointment:read` |
 | นัดซ้ำเป็นคอร์ส | หน้าจองนัด ติ๊ก "จองเป็นคอร์ส" | `appointment:write` |
 | คิวรอ | ปฏิทินนัด ปุ่ม "คิวรอคิวว่าง" (`/appointments/waiting-list`) | `appointment:write` |
 | แผนการรักษา | หน้าสัตว์เลี้ยง | `consult:write` |
@@ -30,10 +37,12 @@
 เมนูหรือปุ่มที่บัญชีไม่มีสิทธิ์จะไม่แสดง ระบบหลังบ้านตรวจสิทธิ์ซ้ำทุกครั้ง
 
 - **ไม่มาตามนัด** ปุ่มขึ้นเฉพาะนัดที่ยัง `booked` หรือ `confirmed` และเลยเวลาเริ่มแล้ว ก่อนถึงเวลามีข้อความบอกว่าบันทึกได้เมื่อไร กดแล้วต้องยืนยันอีกครั้งเพราะย้อนกลับไม่ได้ บันทึกแล้วหน้าต่างแสดงสถิติจาก `attendance` และค่าปรับจาก `fee_due_satang` ถ้ามี พร้อมบอกว่าระบบไม่ได้ออกบิลให้
-- **นโยบายยกเลิกและประเภทนัด** อ่านค่าปัจจุบันไม่ได้ ไม่มี `GET` และทั้งสองเส้นเป็น `PUT` ที่ต้องส่งครบ จึงอ่านด้วย body ว่างแบบค่าตั้งคิวไม่ได้ (body ว่างถูกปฏิเสธ) หน้าจอจึงบอกตรง ๆ ในกล่องสีเหลือง และเริ่มฟอร์มจากค่าตั้งต้นของระบบ ต้องติ๊กว่าเข้าใจว่าการบันทึกจะแทนที่ทั้งชุดก่อนกดบันทึก หลังบันทึก ฟอร์มแสดงค่าที่ระบบตอบกลับ และส่ง `version` นั้นเป็น `If-Match` ในการบันทึกครั้งถัดไปบนหน้าเดิม โหลดหน้าใหม่แล้วฟอร์มกลับไปเริ่มที่ค่าตั้งต้น ฟอร์มตรวจเองแค่ว่าเป็นตัวเลขและรหัสประเภทถูกรูปแบบ ช่วงของค่าให้ระบบหลังบ้านตัดสิน แล้วแสดงข้อความของระบบตามที่ตอบมา แถว `regular` ลบไม่ได้และแก้รหัสไม่ได้
+- **นโยบายยกเลิกและประเภทนัด** ฟอร์มเริ่มจากค่าที่เก็บไว้ (`GET` ทั้งสองเส้น ส่วนขยาย § 23) และส่ง `version` ที่อ่านมาเป็น `If-Match` ถ้ามีคนบันทึกก่อน ระบบตอบ `409` และหน้าจอบอกให้โหลดหน้าใหม่เพื่อดูค่าล่าสุด หลังบันทึก ฟอร์มแสดงค่าที่ระบบตอบกลับและใช้ `version` ใหม่ในครั้งถัดไป การอ่านใช้ scope ของตัวเอง (`settings:read` สำหรับนโยบาย `appointment:read` สำหรับประเภทนัด) บัญชีที่อ่านไม่ได้เห็นกล่องสีเหลืองแทนฟอร์ม เพราะการบันทึกแทนที่ทั้งชุด จึงไม่ควรบันทึกโดยไม่เห็นค่าเดิม ฟอร์มตรวจเองแค่ว่าเป็นตัวเลขและรหัสประเภทถูกรูปแบบ ช่วงของค่าให้ระบบหลังบ้านตัดสิน แล้วแสดงข้อความของระบบตามที่ตอบมา แถว `regular` ลบไม่ได้และแก้รหัสไม่ได้
+- **ประเภทนัดตอนจอง** หน้าจองของเคาน์เตอร์มีช่องเลือกประเภทจาก `GET /staff/appointment-types` ทุกประเภท รวมประเภทที่ลูกค้าจองเองไม่ได้ ไม่เลือกคือ `regular` ประเภทที่มีระยะเวลาของตัวเองบอกใต้ช่องว่าเวลาว่างที่แสดงคิดจากระยะเวลาของบริการ และระบบตรวจช่วงเวลาจริงอีกครั้งตอนจอง บัญชีที่อ่านประเภทไม่ได้ไม่เห็นช่องนี้ และจองเป็น `regular` หน้าจองของลูกค้าแสดงเฉพาะประเภทจาก `GET /portal/appointment-types` ใช้ชื่อที่คลินิกตั้ง ถ้าคลินิกไม่เปิดประเภทไหนให้จองออนไลน์เลย หน้าบอกให้โทรจอง
 - **ตรวจนัดชน** ถามทีละเวลาด้วย `starts_at` พร้อมบริการ หมอ สัตว์ และสาขา ถ้ายังไม่เลือกหมอ endpoint ตรวจได้แค่วันหยุดและนัดซ้อนของสัตว์ หน้าจอบอกเรื่องนี้ไว้ ผลตรวจหายไปเมื่อแก้ฟอร์ม เพื่อไม่ให้เห็นผลของเวลาเก่า
 - **นัดซ้ำเป็นคอร์ส** ตั้ง "ซ้ำทุก N สัปดาห์หรือวัน" และจบเมื่อครบจำนวนครั้งหรือถึงวันที่ ฟอร์มสร้าง RRULE (`FREQ`, `INTERVAL`, `COUNT` หรือ `UNTIL`) และแสดงวันที่ทุกครั้งก่อนจอง โดยคิดแบบเดียวกับระบบหลังบ้าน ฟอร์มเตือนเมื่อน้อยกว่า 2 ครั้ง เกิน 52 ครั้ง หรือไกลเกิน 366 วันจากครั้งแรก กด "ตรวจนัดชนทุกครั้ง" ได้ก่อนจอง ถ้าระบบปฏิเสธ (`422 slot_unavailable`) เหตุผลและเวลาว่างจาก `details.conflicts` แสดงที่แถวของวันนั้น
-- **คิวรอ** เลือกสัตว์ บริการ ช่วงวัน (ตั้งต้นวันนี้ถึงอีก 14 วัน) หมอ สาขา และหมายเหตุ เพิ่มแล้วแสดงรายการที่ระบบเก็บไว้ครั้งเดียว เพราะ contract ไม่มีทางดูรายการหรือถอนออก หน้าจอบอกเรื่องนี้ก่อนกรอก
+- **ตรวจนัดชนทั้งวัน** ปุ่มบนปฏิทินนัดถาม `GET /staff/appointments/conflicts?date=` ของวันและสาขาที่เปิดอยู่ แต่ละเรื่องแสดงเวลา ชื่อสัตว์ และหมอของนัดนั้น พร้อมข้อความของระบบ ผลเป็นของตอนที่กด และหายไปเมื่อเปลี่ยนวัน ปุ่มขึ้นเฉพาะวันที่มีนัด
+- **คิวรอ** เลือกสัตว์ บริการ ช่วงวัน (ตั้งต้นวันนี้ถึงอีก 14 วัน) หมอ สาขา และหมายเหตุ ด้านล่างฟอร์มคือรายการคิวรอ (`GET /staff/waiting-list`) ของสาขาที่เปิดอยู่รวมรายการที่รอทุกสาขา เรียงตามลำดับที่เข้าคิว แยกแท็บ "กำลังรอ" กับ "หมดอายุแล้ว" ทีละ 50 รายการ แต่ละแถวบอกชื่อสัตว์ บริการ ช่วงวัน สาขา หมอ และแจ้งไปแล้วกี่ครั้ง ปุ่ม "ถอนออก" ถามยืนยันก่อนลบ ถ้ามีคนถอนไปก่อน หน้าจอบอกว่าถูกถอนไปแล้ว
 
 ## ไม่มาตามนัด
 
@@ -97,7 +106,7 @@ PUT /v1/staff/appointment-types
 - ส่งทั้งชุดทุกครั้ง ต้องมี `regular` เสมอ ไม่เกิน 20 ประเภท รหัสเป็นตัวพิมพ์เล็ก ตัวเลข หรือ `_`
 - การจองส่ง `type` ได้ทั้ง `POST /staff/appointments` และ `POST /portal/appointments` ไม่ส่งคือ `regular` ทุกนัดตอบ `type` กลับมา
 - นัดที่จองไว้แล้วเก็บรหัสประเภทของตัวเองไว้ ลบประเภทแล้วนัดเดิมยังอยู่ และเช็กอินแบบนัดปกติ
-- contract มีแค่ `PUT` อ่านค่าปัจจุบันได้จากคำตอบของ `PUT` ครั้งล่าสุด
+- อ่านทั้งชุดได้ที่ `GET /staff/appointment-types` (`appointment:read` รูปเดียวกับคำตอบของ `PUT` พร้อม `version`) และนโยบายที่ `GET /staff/policies/cancellation` (`settings:read`) ลูกค้าอ่านเฉพาะประเภทที่จองออนไลน์ได้ที่ `GET /portal/appointment-types` ทั้งสามเส้นเป็น [ส่วนขยาย § 23](../contract-extensions.md)
 
 ## ตรวจนัดชน
 
@@ -158,7 +167,8 @@ POST /v1/staff/waiting-list
 - ข้อความไปหาเจ้าของหลักของสัตว์
 - สัตว์หนึ่งตัวรอบริการเดียวได้ครั้งเดียว ซ้ำตอบ `409 already_waiting`
 - **เมื่อมีคนยกเลิกนัด** ที่ตรงบริการ วัน สาขา และหมอที่ระบุ ระบบแจ้งคนที่รอไม่เกินสามคนตามลำดับที่เข้าคิว (`waiting_list.slot_available`) **ไม่ได้จองให้** ใครจองก่อนได้ก่อนผ่านการจองปกติ จึงไม่มีทางจองซ้อน
-- รายการหมดอายุเองหลัง `latest_on` contract ไม่มีทางถอนออก
+- รายการหมดอายุเองหลัง `latest_on` และถอนออกก่อนได้ด้วย `DELETE /staff/waiting-list/{id}` ซึ่งลบแถวและบันทึก audit `waiting_list.removed` ถอนซ้ำตอบ `404` ถอนแล้วใส่ใหม่ได้ทันที
+- `GET /staff/waiting-list?branch=&service_id=&status=` เรียงเก่าสุดก่อน `status` คือ `waiting` หรือ `lapsed` คิดจาก `latest_on` แต่ละแถวมี `pet_name` และ `service_name` `branch` คือรายการของสาขานั้นรวมรายการที่รอทุกสาขา พนักงานที่ผูกสาขาเห็นและถอนได้แค่รายการของสาขาตัวเองและรายการที่รอทุกสาขา (ส่วนขยาย § 23)
 - ข้อความผ่านด่านความยินยอมเหมือนทุกข้อความ และเข้ากล่องแจ้งเตือนในเว็บ ยังไม่มี LINE จริง
 
 ## แผนการรักษา
@@ -178,11 +188,10 @@ Idempotency-Key: ...
 
 ## ข้อจำกัดที่รู้อยู่
 
-- ยังไม่มีหน้าจอตรวจนัดชนทั้งวัน (`date`) และยังเลือกประเภทนัดตอนจองไม่ได้ เพราะอ่านรายการประเภทไม่ได้
 - หน้าจองคอร์สยังไม่รองรับ `BYDAY` (ซ้ำหลายวันในสัปดาห์) ซ้ำได้แค่วันเดียวกับครั้งแรก
-- คิวรอดูรายการและถอนออกไม่ได้ ทั้งใน API และหน้าจอ
+- เวลาว่างในหน้าจองคิดจากระยะเวลาของบริการ ไม่ใช่ของประเภทนัด ระบบตรวจช่วงเวลาจริงตามประเภทตอนจอง
+- แก้รายการคิวรอไม่ได้ ต้องถอนแล้วใส่ใหม่ และรายการที่หมดอายุไม่ถูกลบเอง
 - ค่าปรับคำนวณแต่ไม่ออกบิลเอง
-- อ่านประเภทนัดและนโยบายปัจจุบันได้จากคำตอบของ `PUT` เท่านั้น
 - ตรวจนัดชนไม่ตรวจห้อง
 - คิวรอไม่จองให้ และแจ้งเฉพาะตอนมีคนยกเลิก การเลื่อนนัดที่ปล่อยช่วงเดิมว่างยังไม่แจ้ง
 
@@ -191,9 +200,9 @@ Idempotency-Key: ...
 | ส่วน | ไฟล์ |
 |---|---|
 | domain | `backend/src/HappyPaws.Domain/Appointments/` (`Appointment.cs`, `AppointmentTypeCatalog.cs`, `CancellationPolicy.cs`, `WaitingListEntry.cs`), `backend/src/HappyPaws.Domain/Patients/TreatmentPlan.cs` |
-| หน้าจอ | `frontend/src/features/appointments/` (`components/detail/no-show-*`, `components/new/` ส่วนคอร์สและตรวจนัดชน, `components/settings/`, `components/waiting-list/`), `frontend/src/app/(staff)/settings/appointments/`, `frontend/src/app/(staff)/appointments/waiting-list/` |
-| use case | `backend/src/HappyPaws.Application/Appointments/` (`MarkNoShow`, `ReplaceCancellationPolicy`, `ReplaceAppointmentTypes`, `DetectConflicts`, `CreateRecurringSeries`, `AddToWaitingList`, `AppointmentRules.cs`), `backend/src/HappyPaws.Application/Patients/CreateTreatmentPlan/` |
+| หน้าจอ | `frontend/src/features/appointments/` (`components/detail/no-show-*`, `components/new/` ส่วนคอร์ส ตรวจนัดชน และ `type-select.tsx`, `components/calendar/day-conflict-check.tsx`, `components/settings/`, `components/waiting-list/`), `frontend/src/features/booking/api/listOnlineAppointmentTypes.ts`, `frontend/src/app/(staff)/settings/appointments/`, `frontend/src/app/(staff)/appointments/waiting-list/` |
+| use case | `backend/src/HappyPaws.Application/Appointments/` (`MarkNoShow`, `ReplaceCancellationPolicy`, `ReplaceAppointmentTypes`, `DetectConflicts`, `CreateRecurringSeries`, `AddToWaitingList`, `GetAppointmentRules`, `ListWaitingList`, `RemoveFromWaitingList`, `AppointmentRules.cs`), `backend/src/HappyPaws.Application/Patients/CreateTreatmentPlan/` |
 | ตัวจองคอร์ส | `backend/src/HappyPaws.Application/Appointments/CreateRecurringSeries/SeriesBooker.cs` |
 | แจ้งคิวรอ | `backend/src/HappyPaws.Application/Appointments/AddToWaitingList/WaitingListNotifier.cs` |
-| endpoint | `backend/src/HappyPaws.Api/Controllers/Staff/` (`AppointmentsController`, `CancellationPolicyController`, `AppointmentTypesController`, `AppointmentConflictsController`, `RecurringAppointmentsController`, `WaitingListController`, `TreatmentPlansController`) |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/AdvancedAppointmentTests.cs`, `Api/Patients/TreatmentPlanTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Appointments/AdvancedBookingRulesTests.cs` |
+| endpoint | `backend/src/HappyPaws.Api/Controllers/Staff/` (`AppointmentsController`, `CancellationPolicyController`, `AppointmentTypesController`, `AppointmentConflictsController`, `RecurringAppointmentsController`, `WaitingListController`, `TreatmentPlansController`), `Portal/PortalAppointmentTypesController` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/AdvancedAppointmentTests.cs`, `AppointmentRulesReadTests.cs`, `WaitingListManagementTests.cs`, `Api/Patients/TreatmentPlanTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Appointments/AdvancedBookingRulesTests.cs`, `Application/Appointments/WaitingListReadTests.cs` |

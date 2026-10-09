@@ -10,6 +10,7 @@ import { WebhookDeliveryTable } from '@/features/integrations/components/webhook
 import { integrationsArea } from '@/features/integrations/content/integrations-nav';
 import { deliveryLogPage } from '@/features/integrations/content/webhook-settings';
 import { integrationPaths } from '@/features/integrations/lib/integration-paths';
+import { loadWebhook } from '@/features/integrations/lib/load-webhook';
 import { loadWebhookDeliveries } from '@/features/integrations/lib/load-webhook-deliveries';
 import { Scope } from '@/lib/auth/scopes';
 
@@ -30,21 +31,23 @@ export default async function WebhookLogPage({ params, searchParams }: WebhookLo
 
   const { id } = await params;
   const { cursor } = await searchParams;
-  const page = await loadWebhookDeliveries(id, cursor);
+  const [page, webhook] = await Promise.all([loadWebhookDeliveries(id, cursor), loadWebhook(id)]);
   const next = page?.page.next_cursor;
 
   return (
     <div className="space-y-5">
       <BackLink href={integrationPaths.webhooks}>{deliveryLogPage.back}</BackLink>
-      <PageHeader title={deliveryLogPage.title} subtitle={<span className="font-mono">{id}</span>} />
+      <PageHeader title={deliveryLogPage.title} subtitle={<span className="break-all font-mono">{webhook?.url ?? id}</span>} />
       <p className="text-sm text-ink-600">{deliveryLogPage.retryNote}</p>
+      {page && !webhook && <Alert tone="info">{deliveryLogPage.deletedNote}</Alert>}
+      {webhook && !webhook.active && <Alert tone="info">{deliveryLogPage.disabledNote}</Alert>}
 
       {!page ? (
         <Alert tone="info">{deliveryLogPage.notFound}</Alert>
       ) : page.data.length === 0 ? (
         <EmptyState title={deliveryLogPage.empty}>{deliveryLogPage.emptyHint}</EmptyState>
       ) : (
-        <WebhookDeliveryTable rows={page.data} />
+        <WebhookDeliveryTable rows={page.data} webhookId={id} canRedeliver={webhook?.active === true} />
       )}
 
       {next && (

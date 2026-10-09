@@ -2117,6 +2117,20 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("created_by_staff_id");
 
+                    b.Property<DateTimeOffset?>("DeactivatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<string>("DeactivatedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deactivated_by_staff_id");
+
+                    b.Property<string>("DeactivationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("deactivation_reason");
+
                     b.Property<int?>("MaxRedemptions")
                         .HasColumnType("integer")
                         .HasColumnName("max_redemptions");
@@ -2173,8 +2187,13 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ux_coupons_code");
 
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_coupons_created_at_id");
+
                     b.ToTable("coupons", null, t =>
                         {
+                            t.HasCheckConstraint("ck_coupons_deactivated_by", "(deactivated_at IS NULL) = (deactivated_by_staff_id IS NULL)");
+
                             t.HasCheckConstraint("ck_coupons_one_kind", "(percent IS NULL) <> (amount_satang IS NULL)");
 
                             t.HasCheckConstraint("ck_coupons_redeemed", "redeemed_count >= 0 AND (max_redemptions IS NULL OR redeemed_count <= max_redemptions)");
@@ -2404,6 +2423,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("discount_id");
 
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
                     b.Property<string>("InvoiceId")
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
@@ -2427,6 +2450,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.Property<int>("Points")
                         .HasColumnType("integer")
                         .HasColumnName("points");
+
+                    b.Property<long?>("SatangPerPoint")
+                        .HasColumnType("bigint")
+                        .HasColumnName("satang_per_point");
 
                     b.Property<string>("StaffId")
                         .HasMaxLength(40)
@@ -2455,6 +2482,58 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_loyalty_entries_customer_id_occurred_at");
 
                     b.ToTable("loyalty_entries", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Crm.LoyaltySettings", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("GoldMinPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("gold_min_points");
+
+                    b.Property<long>("PointValueSatang")
+                        .HasColumnType("bigint")
+                        .HasColumnName("point_value_satang");
+
+                    b.Property<int?>("PointsExpireAfterMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("points_expire_after_months");
+
+                    b.Property<long>("SatangPerPoint")
+                        .HasColumnType("bigint")
+                        .HasColumnName("satang_per_point");
+
+                    b.Property<int>("SilverMinPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("silver_min_points");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_loyalty_settings");
+
+                    b.ToTable("loyalty_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_loyalty_settings_singleton", "id = 'set_loyalty'");
+
+                            t.HasCheckConstraint("ck_loyalty_settings_values", "satang_per_point > 0 AND point_value_satang > 0 AND silver_min_points > 0 AND gold_min_points > silver_min_points AND (points_expire_after_months IS NULL OR points_expire_after_months > 0)");
+                        });
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Crm.PackageUse", b =>
@@ -3845,6 +3924,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("reorder_level");
 
+                    b.Property<DateTimeOffset?>("RetiredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("retired_at");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -3898,6 +3981,20 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<string>("CancelledByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("cancelled_by_staff_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamptz")
@@ -3959,6 +4056,9 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BranchId", "Status")
                         .HasDatabaseName("ix_purchase_orders_branch_id_status");
+
+                    b.HasIndex("OrderedAt", "Id")
+                        .HasDatabaseName("ix_purchase_orders_ordered_at_id");
 
                     b.ToTable("purchase_orders", (string)null);
                 });

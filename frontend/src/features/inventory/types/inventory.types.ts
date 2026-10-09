@@ -50,6 +50,18 @@ export interface InventoryItem {
   on_hand: number;
   available: number;
   branches: BranchStock[];
+  /** False once retired: out of the drug picker, no new receipts or orders (§ 25). */
+  active: boolean;
+  retired_at?: string;
+}
+
+/** `PATCH /staff/inventory/items/{id}`: only the fields sent change. docs/contract-extensions.md § 25. */
+export interface ItemChanges {
+  name?: string;
+  unit?: string;
+  unit_price_satang?: number;
+  reorder_level?: number;
+  active?: boolean;
 }
 
 export interface ItemsQuery {
@@ -81,7 +93,7 @@ export interface StockMovement {
   transfer_id?: string;
 }
 
-export type PurchaseOrderStatus = 'ordered' | 'partially_received' | 'received';
+export type PurchaseOrderStatus = 'ordered' | 'partially_received' | 'received' | 'cancelled';
 
 export interface PurchaseOrderLine {
   id: string;
@@ -93,6 +105,8 @@ export interface PurchaseOrderLine {
   outstanding: number;
   unit_cost_satang: number;
   line_total_satang: number;
+  /** What was still outstanding when the order was cancelled (§ 25). */
+  cancelled_quantity: number;
 }
 
 export interface PurchaseOrder {
@@ -108,6 +122,11 @@ export interface PurchaseOrder {
   ordered_by_staff_id: string;
   total_cost_satang: number;
   lines: PurchaseOrderLine[];
+  /** The cost of what has arrived (§ 25). */
+  received_cost_satang: number;
+  cancelled_at?: string;
+  cancelled_by_staff_id?: string;
+  cancel_reason?: string;
 }
 
 /** The answer of a movement or an adjustment: the rows written and the stock afterwards. */

@@ -30,6 +30,46 @@ public sealed record CreatedWebhookDto(
             subscription.CreatedAt == default ? DateTimeOffset.UtcNow : subscription.CreatedAt);
 }
 
+/// <summary>
+/// A webhook as <c>GET /staff/webhooks</c> and <c>PATCH /staff/webhooks/{id}</c> show it
+/// (<c>docs/contract-extensions.md § 22</c>). No secret, ever: not even whether it can be read.
+/// <see cref="Version"/> goes back as <c>If-Match</c>.
+/// </summary>
+public sealed record WebhookDto(
+    string Id,
+    string Url,
+    IReadOnlyList<string> Events,
+    string? Description,
+    bool Active,
+    uint Version,
+    string CreatedByStaffId,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? UpdatedAt)
+{
+    public static WebhookDto From(WebhookSubscription subscription) =>
+        new(
+            subscription.Id,
+            subscription.Url,
+            subscription.Events,
+            subscription.Description,
+            subscription.Active,
+            subscription.Version,
+            subscription.CreatedByStaffId,
+            subscription.CreatedAt,
+            subscription.UpdatedAt);
+}
+
+/// <summary>
+/// The answer to <c>POST /staff/webhooks/{id}/rotate-secret</c>: the new secret, shown this once,
+/// as on create. The old secret stopped signing the moment this was made.
+/// </summary>
+public sealed record RotatedWebhookSecretDto(
+    string Id,
+    string Secret,
+    WebhookSigningDto Signing,
+    uint Version,
+    DateTimeOffset RotatedAt);
+
 /// <summary>How a receiver verifies a delivery: HMAC-SHA256 of <c>timestamp.body</c>.</summary>
 public sealed record WebhookSigningDto(string Algorithm, string Header, string TimestampHeader, string SignedPayload)
 {

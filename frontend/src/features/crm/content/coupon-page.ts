@@ -1,6 +1,6 @@
-/** `/crm/coupons`: making a discount code. */
+/** `/crm/coupons`: making a discount code, and the codes made. */
 export const couponPage = {
-  title: 'สร้างคูปอง',
+  title: 'คูปอง',
   subtitle:
     'สร้างรหัสส่วนลดให้ลูกค้าใช้ที่เคาน์เตอร์ แคชเชียร์ใส่รหัสในช่องส่วนลดของบิล ระบบตรวจวันใช้ จำนวนสิทธิ์ และบริการที่ร่วมรายการให้เอง',
 

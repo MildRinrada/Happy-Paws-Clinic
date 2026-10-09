@@ -9,11 +9,11 @@
 | GET | `/staff/threads` | `message:read` | รายการกล่องข้อความ กล่องที่รอคำตอบอยู่บน พร้อมข้อความล่าสุดของแต่ละกล่อง |
 | POST | `/staff/threads/{id}/messages` | `message:write` | ตอบลูกค้า ระบบเลือกช่องทางเอง จำกัด 60 ครั้งต่อนาทีต่อ token |
 
-contract มีแค่สองเส้นนี้ ไม่มีเส้นให้พนักงานเปิดกล่องเอง ไม่มีเส้นปิดกล่อง และไม่มีเส้นของลูกค้าใน portal ดูหัวข้อ [ยังไม่ได้ทำ](#ยังไม่ได้ทำ)
+contract มีแค่สองเส้นนี้ ไม่มีเส้นให้พนักงานเปิดกล่องเอง และไม่มีเส้นปิดกล่อง ดูหัวข้อ [ยังไม่ได้ทำ](#ยังไม่ได้ทำ) ส่วนลูกค้ามีส่วนขยายสองเส้นใน portal ดู [แชทใน portal](#แชทใน-portal-ส่วนขยาย--24)
 
 ## กล่องเริ่มอย่างไร
 
-กล่องเริ่มเมื่อลูกค้าเขียนถึงคลินิกครั้งแรก ตอนนี้ทางเดียวที่ contract ให้ลูกค้าเขียนเข้ามาได้คือแชตกับบัญชี LINE ของคลินิก (event `message` ของ `POST /webhooks/line`)
+กล่องเริ่มเมื่อลูกค้าเขียนถึงคลินิกครั้งแรก ทางที่ contract ให้ลูกค้าเขียนเข้ามาได้คือแชตกับบัญชี LINE ของคลินิก (event `message` ของ `POST /webhooks/line`) และส่วนขยาย § 24 เพิ่มหน้าแชทใน portal ดู [แชทใน portal](#แชทใน-portal-ส่วนขยาย--24) ข้างล่างนี้คือทาง LINE
 
 1. LINE ส่ง event `message` มา ระบบตรวจลายเซ็นตามปกติ ดู [LINE](line.md#webhook-post-webhooksline)
 2. ระบบหาลูกค้าที่บันทึก LINE user id นี้ไว้ (เคาน์เตอร์ผูกให้จากรายชื่อผู้ติดตาม ดู [LINE](line.md#ที่อยู่-line-ของลูกค้า)) เป็นการค้นจากที่อยู่ผู้ส่ง เหมือนระบบอีเมลรู้ว่าอีเมลตอบกลับมาจากใคร ไม่ใช่การยืนยันตัวตน
@@ -72,9 +72,10 @@ contract มีแค่สองเส้นนี้ ไม่มีเส้�
 |---|---|
 | `status` | `awaiting_reply` หรือ `replied` |
 | `unread_count` | ข้อความของลูกค้าหลังพนักงานตอบครั้งล่าสุด การเปิดอ่านไม่ลดตัวเลขนี้ กล่องหยุดรอเมื่อมีคนตอบ |
-| `reply_channel` | ช่องทางที่คำตอบจะลองก่อน คือช่องทางที่ลูกค้าเขียนมาล่าสุด |
+| `reply_channel` | ช่องทางที่ลูกค้าเขียนมาล่าสุด คำตอบลองช่องทางนี้ก่อน ค่า `portal` ไม่มีช่องทางให้ลองก่อน คำตอบจึงไปตามลำดับปกติ |
 | `messages` | ข้อความล่าสุด เรียงเก่าไปใหม่ `has_more_messages` บอกว่ายังมีข้อความเก่ากว่านี้ |
 | `direction` | `inbound` จากลูกค้า `outbound` คำตอบของพนักงาน |
+| `channel` | ข้อความขาเข้า: ช่องทางที่ลูกค้าเขียนมา `line` หรือ `portal` (หน้าจอขึ้นว่า "เว็บไซต์") คำตอบ: ช่องทางที่ส่งถึง |
 | `kind` | `text`, `image`, `video`, `audio`, `file`, `location`, `sticker` หรือ `other` |
 | `delivery` | ผลการส่งของคำตอบ `status` เป็น `sent`, `failed` หรือ `skipped` พร้อม `channel`, `error_code` และ `fallback_from` ความหมายเดียวกับ [ประวัติการส่ง](notifications.md#ประวัติการส่ง) |
 
@@ -95,7 +96,9 @@ POST /v1/staff/threads/thr_01J.../messages
 
 **ความยินยอม** ลูกค้าที่ถอนความยินยอมเรื่อง `service_messages` ไม่ได้รับคำตอบ คำตอบยังถูกเก็บในกล่อง และ `delivery` เป็น `skipped` กับ `no_consent` ดู [ความเป็นส่วนตัวและความยินยอม](privacy-and-consent.md)
 
-**กล่องแจ้งเตือนในเว็บ** คำตอบที่ผ่านด่านความยินยอมเข้ากล่องแจ้งเตือนของลูกค้าใน portal (`GET /portal/notifications`) ด้วยหัวเรื่อง "ข้อความตอบกลับจากคลินิก" เหมือนข้อความอื่น
+**กล่องแจ้งเตือนในเว็บ** คำตอบที่ผ่านด่านความยินยอมเข้ากล่องแจ้งเตือนของลูกค้าใน portal (`GET /portal/notifications`) ด้วยหัวเรื่อง "ข้อความตอบกลับจากคลินิก" เหมือนข้อความอื่น และคำตอบทุกฉบับขึ้นในหน้าแชทของลูกค้า (`GET /portal/thread`) เพราะอ่านจากกล่องโดยตรง
+
+**กล่องที่ลูกค้าเขียนล่าสุดจาก portal** `portal` ไม่ใช่ช่องทางส่ง คำตอบจึงไม่มีช่องทางให้ลองก่อน เข้ากล่องแจ้งเตือนแล้วส่งทาง LINE, SMS หรืออีเมลตามลำดับปกติ ลูกค้าที่ปิดหน้าเว็บไปแล้วจึงรู้ว่าคลินิกตอบ ลูกค้าที่ถอนความยินยอมไม่ได้รับทั้งสำเนาในกล่องแจ้งเตือนและการส่ง แต่ยังเห็นคำตอบในหน้าแชทเมื่อเปิดเอง
 
 **SMS** คำตอบยาวได้ 1,000 ตัวอักษร ถ้าไปทาง SMS ภาษาไทยจะเป็นหลายส่วนและเสียเครดิตตามจำนวนส่วน
 
@@ -119,43 +122,51 @@ POST /v1/staff/threads/thr_01J.../messages
 เมนู "ข้อความลูกค้า" (`/messages`) ต้องมี `message:read`
 
 - ซ้ายคือรายการกล่อง กรองได้ทั้งหมดหรือเฉพาะที่รอคำตอบ กล่องที่รอคำตอบมีป้าย "ใหม่" กับจำนวนข้อความ
-- ขวาคือกล่องที่เลือก (`/messages?thread=thr_...`) ข้อความลูกค้าอยู่ซ้าย คำตอบของคลินิกอยู่ขวาพร้อมผลการส่ง ช่องทาง และเหตุผลเมื่อส่งไม่ถึง
+- ขวาคือกล่องที่เลือก (`/messages?thread=thr_...`) ข้อความลูกค้าอยู่ซ้ายพร้อมช่องทาง (LINE หรือ "เว็บไซต์" สำหรับข้อความจาก portal) คำตอบของคลินิกอยู่ขวาพร้อมผลการส่ง ช่องทาง และเหตุผลเมื่อส่งไม่ถึง
 - ช่องตอบกลับขึ้นเฉพาะคนที่มี `message:write` ส่งแล้วหน้าโหลดใหม่ คำตอบขึ้นพร้อมผลการส่ง
 - ยังไม่อัปเดตเอง ข้อความใหม่ขึ้นเมื่อเปิดหน้าใหม่หรือกดกล่องอีกครั้ง
 
-ปุ่ม "แชทกับคลินิก" บนการ์ดนัดใน portal พาไปหน้าติดต่อเรา (`/contact`) ซึ่งมี LINE เบอร์โทร และอีเมลของคลินิก เพราะ contract ไม่มีหน้าแชทของลูกค้า ดู [portal ลูกค้า](portal.md)
+## แชทใน portal (ส่วนขยาย § 24)
+
+ลูกค้าที่เข้าระบบเขียนถึงคลินิกและอ่านบทสนทนาของตัวเองได้ที่หน้า "แชทกับคลินิก" (`/portal/messages`) เป็นกล่องเดียวกับที่พนักงานตอบในหน้านี้ เหตุผลและทางเลือกที่ไม่เลือกอยู่ใน [contract-extensions.md § 24](../contract-extensions.md)
+
+| Method | Path | Scope | หน้าที่ |
+|---|---|---|---|
+| GET | `/portal/thread` | `portal` | กล่องของตัวเองพร้อมข้อความหนึ่งหน้า ใหม่ไปเก่า `limit` และ `cursor` พาไปข้อความที่เก่ากว่า ยังไม่เคยเขียนได้คำตอบที่ไม่มี `id` และ `data` ว่าง ไม่สร้างอะไร |
+| POST | `/portal/thread/messages` | `portal` | `{ "text": "..." }` 1 ถึง 1,000 ตัวอักษรหลังตัดช่องว่าง ช่องทาง `portal` ข้อความแรกเปิดกล่อง ตอบ `201` จำกัดด้วย policy `messaging` |
+
+- รหัสลูกค้ามาจาก token เท่านั้น token ของพนักงานได้ `403` ผู้ดูแลสัตว์ร่วมเป็นลูกค้าอีกคนที่มีกล่องของตัวเอง
+- ข้อความเข้า `ReceiveCustomerMessageHandler` ตัวเดียวกับ LINE กล่องเดียวต่อลูกค้า จัดสาขาตามนัดล่าสุด ไม่มีคำตอบอัตโนมัติ
+- ข้อความที่ลูกค้าเห็นไม่มีรหัสพนักงานและผลการส่ง คำตอบมี `sent_by_name` ชื่อที่แสดงของผู้ตอบ หน้าจอขึ้นว่า "คลินิก" เมื่อไม่มี
+- token ของเรกคอร์ดที่ถูกรวมแล้วเขียนได้ `409 state_conflict` การรวมย้ายข้อความจาก portal ไปด้วยเหมือนข้อความอื่น
+- ช่องทาง `portal` เป็นค่าของ `MessageChannel` ของกล่องข้อความ ไม่ใช่ของ `DeliveryChannel` จึงไม่หลุดเข้าระบบส่งหรือประวัติการส่ง ค่าที่เก็บของสามช่องทางเดิมไม่เปลี่ยน ไม่มี migration
+- **อ่านแล้ว** กล่องไม่มีสถานะอ่านแล้วฝั่งลูกค้า หน้าแชทกดว่าอ่านแล้วให้สำเนา `thread.reply` ในกล่องแจ้งเตือน (`POST /portal/notifications/read`) เมื่อมีคำตอบใหม่ขึ้นบนจอ กระดิ่งจึงลดลงเอง พนักงานไม่เห็นว่าลูกค้าอ่านแล้ว
+- หน้าแชทอ่านใหม่ทุก 15 วินาทีขณะเปิดอยู่ เหมือนการ์ดนัด
+
+ปุ่ม "แชทกับคลินิก" บนการ์ดนัดและเมนูบัญชีใน portal พาไปหน้านี้ ดู [portal ลูกค้า](portal.md)
 
 ## ยังไม่ได้ทำ
 
 | เรื่อง | สถานะ |
 |---|---|
-| ลูกค้าเขียนและอ่านจาก portal | contract ไม่มี endpoint ของลูกค้า ข้อเสนอส่วนขยายอยู่ข้างล่าง รอเจ้าของงานอนุมัติ |
 | ข้อความเข้าทาง SMS และอีเมล | ยังไม่มีตัวรับ ทั้ง ThaiBulkSMS และ SMTP ที่ใช้อยู่ส่งออกอย่างเดียว เมื่อมีตัวรับ ให้เรียก `ReceiveCustomerMessageHandler` ด้วยช่องทางนั้น กล่องและการเลือกช่องทางตอบรองรับแล้ว |
 | พนักงานเริ่มกล่องเอง | contract ไม่มี ใช้หน้า "แจ้งเตือนลูกค้า" ส่ง `clinic.message` แทน ข้อความนั้นไม่ขึ้นในกล่อง |
 | เก็บรูปและไฟล์ที่ลูกค้าส่ง | เก็บแค่ชนิด ถ้าจะเก็บต้องดึงจาก LINE content API ลงที่เก็บไฟล์และตัดสินระยะเก็บก่อน |
-| ปิดกล่อง มอบหมายผู้ตอบ ทำเครื่องหมายว่าอ่านแล้ว | contract ไม่มี กล่องหยุดรอเมื่อมีคนตอบเท่านั้น |
+| ปิดกล่อง มอบหมายผู้ตอบ ทำเครื่องหมายว่าอ่านแล้ว | contract ไม่มี กล่องหยุดรอเมื่อมีคนตอบเท่านั้น ฝั่งลูกค้าใช้สถานะอ่านแล้วของสำเนาในกล่องแจ้งเตือนแทน |
+| แนบรูปหรือไฟล์จาก portal | ส่งได้แค่ข้อความ ไฟล์ของสัตว์ส่งจากหน้าส่งเอกสาร |
 | ระยะเวลาเก็บข้อความ | ยังไม่มีนโยบาย เหมือนข้อมูลอื่นของลูกค้า ดู [contract-extensions.md § 4](../contract-extensions.md) |
-| อัปเดตหน้าจอเองเมื่อมีข้อความใหม่ | ยังไม่มี stream ของข้อความ |
-
-### ข้อเสนอส่วนขยาย: แชทใน portal (ยังไม่ได้อนุมัติ ยังไม่ได้ทำ)
-
-| Method | Path | ผู้เรียก | ทำอะไร |
-|---|---|---|---|
-| GET | `/portal/thread` | ลูกค้า | กล่องของตัวเองพร้อมข้อความล่าสุด รหัสลูกค้ามาจาก token เท่านั้น |
-| POST | `/portal/thread/messages` | ลูกค้า | เขียนถึงคลินิก `{ "text": "..." }` ช่องทางของข้อความคือ `portal` กล่องเริ่มเองถ้ายังไม่มี จำกัดด้วย policy `messaging` |
-
-ถ้าอนุมัติ ต้องเพิ่มช่องทาง `portal` ให้ข้อความขาเข้า และคำตอบของกล่องที่ลูกค้าเขียนล่าสุดทาง portal จะเข้ากล่องแจ้งเตือนในเว็บอยู่แล้ว แล้วจึงไล่ LINE, SMS และอีเมลตามปกติ
+| อัปเดตหน้าจอเองเมื่อมีข้อความใหม่ | ยังไม่มี stream ของข้อความ หน้าของพนักงานยังไม่อัปเดตเอง หน้าแชทของลูกค้าอ่านใหม่ทุก 15 วินาที |
 
 ## โค้ด
 
 | ส่วน | ไฟล์ |
 |---|---|
-| entity | `backend/src/HappyPaws.Domain/Messaging/MessageThread.cs`, `ThreadMessage.cs` |
-| use case | `backend/src/HappyPaws.Application/Messaging/ListThreads/`, `ReplyToThread/`, `ReceiveMessage/` |
+| entity | `backend/src/HappyPaws.Domain/Messaging/MessageThread.cs`, `ThreadMessage.cs`, `MessageChannel.cs` |
+| use case | `backend/src/HappyPaws.Application/Messaging/ListThreads/`, `ReplyToThread/`, `ReceiveMessage/`, `Portal/` (§ 24) |
 | ข้อความขาเข้าจาก LINE | `backend/src/HappyPaws.Application/Integrations/HandleLineWebhook/HandleLineWebhookHandler.cs` |
 | ฐานข้อมูล | `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Messaging/`, `Repositories/Messaging/MessageThreadRepository.cs` migration `CustomerMessageThreads` |
 | การรวมเรกคอร์ด | `FoldThreadAsync` ใน `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Customers/CustomerRepository.cs` |
 | เทมเพลตและช่องทางที่ลองก่อน | `thread.reply` ใน `NotificationTemplateCatalogue`, `PreferredChannel` ใน `NotificationRequest` และ `DeliveringNotificationChannel` |
-| controller | `backend/src/HappyPaws.Api/Controllers/Staff/ThreadsController.cs` |
-| หน้าจอ | `frontend/src/features/messaging/`, `frontend/src/app/(staff)/messages/page.tsx` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/ThreadTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Messaging/MessageThreadTests.cs` |
+| controller | `backend/src/HappyPaws.Api/Controllers/Staff/ThreadsController.cs`, `Portal/PortalThreadController.cs` (§ 24) |
+| หน้าจอ | `frontend/src/features/messaging/`, `frontend/src/app/(staff)/messages/page.tsx`, หน้าแชทของลูกค้า `frontend/src/app/(portal)/portal/messages/page.tsx`, `frontend/src/features/portal/components/chat/` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/ThreadTests.cs`, `PortalThreadTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Messaging/MessageThreadTests.cs` |

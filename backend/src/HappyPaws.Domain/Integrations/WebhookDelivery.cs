@@ -66,6 +66,12 @@ public sealed class WebhookDelivery : Entity
 
     public const int ErrorMaxLength = 300;
 
+    /// <summary>The error on a delivery stopped because its webhook was switched off.</summary>
+    public const string HaltedDisabled = "webhook_disabled";
+
+    /// <summary>The error on a delivery stopped because its webhook was deleted.</summary>
+    public const string HaltedDeleted = "webhook_deleted";
+
     private WebhookDelivery()
     {
     }
@@ -131,6 +137,42 @@ public sealed class WebhookDelivery : Entity
         Status = WebhookDeliveryStatus.Failed;
         NextAttemptAt = null;
         CompletedAt = at;
+    }
+
+    /// <summary>
+    /// Stops a pending delivery without sending it, because its webhook was switched off or deleted.
+    /// No attempt is counted. It reads as <c>failed</c> with <paramref name="reason"/> as the error,
+    /// so it can be sent again with <see cref="Redeliver"/> once the webhook is back on.
+    /// </summary>
+    public void Halt(DateTimeOffset at, string reason)
+    {
+        if (Status != WebhookDeliveryStatus.Pending)
+        {
+            throw new InvalidOperationException($"delivery {Id} is already {Status}");
+        }
+
+        Status = WebhookDeliveryStatus.Failed;
+        NextAttemptAt = null;
+        CompletedAt = at;
+        LastError = Truncate(reason, ErrorMaxLength);
+    }
+
+    /// <summary>
+    /// Puts a failed delivery back in the queue, due now: the same event, the same id, the same
+    /// body. A delivery that used up its retries gets one more attempt and, failing that, is failed
+    /// again; one that was halted early resumes the retries it had left. Only a failed delivery can
+    /// be sent again, so a second press while the first is queued is refused.
+    /// </summary>
+    public void Redeliver(DateTimeOffset now)
+    {
+        if (Status != WebhookDeliveryStatus.Failed)
+        {
+            throw new DomainException("state_conflict", "ส่งซ้ำได้เฉพาะรายการที่ส่งไม่สำเร็จ");
+        }
+
+        Status = WebhookDeliveryStatus.Pending;
+        NextAttemptAt = now;
+        CompletedAt = null;
     }
 
     private void Record(DateTimeOffset at, int? statusCode, string? error, string? responseBody, int durationMs)

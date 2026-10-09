@@ -11,9 +11,16 @@ import { crmPaths } from '../../lib/crm-paths';
 
 /**
  * Finds the customer whose points to show, then opens `?customer_id=`. Searches the register
- * under `customer:read`; without it the customer id is typed instead.
+ * under `customer:read`; without it the customer id is typed instead. `pathFor` sends the choice to
+ * another page, such as the package lookup.
  */
-export function CustomerLookup({ canSearch }: { canSearch: boolean }) {
+export function CustomerLookup({
+  canSearch,
+  pathFor = crmPaths.loyalty,
+}: {
+  canSearch: boolean;
+  pathFor?: (customerId: string) => string;
+}) {
   const text = loyaltyPage.lookup;
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -27,7 +34,7 @@ export function CustomerLookup({ canSearch }: { canSearch: boolean }) {
     if (!q) return;
 
     if (!canSearch) {
-      router.push(crmPaths.loyalty(q));
+      router.push(pathFor(q));
       return;
     }
 
@@ -82,7 +89,7 @@ export function CustomerLookup({ canSearch }: { canSearch: boolean }) {
                 <span className="font-medium text-ink-900">{customer.name}</span>
                 <span className="ml-2 tabular-nums text-ink-500">{customer.phone}</span>
               </span>
-              <Button size="sm" variant="secondary" onClick={() => router.push(crmPaths.loyalty(customer.id))}>
+              <Button size="sm" variant="secondary" onClick={() => router.push(pathFor(customer.id))}>
                 {text.open}
               </Button>
             </li>

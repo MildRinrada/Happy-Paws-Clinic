@@ -1,5 +1,6 @@
 import { Badge, type BadgeTone } from '@/components/ui/badge';
 import { formatDateTime } from '@/lib/format/datetime';
+import { publicProfileText } from '../../content/public-profile';
 import { roleLabel, staffTypeLabel, statusLabels } from '../../content/staff-labels';
 import { staffSettings } from '../../content/staff-settings';
 import type { StaffDirectory } from '../../types/staff-settings.types';
@@ -28,6 +29,7 @@ export function StaffMemberSummary({ member, directory }: StaffMemberSummaryProp
         {member.status !== 'invited' && (
           <Badge tone={member.two_factor_enabled ? 'blue' : 'neutral'}>{member.two_factor_enabled ? text.twoFactorOn : text.twoFactorOff}</Badge>
         )}
+        {member.public_profile?.show_on_website && <Badge tone="blue">{publicProfileText.shown}</Badge>}
         {member.id === directory.selfId && <Badge tone="brand">{text.self}</Badge>}
       </p>
       <p className="break-all text-sm text-ink-600">{member.email ?? text.noEmail}</p>

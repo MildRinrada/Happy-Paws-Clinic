@@ -62,6 +62,19 @@ public sealed partial class Coupon : Entity
     /// <summary>Uses still standing. A voided bill gives its use back.</summary>
     public int RedeemedCount { get; private set; }
 
+    /// <summary>
+    /// When the coupon was switched off before its last day, or null while it is live. Not in the
+    /// API reference: see <c>docs/contract-extensions.md § 25</c>. There is no way back; a code that
+    /// should work again is issued anew.
+    /// </summary>
+    public DateTimeOffset? DeactivatedAt { get; private set; }
+
+    public string? DeactivatedByStaffId { get; private set; }
+
+    public string? DeactivationReason { get; private set; }
+
+    public bool IsDeactivated => DeactivatedAt is not null;
+
     public static Coupon Create(
         string code,
         string name,
@@ -153,6 +166,11 @@ public sealed partial class Coupon : Entity
     /// </summary>
     public void EnsureRedeemable(DateOnly day, string branchId, int customerRedemptions)
     {
+        if (IsDeactivated)
+        {
+            throw new DomainException("coupon_deactivated", "คูปองนี้ถูกปิดแล้ว ใช้ไม่ได้");
+        }
+
         if (day < ValidFrom)
         {
             throw new DomainException("coupon_not_started", $"คูปองนี้เริ่มใช้ได้วันที่ {ValidFrom:yyyy-MM-dd}");
@@ -195,10 +213,47 @@ public sealed partial class Coupon : Entity
             : Math.Min(AmountSatang!.Value, eligibleSatang);
     }
 
+    /// <summary>
+    /// Where the coupon stands on a clinic day: switched off, past its last day, used up, not yet
+    /// started, or live, in that order. Computed on every read, like a package's status.
+    /// </summary>
+    public CouponStatus StatusOn(DateOnly day) =>
+        IsDeactivated ? CouponStatus.Deactivated
+        : ValidUntil is { } until && day > until ? CouponStatus.Expired
+        : MaxRedemptions is { } max && RedeemedCount >= max ? CouponStatus.UsedUp
+        : day < ValidFrom ? CouponStatus.Scheduled
+        : CouponStatus.Active;
+
+    /// <summary>
+    /// Switches the coupon off before its last day. Uses already on bills stand; the next redemption
+    /// is refused with <c>coupon_deactivated</c>. Call under the coupon's lock.
+    /// </summary>
+    public void Deactivate(string staffId, string? reason, DateTimeOffset now)
+    {
+        if (IsDeactivated)
+        {
+            throw new StateConflictException(nameof(Coupon), "deactivated", nameof(Deactivate));
+        }
+
+        DeactivatedAt = now;
+        DeactivatedByStaffId = staffId;
+        DeactivationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+    }
+
     public void Redeem() => RedeemedCount++;
 
     public void Release() => RedeemedCount = Math.Max(0, RedeemedCount - 1);
 
     [GeneratedRegex("^[A-Z0-9-]{4,20}$")]
     private static partial Regex CodePattern();
+}
+
+/// <summary>Where a coupon stands, worked out from its dates, count and switch.</summary>
+public enum CouponStatus
+{
+    Active,
+    Scheduled,
+    UsedUp,
+    Expired,
+    Deactivated,
 }

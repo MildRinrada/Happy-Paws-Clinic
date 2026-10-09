@@ -30,6 +30,9 @@
 | 19 | กติกาเตือนอัตโนมัติมีแค่สร้างและดูตัวอย่าง เปิด ปิด แก้ หรือลบไม่ได้ กติกาเริ่มต้นสี่ข้อจึงปิดตลอดไป | `PATCH` และ `DELETE /staff/automations/{id}` | **ทำแล้ว** |
 | 20 | ใบสั่งยามีแค่ชื่อยาที่พิมพ์เอง ชื่อต่างจากคลังนิดเดียวก็จ่ายไปโดยไม่ตัดสต๊อกและไม่คิดเงิน และสัตวแพทย์ดูคลังยาไม่ได้ | `GET /staff/prescriptions/drug-options` และ `inventory_item_id` ที่ไม่บังคับในคำขอสั่งยา | **ทำแล้ว** |
 | 21 | ส่งออกรายงานได้แค่ CSV contract ไม่ได้บอกรูปแบบไฟล์ | ค่า `xlsx` และ `pdf` ของช่อง `format` บน `POST /staff/reports/exports` | **ทำแล้ว** |
+| 22 | webhook และ API key สร้างได้อย่างเดียว ปิด ลบ หรือหมุน secret ไม่ได้ key ที่หลุดใช้ได้จนหมดอายุ | รายการ แก้ ลบ หมุน secret และส่งซ้ำของ webhook รายการและการยกเลิก API key และ `POST /staff/integrations/calendar/token` | **ทำแล้ว** |
+| 23 | นโยบายยกเลิกและประเภทนัดเขียนได้แต่อ่านกลับไม่ได้ หน้าจองจึงเลือกประเภทนัดไม่ได้ และคิวรอดูหรือถอนออกไม่ได้ | `GET /staff/policies/cancellation`, `GET /staff/appointment-types`, `GET /portal/appointment-types`, `GET` และ `DELETE /staff/waiting-list` | **ทำแล้ว** |
+| 24 | ลูกค้าเขียนถึงคลินิกได้ทาง LINE ทางเดียว และอ่านบทสนทนาของตัวเองใน portal ไม่ได้ | `GET /portal/thread` และ `POST /portal/thread/messages` | **ทำแล้ว** |
 
 endpoint ใหม่ 36 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 137 เส้น มีสามข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ และ § 21 เป็นค่าใหม่ของช่องเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
@@ -596,6 +599,238 @@ POST /staff/reports/exports            report:export
 
 **หน้าจอ** กล่องส่งออกรายงานบนหน้าภาพรวมมีตัวเลือกไฟล์ Excel (ค่าเริ่มต้น) CSV หรือ PDF รายละเอียดอยู่ใน [ภาพรวมและรายงาน](features/dashboard.md#ส่งออกรายงาน)
 
+## 22. webhook และ API key สร้างได้อย่างเดียว key ที่หลุดใช้ได้จนหมดอายุ
+
+**ช่องโหว่** หมวด Webhooks และ Integrations ของ contract มี `POST /staff/webhooks`, `GET /staff/webhooks/{id}/deliveries` และ `POST /staff/api-keys` คือสร้างได้ แต่ไม่มีเส้นไหนอ่านรายการ แก้ ปิด หรือลบสิ่งที่สร้างแล้ว คลินิกต้องจดรหัส webhook เอง ปลายทางที่ย้าย URL ต้องสร้าง webhook ใหม่และปล่อยตัวเก่าส่งต่อไปเรื่อย ๆ secret ที่หลุดเปลี่ยนไม่ได้ delivery ที่ล้มเหลวครบหกครั้งส่งซ้ำไม่ได้ API key ที่หลุดใช้ได้จนหมดอายุ ซึ่งนานได้ถึง 365 วัน และลิงก์ปฏิทินที่หลุดใช้ได้จนเจ้าของถูกปิดบัญชี
+
+**ทำไมสำคัญ** ทั้งสามอย่างเป็น credential ที่อยู่นอกระบบ ทางเดียวที่มีตอนนี้เมื่อ key หลุด คือปิดบัญชีของคนที่สร้าง หรือเอา scope ออกจาก role ของเขา ซึ่งกระทบงานของทุกคนใน role นั้น การหยุด credential ที่หลุดต้องเป็นปุ่มเดียว ไม่ใช่การแก้สิทธิ์ของคน
+
+**การตัดสิน** เพิ่มแปดเส้น ได้รับอนุมัติก่อนสร้าง ทุกเส้นใช้ `integration:manage` ตัวเดียวกับการสร้าง ยกเว้นการสร้างลิงก์ปฏิทินใหม่ ซึ่งใช้กติกาเดียวกับฟีด คือพนักงานทุกคน เฉพาะลิงก์ของตัวเอง ไม่มี migration
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/webhooks` | `integration:manage` | webhook ทุกตัวที่ยังไม่ถูกลบ ใหม่สุดก่อน มี `version` ไม่มี secret |
+| PATCH | `/staff/webhooks/{id}` | `integration:manage` | แก้ `url`, `events`, `description` หรือ `active` ช่องที่ไม่ส่งไม่เปลี่ยน ตอบ webhook พร้อม `ETag` รองรับ `If-Match` |
+| DELETE | `/staff/webhooks/{id}` | `integration:manage` | ลบ ตอบ `204` ประวัติการส่งยังอ่านได้ รองรับ `If-Match` |
+| POST | `/staff/webhooks/{id}/rotate-secret` | `integration:manage` | secret ใหม่ แสดงครั้งเดียว secret เดิมหยุดทันที รองรับ `If-Match` |
+| POST | `/staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` | `integration:manage` | ส่ง delivery ที่ `failed` อีกครั้ง ตอบ `202` พร้อม delivery ที่กลับเป็น `pending` |
+| GET | `/staff/api-keys` | `integration:manage` | key ที่ผู้เรียกจัดการได้ ใหม่สุดก่อน ไม่มีตัว key |
+| DELETE | `/staff/api-keys/{id}` | `integration:manage` | ยกเลิก key ตอบ `204` คำขอถัดไปของ key นั้นได้ `401` |
+| POST | `/staff/integrations/calendar/token` | พนักงานทุกคน ลิงก์ของตัวเองเท่านั้น | ลิงก์ปฏิทินใหม่ ลิงก์เดิมได้ `401` ทันที |
+
+```http
+GET /staff/webhooks                                   integration:manage
+{ "data": [ { "id": "whk_...", "url": "https://example.com/hooks/clinic", "events": ["invoice.issued"],
+              "description": "ระบบบัญชี", "active": true, "version": 812,
+              "created_by_staff_id": "stf_...", "created_at": "...", "updated_at": "..." } ] }
+
+PATCH /staff/webhooks/whk_...                         integration:manage
+If-Match: "812"
+{ "active": false }
+
+POST /staff/webhooks/whk_.../rotate-secret            integration:manage
+{ "id": "whk_...", "secret": "whsec_...", "signing": { ... }, "version": 815, "rotated_at": "..." }
+
+GET /staff/api-keys                                   integration:manage
+{ "data": [ { "id": "key_...", "name": "ระบบบัญชี", "prefix": "hp_k7m2qx9ab4",
+              "scopes": ["appointment:read"], "branch_ids": ["brn_..."], "status": "active",
+              "created_by_staff_id": "stf_...", "created_at": "...", "expires_at": "...", "last_used_at": "..." } ] }
+```
+
+**กฎของการแก้ webhook**
+
+- **URL ใหม่ตรวจด้วยกฎเดียวกับตอนสร้าง** คือ `WebhookUrl.Problem` ตัวเดียวกัน `http://` ที่อยู่ภายใน metadata ของ cloud ชื่อที่ลงท้าย `.internal` หรือ URL ที่มีรหัสผ่าน ได้ `422` ที่ช่อง `url` ตรวจเฉพาะช่องที่ส่งมา การปิด webhook จึงทำได้เสมอ แม้ URL ที่เก็บไว้จะไม่ผ่านกฎที่เข้มขึ้นในรุ่นหลัง การตรวจตอนส่ง (resolve ชื่อ และตรวจซ้ำตอนต่อ socket) ทำกับ URL ใหม่เหมือนเดิม
+- **URL ใหม่มีผลกับการส่งครั้งถัดไปทุกครั้ง** รวมการลองใหม่ของ event ที่เกิดก่อนแก้
+- **ปิดคือหยุดจริง** การแตก event ข้าม webhook ที่ปิดอยู่แล้ว การปิดยังหยุด delivery ที่รอส่งทั้งหมดใน transaction เดียวกัน เป็น `failed` ด้วย `last_error` เป็น `webhook_disabled` และตัวส่งตรวจอีกครั้งก่อนส่งทุกครั้ง แถวที่ถูกจองไปก่อนกดปิดจึงถูกหยุดโดยไม่ส่ง และไม่นับเป็นครั้งที่ลอง คำขอที่ออกไปแล้วก่อนกดปิดอาจยังถึงปลายทาง
+- **เปิดใหม่ไม่ส่งย้อนหลัง** event ที่เกิดระหว่างปิดไม่ถูกแตกให้ webhook นั้นเลย delivery ที่ถูกหยุดส่งซ้ำได้ทีละรายการ
+- **audit** `integration.webhook_updated` พร้อมรายชื่อช่องที่เปลี่ยน ปลายทางใหม่ (ไม่รวม query string) รายการ event และ `active` การแก้ที่ไม่เปลี่ยนอะไรไม่เขียน audit
+
+**ลบแล้วประวัติยังอยู่ โดยไม่มี migration** `webhook_deliveries` ผูกกับ webhook ด้วย foreign key แบบ cascade ถ้าลบแถวจริง ประวัติการส่งหายไปด้วย และคำถาม "ปลายทางเคยได้ event นี้ไหม" จะตอบไม่ได้ ส่วนคอลัมน์ `deleted_at` ต้องมี migration ซึ่งรอบนี้ไม่ทำ การลบจึงเก็บแถวไว้ ปิด webhook ล้างค่า secret ที่เข้ารหัสเป็นสตริงว่าง และตัด query string ออกจาก URL เพราะอาจมี token ของผู้รับ secret ว่างคือเครื่องหมายว่าถูกลบ (`WebhookSubscription.IsDeleted`) เพราะ webhook ที่ยังใช้งานมี secret เสมอ และ webhook ที่ไม่มี secret ก็ลงนามอะไรไม่ได้อยู่แล้ว ผลคือ
+
+- webhook ที่ลบหายจากรายการ delivery ที่รอส่งหยุดเป็น `failed` ด้วย `webhook_deleted`
+- `PATCH`, `DELETE`, `rotate-secret` และ `redeliver` หลังลบได้ `404`
+- `GET /staff/webhooks/{id}/deliveries` ยังอ่านได้ด้วยรหัสเดิม จนงาน housekeeping ลบ event ที่เก่ากว่า 30 วันพร้อม delivery ตามปกติ
+- audit `integration.webhook_deleted` พร้อมปลายทาง รายการ event และสถานะก่อนลบ
+- แถวที่ลบแล้วไม่ถูกลบจริงภายหลัง แต่ไม่มีความลับเหลือ และมีขนาดเล็ก
+
+**secret ใหม่ไม่มีช่วงซ้อน** มีคอลัมน์ secret คอลัมน์เดียว secret เดิมจึงหยุดลงนามทันที ปลายทางที่ยังใช้ค่าเดิมจะปฏิเสธการส่งระหว่างนั้น และการส่งจะลองใหม่ตามรอบปกติ (1, 5, 25 นาที และต่อไป) ปลายทางที่เปลี่ยนค่าทันในช่วงนั้นจึงไม่เสีย event คำตอบมี `Cache-Control: no-store` และ audit `integration.webhook_secret_rotated` ไม่เก็บ secret หมุนได้แม้ webhook ปิดอยู่ เพื่อเปลี่ยน secret ก่อนเปิดใช้อีกครั้ง
+
+**ส่งซ้ำได้ครั้งเดียวต่อการกด** ส่งซ้ำได้เฉพาะ delivery ที่ `failed` แถวเดิมกลับเป็น `pending` และถึงเวลาส่งทันที งานเบื้องหลังส่งในรอบถัดไปด้วย event id และ body เดิม ผู้รับจึงกันซ้ำด้วย `X-Webhook-Id` ได้เหมือนการลองใหม่ปกติ
+
+- กดซ้ำระหว่างที่ยังรอส่งได้ `409 state_conflict` สองคนกดพร้อมกัน คนหลังได้ `409` จาก version ของแถว จึงไม่มีทางเข้าคิวสองครั้ง
+- delivery ที่ลองครบหกครั้งแล้วได้ลองอีกหนึ่งครั้ง ไม่สำเร็จก็กลับเป็น `failed` (`attempts` จึงเกิน `max_attempts` ได้) delivery ที่ถูกหยุดเพราะปิด webhook ได้ลองต่อตามรอบที่ยังเหลือ
+- delivery ของ webhook อื่น หรือของ webhook ที่ลบแล้ว ได้ `404` ส่วน webhook ที่ปิดอยู่ได้ `409` เพราะตัวส่งจะหยุดมันอีกก่อนออกไป
+- audit `integration.webhook_redelivered` พร้อมรหัส delivery รหัส event ชนิดของ event และ error เดิม
+
+**กฎของ API key**
+
+- **รายการไม่มีตัว key** มี prefix (`hp_` และ 10 ตัว) ชื่อ scope สาขา `status` (`active`, `expired`, `revoked`) ผู้สร้าง และเวลาสร้าง หมดอายุ ใช้ล่าสุด และยกเลิก ไม่มีตัว key หรือ hash ซึ่งระบบไม่มีตัว key อยู่แล้ว key ที่หมดอายุและที่ยกเลิกแล้วยังอยู่ในรายการ เพื่อให้แถว audit ที่มี `via_api_key` ยังรู้ว่าเป็น key ไหน
+- **จัดการได้เฉพาะ key ที่ตัวเองสร้างได้** ผู้ที่ไม่ผูกสาขาเห็นและยกเลิกได้ทุก key ผู้ที่ผูกสาขาเห็นเฉพาะ key ที่ทุกสาขาของ key อยู่ในสาขาของตัวเอง key ของสาขาอื่นหรือของทุกสาขาไม่ขึ้นในรายการ และยกเลิกได้ `404` เหมือนไม่มีอยู่ เป็นกฎเดียวกับการสร้าง
+- **ยกเลิกแล้วคำขอถัดไปถูกปฏิเสธ** การยืนยันตัวด้วย key อ่านแถวจากฐานข้อมูลทุกคำขอ (`ApiKeyAuthenticator`) ไม่มี cache ทั้งในหน่วยความจำและใน token เมื่อ `DELETE` commit แล้ว คำขอถัดไปของ key นั้นได้ `401` คำขอที่ผ่านการยืนยันตัวไปก่อนแล้วทำต่อจนจบ
+- **ยกเลิกด้วยคำสั่งเดียว ไม่ใช้ `If-Match`** key ที่ใช้งานอยู่เขียน `last_used_at` ทุกนาที version ของแถวจึงเปลี่ยนตลอด ถ้าบังคับ version การยกเลิก key ที่ถูกใช้ถี่ ซึ่งก็คือ key ที่หลุด จะชนกับการใช้งานเรื่อย ๆ ระบบจึงตั้ง `revoked_at` ด้วย UPDATE เดียวที่มีเงื่อนไข `revoked_at IS NULL` และรายการไม่มีช่อง `version`
+- ยกเลิก key ที่ยกเลิกไปแล้วได้ `204` และไม่เขียน audit ซ้ำ audit `integration.api_key_revoked` เก็บชื่อ prefix ผู้สร้าง และสถานะก่อนยกเลิก
+- ใช้คอลัมน์ `revoked_at` และการตรวจตอนยืนยันตัวที่มีอยู่แล้ว
+
+**ลิงก์ปฏิทินใหม่** `POST /staff/integrations/calendar/token` สร้าง token ใหม่ให้ผู้เรียก แทนทั้ง hash และ ciphertext และล้าง `last_used_at` ใน UPDATE เดียว แอปปฏิทินที่ดึงฟีดพร้อมกันจึงไม่ทำให้ชน version ลิงก์เดิมหา token ไม่เจอและได้ `401` ทันที คำตอบรูปเดียวกับ `GET /staff/integrations/calendar/ics` แบบ JSON และมี `Cache-Control: private, no-store` ยังไม่มีลิงก์ก็สร้างลิงก์แรกให้ (audit `integration.calendar_feed_created`) มีแล้วเขียน `integration.calendar_feed_rotated` ไม่มีทางสร้างลิงก์ใหม่ให้คนอื่น เพราะการปิดบัญชีของคนนั้นหยุดลิงก์ของเขาอยู่แล้ว API key ได้ `403` เพราะ key ไม่มีปฏิทินของตัวเอง
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ลบ webhook โดยลบแถวจริง | foreign key แบบ cascade ลบประวัติการส่งไปด้วย หลักฐานว่าเคยส่งอะไรไปที่ไหนจะเหลือแค่ใน audit |
+| เพิ่มคอลัมน์ `deleted_at` หรือ secret ตัวที่สองสำหรับช่วงซ้อน | ต้องมี migration ซึ่งรอบนี้ไม่ทำ เพิ่มทีหลังได้โดยไม่เปลี่ยน endpoint |
+| เปิด webhook อีกครั้งแล้วส่ง event ที่เกิดระหว่างปิดย้อนหลัง | การปิดมักแปลว่าปลายทางมีปัญหา หรือไม่ควรได้ข้อมูลช่วงนั้น การส่งย้อนหลังเองคือการเดาแทนคลินิก ส่งซ้ำทีละรายการได้ |
+| ส่งซ้ำโดยสร้าง delivery แถวใหม่ | unique `(event_id, subscription_id)` กันไว้ และแถวเดิมเก็บผลครั้งล่าสุดอยู่แล้ว ใช้แถวเดิมจึงไม่ต้องแก้ schema |
+| บังคับ `If-Match` ตอนยกเลิก key | version เปลี่ยนทุกนาทีที่ key ถูกใช้ การหยุด key ที่หลุดต้องไม่แพ้การแข่งกับคนที่ใช้มันอยู่ |
+| `PATCH /staff/api-keys/{id}` ที่ตั้ง `revoked: true` | การยกเลิกย้อนกลับไม่ได้ `DELETE` บอกความหมายนั้นตรงกว่า และไม่ต้องตอบคำถามว่าเปิดคืนได้ไหม |
+| ให้ `integration:manage` สร้างลิงก์ปฏิทินใหม่ให้คนอื่น | ลิงก์เป็นของคน ไม่ใช่ของคลินิก และการปิดบัญชีหยุดลิงก์อยู่แล้ว |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่มี `GET /staff/webhooks/{id}` และ `GET /staff/api-keys/{id}` แบบตัวเดียว รายการสั้นพอให้หาจากรายการ
+- ไม่คืน secret เดิมหรือตัว key ทางใดเลย หมุนหรือสร้างใหม่เท่านั้น
+- ไม่มีทางกู้ webhook ที่ลบหรือ key ที่ยกเลิก สร้างใหม่ได้
+- ไม่แก้ชื่อ scope สาขา หรือวันหมดอายุของ key ที่ออกแล้ว ต้องการต่างจากเดิมให้ออก key ใหม่แล้วยกเลิกตัวเก่า เพราะ key ที่ขยายสิทธิ์ได้หลังออก คือ key ที่ระบบปลายทางไม่รู้ว่าทำอะไรได้บ้าง
+- ไม่ส่งซ้ำทีละหลายรายการ
+- ไม่เพิ่ม scope ใหม่ และไม่มี migration
+
+**หน้าจอ** หน้า webhook มีรายการ webhook ทั้งหมด แต่ละตัวมีปุ่มประวัติการส่ง แก้ไข ปิดหรือเปิดใช้งาน สร้าง secret ใหม่ (แสดงครั้งเดียวพร้อมคำเตือน) และลบ การปิด การสร้าง secret ใหม่ และการลบ ถามยืนยันอีกครั้งพร้อมบอกผลที่จะเกิด ช่องใส่รหัส webhook ยังอยู่ ไว้เปิดประวัติของ webhook ที่ลบแล้ว หน้าประวัติการส่งมีปุ่มส่งอีกครั้งที่รายการที่ไม่สำเร็จ เมื่อ webhook เปิดอยู่ หน้า API key มีรายการ key พร้อมสถานะ และปุ่มยกเลิก key ที่ถามยืนยันก่อน หน้าปฏิทินมีปุ่ม "สร้างลิงก์ใหม่" ที่ถามยืนยันว่าลิงก์เดิมจะใช้ไม่ได้ รายละเอียดอยู่ใน [การเชื่อมต่อระบบ](features/integrations.md) และ [การเชื่อมต่อระบบภายนอก (ความปลอดภัย)](security/integrations.md)
+
+## 23. ค่าตั้งของนัดอ่านกลับไม่ได้ และคิวรอเพิ่มได้อย่างเดียว
+
+**ช่องโหว่** นโยบายยกเลิกและประเภทนัดมีเส้นเดียวใน contract คือ `PUT` ค่าที่เก็บไว้จึงเห็นได้แค่ในคำตอบของ `PUT` ครั้งล่าสุด หน้าตั้งค่าต้องเริ่มฟอร์มจากค่าตั้งต้นของระบบ และการบันทึกแทนที่ค่าเดิมทั้งชุดโดยไม่เคยเห็นค่าเดิม หน้าจองของเคาน์เตอร์และของลูกค้าก็เลือกประเภทนัดจากรายการจริงไม่ได้ หน้าจองของลูกค้าเขียน `regular` กับ `follow_up` ไว้ในหน้าเว็บ ถ้าคลินิกปิดจองออนไลน์ของ `follow_up` ลูกค้ายังกดได้แล้วโดน `422` และประเภทใหม่ที่เปิดจองออนไลน์ไว้ ลูกค้าก็ไม่มีทางเลือก ส่วนคิวรอมีแค่ `POST /staff/waiting-list` ดูไม่ได้ว่าใครรออยู่ และถอนคนที่ไม่ต้องการรอแล้วออกไม่ได้ คนนั้นจึงได้ข้อความคิวว่างไปจนถึงวันสุดท้ายที่รอ
+
+**ทำไมสำคัญ** ค่าปรับคือเงินที่ลูกค้าอาจถูกเรียกเก็บ การแก้นโยบายโดยไม่เห็นค่าเดิมคือการเดา และการบันทึกทับทั้งชุดอาจลบประเภทนัดที่คลินิกตั้งไว้โดยไม่รู้ตัว ส่วนข้อความคิวว่างที่ส่งถึงคนที่จองที่อื่นไปแล้ว ทำให้ข้อความของคลินิกถูกมองข้าม
+
+**คำตอบ** ห้า endpoint ได้รับอนุมัติก่อนสร้าง ไม่มี migration
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/policies/cancellation` | `settings:read` | นโยบายตามที่เก็บ รูปเดียวกับคำตอบของ `PUT` พร้อม `version` และ `ETag` |
+| GET | `/staff/appointment-types` | `appointment:read` | ทุกประเภทพร้อมกติกา รูปเดียวกับคำตอบของ `PUT` พร้อม `version` และ `ETag` |
+| GET | `/portal/appointment-types` | `portal` | เฉพาะประเภทที่เปิดจองออนไลน์ เรียงตามที่คลินิกตั้ง แต่ละแถวมีแค่ `code` `name` และ `duration_minutes` |
+| GET | `/staff/waiting-list?branch=&service_id=&status=&limit=&cursor=` | `appointment:write` | รายการคิวรอ เก่าสุดก่อน แบ่งหน้าด้วย cursor |
+| DELETE | `/staff/waiting-list/{id}` | `appointment:write` | ถอนออกจากคิวรอ ตอบ `204` ถอนซ้ำตอบ `404` |
+
+```http
+GET /v1/staff/appointment-types                      appointment:read
+ETag: "8412"
+{ "version": 8412, "types": [ { "code": "regular", "name": "นัดปกติ", "online_booking": true, "queue_priority": "normal" }, ... ] }
+
+PUT /v1/staff/appointment-types                      settings:write
+If-Match: "8412"
+
+GET /v1/staff/waiting-list?branch=brn_...&status=waiting
+{ "data": [ { "id": "wtl_...", "status": "waiting", "pet_id": "pet_...", "pet_name": "ลูน่า", "service_id": "svc_...",
+              "service_name": "ตรวจสุขภาพ", "branch_id": "brn_...", "earliest_on": "2026-10-09", "latest_on": "2026-10-23",
+              "notified_count": 1, ... } ],
+  "page": { "next_cursor": "..." } }
+```
+
+คลินิกที่ยังไม่เคยบันทึกนโยบายหรือประเภทนัด อ่านได้ค่าตั้งต้นพร้อม `version` เป็น 0 และ `PUT` ครั้งแรกรับ `If-Match: "0"` เหมือนค่าตั้งของคลินิกอื่น ๆ
+
+**ทำไมใช้ scope เหล่านี้**
+
+- **นโยบาย `settings:read`** เป็นคู่อ่านของ `settings:write` ที่ `PUT` ใช้ แบบเดียวกับ `GET /clinic/settings/booking`
+- **ประเภทนัด `appointment:read`** คนที่ต้องใช้รายการนี้มากที่สุดคือคนจอง และการเลือกประเภทเป็นส่วนหนึ่งของการจอง role ตั้งต้นที่จองได้ทุก role ถือ scope นี้ (พนักงานต้อนรับผ่าน `appointment:*` ผู้ดูแล และเจ้าของ) ส่วน `settings:read` พนักงานต้อนรับไม่มี role ตั้งต้นที่แก้ประเภทนัดได้ถือ `appointment:read` อยู่แล้ว role ที่คลินิกตั้งเองและมีแค่ `settings:write` จะเห็นในหน้าตั้งค่าว่าอ่านไม่ได้ และหน้าไม่เปิดให้บันทึกทับโดยไม่เห็นค่าเดิม ระบบรับ scope ได้ทีละตัวต่อเส้น จึงไม่ทำแบบ "ตัวไหนก็ได้"
+- **ประเภทนัดฝั่งลูกค้า `portal`** หน้าจองของลูกค้าต้องเข้าระบบอยู่แล้ว รายการนี้ตัดเหลือเฉพาะประเภทที่ `POST /portal/appointments` ยอมรับ ไม่มีความเร่งด่วนของคิวหรือเวลาจองล่วงหน้า เพราะเป็นกติกาของคลินิก ไม่ใช่ของลูกค้า ไม่ทำเป็นเส้นสาธารณะ เพราะไม่มีหน้าไหนที่ไม่เข้าระบบใช้
+- **คิวรอ `appointment:write`** เท่ากับ `POST` ที่มีอยู่ รายการนี้เป็นเครื่องมือของเคาน์เตอร์สำหรับจัดการสิ่งที่ตัวเองใส่ไว้
+
+**กฎของรายการคิวรอ**
+
+- **สถานะคิดเอา ไม่ได้เก็บ** `waiting` คือยังไม่เลย `latest_on` และ `lapsed` คือเลยแล้ว ไม่ส่ง `status` คือทั้งสองแบบ ค่าอื่นตอบ `422` ที่ช่อง `status`
+- **เรียงจากเก่าไปใหม่** ซึ่งเป็นลำดับเดียวกับที่ระบบแจ้งคนที่รอ
+- **แต่ละแถวมีชื่อมาด้วย** `pet_name` และ `service_name` เพิ่มจากรูปของคำตอบ `POST` เพราะหน้าจอต้องแสดงชื่อ และพนักงานต้อนรับไม่มี `patient:read` ให้อ่านชื่อสัตว์ทีละตัว ชื่อลูกค้าไม่มีในแถว มีแค่ `customer_id` ให้เปิดหน้าลูกค้าด้วย `customer:read`
+- **สาขา** `branch` คือรายการที่คิวว่างของสาขานั้นจะแจ้งถึง คือรายการของสาขานั้นและรายการที่รอทุกสาขา พนักงานที่ผูกสาขาเห็นแค่รายการของสาขาตัวเองและรายการที่รอทุกสาขา ขอสาขาอื่นตอบ `403` ข้อจำกัดนี้อยู่ในคำค้น ไม่ได้กรองหลังอ่าน แบ่งหน้าไปเท่าไรก็ไม่หลุด
+
+**การถอนคือการลบแถว** เลือก `DELETE` ไม่ใช่ `POST .../cancel` เพราะรายการคิวรอไม่มีสถานะให้เปลี่ยน การเพิ่มสถานะ "ถอนแล้ว" ต้องมี migration ไม่มีตารางไหนชี้มาที่แถวนี้ และข้อความที่ส่งไปแล้วอยู่ในประวัติการส่งของมันเอง สิ่งที่ควรเก็บคือใครถอนและถอนอะไร ซึ่ง audit `waiting_list.removed` เก็บไว้พร้อมลูกค้า บริการ หมอ ช่วงวัน และจำนวนครั้งที่เคยแจ้ง
+
+- ถอนซ้ำตอบ `404` แบบเดียวกับการลบกติกาเตือนซ้ำ (§ 19)
+- รายการที่ระบุสาขาที่ผู้เรียกไม่ได้สังกัดตอบ `403` รายการที่รอทุกสาขาเป็นของทุกสาขา เคาน์เตอร์สาขาไหนก็ถอนได้ เหมือนที่ทุกสาขาเห็นในรายการ
+- ไม่มี `If-Match` เพราะรายการคิวรอไม่มีช่องไหนที่คนแก้ได้
+- ถอนแล้วใส่สัตว์ตัวเดิมกับบริการเดิมใหม่ได้ทันที
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่มีการแก้รายการคิวรอ ถ้าช่วงวันหรือหมอผิดให้ถอนแล้วใส่ใหม่
+- ไม่ลบรายการที่หมดอายุเอง รายการเหล่านั้นไม่ได้รับข้อความแล้ว และดูย้อนหลังได้ที่ `status=lapsed`
+- ไม่ให้ลูกค้าดูหรือถอนคิวรอเองจาก portal
+- เวลาว่างในหน้าจองยังคิดจากระยะเวลาของบริการ ไม่ใช่ของประเภทนัด ระบบตรวจช่วงเวลาจริงตามประเภทอีกครั้งตอนจอง หน้าจองของเคาน์เตอร์บอกเรื่องนี้ใต้ช่องประเภท
+- ไม่คิด scope ใหม่ และไม่เพิ่ม scope ให้ role ใด
+
+**หน้าจอ** หน้าตั้งค่านโยบายยกเลิกและประเภทนัดโหลดค่าปัจจุบันและส่ง `version` เป็น `If-Match` หน้าจองนัดของเคาน์เตอร์มีช่องเลือกประเภทนัดจากรายการจริง ปฏิทินนัดมีปุ่ม "ตรวจนัดชนทั้งวัน" ที่ใช้ `GET /staff/appointments/conflicts?date=` ตัวเดิม หน้าคิวรอแสดงรายการพร้อมปุ่มถอนออก และหน้าจองของลูกค้าแสดงประเภทนัดจาก `GET /portal/appointment-types` รายละเอียดอยู่ใน [นัดขั้นสูง](features/advanced-booking.md)
+
+## 24. ลูกค้าเขียนถึงคลินิกได้ทาง LINE ทางเดียว และอ่านบทสนทนาใน portal ไม่ได้
+
+**ช่องโหว่** contract เขียนว่ากล่องข้อความคือ "กล่องข้อความรวมทุกช่องทางต่อลูกค้าหนึ่งคน" แต่ทางเดียวที่ลูกค้าเขียนเข้ามาได้คือแชตกับบัญชี LINE ของคลินิก และต้องให้เคาน์เตอร์ผูก LINE ให้ก่อน ลูกค้าที่ไม่ใช้ LINE หรือยังไม่ได้ผูก เขียนถึงคลินิกในระบบไม่ได้เลย ปุ่ม "แชทกับคลินิก" บนการ์ดนัดใน portal จึงต้องพาไปหน้าติดต่อเรา และลูกค้าที่เข้าระบบอยู่ก็อ่านบทสนทนาของตัวเองไม่ได้ เห็นแค่สำเนาคำตอบในกล่องแจ้งเตือน โดยไม่มีคำถามของตัวเองอยู่ข้างกัน
+
+**ทำไมสำคัญ** portal เป็นที่เดียวที่ระบบรู้แน่ว่าผู้เขียนเป็นใคร เพราะลูกค้าเข้าระบบด้วยบัญชีของตัวเอง ไม่ต้องเดาจากที่อยู่ผู้ส่งแบบ LINE คำถามที่ไม่มีทางเขียนในระบบจะไปจบที่โทรศัพท์หรือแชตส่วนตัวของพนักงาน ซึ่งไม่มีใครเห็นต่อ ไม่มีประวัติ และไม่ผ่านด่านความยินยอม
+
+**การตัดสิน** สองเส้น ได้รับอนุมัติก่อนสร้าง ใช้ scope `portal` ไม่มี scope ใหม่ และไม่มี migration
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/portal/thread?limit=&cursor=` | `portal` | กล่องของลูกค้าที่เข้าระบบ พร้อมข้อความหนึ่งหน้า ใหม่ไปเก่า `next_cursor` พาไปข้อความที่เก่ากว่า ลูกค้าที่ยังไม่เคยเขียนได้คำตอบที่ไม่มี `id` และ `data` ว่าง การอ่านไม่สร้างอะไร |
+| POST | `/portal/thread/messages` | `portal` | เขียนถึงคลินิก `{ "text": "..." }` ช่องทางของข้อความคือ `portal` ข้อความแรกเปิดกล่อง ตอบ `201` พร้อมข้อความที่เก็บ อยู่ใต้ policy `messaging` |
+
+```http
+GET /v1/portal/thread?limit=50                       portal
+{ "id": "thr_...", "status": "replied",
+  "data": [ { "id": "msg_...", "direction": "outbound", "kind": "text", "text": "พามาได้ทุกวันค่ะ",
+              "sent_at": "...", "sent_by_name": "หมอเอ" },
+            { "id": "msg_...", "direction": "inbound", "channel": "portal", "kind": "text",
+              "text": "ขอสอบถามเรื่องวัคซีนค่ะ", "sent_at": "..." } ],
+  "page": { "next_cursor": null } }
+
+POST /v1/portal/thread/messages                      portal
+{ "text": "ขอสอบถามเรื่องวัคซีนค่ะ" }
+201 { "id": "msg_...", "direction": "inbound", "channel": "portal", "kind": "text", "text": "ขอสอบถามเรื่องวัคซีนค่ะ", "sent_at": "..." }
+```
+
+**กฎของสองเส้นนี้**
+
+- **ของใครของมัน** รหัสลูกค้ามาจาก token เท่านั้น ไม่มี parameter ไหนชี้ไปกล่องของคนอื่นได้ ผู้ดูแลสัตว์ร่วม (carer) เป็นลูกค้าอีกคนที่มีบัญชีและกล่องของตัวเอง จึงไม่เห็นกล่องของเจ้าของ และเจ้าของก็ไม่เห็นกล่องของเขา token ของพนักงานได้ `403` แม้ถือ `*` เพราะไม่มีรหัสลูกค้า
+- **เส้นทางเดียวกับข้อความจาก LINE** ข้อความเข้า `ReceiveCustomerMessageHandler` ตัวเดียวกัน จึงอยู่ในกล่องเดียวของลูกค้าไม่ว่ามาทางไหน กล่องถูกจัดไว้ที่สาขาที่ลูกค้าจองครั้งล่าสุดตามกฎเดิม และข้อความแรกสองข้อความที่แย่งกันสร้างกล่องได้ลองใหม่เองเหมือนเดิม
+- **ข้อความ** ต้องไม่ว่าง และยาวไม่เกิน 1,000 ตัวอักษรหลังตัดช่องว่างหัวท้าย เท่ากับคำตอบของพนักงาน ข้อความที่ผิดตอบ `422` ที่ช่อง `text` และไม่เก็บอะไร cursor ที่อ่านไม่ได้ตอบ `422`
+- **ไม่ตอบอัตโนมัติ** บน LINE คำตอบอัตโนมัติบอกคนที่พิมพ์ในแอปแชตว่าจะมีคนตอบ หน้าแชทของ portal บอกเรื่องนี้เองอยู่แล้ว กล่องเปลี่ยนเป็นรอคำตอบ และขึ้นด้านบนในหน้า "ข้อความลูกค้า" ของพนักงาน
+- **สิ่งที่ลูกค้าเห็น** ไม่มีรหัสพนักงานและไม่มีผลการส่ง ข้อความของคลินิกมี `sent_by_name` คือชื่อที่แสดงของผู้ตอบ หน้าจอขึ้นว่า "คลินิก" เมื่อไม่มีชื่อ ข้อความของลูกค้ามี `channel` บอกว่าเขียนมาทางไหน ข้อความจาก LINE ที่เป็นรูปหรือสติกเกอร์ขึ้นเป็นชนิดของสิ่งที่ส่ง เหมือนฝั่งพนักงาน
+- **เรกคอร์ดที่ถูกรวมแล้ว** token ที่ออกก่อนการรวมเขียนได้ `409 state_conflict` ไม่สร้างกล่องใหม่ให้เรกคอร์ดที่ไม่ใช้แล้ว การรวมย้ายข้อความทุกช่องทาง รวมทั้ง `portal` ไปกล่องของเรกคอร์ดที่เก็บด้วย `FoldThreadAsync` ตัวเดิม
+- **rate limit** `POST` อยู่ใต้ policy `messaging` 60 ครั้งต่อนาทีต่อ token ตัวเดียวกับคำตอบของพนักงาน `GET` ใช้เพดาน 600 ครั้งต่อนาทีของทั้งระบบ หน้าแชทอ่านใหม่ทุก 15 วินาทีขณะเปิดอยู่ คือ 4 ครั้งต่อนาที
+- **ไม่บันทึก audit** เหมือนส่วนอื่นของกล่องข้อความ ข้อความคือสิ่งที่ลูกค้าเลือกเขียนถึงคลินิก ไม่ใช่เวชระเบียน
+
+**ช่องทาง `portal` ไม่ใช่ช่องทางส่ง** ข้อความในกล่องใช้ชนิดใหม่ `MessageChannel` ที่มี `line`, `sms`, `email` และ `portal` แยกจาก `DeliveryChannel` ของระบบแจ้งเตือนซึ่งยังมีแค่สามค่า ชื่อสามค่าแรกเหมือนเดิมทุกตัวอักษร ค่าที่เก็บในคอลัมน์ `channel` และ `last_inbound_channel` จึงเหมือนเดิม และไม่ต้องมี migration ผลคือ `portal` ไม่มีทางหลุดเข้า dispatcher ประวัติการส่ง ตัวกรอง `channel` ของประวัติการส่ง หรือช่อง `channel` ของ `POST /staff/notifications/send`
+
+**คำตอบของพนักงานถึงกล่องที่ลูกค้าเขียนล่าสุดจาก portal** คำตอบยังใช้กฎเดิมคือ "ลองช่องทางที่ลูกค้าใช้ล่าสุดก่อน" แต่ `portal` ไม่ใช่ช่องทางส่ง จึงไม่มีช่องทางให้ลองก่อน และเป็นไปตาม [การแจ้งเตือน](features/notifications.md) ทุกข้อ
+
+1. คำตอบถูกเก็บในกล่องก่อนส่งเสมอ จึงขึ้นในหน้าแชทของลูกค้าในการอ่านครั้งถัดไป ไม่ว่าการส่งจะเป็นอย่างไร
+2. ส่งผ่าน `INotificationDispatcher` ด้วยเทมเพลต `thread.reply` ถ้าลูกค้ายินยอมเรื่อง `service_messages` สำเนาเข้ากล่องแจ้งเตือนในเว็บ (หัวเรื่อง "ข้อความตอบกลับจากคลินิก") แล้วส่งทาง LINE, SMS หรืออีเมลตามลำดับปกติ ข้ามช่องทางที่ส่งไม่ได้ และลองช่องทางถัดไปเมื่อส่งไม่สำเร็จ ลูกค้าที่ปิดหน้าเว็บไปแล้วจึงรู้ว่าคลินิกตอบ
+3. ถ้าลูกค้าถอนความยินยอม ไม่มีสำเนาในกล่องแจ้งเตือนและไม่ส่งทางไหน `delivery` เป็น `skipped` กับ `no_consent` เหมือนเดิม แต่คำตอบยังขึ้นในหน้าแชทเมื่อลูกค้าเปิดเอง เพราะเป็นคำตอบของคำถามที่ลูกค้าถามเอง และลูกค้าเป็นคนเปิดอ่าน ไม่ใช่คลินิกส่งไปหา
+4. `delivery` ในคำตอบของ `POST /staff/threads/{id}/messages` บอกผลการส่งทาง LINE, SMS หรืออีเมล ไม่ได้บอกเรื่องหน้าแชท ซึ่งขึ้นเสมอ
+5. คำตอบที่ไปทาง SMS เสียเครดิตตามจำนวนส่วนเหมือนเดิม ลูกค้าที่ไม่อยากได้ SMS ปิดช่องทางนั้นเองได้ในหน้าบัญชี
+
+**อ่านแล้วฝั่งลูกค้า โดยไม่มีคอลัมน์ใหม่** กล่องไม่มีที่เก็บว่าลูกค้าอ่านถึงไหน และการเพิ่มต้องมี migration แต่คำตอบทุกฉบับที่ผ่านด่านความยินยอมมีสำเนา `thread.reply` ในกล่องแจ้งเตือน ซึ่งมี `read_at` อยู่แล้ว หน้าแชทจึงกดว่าอ่านแล้วให้สำเนาเหล่านั้นผ่าน `GET /portal/notifications?unread=true` และ `POST /portal/notifications/read` (§ 13) เมื่อมีคำตอบใหม่ขึ้นบนจอ ตัวเลขบนกระดิ่งจึงลดลงเอง ไม่มีเส้นใหม่ ส่วนพนักงานยังไม่เห็นว่าลูกค้าอ่านคำตอบแล้วหรือยัง
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| เพิ่ม `portal` เป็นค่าที่สี่ของ `DeliveryChannel` | `DeliveryChannel` คือทางที่ระบบใช้ส่งข้อความ ใช้ทั้งใน dispatcher ประวัติการส่ง และค่าที่รับจากพนักงาน ค่าที่ส่งอะไรไม่ได้จะหลุดเข้าไปในที่เหล่านั้น เช่นกรองประวัติการส่งด้วย `channel=portal` ได้ทั้งที่ไม่มีแถวไหนเป็นไปได้ |
+| คำตอบของกล่องที่มาจาก portal เข้าแค่หน้าแชทและกล่องแจ้งเตือน ไม่ส่ง LINE, SMS หรืออีเมล | ลูกค้าที่ถามแล้วปิดหน้าเว็บจะไม่รู้ว่าคลินิกตอบแล้ว และกฎ "ทุกข้อความผ่านเส้นทางเดียวกัน" ของการแจ้งเตือนจะมีข้อยกเว้นแรก |
+| เพิ่มคอลัมน์ "ลูกค้าอ่านถึงไหน" หรือเส้น `POST /portal/thread/read` | ต้องมี migration หรือ endpoint ที่สามซึ่งไม่ได้ขออนุมัติ สำเนาในกล่องแจ้งเตือนมี `read_at` อยู่แล้ว และกระดิ่งก็นับจากที่นั่น |
+| ให้ `GET` สร้างกล่องว่างเมื่อยังไม่มี | กล่องว่างจะขึ้นในหน้า "ข้อความลูกค้า" ของพนักงานทั้งที่ไม่มีใครเขียน ลูกค้าทุกคนที่เคยเปิดหน้าแชทจะมีกล่อง |
+| stream แบบ server-sent events ให้ portal | portal ยังไม่มี stream ของตัวเอง การ์ดนัดใช้การอ่านใหม่ทุก 15 วินาทีขณะเปิดอยู่แล้ว แชทที่คลินิกตอบในเวลาทำการไม่ต้องเร็วกว่านั้น |
+| ให้ผู้ดูแลสัตว์ร่วมเห็นกล่องของเจ้าของ | กล่องเป็นของคน ไม่ใช่ของสัตว์ ข้อความอาจมีเรื่องอื่นนอกจากสัตว์ตัวที่ดูแลร่วม เช่นเรื่องเงิน |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่แนบรูปหรือไฟล์จาก portal ส่งได้แค่ข้อความ ไฟล์ของสัตว์ส่งได้จากหน้าส่งเอกสาร
+- ไม่แก้หรือลบข้อความที่ส่งแล้ว
+- ไม่มีคำตอบอัตโนมัติ และไม่บอกพนักงานว่าลูกค้าอ่านแล้ว
+- ไม่มีเส้นที่สามสำหรับอ่านแล้ว
+- ไม่เพิ่ม scope ใหม่ และไม่มี migration
+
+**หน้าจอ** portal มีหน้า "แชทกับคลินิก" (`/portal/messages`) ข้อความของลูกค้าอยู่ขวา ของคลินิกอยู่ซ้ายพร้อมชื่อผู้ตอบหรือคำว่า "คลินิก" ช่องพิมพ์อยู่ใต้บทสนทนา หน้าอ่านใหม่ทุก 15 วินาทีขณะเปิดอยู่ และดูข้อความก่อนหน้าได้ทีละหน้า ปุ่ม "แชทกับคลินิก" บนการ์ดนัดและเมนูบัญชีพาไปหน้านี้ หน้า "ข้อความลูกค้า" ของพนักงานแสดงข้อความที่มาจาก portal ด้วยป้ายช่องทาง "เว็บไซต์" รายละเอียดอยู่ใน [ข้อความลูกค้า](features/messaging.md) และ [portal ลูกค้า](features/portal.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -613,6 +848,9 @@ POST /staff/reports/exports            report:export
 | `line_address_taken` และช่อง `version` ของกติกาเตือน (§ 18 และ § 19) ได้รับรองไหม | ทำงานอยู่ ดู [assumptions.md § 14](./assumptions.md) |
 | คลังยาควรมีการปิดรายการไหม (§ 20 ถือว่ายาทุกตัวในคลังใช้งานอยู่) | ตอนนี้ไม่มี endpoint แก้หรือปิดรายการในคลัง |
 | รูปแบบไฟล์ส่งออก `xlsx` และ `pdf` (§ 21) ควรเป็นส่วนหนึ่งของ contract ไหม | ทำงานอยู่ ค่าเริ่มต้นยังเป็น `csv` |
+| webhook ที่ลบแล้ว (§ 22) ควรมีคอลัมน์ `deleted_at` และ secret ควรมีช่วงซ้อนตอนหมุนไหม | ตอนนี้ใช้ secret ว่างเป็นเครื่องหมายว่าลบ และ secret เดิมหยุดทันที ทั้งสองต้องมี migration |
+| การถอนคิวรอคือการลบแถวพร้อม audit `waiting_list.removed` (§ 23) ได้รับรองไหม หรือควรมีสถานะ "ถอนแล้ว" | ทำงานอยู่ ถ้าต้องการสถานะต้องมี migration |
+| แชทใน portal (§ 24) ควรมีสถานะอ่านแล้วของกล่องเอง และให้พนักงานเห็นว่าลูกค้าอ่านแล้วไหม | ตอนนี้ใช้สถานะอ่านแล้วของสำเนาในกล่องแจ้งเตือน ถ้าต้องการของกล่องเองต้องมี migration |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -640,3 +878,6 @@ POST /staff/reports/exports            report:export
 | เลือกยาจากคลังตอนสั่งยา | `backend/src/HappyPaws.Application/Prescriptions/ListDrugOptions/`, `backend/src/HappyPaws.Application/Consultations/AddPrescription/AddPrescriptionHandler.cs`, `backend/src/HappyPaws.Application/Inventory/Dispensing/StockDispenser.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/PrescriptionsController.cs`, `frontend/src/features/consultations/components/prescriptions/drug-search-field.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Prescriptions/DrugPickerTests.cs` |
 | แก้ เปิดปิด และลบกติกาเตือน | `backend/src/HappyPaws.Domain/Automation/AutomationRule.cs`, `backend/src/HappyPaws.Application/Automation/UpdateAutomation/`, `DeleteAutomation/`, `AutomationAccess.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/AutomationsController.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Automation/AutomationEditTests.cs` |
 | ส่งออกรายงานเป็น Excel และ PDF | `backend/src/HappyPaws.Application/Reporting/Tables/ReportTable.cs`, `Files/IReportFileWriter.cs`, `Csv/CsvReportWriter.cs`, `RunExports/RunReportExportsHandler.cs`, `backend/src/HappyPaws.Infrastructure/Reporting/XlsxReportWriter.cs`, `PdfReportWriter.cs`, `frontend/src/features/reporting/components/export-format-select.tsx`, `backend/tests/HappyPaws.IntegrationTests/Reporting/`, `Api/Reporting/ReportExportTests.cs` |
+| จัดการ webhook, API key และลิงก์ปฏิทิน | `backend/src/HappyPaws.Application/Integrations/ListWebhooks/`, `UpdateWebhookSubscription/`, `DeleteWebhookSubscription/`, `RotateWebhookSecret/`, `RedeliverWebhookDelivery/`, `ListApiKeys/`, `RevokeApiKey/`, `RotateCalendarFeed/`, `ApiKeys/ApiKeyReach.cs`, `DispatchWebhooks/DispatchWebhooksHandler.cs`, `backend/src/HappyPaws.Domain/Integrations/WebhookSubscription.cs`, `WebhookDelivery.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/WebhooksController.cs`, `WebhookDeliveriesController.cs`, `ApiKeysController.cs`, `CalendarTokenController.cs`, `frontend/src/features/integrations/components/webhook-list.tsx`, `api-key-list.tsx`, `rotate-calendar-link-button.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/WebhookManagementTests.cs`, `ApiKeyManagementTests.cs`, `CalendarTokenTests.cs` |
+| อ่านค่าตั้งของนัดกลับ ประเภทนัดฝั่งลูกค้า และรายการกับการถอนคิวรอ | `backend/src/HappyPaws.Application/Appointments/GetAppointmentRules/`, `ListWaitingList/`, `RemoveFromWaitingList/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Appointments/WaitingListRepository.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/CancellationPolicyController.cs`, `AppointmentTypesController.cs`, `WaitingListController.cs`, `Portal/PortalAppointmentTypesController.cs`, `frontend/src/features/appointments/components/waiting-list/`, `components/calendar/day-conflict-check.tsx`, `components/new/type-select.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/AppointmentRulesReadTests.cs`, `WaitingListManagementTests.cs` |
+| แชทกับคลินิกใน portal | `backend/src/HappyPaws.Domain/Messaging/MessageChannel.cs`, `backend/src/HappyPaws.Application/Messaging/Portal/`, `ReceiveMessage/ReceiveCustomerMessageHandler.cs`, `ReplyToThread/ReplyToThreadHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Portal/PortalThreadController.cs`, `frontend/src/app/(portal)/portal/messages/page.tsx`, `frontend/src/features/portal/components/chat/`, `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/PortalThreadTests.cs` |

@@ -5,6 +5,7 @@ import type {
   InviteStaffInput,
   StaffListFilters,
   StaffMember,
+  StaffPublicProfile,
   StaffTypeOption,
   UpdateStaffInput,
 } from '../types/staff.types';
@@ -51,6 +52,14 @@ export function inviteStaffMember(input: InviteStaffInput): Promise<StaffMember>
 /** `PATCH /staff/members/{id}` — position, department, licence, roles, branches. */
 export function updateStaffMember(id: string, version: number, input: UpdateStaffInput): Promise<StaffMember> {
   return staffApi().patch<StaffMember>(`/staff/members/${encodeURIComponent(id)}`, { body: input, ifMatch: version });
+}
+
+/**
+ * `PUT /staff/members/{id}/public-profile` — what the public team page says about this person.
+ * Replaces the whole profile: a field left out is cleared. Extension, § 10.
+ */
+export function replacePublicProfile(id: string, version: number, profile: StaffPublicProfile): Promise<StaffMember> {
+  return staffApi().put<StaffMember>(`/staff/members/${encodeURIComponent(id)}/public-profile`, { body: profile, ifMatch: version });
 }
 
 /** `POST /staff/members/{id}/deactivate` — revokes every session; the name stays on old records. */

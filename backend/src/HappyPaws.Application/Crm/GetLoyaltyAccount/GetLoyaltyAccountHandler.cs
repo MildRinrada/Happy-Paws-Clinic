@@ -1,3 +1,5 @@
+using HappyPaws.Application.Clinics;
+using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Crm.Dtos;
 using HappyPaws.Application.Customers;
@@ -23,6 +25,8 @@ public sealed class GetLoyaltyAccountHandler(
     ILoyaltyLedger ledger,
     ICouponRepository coupons,
     ICustomerPackageRepository packages,
+    IClinicSettingsStore settings,
+    IClock clock,
     ClinicDays clinicDays)
 {
     public const int HistoryLimit = 50;
@@ -32,28 +36,24 @@ public sealed class GetLoyaltyAccountHandler(
         var customer = await customers.FindByIdAsync(customerId, cancellationToken)
             ?? throw new NotFoundException("customer", customerId);
 
-        var totals = await ledger.TotalsAsync(customer.Id, cancellationToken);
+        var loyalty = await settings.LoyaltyAsync(cancellationToken);
+        var totals = await ledger.TotalsAsync(customer.Id, clock.UtcNow, cancellationToken);
         var history = await ledger.HistoryAsync(customer.Id, HistoryLimit, cancellationToken);
         var redemptions = await coupons.HistoryForCustomerAsync(customer.Id, HistoryLimit, cancellationToken);
         var owned = await packages.ForCustomerAsync(customer.Id, cancellationToken);
 
-        var next = LoyaltyRules.NextTier(totals.Lifetime);
+        var next = loyalty.NextTier(totals.Lifetime);
 
         return new LoyaltyAccountDto(
             customer.Id,
             totals.Balance,
             totals.Lifetime,
-            CrmWire.ToWire(LoyaltyRules.TierFor(totals.Lifetime)),
+            CrmWire.ToWire(loyalty.TierFor(totals.Lifetime)),
             next is { } step ? new NextTierDto(CrmWire.ToWire(step.Tier), step.PointsNeeded) : null,
-            LoyaltyRulesDto.Current,
-            [.. history.Select(row => new LoyaltyEntryDto(
-                row.Entry.Id,
-                CrmWire.ToWire(row.Entry.Kind),
-                row.Entry.Points,
-                row.Entry.InvoiceId,
-                row.InvoiceNumber,
-                row.Entry.Note,
-                row.Entry.OccurredAt))],
+            LoyaltyRulesDto.From(loyalty),
+            totals.Expired,
+            totals.NextExpiryAt is { } expiresAt ? new NextExpiryDto(totals.NextExpiringPoints, expiresAt) : null,
+            [.. history.Select(row => LoyaltyEntryDto.From(row.Entry, row.InvoiceNumber))],
             [.. redemptions.Select(row => new CouponRedemptionDto(
                 row.Redemption.Id,
                 row.Redemption.CouponId,

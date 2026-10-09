@@ -9,10 +9,7 @@ interface WaitingListAddedProps {
   onAnother: () => void;
 }
 
-/**
- * The entry as the backend stored it. This is the only time it is seen: the contract has no way
- * to list the waiting list afterwards.
- */
+/** The entry as the backend stored it. It also shows in the list below from now on. */
 export function WaitingListAdded({ entry, petName, onAnother }: WaitingListAddedProps) {
   const text = waitingListText;
   // Dates are clinic days; noon keeps the long format on the same day in any viewer's zone.

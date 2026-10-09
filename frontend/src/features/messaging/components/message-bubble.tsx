@@ -1,5 +1,6 @@
-import { channelLabels, labelOf } from '@/features/notifications/content/delivery-labels';
+import { labelOf } from '@/features/notifications/content/delivery-labels';
 import { formatDateTime } from '@/lib/format/datetime';
+import { inboundChannelLabels } from '../content/message-labels';
 import { messagesPage } from '../content/messages-page';
 import { messageText } from '../lib/message-text';
 import type { ThreadMessage } from '../types/thread.types';
@@ -10,7 +11,7 @@ export function MessageBubble({ message }: { message: ThreadMessage }) {
   const outbound = message.direction === 'outbound';
   const meta = outbound
     ? message.sent_by_name && messagesPage.thread.from(message.sent_by_name)
-    : message.channel && labelOf(channelLabels, message.channel);
+    : message.channel && labelOf(inboundChannelLabels, message.channel);
 
   return (
     <li className={`flex flex-col ${outbound ? 'items-end' : 'items-start'}`}>

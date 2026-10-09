@@ -18,6 +18,10 @@ namespace HappyPaws.Domain.Integrations;
 /// The token alone grants nothing beyond the feed, and the feed is checked against its owner on
 /// every fetch: a deactivated staff member's link returns 401.
 /// </para>
+/// <para>
+/// <c>POST /staff/integrations/calendar/token</c> (<c>docs/contract-extensions.md § 22</c>) gives
+/// the row a new token: both columns are replaced, so the old link finds nothing from then on.
+/// </para>
 /// </summary>
 public sealed class CalendarFeed : Entity
 {

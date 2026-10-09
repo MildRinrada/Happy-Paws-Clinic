@@ -35,6 +35,7 @@ const newAppointment = z.object({
   startsAt: instant,
   staffId: id.optional(),
   reason: z.string().trim().max(1000).optional(),
+  type: z.string().regex(/^[a-z][a-z0-9_]{1,29}$/).optional(),
   idempotencyKey: z.uuid(),
 });
 
@@ -49,6 +50,7 @@ export async function createAppointmentAction(input: z.infer<typeof newAppointme
         starts_at: parsed.startsAt,
         staff_id: parsed.staffId,
         reason: parsed.reason || undefined,
+        type: parsed.type,
       },
       parsed.idempotencyKey,
     ),

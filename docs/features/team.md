@@ -127,10 +127,20 @@ docker compose run --rm api seed-staff
 - รูปที่ยังไม่มีแสดงเป็นกรอบเส้นประ ใส่รูปจริงโดยวางไฟล์ใต้ `frontend/public/images/team/` แล้วตั้ง `photo_path` เช่น `/images/team/mint.jpg`
 - การ์ดสัตวแพทย์บนหน้าแรกเดิมมีป้าย "ว่างวันนี้" ตอนนี้เป็นตำแหน่งแทน เพราะยังไม่มีข้อมูลกะทำงานจริงให้คำนวณ
 
+## หน้าจอพนักงาน
+
+แก้ทั้งแผนกและโปรไฟล์สาธารณะได้ที่ **ตั้งค่า > พนักงานและสิทธิ์** (`/settings/staff`) ไม่มีแท็บแยก เพราะทั้งสองอย่างเป็นข้อมูลของพนักงานคนนั้น
+
+- **แผนก** กด **แก้ไข** ที่แถวของคนนั้น แล้วเลือกแผนกจากรายการ ส่งผ่าน `PATCH /staff/members/{id}`
+- **โปรไฟล์บนเว็บ** ปุ่มข้าง **แก้ไข** เปิดฟอร์มตำแหน่งที่แสดง ความเชี่ยวชาญ รูป ปีที่เริ่มทำงาน แนะนำตัว และช่องติ๊ก **แสดงคนนี้บนหน้าทีมของเรา** ส่งผ่าน `PUT /staff/members/{id}/public-profile` ครั้งละทั้งก้อน ช่องที่เว้นว่างถูกล้าง
+- ปุ่มทั้งสองขึ้นเฉพาะคนที่ยังทำงานอยู่ และเมื่อบัญชีที่เปิดหน้าถือ `staff:manage` และมีสิทธิ์ไม่น้อยกว่าคนนั้น ซึ่งเป็นกติกาเดียวกับที่ backend ตรวจ
+- คนที่ตั้งให้แสดงบนเว็บมีป้าย **แสดงบนเว็บ** ในรายชื่อ
+- ส่ง `version` ไปเป็น `If-Match` ถ้ามีคนแก้คนเดียวกันไปก่อน หน้าบอกให้โหลดใหม่ ค่าที่ผิดกติกา (`409 invalid_public_profile`) ขึ้นเป็นข้อความของ backend ใต้ฟอร์ม
+- บันทึกแล้วหน้าทีมและหน้าแรกโหลดข้อมูลใหม่ในการเปิดครั้งถัดไป
+
 ## ข้อจำกัดที่รู้อยู่
 
-- ยังไม่มีหน้าจอฝั่งพนักงานสำหรับแก้แผนกหรือโปรไฟล์ ต้องเรียก API ตรง
-- ยังไม่มีการอัปโหลดรูป ต้องวางไฟล์ในโฟลเดอร์ของหน้าเว็บเอง
+- ยังไม่มีการอัปโหลดรูป API รับแค่ path ใต้ `/public` ของหน้าเว็บ ต้องวางไฟล์ในโฟลเดอร์ของหน้าเว็บเองก่อน แล้วพิมพ์ path ในฟอร์ม
 - พนักงานแก้โปรไฟล์ของตัวเองไม่ได้ ต้องให้คนที่มี `staff:manage` แก้ให้
 - แผนกเป็นรายการตายตัวหกแผนก คลินิกเพิ่มเองไม่ได้
 - ยังไม่มีหน้าแยกของแต่ละคน และยังจองนัดกับหมอคนที่เลือกจากหน้าทีมไม่ได้
@@ -148,3 +158,4 @@ docker compose run --rm api seed-staff
 | คำสั่ง `seed-staff` | `backend/src/HappyPaws.Api/Operator/OperatorCommands.cs` |
 | เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Staff/DepartmentTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Staff/TeamTests.cs`, `DepartmentAccessTests.cs` |
 | หน้าเว็บ | `frontend/src/features/team/`, `frontend/src/app/(public)/team/page.tsx`, `frontend/src/features/home/components/vets/` |
+| หน้าจอพนักงาน | `frontend/src/features/staff/components/settings/public-profile-form.tsx`, `staff-member-row.tsx`, `staff-member-form.tsx`, `actions/public-profile-actions.ts`, `content/public-profile.ts` |

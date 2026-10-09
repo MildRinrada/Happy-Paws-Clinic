@@ -21,6 +21,19 @@ public interface IWebhookRepository
 
     Task<WebhookSubscription?> FindAsync(string subscriptionId, CancellationToken cancellationToken = default);
 
+    /// <summary>The subscription, tracked for a change; deleted ones included, so the caller decides.</summary>
+    Task<WebhookSubscription?> LoadAsync(string subscriptionId, CancellationToken cancellationToken = default);
+
+    /// <summary>Every subscription not deleted, newest first. A clinic has a handful.</summary>
+    Task<IReadOnlyList<WebhookSubscription>> ListAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stops every pending delivery of one subscription in one statement (<see cref="WebhookDelivery.Halt"/>),
+    /// inside the caller's transaction. A row-by-row update could lose a race with the sender's
+    /// lease and fail on its version for no reason the caller could fix.
+    /// </summary>
+    Task<int> HaltPendingAsync(string subscriptionId, string reason, DateTimeOffset at, CancellationToken cancellationToken = default);
+
     /// <summary>Subscriptions that are on, for fanning events out. A clinic has a handful.</summary>
     Task<IReadOnlyList<WebhookSubscription>> ListActiveAsync(CancellationToken cancellationToken = default);
 

@@ -17,15 +17,18 @@ import { repeatText } from '../../content/advanced-booking';
 import { newAppointment } from '../../content/appointment-calendar';
 import { useConflictCheck, type ConflictQuery } from '../../hooks/use-conflict-check';
 import { appointmentPaths } from '../../lib/appointment-paths';
+import { REGULAR } from '../../lib/appointment-type-draft';
 import { defaultRepeat, expand, toRrule, type RepeatRule } from '../../lib/recurrence';
 import { refusalText } from '../../lib/refusal';
 import { seriesConflicts } from '../../lib/series-conflicts';
 import type { SeriesConflict } from '../../types/advanced-booking.types';
+import type { AppointmentTypeInput } from '../../types/appointment-settings.types';
 import type { VetOption } from '../../types/calendar.types';
 import { PetPicker } from './pet-picker';
 import { RepeatSection } from './repeat-section';
 import { SingleConflictCheck } from './single-conflict-check';
 import { SlotPicker } from './slot-picker';
+import { TypeSelect } from './type-select';
 
 interface NewAppointmentFormProps {
   branchId: string;
@@ -34,6 +37,11 @@ interface NewAppointmentFormProps {
   initialDay: string;
   /** `appointment:read`, which the conflict check needs. */
   canCheck: boolean;
+  /**
+   * The clinic's appointment types, or empty when they could not be read; the booking is then
+   * `regular`, the type every booking that names none is.
+   */
+  types: AppointmentTypeInput[];
 }
 
 /**
@@ -42,7 +50,7 @@ interface NewAppointmentFormProps {
  * online notice period. Either way the backend checks the vet is really free and answers with other
  * times if not. A course is booked whole or not at all, and a refusal is shown against each date.
  */
-export function NewAppointmentForm({ branchId, services, vets, initialDay, canCheck }: NewAppointmentFormProps) {
+export function NewAppointmentForm({ branchId, services, vets, initialDay, canCheck, types }: NewAppointmentFormProps) {
   const text = newAppointment;
   const router = useRouter();
 
@@ -54,6 +62,7 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay, canCh
   const [chosen, setChosen] = useState<string>();
   const [manualTime, setManualTime] = useState('');
   const [reason, setReason] = useState('');
+  const [typeCode, setTypeCode] = useState(REGULAR);
   const [repeat, setRepeat] = useState<RepeatRule | null>(null);
   const [error, setError] = useState<string>();
   const [suggested, setSuggested] = useState<string[]>([]);
@@ -105,7 +114,8 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay, canCh
     setSuggested([]);
     setRefused(undefined);
 
-    const common = { petId: pet.id, serviceId, branchId, staffId, reason: reason.trim() || undefined, idempotencyKey };
+    const type = typeCode === REGULAR ? undefined : typeCode;
+    const common = { petId: pet.id, serviceId, branchId, staffId, reason: reason.trim() || undefined, type, idempotencyKey };
 
     startSubmit(async () => {
       try {
@@ -151,6 +161,8 @@ export function NewAppointmentForm({ branchId, services, vets, initialDay, canCh
           <Input id="book-day" type="date" value={day} required onChange={(event) => setDay(event.target.value)} />
         </Field>
       </div>
+
+      {types.length > 1 && <TypeSelect types={types} value={typeCode} onChange={setTypeCode} />}
 
       <Field label={text.vet.label} htmlFor="book-vet">
         <Select id="book-vet" value={vetId} onChange={(event) => { setVetId(event.target.value); setChosen(undefined); }}>

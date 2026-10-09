@@ -20,6 +20,8 @@ internal sealed class CouponConfiguration : EntityConfiguration<Coupon>
         builder.Property(coupon => coupon.Name).HasMaxLength(120).IsRequired();
         builder.Property(coupon => coupon.BranchId).HasMaxLength(40);
         builder.Property(coupon => coupon.CreatedByStaffId).HasMaxLength(40).IsRequired();
+        builder.Property(coupon => coupon.DeactivatedByStaffId).HasMaxLength(40);
+        builder.Property(coupon => coupon.DeactivationReason).HasMaxLength(500);
 
         builder.PrimitiveCollection(coupon => coupon.ServiceIds)
             .HasField("_serviceIds")
@@ -27,12 +29,18 @@ internal sealed class CouponConfiguration : EntityConfiguration<Coupon>
 
         builder.HasIndex(coupon => coupon.Code).IsUnique().HasDatabaseName(CodeIndex);
 
+        // GET /staff/coupons pages newest first (docs/contract-extensions.md § 25).
+        builder.HasIndex(coupon => new { coupon.CreatedAt, coupon.Id });
+
         builder.ToTable(table =>
         {
             table.HasCheckConstraint("ck_coupons_one_kind", "(percent IS NULL) <> (amount_satang IS NULL)");
             table.HasCheckConstraint(
                 "ck_coupons_redeemed",
                 "redeemed_count >= 0 AND (max_redemptions IS NULL OR redeemed_count <= max_redemptions)");
+            table.HasCheckConstraint(
+                "ck_coupons_deactivated_by",
+                "(deactivated_at IS NULL) = (deactivated_by_staff_id IS NULL)");
         });
 
         builder.HasOne<Branch>().WithMany()
@@ -95,6 +103,25 @@ internal sealed class LoyaltyEntryConfiguration : EntityConfiguration<LoyaltyEnt
             .HasForeignKey(entry => entry.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Invoice>().WithMany()
             .HasForeignKey(entry => entry.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+/// <summary>
+/// The points programme (<c>docs/contract-extensions.md § 25</c>): one row, like the clinic's other
+/// settings, and levels that rise.
+/// </summary>
+internal sealed class LoyaltySettingsConfiguration : EntityConfiguration<LoyaltySettings>
+{
+    protected override void ConfigureEntity(EntityTypeBuilder<LoyaltySettings> builder)
+    {
+        builder.ToTable("loyalty_settings", table =>
+        {
+            table.HasCheckConstraint("ck_loyalty_settings_singleton", $"id = '{LoyaltySettings.SingletonId}'");
+            table.HasCheckConstraint(
+                "ck_loyalty_settings_values",
+                "satang_per_point > 0 AND point_value_satang > 0 AND silver_min_points > 0 AND gold_min_points > silver_min_points "
+                + "AND (points_expire_after_months IS NULL OR points_expire_after_months > 0)");
+        });
     }
 }
 

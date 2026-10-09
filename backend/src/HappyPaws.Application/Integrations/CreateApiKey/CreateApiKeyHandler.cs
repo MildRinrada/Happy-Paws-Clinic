@@ -61,8 +61,9 @@ public sealed class CreateApiKeyValidator : AbstractValidator<CreateApiKeyComman
 /// branch.
 /// </para>
 /// <para>
-/// <b>Expiry.</b> Always set: 90 days unless asked, never more than 365. There is no endpoint that
-/// revokes a key, so expiry is what guarantees a forgotten key stops.
+/// <b>Expiry.</b> Always set: 90 days unless asked, never more than 365, so a forgotten key stops
+/// by itself. A key known to be leaked is stopped sooner with <c>DELETE /staff/api-keys/{id}</c>
+/// (<c>docs/contract-extensions.md § 22</c>).
 /// </para>
 /// </summary>
 public sealed class CreateApiKeyHandler(

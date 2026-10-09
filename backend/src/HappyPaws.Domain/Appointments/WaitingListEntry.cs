@@ -12,9 +12,10 @@ namespace HappyPaws.Domain.Appointments;
 /// ordinary booking path, so a waiting list can never double-book a vet.
 /// </para>
 /// <para>
-/// There is no status to manage. An entry lapses on its own once its last date has passed, and the
-/// contract gives no endpoint to withdraw one, so a field that could only ever say "waiting" would
-/// be decoration.
+/// There is no status to manage. An entry lapses on its own once its last date has passed, and
+/// withdrawing one (<c>DELETE /staff/waiting-list/{id}</c>, <c>docs/contract-extensions.md § 23</c>)
+/// deletes the row, so a field that could only ever say "waiting" would be decoration. The list
+/// works out <c>waiting</c> or <c>lapsed</c> from <see cref="IsLapsed"/>.
 /// </para>
 /// </summary>
 public sealed class WaitingListEntry : Entity

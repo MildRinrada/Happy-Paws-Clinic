@@ -123,8 +123,13 @@ internal sealed class PurchaseOrderConfiguration : EntityConfiguration<PurchaseO
         builder.Property(order => order.OrderedByStaffId).HasMaxLength(40).IsRequired();
         builder.Property(order => order.ExpectedOn).HasColumnType("date");
         builder.Property(order => order.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(order => order.CancelledByStaffId).HasMaxLength(40);
+        builder.Property(order => order.CancelReason).HasMaxLength(PurchaseOrder.NoteMax);
 
         builder.HasIndex(order => order.Number).IsUnique();
+
+        // GET /staff/inventory/purchase-orders pages newest first (docs/contract-extensions.md § 25).
+        builder.HasIndex(order => new { order.OrderedAt, order.Id });
 
         // "On order" on the stock list: open orders at a branch.
         builder.HasIndex(order => new { order.BranchId, order.Status });

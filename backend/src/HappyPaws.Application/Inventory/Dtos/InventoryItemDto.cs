@@ -12,6 +12,8 @@ namespace HappyPaws.Application.Inventory.Dtos;
 /// <item><c>on_hand</c>: Every unit on the books across the listed branches, expired lots included.</item>
 /// <item><c>available</c>: The usable part of <paramref name="OnHand"/>: lots not yet expired.</item>
 /// <item><c>branches</c>: One entry per branch, in the order the branches are listed.</item>
+/// <item><c>active</c>, <c>retired_at</c>: false and the time once the item is retired
+/// (<c>docs/contract-extensions.md § 25</c>, not in the API reference).</item>
 /// </list>
 /// </remarks>
 public sealed record InventoryItemDto(
@@ -25,7 +27,9 @@ public sealed record InventoryItemDto(
     DateTimeOffset CreatedAt,
     int OnHand,
     int Available,
-    IReadOnlyList<BranchStockDto> Branches);
+    IReadOnlyList<BranchStockDto> Branches,
+    bool Active = true,
+    DateTimeOffset? RetiredAt = null);
 
 /// <summary>One branch's stock of one item.</summary>
 /// <remarks>

@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { runAction } from '@/lib/actions/action-result';
 import { replaceAppointmentTypes, replaceCancellationPolicy } from '../api/appointmentSettings';
@@ -26,7 +27,9 @@ const policy = z.object({
 
 export async function replaceCancellationPolicyAction(input: z.infer<typeof policy>) {
   const parsed = policy.parse(input);
-  return runAction(() => replaceCancellationPolicy(parsed.values, parsed.version));
+  const result = await runAction(() => replaceCancellationPolicy(parsed.values, parsed.version));
+  revalidatePath('/settings/appointments');
+  return result;
 }
 
 const types = z.object({
@@ -48,5 +51,8 @@ const types = z.object({
 
 export async function replaceAppointmentTypesAction(input: z.infer<typeof types>) {
   const parsed = types.parse(input);
-  return runAction(() => replaceAppointmentTypes(parsed.types, parsed.version));
+  const result = await runAction(() => replaceAppointmentTypes(parsed.types, parsed.version));
+  revalidatePath('/settings/appointments');
+  revalidatePath('/appointments/new');
+  return result;
 }

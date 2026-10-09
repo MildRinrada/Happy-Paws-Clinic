@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Application.Crm;
 using HappyPaws.Domain.Billing;
 using HappyPaws.Domain.Crm;
@@ -58,6 +59,67 @@ internal sealed class CouponRepository(HappyPawsDbContext db) : ICouponRepositor
                 redemption,
                 db.Set<Invoice>().Where(invoice => invoice.Id == redemption.InvoiceId).Select(invoice => invoice.Number).FirstOrDefault()))
             .ToListAsync(cancellationToken);
+
+    public async Task<CursorPage<Coupon>> ListAsync(
+        CouponFilter filter,
+        CursorPageRequest page,
+        CancellationToken cancellationToken = default)
+    {
+        var coupons = db.Set<Coupon>().AsNoTracking();
+
+        // A coupon for every branch is usable at every counter, so everyone's.
+        if (filter.VisibleBranchIds is { } visibleIds)
+        {
+            var visible = visibleIds.ToArray();
+            coupons = coupons.Where(coupon => coupon.BranchId == null || visible.Contains(coupon.BranchId));
+        }
+
+        if (filter.BranchId is { Length: > 0 } branchId)
+        {
+            coupons = coupons.Where(coupon => coupon.BranchId == null || coupon.BranchId == branchId);
+        }
+
+        if (filter.Search is { Length: > 0 } search)
+        {
+            var pattern = $"%{search.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_")}%";
+            coupons = coupons.Where(coupon => EF.Functions.ILike(coupon.Code, pattern) || EF.Functions.ILike(coupon.Name, pattern));
+        }
+
+        // The same order of precedence as Coupon.StatusOn, so a filtered row shows the status it was filtered by.
+        var today = filter.Today;
+        coupons = filter.Status switch
+        {
+            CouponStatus.Deactivated => coupons.Where(coupon => coupon.DeactivatedAt != null),
+            CouponStatus.Expired => coupons.Where(coupon =>
+                coupon.DeactivatedAt == null && coupon.ValidUntil != null && coupon.ValidUntil < today),
+            CouponStatus.UsedUp => coupons.Where(coupon =>
+                coupon.DeactivatedAt == null && (coupon.ValidUntil == null || coupon.ValidUntil >= today)
+                && coupon.MaxRedemptions != null && coupon.RedeemedCount >= coupon.MaxRedemptions),
+            CouponStatus.Scheduled => coupons.Where(coupon =>
+                coupon.DeactivatedAt == null && (coupon.ValidUntil == null || coupon.ValidUntil >= today)
+                && (coupon.MaxRedemptions == null || coupon.RedeemedCount < coupon.MaxRedemptions)
+                && coupon.ValidFrom > today),
+            CouponStatus.Active => coupons.Where(coupon =>
+                coupon.DeactivatedAt == null && (coupon.ValidUntil == null || coupon.ValidUntil >= today)
+                && (coupon.MaxRedemptions == null || coupon.RedeemedCount < coupon.MaxRedemptions)
+                && coupon.ValidFrom <= today),
+            _ => coupons,
+        };
+
+        if (page.Cursor is { Length: > 0 } cursor)
+        {
+            var (sortKey, id) = Cursor.Decode(cursor);
+            coupons = coupons.Where(coupon =>
+                coupon.CreatedAt < sortKey || (coupon.CreatedAt == sortKey && string.Compare(coupon.Id, id) < 0));
+        }
+
+        var rows = await coupons
+            .OrderByDescending(coupon => coupon.CreatedAt).ThenByDescending(coupon => coupon.Id)
+            .Take(page.SafeLimit + 1)
+            .ToListAsync(cancellationToken);
+
+        return NewestFirst.Page(rows, page, coupon => coupon.CreatedAt, coupon => coupon.Id);
+    }
 }
 
 internal sealed class LoyaltyLedger(HappyPawsDbContext db) : ILoyaltyLedger
@@ -78,21 +140,21 @@ internal sealed class LoyaltyLedger(HappyPawsDbContext db) : ILoyaltyLedger
         return [.. saved, .. pending];
     }
 
-    public async Task<LoyaltyTotals> TotalsAsync(string customerId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Reads the customer's rows and works the position out in <see cref="LoyaltyBalance"/>: with
+    /// expiry, which points are left depends on the order they were added and spent in, which a
+    /// SUM cannot say. A customer's ledger is a few rows a visit, so reading it whole is cheap.
+    /// </summary>
+    public async Task<LoyaltyPosition> TotalsAsync(
+        string customerId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
     {
-        var totals = await db.Set<LoyaltyEntry>().AsNoTracking()
+        var entries = await db.Set<LoyaltyEntry>().AsNoTracking()
             .Where(entry => entry.CustomerId == customerId)
-            .GroupBy(entry => entry.CustomerId)
-            .Select(group => new
-            {
-                Balance = group.Sum(entry => entry.Points),
-                Lifetime = group
-                    .Where(entry => entry.Kind == LoyaltyEntryKind.Earn || entry.Kind == LoyaltyEntryKind.Reverse)
-                    .Sum(entry => entry.Points),
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
-        return totals is null ? new LoyaltyTotals(0, 0) : new LoyaltyTotals(totals.Balance, totals.Lifetime);
+        return LoyaltyBalance.Compute(entries, now);
     }
 
     public async Task<IReadOnlyList<LoyaltyEntryRow>> HistoryAsync(
@@ -115,6 +177,62 @@ internal sealed class SegmentRepository(HappyPawsDbContext db) : ISegmentReposit
 
     public Task<Segment?> FindByIdAsync(string segmentId, CancellationToken cancellationToken = default) =>
         db.Set<Segment>().AsNoTracking().FirstOrDefaultAsync(segment => segment.Id == segmentId, cancellationToken);
+
+    public async Task<CursorPage<Segment>> ListAsync(
+        string? branchId,
+        IReadOnlyCollection<string>? visibleBranchIds,
+        CursorPageRequest page,
+        CancellationToken cancellationToken = default)
+    {
+        var segments = db.Set<Segment>().AsNoTracking();
+
+        // A group over every branch counts customers a branch-bound account cannot see.
+        if (visibleBranchIds is not null)
+        {
+            var visible = visibleBranchIds.ToArray();
+            segments = segments.Where(segment => segment.BranchId != null && visible.Contains(segment.BranchId));
+        }
+
+        if (branchId is { Length: > 0 })
+        {
+            segments = segments.Where(segment => segment.BranchId == branchId);
+        }
+
+        if (page.Cursor is { Length: > 0 } cursor)
+        {
+            var (sortKey, id) = Cursor.Decode(cursor);
+            segments = segments.Where(segment =>
+                segment.CreatedAt < sortKey || (segment.CreatedAt == sortKey && string.Compare(segment.Id, id) < 0));
+        }
+
+        var rows = await segments
+            .OrderByDescending(segment => segment.CreatedAt).ThenByDescending(segment => segment.Id)
+            .Take(page.SafeLimit + 1)
+            .ToListAsync(cancellationToken);
+
+        return NewestFirst.Page(rows, page, segment => segment.CreatedAt, segment => segment.Id);
+    }
+}
+
+/// <summary>Cuts a newest-first read of one row past the page into a page and the cursor for the next.</summary>
+internal static class NewestFirst
+{
+    public static CursorPage<T> Page<T>(
+        IReadOnlyList<T> rows,
+        CursorPageRequest page,
+        Func<T, DateTimeOffset> sortKey,
+        Func<T, string> id)
+    {
+        if (rows.Count <= page.SafeLimit)
+        {
+            return new CursorPage<T>(rows, null);
+        }
+
+        var data = rows.Take(page.SafeLimit).ToList();
+        var last = data[^1];
+
+        return new CursorPage<T>(data, Cursor.Encode(sortKey(last), id(last)));
+    }
 }
 
 /// <summary>

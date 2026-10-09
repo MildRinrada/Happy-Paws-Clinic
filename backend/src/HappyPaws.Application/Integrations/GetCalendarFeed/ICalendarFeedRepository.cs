@@ -11,6 +11,13 @@ public interface ICalendarFeedRepository
 
     Task<CalendarFeed?> FindByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gives a feed a new token: hash and ciphertext replaced and <c>last_used_at</c> cleared, in one
+    /// statement inside the caller's transaction, so a calendar app polling at that moment cannot
+    /// make it fail on the row's version.
+    /// </summary>
+    Task ReplaceTokenAsync(string feedId, string tokenHash, string tokenCiphertext, DateTimeOffset at, CancellationToken cancellationToken = default);
+
     /// <summary>Writes <c>last_used_at</c> directly; a calendar app polls, and a poll should not be a transaction.</summary>
     Task TouchAsync(string feedId, DateTimeOffset at, CancellationToken cancellationToken = default);
 

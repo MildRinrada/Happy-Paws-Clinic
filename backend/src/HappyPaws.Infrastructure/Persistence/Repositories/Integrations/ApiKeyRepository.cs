@@ -16,6 +16,23 @@ internal sealed class ApiKeyRepository(HappyPawsDbContext db) : IApiKeyRepositor
     public Task<ApiKey?> FindByPrefixAsync(string prefix, CancellationToken cancellationToken = default) =>
         db.Set<ApiKey>().AsNoTracking().FirstOrDefaultAsync(key => key.Prefix == prefix, cancellationToken);
 
+    public Task<ApiKey?> FindAsync(string keyId, CancellationToken cancellationToken = default) =>
+        db.Set<ApiKey>().AsNoTracking().FirstOrDefaultAsync(key => key.Id == keyId, cancellationToken);
+
+    public async Task<IReadOnlyList<ApiKey>> ListAsync(CancellationToken cancellationToken = default) =>
+        await db.Set<ApiKey>().AsNoTracking()
+            .OrderByDescending(key => key.CreatedAt).ThenByDescending(key => key.Id)
+            .ToListAsync(cancellationToken);
+
+    public async Task<bool> RevokeAsync(string keyId, DateTimeOffset at, CancellationToken cancellationToken = default) =>
+        await db.Set<ApiKey>()
+            .Where(key => key.Id == keyId && key.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                set => set
+                    .SetProperty(key => key.RevokedAt, at)
+                    .SetProperty(key => key.UpdatedAt, at),
+                cancellationToken) > 0;
+
     public Task TouchAsync(string keyId, DateTimeOffset at, CancellationToken cancellationToken = default) =>
         db.Set<ApiKey>()
             .Where(key => key.Id == keyId)
@@ -32,6 +49,22 @@ internal sealed class CalendarFeedRepository(HappyPawsDbContext db) : ICalendarF
 
     public Task<CalendarFeed?> FindByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default) =>
         db.Set<CalendarFeed>().AsNoTracking().FirstOrDefaultAsync(feed => feed.TokenHash == tokenHash, cancellationToken);
+
+    public Task ReplaceTokenAsync(
+        string feedId,
+        string tokenHash,
+        string tokenCiphertext,
+        DateTimeOffset at,
+        CancellationToken cancellationToken = default) =>
+        db.Set<CalendarFeed>()
+            .Where(feed => feed.Id == feedId)
+            .ExecuteUpdateAsync(
+                set => set
+                    .SetProperty(feed => feed.TokenHash, tokenHash)
+                    .SetProperty(feed => feed.TokenCiphertext, tokenCiphertext)
+                    .SetProperty(feed => feed.LastUsedAt, (DateTimeOffset?)null)
+                    .SetProperty(feed => feed.UpdatedAt, at),
+                cancellationToken);
 
     public Task TouchAsync(string feedId, DateTimeOffset at, CancellationToken cancellationToken = default) =>
         db.Set<CalendarFeed>()

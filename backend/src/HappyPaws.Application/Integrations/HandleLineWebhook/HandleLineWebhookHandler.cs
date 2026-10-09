@@ -141,7 +141,7 @@ public sealed class HandleLineWebhookHandler(
                 if (customer is not null && item.Message is { } incoming)
                 {
                     var outcome = await threads.HandleAsync(
-                        new CustomerMessage(customer.Id, DeliveryChannel.Line, KindOf(incoming.Type), incoming.Text, incoming.Id),
+                        new CustomerMessage(customer.Id, MessageChannel.Line, KindOf(incoming.Type), incoming.Text, incoming.Id),
                         cancellationToken);
 
                     if (outcome == CustomerMessageOutcome.Opened)

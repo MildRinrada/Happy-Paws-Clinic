@@ -116,6 +116,13 @@ public sealed class ListAlertsHandler(
                 }
             }
 
+            // A retired item is not reordered, so running low on it is not news (§ 25). Its lots
+            // still raise expiry rows above: the units are on the shelf until someone takes them off.
+            if (item.IsRetired)
+            {
+                continue;
+            }
+
             switch (StockLevels.StatusOf(available, item.ReorderLevel))
             {
                 case StockStatus.Out:

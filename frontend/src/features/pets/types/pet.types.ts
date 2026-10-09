@@ -164,3 +164,16 @@ export interface DocumentRequest {
   reason?: string;
   remarks?: string;
 }
+
+/** `POST /staff/pets/{id}/deceased`. No `occurred_at` means now; the note goes to the audit trail. */
+export interface MarkDeceasedInput {
+  occurred_at?: string;
+  note?: string;
+}
+
+/** What closing the record did: every future visit it cancelled. */
+export interface PetDeceasedResult {
+  pet_id: string;
+  deceased_at: string;
+  cancelled_appointment_ids: string[];
+}

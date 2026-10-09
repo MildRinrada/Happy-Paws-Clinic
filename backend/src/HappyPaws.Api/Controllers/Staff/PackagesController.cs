@@ -1,8 +1,10 @@
 using HappyPaws.Api.Authorization;
+using HappyPaws.Api.Contracts;
 using HappyPaws.Api.Contracts.Crm;
 using HappyPaws.Api.Idempotency;
 using HappyPaws.Application.Crm.CreatePackage;
 using HappyPaws.Application.Crm.Dtos;
+using HappyPaws.Application.Crm.ListPackages;
 using HappyPaws.Domain.Access;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,4 +38,27 @@ public sealed class PackagesController : ControllerBase
         [FromServices] CreatePackageHandler handler,
         CancellationToken cancellationToken) =>
         StatusCode(StatusCodes.Status201Created, await handler.HandleAsync(request.ToCommand(), cancellationToken));
+
+    /// <summary>
+    /// <c>GET /staff/packages?customer_id=&amp;status=&amp;branch=</c> — one customer's packages in
+    /// <c>{ "data": [...] }</c>, usable first. Clinic-wide like the loyalty account; <c>branch</c> only
+    /// narrows to packages sold there. Not in the API reference (<c>docs/contract-extensions.md § 25</c>).
+    /// </summary>
+    /// <param name="customerId">Required.</param>
+    /// <param name="status"><c>pending_payment</c>, <c>active</c>, <c>used_up</c>, <c>expired</c> or <c>cancelled</c>.</param>
+    /// <param name="branch">Only packages sold at this branch.</param>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpGet]
+    [RequireScope(Scopes.Crm.Read)]
+    [ProducesResponseType<ListResponse<PackageDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ListResponse<PackageDto>> List(
+        [FromQuery(Name = "customer_id")] string? customerId,
+        [FromQuery] string? status,
+        [FromQuery] string? branch,
+        [FromServices] ListPackagesHandler handler,
+        CancellationToken cancellationToken) =>
+        ListResponse.Of(await handler.HandleAsync(new ListPackagesQuery(customerId, status, branch), cancellationToken));
 }

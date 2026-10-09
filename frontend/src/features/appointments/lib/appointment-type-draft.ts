@@ -22,28 +22,12 @@ export type TypeProblem = 'badCode' | 'duplicateCode' | 'needName' | 'badNumber'
 
 let nextKey = 0;
 
-function draft(code: string, name: string, onlineBooking = true, priority: QueuePriority = 'normal'): TypeDraft {
-  return { key: nextKey++, code, name, duration: '', onlineBooking, leadTime: '', priority, locked: code === REGULAR };
-}
-
+/** A new row: bookable online, normal priority, the service's length and the clinic's notice. */
 export function emptyType(): TypeDraft {
-  return draft('', '');
+  return { key: nextKey++, code: '', name: '', duration: '', onlineBooking: true, leadTime: '', priority: 'normal', locked: false };
 }
 
-/**
- * Where the form starts, since the stored set cannot be read: the four the contract names, with the
- * rules the backend gives them by default.
- */
-export function defaultTypes(): TypeDraft[] {
-  return [
-    draft(REGULAR, 'นัดปกติ'),
-    draft('emergency', 'ฉุกเฉิน', false, 'emergency'),
-    draft('follow_up', 'ติดตามผล'),
-    draft('surgery', 'ผ่าตัด', false),
-  ];
-}
-
-/** The set the backend answered with, back into the form. */
+/** The stored set (as read, or as the backend answered a save), into the form. */
 export function draftsFrom(types: AppointmentTypeInput[]): TypeDraft[] {
   return types.map((type) => ({
     key: nextKey++,

@@ -1,3 +1,4 @@
+using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Domain.Crm;
 
 namespace HappyPaws.Application.Crm;
@@ -52,7 +53,30 @@ public interface ICouponRepository
 
     /// <summary>A customer's redemptions, newest first, with the bill number.</summary>
     Task<IReadOnlyList<CouponRedemptionRow>> HistoryForCustomerAsync(string customerId, int limit, CancellationToken cancellationToken = default);
+
+    /// <summary>One page of coupons, newest first. Untracked. See <see cref="CouponFilter"/>.</summary>
+    Task<CursorPage<Coupon>> ListAsync(CouponFilter filter, CursorPageRequest page, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// What <c>GET /staff/coupons</c> narrows by (<c>docs/contract-extensions.md § 25</c>).
+/// <para>
+/// <c>BranchId</c> means "the coupons a bill at this branch could take": those for the branch and
+/// those for every branch. <c>VisibleBranchIds</c> applies the caller's own branches the same way,
+/// in the query, so paging cannot pass it.
+/// </para>
+/// </summary>
+/// <param name="Today">The clinic day the status is judged on.</param>
+/// <param name="Status">Only coupons in this state, or null for all.</param>
+/// <param name="BranchId">Coupons usable at this branch, or null.</param>
+/// <param name="Search">Part of the code or the name.</param>
+/// <param name="VisibleBranchIds">The caller's branches, or null when not branch-bound.</param>
+public sealed record CouponFilter(
+    DateOnly Today,
+    CouponStatus? Status = null,
+    string? BranchId = null,
+    string? Search = null,
+    IReadOnlyCollection<string>? VisibleBranchIds = null);
 
 /// <summary>A redemption as the loyalty page lists it.</summary>
 public sealed record CouponRedemptionRow(CouponRedemption Redemption, string? InvoiceNumber);
@@ -65,14 +89,15 @@ public interface ILoyaltyLedger
     /// <summary>The ledger rows written for one bill.</summary>
     Task<IReadOnlyList<LoyaltyEntry>> ForInvoiceAsync(string invoiceId, CancellationToken cancellationToken = default);
 
-    /// <summary>Spendable points, and lifetime points (earned less reversed).</summary>
-    Task<LoyaltyTotals> TotalsAsync(string customerId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Spendable points as of <paramref name="now"/>, lifetime points (earned less reversed), and
+    /// what has expired or expires next. See <see cref="LoyaltyBalance"/>.
+    /// </summary>
+    Task<LoyaltyPosition> TotalsAsync(string customerId, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     /// <summary>The latest rows, newest first, with the bill number.</summary>
     Task<IReadOnlyList<LoyaltyEntryRow>> HistoryAsync(string customerId, int limit, CancellationToken cancellationToken = default);
 }
-
-public sealed record LoyaltyTotals(int Balance, int Lifetime);
 
 public sealed record LoyaltyEntryRow(LoyaltyEntry Entry, string? InvoiceNumber);
 
@@ -81,6 +106,17 @@ public interface ISegmentRepository
     void Add(Segment segment);
 
     Task<Segment?> FindByIdAsync(string segmentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One page of saved groups, newest first. Untracked. With <paramref name="visibleBranchIds"/>,
+    /// only groups limited to one of those branches; with <paramref name="branchId"/>, only that
+    /// branch's groups.
+    /// </summary>
+    Task<CursorPage<Segment>> ListAsync(
+        string? branchId,
+        IReadOnlyCollection<string>? visibleBranchIds,
+        CursorPageRequest page,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

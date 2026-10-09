@@ -2,6 +2,7 @@ using HappyPaws.Application.Integrations.ConfigureLabProvider;
 using HappyPaws.Application.Integrations.ConfigurePaymentProvider;
 using HappyPaws.Application.Integrations.CreateApiKey;
 using HappyPaws.Application.Integrations.CreateWebhookSubscription;
+using HappyPaws.Application.Integrations.UpdateWebhookSubscription;
 
 namespace HappyPaws.Api.Contracts.Integrations;
 
@@ -15,6 +16,21 @@ public sealed record CreateWebhookRequest(
     string? Description = null)
 {
     public CreateWebhookSubscriptionCommand ToCommand() => new(Url ?? string.Empty, Events ?? [], Description);
+}
+
+/// <summary>
+/// <c>PATCH /staff/webhooks/{id}</c> (<c>docs/contract-extensions.md § 22</c>). Every field
+/// optional; an empty <c>description</c> clears it.
+/// <code>{ "url": "https://example.com/hooks/v2", "events": ["invoice.issued"], "description": "ระบบบัญชี", "active": false }</code>
+/// </summary>
+public sealed record UpdateWebhookRequest(
+    string? Url = null,
+    IReadOnlyList<string>? Events = null,
+    string? Description = null,
+    bool? Active = null)
+{
+    public UpdateWebhookSubscriptionCommand ToCommand(string id, uint? ifMatch) =>
+        new(id, Url, Events, Description, Active, ifMatch);
 }
 
 /// <summary>

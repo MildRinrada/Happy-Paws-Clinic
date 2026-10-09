@@ -5,10 +5,8 @@ import { portalPaths } from './portal-navigation';
 /**
  * Everything the visit card says, and where its links go. Edit the wording here.
  *
- * Chat goes to the contact page, which lists the clinic's LINE account, phone and email: the
- * contract has no portal chat endpoint. A message the owner sends to the clinic's LINE account
- * from a linked LINE reaches the staff inbox (`/messages`). Point `href` at a portal chat page
- * instead if one is ever added; nothing else needs to change.
+ * Chat goes to the portal chat page (`/portal/messages`, contract extension § 24): the same
+ * conversation the clinic answers from its "ข้อความลูกค้า" page.
  */
 export const visitCard = {
   liveTitle: 'ติดตามสด คิววันนี้',
@@ -54,7 +52,7 @@ export const visitCard = {
   checkIn: 'เช็กอินล่วงหน้า',
   checkingIn: 'กำลังเช็กอิน',
   reschedule: { label: 'เลื่อนนัด', href: portalPaths.reschedule },
-  chat: { label: 'แชทกับคลินิก', href: '/contact' },
+  chat: { label: 'แชทกับคลินิก', href: portalPaths.messages },
 
   unreachable: 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่อีกครั้ง',
 

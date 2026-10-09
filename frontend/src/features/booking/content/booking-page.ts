@@ -1,5 +1,3 @@
-import type { BookableType } from '../types/booking.types';
-
 /** Everything the booking page says. Edit the wording here. */
 export const bookingPage = {
   title: 'จองนัด',
@@ -16,10 +14,13 @@ export const bookingPage = {
     minutes: (count: number) => `${count} นาที`,
     priceFrom: (price: string) => `เริ่มต้น ${price}`,
     type: 'ประเภทนัด',
-    types: {
-      regular: { label: 'นัดปกติ', hint: 'ตรวจ ฉีดวัคซีน หรือปรึกษาเรื่องใหม่' },
-      follow_up: { label: 'ติดตามผล', hint: 'กลับมาตามที่หมอนัดหลังการรักษา' },
-    } satisfies Record<BookableType, { label: string; hint: string }>,
+    // A line under the clinic's own name for the types it ships with. Other types show their length.
+    typeHints: {
+      regular: 'ตรวจ ฉีดวัคซีน หรือปรึกษาเรื่องใหม่',
+      follow_up: 'กลับมาตามที่หมอนัดหลังการรักษา',
+    } as Record<string, string>,
+    typeMinutes: (count: number) => `ใช้เวลาประมาณ ${count} นาที`,
+    noTypes: 'ตอนนี้คลินิกยังไม่เปิดให้จองนัดออนไลน์ โทรจองกับคลินิกได้เลย',
     reason: 'อาการหรือสิ่งที่อยากให้หมอรู้ (ไม่บังคับ)',
     reasonPlaceholder: 'เช่น เกาหูบ่อย 3 วันแล้ว',
     next: 'เลือกวันและเวลา',

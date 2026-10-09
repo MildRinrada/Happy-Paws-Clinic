@@ -12,6 +12,39 @@ export interface CreatedWebhook {
   created_at: string;
 }
 
+/**
+ * A webhook as `GET /staff/webhooks` lists it (docs/contract-extensions.md § 22). No secret, ever;
+ * `version` goes back as `If-Match`.
+ */
+export interface Webhook {
+  id: string;
+  url: string;
+  events: string[];
+  description?: string;
+  active: boolean;
+  version: number;
+  created_by_staff_id: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/** `PATCH /staff/webhooks/{id}`: every field optional; an empty description clears it. */
+export interface WebhookPatch {
+  url?: string;
+  events?: string[];
+  description?: string;
+  active?: boolean;
+}
+
+/** `POST /staff/webhooks/{id}/rotate-secret`. `secret` is in this answer and nowhere else. */
+export interface RotatedWebhookSecret {
+  id: string;
+  secret: string;
+  signing: CreatedWebhook['signing'];
+  version: number;
+  rotated_at: string;
+}
+
 export interface WebhookInput {
   url: string;
   events: string[];
@@ -46,6 +79,23 @@ export interface CreatedApiKey {
   branch_ids: string[];
   expires_at: string;
   created_at: string;
+}
+
+export type ApiKeyStatus = 'active' | 'expired' | 'revoked';
+
+/** A key as `GET /staff/api-keys` lists it: enough to recognise and revoke it, never the key. */
+export interface ApiKeySummary {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  branch_ids: string[];
+  status: ApiKeyStatus;
+  created_by_staff_id: string;
+  created_at: string;
+  expires_at: string;
+  last_used_at?: string;
+  revoked_at?: string;
 }
 
 export interface ApiKeyInput {

@@ -156,6 +156,28 @@ public static class AuditActions
     /// </summary>
     public const string CalendarFeedCreated = "integration.calendar_feed_created";
 
+    /// <summary>
+    /// A webhook's URL, events, description or on/off switch changed (<c>docs/contract-extensions.md § 22</c>).
+    /// Pointing events somewhere else is as weighty as creating the webhook, so the new
+    /// destination is on record (without its query string).
+    /// </summary>
+    public const string WebhookUpdated = "integration.webhook_updated";
+
+    /// <summary>A webhook was deleted: it stops, its secret is destroyed, its delivery log stays.</summary>
+    public const string WebhookDeleted = "integration.webhook_deleted";
+
+    /// <summary>A webhook got a new signing secret, shown once. Never the secret itself.</summary>
+    public const string WebhookSecretRotated = "integration.webhook_secret_rotated";
+
+    /// <summary>A failed webhook delivery was queued to be sent again.</summary>
+    public const string WebhookRedelivered = "integration.webhook_redelivered";
+
+    /// <summary>An API key was revoked before its expiry; from the next request it is refused.</summary>
+    public const string ApiKeyRevoked = "integration.api_key_revoked";
+
+    /// <summary>A staff member replaced their calendar link; the old link stopped working.</summary>
+    public const string CalendarFeedRotated = "integration.calendar_feed_rotated";
+
     // ---- Actions that change who can do what --------------------------------------------------
 
     public const string SignedIn = "auth.signed_in";
@@ -255,6 +277,12 @@ public static class AuditActions
     /// <summary>The cutoff, the fee or the allowance changed — what a customer can be charged for.</summary>
     public const string CancellationPolicyChanged = "settings.cancellation_policy_changed";
 
+    /// <summary>
+    /// A pet was taken off the waiting list. The row is deleted, so this is the only trace that it
+    /// was there (<c>docs/contract-extensions.md § 23</c>).
+    /// </summary>
+    public const string WaitingListEntryRemoved = "waiting_list.removed";
+
     public const string QueuePriorityChanged = "queue.priority_changed";
 
     /// <summary>A bill was raised, by hand or by closing a case.</summary>
@@ -299,6 +327,19 @@ public static class AuditActions
     /// <summary>An order to a supplier was raised: money the clinic has committed to spend.</summary>
     public const string PurchaseOrderRaised = "inventory.purchase_order_raised";
 
+    /// <summary>
+    /// A catalogue item was renamed, repriced, relabelled, given a new reorder level, retired or
+    /// brought back (<c>docs/contract-extensions.md § 25</c>). The price is what customers are
+    /// charged, so the before and after are kept.
+    /// </summary>
+    public const string InventoryItemUpdated = "inventory.item_updated";
+
+    /// <summary>
+    /// What was still outstanding on a purchase order was called off (§ 25). Money the clinic had
+    /// committed to spend, released.
+    /// </summary>
+    public const string PurchaseOrderCancelled = "inventory.purchase_order_cancelled";
+
     // ---- Loyalty, packages and promotions ------------------------------------------------------
 
     /// <summary>A package was sold to a customer, on a bill raised in the same step.</summary>
@@ -315,6 +356,18 @@ public static class AuditActions
 
     /// <summary>A customer group was saved. It decides who campaigns reach.</summary>
     public const string SegmentCreated = "segment.created";
+
+    /// <summary>A discount code was switched off before its last day (§ 25).</summary>
+    public const string CouponDeactivated = "coupon.deactivated";
+
+    /// <summary>
+    /// Points were given or taken by hand, with a reason (§ 25). Points are money off future bills,
+    /// and this is the one change to them that no bill accounts for.
+    /// </summary>
+    public const string LoyaltyAdjusted = "loyalty.adjusted";
+
+    /// <summary>The points programme was changed (§ 25): rate, point value, levels or expiry.</summary>
+    public const string LoyaltySettingsChanged = "settings.loyalty_changed";
 
     // ---- Reminders and reports -----------------------------------------------------------------
 
@@ -371,13 +424,14 @@ public static class AuditActions
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,
         NotificationBroadcast, LineIntegrationConfigured,
         WebhookCreated, ApiKeyCreated, PaymentIntegrationConfigured, LabIntegrationConfigured, CalendarFeedCreated,
+        WebhookUpdated, WebhookDeleted, WebhookSecretRotated, WebhookRedelivered, ApiKeyRevoked, CalendarFeedRotated,
         SignedIn, SignInFailed, PasswordChanged, SessionRevoked, AccountRegistered, PasswordReset,
         PetAccessGranted, PetAccessRevoked, CustomerInvited,
         ClinicBootstrapped, CredentialsReset,
         StaffInvited, StaffInvitationAccepted, StaffUpdated, StaffDeactivated,
         StaffPublicProfileUpdated, StaffSeeded,
         RoleCreated, RolePermissionsReplaced, MedicalRecordSettingsChanged,
-        AppointmentCancelled, AppointmentNoShow, CancellationPolicyChanged, QueuePriorityChanged,
+        AppointmentCancelled, AppointmentNoShow, CancellationPolicyChanged, WaitingListEntryRemoved, QueuePriorityChanged,
         InvoiceIssued, InvoiceVoided, InvoiceDiscounted,
         PaymentCollected, PaymentRefunded, ReceiptIssued, ServicePricingChanged,
         ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced,
@@ -385,6 +439,7 @@ public static class AuditActions
         AutomationCreated, AutomationUpdated, AutomationDeleted, ReportExported,
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
         PackageSold, PackageUsed, PackageCancelled, CouponCreated, SegmentCreated,
+        InventoryItemUpdated, PurchaseOrderCancelled, CouponDeactivated, LoyaltyAdjusted, LoyaltySettingsChanged,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -400,6 +455,7 @@ public static class AuditResources
     public const string Pet = "pet";
     public const string Customer = "customer";
     public const string Appointment = "appointment";
+    public const string WaitingList = "waiting_list";
     public const string QueueTicket = "queue_ticket";
     public const string UserAccount = "user_account";
     public const string Consent = "consent";

@@ -40,7 +40,7 @@ export async function holdSlotAction(input: z.infer<typeof holdInput>) {
 const bookInput = z.object({
   petId: id,
   hold: z.object({ id, service_id: id, branch_id: id, staff_id: id, starts_at: z.iso.datetime({ offset: true }) }),
-  type: z.enum(['regular', 'follow_up']),
+  type: z.string().regex(/^[a-z][a-z0-9_]{1,29}$/),
   reason: z.string().trim().max(1000).optional(),
   idempotencyKey: z.uuid(),
 });

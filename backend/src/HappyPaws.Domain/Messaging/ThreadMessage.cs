@@ -40,6 +40,9 @@ public sealed class ThreadMessage : Entity
     /// <summary>LINE's own limit on a text message.</summary>
     public const int InboundTextMax = 5_000;
 
+    /// <summary>What a customer may type in the portal's chat: the same as a reply, so an answer quoting it fits.</summary>
+    public const int PortalTextMax = 1_000;
+
     /// <summary>A reply has to fit LINE, SMS and email alike; SMS is the tight one.</summary>
     public const int ReplyTextMax = 1_000;
 
@@ -57,7 +60,7 @@ public sealed class ThreadMessage : Entity
     /// The channel it came on (inbound), or the channel it was delivered on (outbound, null until
     /// it is sent, and when it reached no channel).
     /// </summary>
-    public DeliveryChannel? Channel { get; private set; }
+    public MessageChannel? Channel { get; private set; }
 
     public MessageKind Kind { get; private set; }
 
@@ -83,7 +86,7 @@ public sealed class ThreadMessage : Entity
 
     internal static ThreadMessage Inbound(
         string threadId,
-        DeliveryChannel channel,
+        MessageChannel channel,
         MessageKind kind,
         string? text,
         string? externalId,
@@ -135,7 +138,7 @@ public sealed class ThreadMessage : Entity
         }
 
         DeliveryStatus = status;
-        Channel = channel;
+        Channel = channel is { } used ? MessageChannels.From(used) : null;
         DeliveryErrorCode = errorCode;
         FallbackFrom = fallbackFrom;
     }

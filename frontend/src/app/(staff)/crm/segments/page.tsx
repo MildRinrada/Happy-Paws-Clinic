@@ -3,35 +3,61 @@ import { Alert } from '@/components/ui/alert';
 import { Card, CardBody } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { listSegments } from '@/features/crm/api/segments';
 import { SegmentForm } from '@/features/crm/components/segments/segment-form';
+import { SegmentList } from '@/features/crm/components/segments/segment-list';
 import { crmArea } from '@/features/crm/content/crm-tabs';
+import { segmentListText } from '@/features/crm/content/segment-list';
 import { segmentPage } from '@/features/crm/content/segment-page';
+import { crmPaths } from '@/features/crm/lib/crm-paths';
+import { readCursor, withCursor } from '@/features/crm/lib/read-list-query';
 import { Scope } from '@/lib/auth/scopes';
+import { authed } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: crmArea.metaTitle(segmentPage.title) };
 
 /**
- * A group of customers picked by conditions. There is no list of saved segments in the contract,
- * so the answer is shown right away and its id travels on in the broadcast link.
+ * Customer groups: the form to save one (`crm:manage`) and the groups saved before (`crm:read`,
+ * docs/contract-extensions.md § 25). Opening a group counts it again and offers the broadcast.
  */
-export default async function CrmSegmentsPage() {
-  const context = await loadStaffContext();
+export default async function CrmSegmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [context, params] = await Promise.all([loadStaffContext(), searchParams]);
+  const canManage = Boolean(context?.can(Scope.CrmManage));
+  const canRead = Boolean(context?.can(Scope.CrmRead));
 
-  if (!context?.can(Scope.CrmManage)) {
-    return <Alert tone="info">{crmArea.noManage}</Alert>;
+  if (!context || (!canManage && !canRead)) {
+    return <Alert tone="info">{crmArea.noAccess}</Alert>;
   }
 
+  const cursor = readCursor(params);
+  const page = canRead ? await authed(() => listSegments(cursor)) : null;
+
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="space-y-5">
       <PageHeader title={segmentPage.title} subtitle={segmentPage.subtitle} />
-      <Card>
-        <CardBody>
-          <SegmentForm
-            branches={context.branches.map(({ id, name }) => ({ id, name }))}
-            canBroadcast={context.can(Scope.NotifyBroadcast)}
-          />
-        </CardBody>
-      </Card>
+      {canManage && (
+        <Card className="max-w-3xl">
+          <CardBody>
+            <SegmentForm
+              branches={context.branches.map(({ id, name }) => ({ id, name }))}
+              canBroadcast={context.can(Scope.NotifyBroadcast)}
+            />
+          </CardBody>
+        </Card>
+      )}
+      {page ? (
+        <SegmentList
+          segments={page.data}
+          nextHref={page.page.next_cursor ? withCursor(crmPaths.segments, {}, page.page.next_cursor) : undefined}
+          firstHref={cursor ? crmPaths.segments : undefined}
+        />
+      ) : (
+        <p className="text-sm text-ink-600">{segmentListText.noRead}</p>
+      )}
     </div>
   );
 }

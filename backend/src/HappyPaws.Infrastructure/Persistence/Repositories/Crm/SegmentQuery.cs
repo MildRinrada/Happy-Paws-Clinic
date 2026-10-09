@@ -1,3 +1,4 @@
+using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Crm;
 using HappyPaws.Domain.Crm;
 using HappyPaws.Infrastructure.Common;
@@ -25,7 +26,10 @@ namespace HappyPaws.Infrastructure.Persistence.Repositories.Crm;
 /// switched off by its parameter (<c>@x IS NULL OR ...</c>), so one statement serves every mix.
 /// </para>
 /// </summary>
-internal sealed class SegmentQuery(HappyPawsDbContext db, IOptions<ClinicOptions> clinic) : ISegmentQuery
+internal sealed class SegmentQuery(
+    HappyPawsDbContext db,
+    IOptions<ClinicOptions> clinic,
+    IClinicSettingsStore settings) : ISegmentQuery
 {
     private const string MembersSql =
         """
@@ -113,7 +117,7 @@ internal sealed class SegmentQuery(HappyPawsDbContext db, IOptions<ClinicOptions
         var rows = await AnalyticsSql.QueryAsync(
             db,
             CountSql,
-            Parameters(criteria, today),
+            await ParametersAsync(criteria, today, cancellationToken),
             reader => new SegmentCounts(reader.GetInt32(0), reader.GetInt32(1)),
             cancellationToken);
 
@@ -126,16 +130,21 @@ internal sealed class SegmentQuery(HappyPawsDbContext db, IOptions<ClinicOptions
         int limit,
         CancellationToken cancellationToken = default)
     {
-        var parameters = Parameters(criteria, today);
+        var parameters = await ParametersAsync(criteria, today, cancellationToken);
         parameters.Add(new NpgsqlParameter("limit", NpgsqlDbType.Integer) { Value = limit });
 
         return await AnalyticsSql.QueryAsync(db, ReachableSql, parameters, reader => reader.GetString(0), cancellationToken);
     }
 
-    private List<NpgsqlParameter> Parameters(SegmentCriteria criteria, DateOnly today)
+    /// <summary>
+    /// The level thresholds are the clinic's current ones (<c>docs/contract-extensions.md § 25</c>),
+    /// the same the loyalty page labels a customer with.
+    /// </summary>
+    private async Task<List<NpgsqlParameter>> ParametersAsync(SegmentCriteria criteria, DateOnly today, CancellationToken cancellationToken)
     {
-        var silver = LoyaltyRules.Tiers.Single(step => step.Tier == LoyaltyTier.Silver).MinPoints;
-        var gold = LoyaltyRules.Tiers.Single(step => step.Tier == LoyaltyTier.Gold).MinPoints;
+        var loyalty = await settings.LoyaltyAsync(cancellationToken);
+        var silver = loyalty.SilverMinPoints;
+        var gold = loyalty.GoldMinPoints;
 
         return
         [

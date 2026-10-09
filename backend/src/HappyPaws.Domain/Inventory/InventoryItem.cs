@@ -73,6 +73,17 @@ public sealed class InventoryItem : Entity
 
     public string CreatedByStaffId { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// When the item was retired, or null while it is in use. A retired item is not offered to
+    /// prescribers, cannot be picked on a new prescription, received or ordered, and drops out of
+    /// the low-stock and out-of-stock warnings. Units still on the shelf can be issued, moved,
+    /// counted and dispensed, and every past record keeps pointing at it. Not in the API reference:
+    /// see <c>docs/contract-extensions.md § 25</c>.
+    /// </summary>
+    public DateTimeOffset? RetiredAt { get; private set; }
+
+    public bool IsRetired => RetiredAt is not null;
+
     public static InventoryItem Create(
         string name,
         InventoryItemKind kind,
@@ -125,6 +136,75 @@ public sealed class InventoryItem : Entity
 
     /// <summary>Whether a drug name as written on a prescription names this item.</summary>
     public bool IsNamedBy(string drugName) => KeyOf(drugName) == NameKey;
+
+    /// <summary>
+    /// Renames the item. The match key follows, so a typed prescription not yet dispensed matches
+    /// the new name, not the old one; prescriptions picked from stock carry the id and are unaffected.
+    /// The caller checks the new key is free; the unique index is the backstop.
+    /// </summary>
+    public void Rename(string name)
+    {
+        var trimmed = Collapse(name);
+
+        if (trimmed.Length == 0 || trimmed.Length > NameMax)
+        {
+            throw new DomainException("invalid_inventory_item", $"ชื่อรายการต้องมี 1 ถึง {NameMax} ตัวอักษร");
+        }
+
+        Name = trimmed;
+        NameKey = KeyOf(trimmed);
+    }
+
+    /// <summary>
+    /// Changes what a unit is called. A relabel, not a conversion: quantities on the books are not
+    /// touched, so it is for correcting a unit, not for repacking.
+    /// </summary>
+    public void ChangeUnit(string unit)
+    {
+        if (string.IsNullOrWhiteSpace(unit) || unit.Trim().Length > UnitMax)
+        {
+            throw new DomainException("invalid_inventory_item", $"หน่วยต้องมี 1 ถึง {UnitMax} ตัวอักษร");
+        }
+
+        Unit = unit.Trim();
+    }
+
+    /// <summary>
+    /// The selling price from now on. A dispense records the price it charged on the prescription,
+    /// so what has been dispensed keeps its price.
+    /// </summary>
+    public void Reprice(long unitPriceSatang)
+    {
+        if (unitPriceSatang is < 0 or > MaxUnitPriceSatang)
+        {
+            throw new DomainException("invalid_inventory_item", "ราคาขายต่อหน่วยไม่ถูกต้อง");
+        }
+
+        UnitPriceSatang = unitPriceSatang;
+    }
+
+    public void ChangeReorderLevel(int reorderLevel)
+    {
+        if (reorderLevel is < 0 or > MaxReorderLevel)
+        {
+            throw new DomainException("invalid_inventory_item", "จุดสั่งซื้อต้องไม่ติดลบ");
+        }
+
+        ReorderLevel = reorderLevel;
+    }
+
+    public void Retire(DateTimeOffset now) => RetiredAt ??= now;
+
+    public void Reactivate() => RetiredAt = null;
+
+    /// <summary>Refuses what only an item in use may do: be received, ordered or newly prescribed.</summary>
+    public void EnsureInUse()
+    {
+        if (IsRetired)
+        {
+            throw new DomainException("inventory_item_retired", $"{Name} เลิกใช้แล้ว เปิดใช้อีกครั้งก่อน");
+        }
+    }
 
     private static string Collapse(string? value)
     {

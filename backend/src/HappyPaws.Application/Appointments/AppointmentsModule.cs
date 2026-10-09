@@ -8,11 +8,14 @@ using HappyPaws.Application.Appointments.CreateRecurringSeries;
 using HappyPaws.Application.Appointments.CreateStaffAppointment;
 using HappyPaws.Application.Appointments.DetectConflicts;
 using HappyPaws.Application.Appointments.GetAppointment;
+using HappyPaws.Application.Appointments.GetAppointmentRules;
 using HappyPaws.Application.Appointments.GetAvailability;
 using HappyPaws.Application.Appointments.HoldSlot;
 using HappyPaws.Application.Appointments.ListAppointments;
 using HappyPaws.Application.Appointments.ListMyAppointments;
+using HappyPaws.Application.Appointments.ListWaitingList;
 using HappyPaws.Application.Appointments.MarkNoShow;
+using HappyPaws.Application.Appointments.RemoveFromWaitingList;
 using HappyPaws.Application.Appointments.ReplaceAppointmentTypes;
 using HappyPaws.Application.Appointments.ReplaceCancellationPolicy;
 using HappyPaws.Application.Appointments.RescheduleAppointment;
@@ -53,6 +56,14 @@ public static class AppointmentsModule
         services.AddScoped<AddToWaitingListHandler>();
         services.AddScoped<ReplaceAppointmentTypesHandler>();
         services.AddScoped<ReplaceCancellationPolicyHandler>();
+
+        // docs/contract-extensions.md § 23: reading the two rule sets back, and listing and
+        // withdrawing waiting-list entries.
+        services.AddScoped<GetCancellationPolicyHandler>();
+        services.AddScoped<GetAppointmentTypesHandler>();
+        services.AddScoped<ListOnlineAppointmentTypesHandler>();
+        services.AddScoped<ListWaitingListHandler>();
+        services.AddScoped<RemoveFromWaitingListHandler>();
 
         return services;
     }

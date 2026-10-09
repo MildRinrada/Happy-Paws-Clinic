@@ -15,6 +15,19 @@ contract ให้แค่ method และ path ไม่มีรูปร่
 | PUT | `/staff/integrations/lab` | `integration:manage` | ค่าตั้งแล็บภายนอก (เก็บอย่างเดียว) |
 | GET | `/staff/integrations/calendar/ics` | พนักงานทุกคน หรือ token ในลิงก์ | ฟีดปฏิทินนัด หรือลิงก์สำหรับ subscribe |
 
+ส่วนขยายที่ได้รับอนุมัติ ([contract-extensions.md § 22](../contract-extensions.md)) จัดการสิ่งที่สร้างไว้แล้ว เพราะ contract ให้สร้างได้อย่างเดียว
+
+| Method | Endpoint | สิทธิ์ | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/webhooks` | `integration:manage` | รายการ webhook ที่ยังไม่ถูกลบ ไม่มี secret |
+| PATCH | `/staff/webhooks/{id}` | `integration:manage` | แก้ URL, event, คำอธิบาย หรือเปิดปิด |
+| DELETE | `/staff/webhooks/{id}` | `integration:manage` | ลบ webhook ประวัติการส่งยังอ่านได้ |
+| POST | `/staff/webhooks/{id}/rotate-secret` | `integration:manage` | secret ใหม่ แสดงครั้งเดียว |
+| POST | `/staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` | `integration:manage` | ส่ง delivery ที่ไม่สำเร็จอีกครั้ง |
+| GET | `/staff/api-keys` | `integration:manage` | รายการ key ไม่มีตัว key |
+| DELETE | `/staff/api-keys/{id}` | `integration:manage` | ยกเลิก key ทันที |
+| POST | `/staff/integrations/calendar/token` | พนักงานทุกคน ลิงก์ของตัวเอง | สร้างลิงก์ปฏิทินใหม่ ลิงก์เดิมใช้ไม่ได้ |
+
 ## Webhook
 
 ### สร้าง
@@ -72,7 +85,7 @@ POST /staff/webhooks
 | 5 | 125 นาที | 2 ชั่วโมง 36 นาที |
 | 6 | 625 นาที | 13 ชั่วโมง |
 
-ไม่สำเร็จครบหกครั้ง delivery เป็น `failed` และไม่ส่งอีก สำเร็จคือได้ 2xx อย่างอื่นนับเป็นไม่สำเร็จทั้งหมด รวม 3xx และ 4xx ไม่มี jitter เพื่อให้ผู้รับคาดเวลาได้
+ไม่สำเร็จครบหกครั้ง delivery เป็น `failed` และไม่ส่งอีก เว้นแต่มีคนกดส่งซ้ำ สำเร็จคือได้ 2xx อย่างอื่นนับเป็นไม่สำเร็จทั้งหมด รวม 3xx และ 4xx ไม่มี jitter เพื่อให้ผู้รับคาดเวลาได้
 
 ### สิ่งที่ผู้รับได้
 
@@ -144,7 +157,43 @@ URL มาจากคนพิมพ์ แต่เซิร์ฟเวอร
 } ], "page": { "next_cursor": "..." } }
 ```
 
-`last_error` เป็นรหัสสั้น คือ `http_<code>`, `timeout`, `redirect_not_followed`, `address_blocked`, `connection_failed` และ `secret_unavailable` (กุญแจ Data Protection ที่เข้ารหัส secret หายไป ดู [development.md](../development.md)) แต่ละแถวเก็บผลของครั้งล่าสุด ไม่ได้เก็บทุกครั้ง event และประวัติการส่งเก็บ 30 วัน แล้ว housekeeping ลบทิ้ง
+`last_error` เป็นรหัสสั้น คือ `http_<code>`, `timeout`, `redirect_not_followed`, `address_blocked`, `connection_failed`, `secret_unavailable` (กุญแจ Data Protection ที่เข้ารหัส secret หายไป ดู [development.md](../development.md)) และ `webhook_disabled` หรือ `webhook_deleted` (ระบบหยุดรายการที่รอส่งเพราะ webhook ถูกปิดหรือถูกลบ ไม่นับเป็นครั้งที่ลอง) แต่ละแถวเก็บผลของครั้งล่าสุด ไม่ได้เก็บทุกครั้ง event และประวัติการส่งเก็บ 30 วัน แล้ว housekeeping ลบทิ้ง
+
+### รายการ แก้ ปิด และลบ
+
+`GET /staff/webhooks` ตอบ `{ "data": [...] }` webhook ที่ยังไม่ถูกลบ ใหม่สุดก่อน แต่ละตัวมี `id`, `url`, `events`, `description`, `active`, `version`, `created_by_staff_id`, `created_at`, `updated_at` ไม่มี secret และไม่บอกด้วยซ้ำว่าอ่าน secret ได้ไหม
+
+```json
+PATCH /staff/webhooks/whk_...
+If-Match: "812"
+{ "url": "https://example.com/hooks/v2", "events": ["invoice.issued"], "description": "", "active": false }
+```
+
+- ทุกช่องไม่บังคับ ช่องที่ไม่ส่งไม่เปลี่ยน `events` ที่ส่งแทนรายการเดิมทั้งชุด `description` ว่างคือลบ ตอบ webhook พร้อม `ETag` version ไม่ตรงได้ `409 version_conflict`
+- `url` ใหม่ตรวจด้วยกฎเดียวกับตอนสร้าง ผิดได้ `422` ที่ช่อง `url` ตรวจเฉพาะช่องที่ส่ง การปิดจึงทำได้เสมอ URL ใหม่มีผลกับการส่งครั้งถัดไปทุกครั้ง รวมการลองใหม่ของ event ก่อนหน้า
+- **ปิด** (`active: false`) หยุด delivery ที่รอส่งทั้งหมดทันทีเป็น `failed` ด้วย `webhook_disabled` และตัวส่งตรวจซ้ำก่อนส่งทุกครั้ง คำขอที่ออกไปแล้วก่อนกดปิดอาจยังถึงปลายทาง event ที่เกิดระหว่างปิดไม่ถูกส่งตามหลังเมื่อเปิดใหม่
+- audit `integration.webhook_updated` พร้อมช่องที่เปลี่ยน ปลายทาง (ไม่รวม query string) event และ `active` แก้แล้วไม่มีอะไรเปลี่ยนไม่เขียน audit
+
+`DELETE /staff/webhooks/{id}` ตอบ `204` รองรับ `If-Match` webhook หายจากรายการ ไม่ส่งอะไรอีก delivery ที่รอส่งหยุดด้วย `webhook_deleted` แต่ประวัติการส่งยังอ่านได้ด้วยรหัสเดิมจนครบ 30 วันตามปกติ เพราะไม่มีคอลัมน์ `deleted_at` (ไม่มี migration) ระบบจึงเก็บแถวไว้ ล้าง secret ที่เข้ารหัสเป็นค่าว่าง ซึ่งเป็นเครื่องหมายว่าถูกลบ และตัด query string ออกจาก URL ลบซ้ำ แก้ หมุน secret หรือส่งซ้ำหลังลบได้ `404` audit `integration.webhook_deleted`
+
+### secret ใหม่
+
+`POST /staff/webhooks/{id}/rotate-secret` รองรับ `If-Match` ตอบ `200` พร้อม secret ใหม่ครั้งเดียว และ `Cache-Control: no-store`
+
+```json
+{ "id": "whk_...", "secret": "whsec_...", "signing": { ... }, "version": 815, "rotated_at": "2026-10-09T03:00:00Z" }
+```
+
+secret เดิมหยุดลงนามทันที ไม่มีช่วงที่ใช้ได้ทั้งสองค่า เพราะมีคอลัมน์ secret คอลัมน์เดียว การส่งที่ปลายทางปฏิเสธระหว่างเปลี่ยนค่าจะลองใหม่ตามรอบปกติ (1, 5, 25 นาที และต่อไป) หมุนได้แม้ webhook ปิดอยู่ audit `integration.webhook_secret_rotated` ไม่เก็บ secret
+
+### ส่งซ้ำ
+
+`POST /staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` ตอบ `202` พร้อม delivery ที่กลับเป็น `pending` งานเบื้องหลังส่งในรอบถัดไป (ไม่เกิน 10 วินาที) ด้วย event id และ body เดิม
+
+- ส่งซ้ำได้เฉพาะ `failed` อย่างอื่นได้ `409 state_conflict` กดซ้ำระหว่างรอส่งจึงไม่เข้าคิวสองครั้ง
+- delivery ที่ลองครบหกครั้งแล้วได้ลองอีกหนึ่งครั้ง ไม่สำเร็จก็กลับเป็น `failed` (`attempts` จึงเกิน `max_attempts` ได้) delivery ที่ถูกหยุดเพราะปิด webhook ได้ลองต่อตามรอบที่เหลือ
+- webhook ต้องเปิดอยู่ ไม่อย่างนั้น `409` delivery ของ webhook อื่น หรือ webhook ที่ลบแล้ว ได้ `404`
+- audit `integration.webhook_redelivered`
 
 ## API key
 
@@ -166,7 +215,7 @@ POST /staff/api-keys
 - **แสดง key ครั้งเดียว** รูปแบบ `hp_<prefix 10 ตัว>_<ความลับ 256 bit>` ฐานข้อมูลเก็บแค่ prefix (ไว้ระบุตัว) และ SHA-256 ของ key ทั้งก้อน ไม่มีคอลัมน์ใดเก็บ key ได้ SHA-256 ไม่มี work factor เพียงพอเพราะ key สุ่ม 256 bit ไม่มีอะไรให้เดา เหมือน refresh token
 - **scope** ต้องเป็น scope ในแค็ตตาล็อกที่ key ถือได้ และผู้สร้างถืออยู่ key ถือไม่ได้คือ scope ระดับ 2FA ทั้งหมด (`record:*`, `consult:write`, `rx:write`, `rx:dispense`, `payment:refund`, `billing:payout`, `settings:danger`, `user:manage`, `role:manage`) `integration:manage` (key ที่ออก key ได้หรือเปลี่ยน webhook ได้จะอยู่เหนือการปิดกั้นทุกอย่าง) `staff:manage` (key ที่เชิญพนักงานได้สร้างคนขึ้นมาเองได้) และ wildcard ทุกแบบ ผิดข้อแรกได้ `422` ผิดข้อหลังได้ `403 insufficient_scope` แบบเดียวกับการให้ role
 - **สาขา** ผู้สร้างที่ผูกสาขาเลือกได้เฉพาะสาขาของตัวเอง ไม่เลือกหมายถึงทุกสาขาของตัวเอง ผู้สร้างที่ไม่ผูกสาขาเลือกสาขาใดก็ได้ หรือไม่เลือกเลยหมายถึงทุกสาขา
-- **อายุ** บังคับทุก key ไม่ระบุได้ 90 วัน นานสุด 365 วัน เพราะ contract ไม่มี endpoint ยกเลิก key การหมดอายุจึงเป็นทางเดียวที่รับประกันว่า key ที่ถูกลืมจะหยุดทำงาน
+- **อายุ** บังคับทุก key ไม่ระบุได้ 90 วัน นานสุด 365 วัน key ที่ถูกลืมจึงหยุดทำงานเอง key ที่รู้ว่าหลุดยกเลิกได้ทันที (ข้างล่าง)
 - audit `integration.api_key_created` เก็บชื่อ prefix scope สาขา และวันหมดอายุ ไม่เก็บ key
 
 ### ใช้ key
@@ -184,6 +233,14 @@ header เดียวกับ access token ของคน ระบบเห�
 5. เขียน `last_used_at` ไม่เกินหนึ่งครั้งต่อนาที
 
 key ทำหน้าที่แทนผู้สร้าง แถว audit จึงมีผู้สร้างเป็นผู้กระทำ และมี `via_api_key` ใน `details` บอกว่าเป็น key ไหน key **ใช้ได้เฉพาะ endpoint ที่ประกาศ `RequireScope`** เส้นที่ไม่มี scope เป็นของคน เช่น `/me`, `/me/sessions`, `/auth/logout` และเส้นที่ลูกค้ากับพนักงานใช้ร่วมกัน key ได้ `403` (`InteractiveCallerRequirement`) ไม่อย่างนั้น key ที่มีแค่ `appointment:read` ก็แก้โปรไฟล์หรือเพิกถอนเซสชันของผู้สร้างได้ ฟีดปฏิทินก็ปฏิเสธ key
+
+### รายการและการยกเลิก
+
+`GET /staff/api-keys` ตอบ `{ "data": [...] }` ใหม่สุดก่อน แต่ละแถวมี `id`, `name`, `prefix`, `scopes`, `branch_ids`, `status` (`active`, `expired`, `revoked`), `created_by_staff_id`, `created_at`, `expires_at`, `last_used_at` และ `revoked_at` ไม่มีตัว key หรือ hash key ที่หมดอายุและที่ยกเลิกแล้วยังอยู่ในรายการ แถว audit ที่มี `via_api_key` จึงยังรู้ว่าเป็น key ไหน
+
+`DELETE /staff/api-keys/{id}` ตอบ `204` ตั้ง `revoked_at` แล้ว **คำขอถัดไปของ key นั้นได้ `401`** เพราะการยืนยันตัวอ่านแถวจากฐานข้อมูลทุกคำขอ ไม่มี cache คำขอที่ผ่านการยืนยันตัวไปแล้วทำต่อจนจบ ยกเลิกซ้ำได้ `204` และไม่เขียน audit ซ้ำ ไม่ใช้ `If-Match` เพราะ key ที่ใช้งานอยู่เปลี่ยน `last_used_at` ทุกนาที และการหยุด key ที่หลุดต้องไม่ชนกับการใช้งานของมัน audit `integration.api_key_revoked`
+
+ผู้ที่ไม่ผูกสาขาเห็นและยกเลิกได้ทุก key ผู้ที่ผูกสาขาเห็นเฉพาะ key ที่ทุกสาขาของ key เป็นสาขาของตัวเอง เหมือนกฎตอนสร้าง key อื่นไม่ขึ้นในรายการและยกเลิกได้ `404`
 
 **rate limit** key มีหน้าต่างของตัวเอง แยกจากผู้สร้าง `RateLimits:PerApiKeyPerMinute` ค่าเริ่มต้นเท่ากับ `RateLimits:PerTokenPerMinute` (600 ครั้งต่อนาทีตาม contract) งานที่วิ่งถี่ของ key จึงไม่ทำให้ผู้สร้างใช้หน้าเคาน์เตอร์ไม่ได้ และกลับกัน
 
@@ -220,7 +277,8 @@ PUT /staff/integrations/lab
 - ช่วงเวลาย้อนหลัง 30 วันถึงล่วงหน้า 180 วัน ไม่เกิน 2,000 นัด นัดที่ยกเลิกหรือไม่มาแสดงเป็น `STATUS:CANCELLED` เพื่อให้แอปลบออก
 - **ความเป็นส่วนตัว** แต่ละนัดมีแค่เวลา ชื่อบริการ ชื่อสัตว์ สาขา และรหัสนัด ไม่มีอาการที่แจ้ง เหตุผล บันทึก ผลวินิจฉัย หรือข้อมูลติดต่อของเจ้าของ เพราะลิงก์ฟีดไปอยู่ในแอปปฏิทินที่ซิงก์ข้ามอุปกรณ์และแชร์ได้ คำตอบมี `Cache-Control: private, no-store` และ `X-Robots-Tag: noindex`
 - **token** ฐานข้อมูลเก็บ SHA-256 ไว้ค้นหา และเก็บ token แบบเข้ารหัสไว้ให้หน้าเว็บแสดงลิงก์เดิมได้ ไม่ต้องสร้างใหม่จนปฏิทินที่ subscribe แล้วเสีย token ไม่ได้ให้สิทธิ์อื่นนอกจากฟีด และถูกตรวจกับเจ้าของทุกครั้ง พนักงานที่ถูกปิดบัญชีได้ `401` ทันที token ผิดได้ `401`
-- audit `integration.calendar_feed_created` ตอนสร้างลิงก์ การดึงฟีดไม่เขียน audit (แอปดึงทุกครึ่งชั่วโมง) แต่บันทึก `last_used_at` ไม่เกินหนึ่งครั้งต่อห้านาที
+- **ลิงก์ใหม่** `POST /staff/integrations/calendar/token` ([§ 22](../contract-extensions.md)) แทน token ของผู้เรียกด้วยค่าใหม่ ลิงก์เดิมได้ `401` ทันที ตอบรูปเดียวกับลิงก์แบบ JSON ข้างบน พนักงานทุกคนทำได้กับลิงก์ของตัวเองเท่านั้น API key ได้ `403` ปฏิทินที่ใช้ลิงก์เดิมต้องเพิ่มลิงก์ใหม่อีกครั้ง
+- audit `integration.calendar_feed_created` ตอนสร้างลิงก์ และ `integration.calendar_feed_rotated` ตอนสร้างลิงก์ใหม่ การดึงฟีดไม่เขียน audit (แอปดึงทุกครึ่งชั่วโมง) แต่บันทึก `last_used_at` ไม่เกินหนึ่งครั้งต่อห้านาที
 
 ## หน้าจอ
 
@@ -228,36 +286,23 @@ PUT /staff/integrations/lab
 
 | หน้า | ทำอะไร |
 |---|---|
-| `/settings/integrations/webhooks` | สร้าง webhook เลือก event แสดง secret ครั้งเดียวพร้อมปุ่มคัดลอกและคำเตือน และช่องใส่รหัส webhook เพื่อเปิดประวัติการส่ง |
-| `/settings/integrations/webhooks/[id]` | ประวัติการส่ง สถานะ ครั้งที่ลอง เวลาลองครั้งถัดไป และคำตอบจากปลายทางแบบย่อ |
-| `/settings/integrations/api-keys` | สร้าง key เลือกได้เฉพาะ scope ที่ตัวเองมีและ key ถือได้ เลือกสาขาและอายุ แสดง key ครั้งเดียวพร้อมปุ่มคัดลอกและคำเตือน |
+| `/settings/integrations/webhooks` | สร้าง webhook เลือก event แสดง secret ครั้งเดียวพร้อมปุ่มคัดลอกและคำเตือน รายการ webhook ทั้งหมดพร้อมปุ่มประวัติการส่ง แก้ไข ปิดหรือเปิด สร้าง secret ใหม่ (แสดงครั้งเดียว) และลบ การปิด การสร้าง secret ใหม่ และการลบถามยืนยันก่อน และช่องใส่รหัสเพื่อเปิดประวัติของ webhook ที่ลบแล้ว |
+| `/settings/integrations/webhooks/[id]` | ประวัติการส่ง สถานะ ครั้งที่ลอง เวลาลองครั้งถัดไป คำตอบจากปลายทางแบบย่อ และปุ่มส่งอีกครั้งที่รายการที่ไม่สำเร็จเมื่อ webhook เปิดอยู่ |
+| `/settings/integrations/api-keys` | สร้าง key เลือกได้เฉพาะ scope ที่ตัวเองมีและ key ถือได้ เลือกสาขาและอายุ แสดง key ครั้งเดียวพร้อมปุ่มคัดลอกและคำเตือน รายการ key พร้อมสถานะ และปุ่มยกเลิก key ที่ถามยืนยันก่อน |
 | `/settings/integrations/payment` | ค่าตั้งผู้ให้บริการชำระเงิน ช่องความลับแบบเขียนอย่างเดียว และคำบอกว่ายังไม่มีตัวเชื่อม |
 | `/settings/integrations/lab` | ค่าตั้งแล็บภายนอก แบบเดียวกัน |
-| `/settings/integrations/calendar` | ลิงก์ปฏิทินของตัวเอง (และทั้งสาขาถ้ามีสิทธิ์) พร้อมปุ่มคัดลอกและคำเตือนเรื่องความเป็นส่วนตัว พนักงานทุกคนเปิดได้ |
+| `/settings/integrations/calendar` | ลิงก์ปฏิทินของตัวเอง (และทั้งสาขาถ้ามีสิทธิ์) พร้อมปุ่มคัดลอกและคำเตือนเรื่องความเป็นส่วนตัว และปุ่ม "สร้างลิงก์ใหม่" ที่ถามยืนยันว่าลิงก์เดิมจะใช้ไม่ได้ พนักงานทุกคนเปิดได้ |
 
 โค้ดหน้าจออยู่ที่ `frontend/src/features/integrations/` (หน้า LINE ยังอยู่ที่เดิม) และ `frontend/src/app/(staff)/settings/integrations/`
 
 ## ข้อจำกัดที่รู้อยู่
 
-- contract ไม่มีรายการ webhook หรือ API key จึงต้องจดรหัส webhook ไว้เองเพื่อเปิดประวัติการส่ง และไม่มีทางยกเลิก key ก่อนหมดอายุผ่าน API
-- ปิด webhook ไม่ได้ แก้ URL ไม่ได้ หมุน secret ไม่ได้ ต้องสร้างใหม่
+- หมุน secret แล้ว secret เดิมหยุดทันที ไม่มีช่วงที่ใช้ได้ทั้งสองค่า และ webhook ที่ลบแล้วยังเป็นแถวในฐานข้อมูล ทั้งสองข้อแก้ได้เมื่อเพิ่มคอลัมน์ (ต้องมี migration) ดู [contract-extensions.md § 22](../contract-extensions.md)
+- แก้ชื่อ scope สาขา หรือวันหมดอายุของ key ที่ออกแล้วไม่ได้ ต้องออกใหม่แล้วยกเลิกตัวเก่า
 - ประวัติเก็บแค่ผลครั้งล่าสุดของแต่ละ event ไม่ได้เก็บทุกครั้งที่ลอง
 - หน้าลิงก์ปฏิทินอยู่ใต้แท็บที่ต้องมี `integration:manage` พนักงานคนอื่นต้องเปิด `/settings/integrations/calendar` ตรง ๆ ควรมีลิงก์จากหน้าบัญชีของฉัน
-- ลิงก์ปฏิทินที่หลุดไปใช้ได้จนกว่าเจ้าของจะถูกปิดบัญชี เพราะยังไม่มีทางสร้างลิงก์ใหม่
 - ถ้ากุญแจ Data Protection หาย secret ของ webhook และค่าตั้งที่เข้ารหัสจะอ่านไม่ได้ webhook จะส่งไม่สำเร็จด้วย `secret_unavailable` ต้องสร้างใหม่ ดู [development.md](../development.md)
 - ความลับ TOTP และความลับของ LINE ยังเก็บแบบไม่เข้ารหัส เป็นช่องโหว่ที่รู้อยู่และแยกจากงานนี้ ([system-overview.md § 5 A](../system-overview.md))
-
-## ข้อเสนอส่วนขยาย (ยังไม่ได้ขออนุมัติ ยังไม่ได้ทำ)
-
-| ข้อเสนอ | เหตุผล |
-|---|---|
-| `GET /staff/webhooks` | รายการ webhook ทั้งหมด ไม่ต้องจดรหัสเอง |
-| `PATCH /staff/webhooks/{id}` และ `DELETE /staff/webhooks/{id}` | ปิด เปิด แก้ URL หรือ event และลบ (คอลัมน์ `active` มีแล้ว) |
-| `POST /staff/webhooks/{id}/rotate-secret` | หมุน secret โดยไม่ต้องสร้าง webhook ใหม่ |
-| `POST /staff/webhooks/{id}/deliveries/{delivery_id}/redeliver` | ส่งซ้ำ delivery ที่ `failed` แล้ว |
-| `GET /staff/api-keys` | รายการ key (prefix, scope, สาขา, วันหมดอายุ, `last_used_at`) ไม่มีตัว key |
-| `DELETE /staff/api-keys/{id}` | ยกเลิก key ทันที คอลัมน์ `revoked_at` และการตรวจตอนยืนยันตัวมีแล้ว |
-| `POST /staff/integrations/calendar/token` | สร้างลิงก์ปฏิทินใหม่และทำให้ลิงก์เดิมใช้ไม่ได้ |
 
 ## โค้ด
 
@@ -265,10 +310,10 @@ PUT /staff/integrations/lab
 |---|---|
 | domain | `backend/src/HappyPaws.Domain/Integrations/` (`WebhookSubscription`, `WebhookEvent`, `WebhookDelivery`, `WebhookAddressRules`, `WebhookUrl`, `ApiKey`, `PaymentProviderSettings`, `LabProviderSettings`, `CalendarFeed`) |
 | scope ที่ key ถือได้ | `backend/src/HappyPaws.Domain/Access/SecondFactorScopes.cs` |
-| use case | `backend/src/HappyPaws.Application/Integrations/` |
+| use case | `backend/src/HappyPaws.Application/Integrations/` (ส่วนขยาย § 22 อยู่ใน `ListWebhooks/`, `UpdateWebhookSubscription/`, `DeleteWebhookSubscription/`, `RotateWebhookSecret/`, `RedeliverWebhookDelivery/`, `ListApiKeys/`, `RevokeApiKey/`, `RotateCalendarFeed/`) |
 | outbox และ payload | `backend/src/HappyPaws.Application/Integrations/Webhooks/` |
 | ตัวส่ง การตรวจที่อยู่ และการเข้ารหัส | `backend/src/HappyPaws.Infrastructure/Webhooks/` |
 | งานเบื้องหลัง | `backend/src/HappyPaws.Infrastructure/Jobs/WebhookJob.cs` |
 | การยืนยันตัวด้วย API key | `backend/src/HappyPaws.Api/Authorization/ApiKeyAuthenticationHandler.cs`, `InteractiveCallerRequirement.cs`, `backend/src/HappyPaws.Api/Extensions/AuthenticationExtensions.cs` |
-| controller | `backend/src/HappyPaws.Api/Controllers/Staff/` (`WebhooksController`, `WebhookDeliveriesController`, `ApiKeysController`, `PaymentIntegrationController`, `LabIntegrationController`, `CalendarFeedController`) |
+| controller | `backend/src/HappyPaws.Api/Controllers/Staff/` (`WebhooksController`, `WebhookDeliveriesController`, `ApiKeysController`, `PaymentIntegrationController`, `LabIntegrationController`, `CalendarFeedController`, `CalendarTokenController`) |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/`, `backend/tests/HappyPaws.IntegrationTests/Webhooks/`, `backend/tests/HappyPaws.UnitTests/Domain/Integrations/`, `backend/tests/HappyPaws.UnitTests/Application/Integrations/` |

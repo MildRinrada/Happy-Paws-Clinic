@@ -29,7 +29,38 @@ public static class CrmWire
         LoyaltyEntryKind.Reverse => "reverse",
         LoyaltyEntryKind.Redeem => "redeem",
         LoyaltyEntryKind.Restore => "restore",
+        LoyaltyEntryKind.Adjust => "adjust",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+    };
+
+    public static string ToWire(CouponStatus status) => status switch
+    {
+        CouponStatus.Active => "active",
+        CouponStatus.Scheduled => "scheduled",
+        CouponStatus.UsedUp => "used_up",
+        CouponStatus.Expired => "expired",
+        CouponStatus.Deactivated => "deactivated",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
+    };
+
+    public static CouponStatus? ParseCouponStatus(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "active" => CouponStatus.Active,
+        "scheduled" => CouponStatus.Scheduled,
+        "used_up" => CouponStatus.UsedUp,
+        "expired" => CouponStatus.Expired,
+        "deactivated" => CouponStatus.Deactivated,
+        _ => null,
+    };
+
+    public static PackageStatus? ParsePackageStatus(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "pending_payment" => PackageStatus.PendingPayment,
+        "active" => PackageStatus.Active,
+        "used_up" => PackageStatus.UsedUp,
+        "expired" => PackageStatus.Expired,
+        "cancelled" => PackageStatus.Cancelled,
+        _ => null,
     };
 
     public static LoyaltyTier? ParseTier(string? value) => value?.Trim().ToLowerInvariant() switch

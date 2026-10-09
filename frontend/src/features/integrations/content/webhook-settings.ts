@@ -18,15 +18,15 @@ export const webhookSettingsPage = {
   created: {
     heading: 'สร้าง webhook แล้ว',
     secret: 'Signing secret',
-    warning: 'คัดลอก secret ไปเก็บในระบบปลายทางตอนนี้ ระบบจะไม่แสดงค่านี้อีก ถ้าทำหาย ต้องสร้าง webhook ใหม่',
+    warning: 'คัดลอก secret ไปเก็บในระบบปลายทางตอนนี้ ระบบจะไม่แสดงค่านี้อีก ถ้าทำหาย สร้าง secret ใหม่ได้จากรายการ webhook',
     signing: 'ตรวจลายเซ็นด้วย HMAC-SHA256 ของ "timestamp.body" จาก header X-Webhook-Timestamp และเทียบกับ header X-Signature',
     id: 'รหัส webhook',
     log: 'ดูประวัติการส่ง',
   },
 
   lookup: {
-    heading: 'ประวัติการส่งของ webhook',
-    hint: 'ระบบยังไม่มีรายการ webhook ทั้งหมด ใส่รหัส webhook ที่ได้ตอนสร้าง (ขึ้นต้นด้วย whk_)',
+    heading: 'เปิดประวัติด้วยรหัส webhook',
+    hint: 'ใช้เปิดประวัติของ webhook ที่ลบไปแล้ว รหัสขึ้นต้นด้วย whk_ ดูได้จากบันทึกการใช้งาน',
     label: 'รหัส webhook',
     submit: 'ดูประวัติ',
   },
@@ -68,8 +68,14 @@ export const deliveryLogPage = {
     status: 'สถานะ',
     attempts: 'ครั้งที่ลอง',
     result: 'ผลครั้งล่าสุด',
+    action: 'ส่งซ้ำ',
   },
-  attempts: (done: number, max: number) => `${done} จาก ${max}`,
+  deletedNote: 'webhook นี้ถูกลบแล้ว ยังดูประวัติได้ แต่ส่งซ้ำไม่ได้',
+  disabledNote: 'webhook นี้ปิดอยู่ เปิดใช้งานก่อนจึงจะส่งซ้ำได้',
+  redeliver: 'ส่งอีกครั้ง',
+  redelivering: 'กำลังส่ง…',
+  redelivered: 'เข้าคิวแล้ว จะส่งภายในไม่กี่วินาที',
+  attempts: (done: number, max: number) => (done > max ? `${done} ครั้ง (รวมส่งซ้ำ)` : `${done} จาก ${max}`),
   nextAttempt: (when: string) => `ลองอีกครั้ง ${when}`,
   answer: 'คำตอบจากปลายทาง (ตัดให้สั้น)',
 };
@@ -93,4 +99,6 @@ export const deliveryErrorLabels: Record<string, string> = {
   connection_failed: 'เชื่อมต่อปลายทางไม่ได้',
   secret_unavailable: 'อ่าน secret ไม่ได้ (กุญแจเข้ารหัสของเซิร์ฟเวอร์เปลี่ยน)',
   subscription_missing: 'ไม่พบ webhook',
+  webhook_disabled: 'webhook ถูกปิด ระบบหยุดส่ง',
+  webhook_deleted: 'webhook ถูกลบ ระบบหยุดส่ง',
 };

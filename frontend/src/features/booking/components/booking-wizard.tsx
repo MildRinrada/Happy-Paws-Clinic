@@ -141,7 +141,7 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
           summary={{
             pet: pet?.name,
             service: service?.name,
-            type: bookingPage.details.types[details.type].label,
+            type: options.types.find((type) => type.code === details.type)?.name ?? details.type,
             vet: options.vets[hold.value.staff_id] ?? bookingPage.vetFallback,
             branch: branch?.name,
             reason: details.reason.trim() || undefined,

@@ -9,11 +9,13 @@ import { AllergiesCard } from '@/features/pets/components/profile/allergies-card
 import { DocumentsCard } from '@/features/pets/components/profile/documents-card';
 import { OwnersCard } from '@/features/pets/components/profile/owners-card';
 import { PetFacts } from '@/features/pets/components/profile/pet-facts';
+import { RecordDeathCard } from '@/features/pets/components/profile/record-death-card';
 import { TimelineCard } from '@/features/pets/components/profile/timeline-card';
 import { TreatmentPlanCard } from '@/features/pets/components/profile/treatment-plan-card';
 import { VaccinesCard } from '@/features/pets/components/profile/vaccines-card';
 import { WeightCard } from '@/features/pets/components/profile/weight-card';
 import { petProfile } from '@/features/pets/content/pet-profile';
+import { recordDeath } from '@/features/pets/content/record-death';
 import { loadPetProfile, type PetProfile } from '@/features/pets/lib/load-pet-profile';
 import { prescriptionPaths } from '@/features/prescriptions/lib/prescription-paths';
 import { listServices } from '@/features/service-catalog/api/listServices';
@@ -53,9 +55,11 @@ export default async function PetPage({
 
   const { pet, allergies, latest_weight } = profile.detail;
 
-  // A closed record takes no new dose and no new plan; the backend refuses both.
+  // A closed record takes no new dose and no new plan (the backend refuses both), and no new
+  // allergy or carer: those forms are hidden too, as nothing they record can matter any more.
   const alive = !pet.is_deceased;
   const canRecord = context.can(Scope.RecordWrite);
+  const canWritePatient = context.can(Scope.PatientWrite);
   const canPlan = alive && context.can(Scope.ConsultWrite);
   const canPrint = context.can(Scope.RecordRead);
   const branchId = context.branch?.id;
@@ -88,21 +92,24 @@ export default async function PetPage({
         }
       />
 
+      {pet.is_deceased && <Alert tone="info">{recordDeath.closedNote}</Alert>}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-6">
-          <AllergiesCard petId={pet.id} allergies={allergies} canRecord={canRecord} />
+          <AllergiesCard petId={pet.id} allergies={allergies} canRecord={alive && canRecord} />
           {canPlan && <TreatmentPlanCard petId={pet.id} branchId={branchId} services={services} vets={vets} />}
           <TimelineCard petId={pet.id} history={profile.history} paged={Boolean(cursor)} />
         </div>
 
         <div className="space-y-6">
           <PetFacts pet={pet} />
-          <OwnersCard petId={pet.id} owners={profile.owners} canManage={context.can(Scope.PatientWrite)} />
+          <OwnersCard petId={pet.id} owners={profile.owners} canManage={alive && canWritePatient} />
           <WeightCard latest={latest_weight} series={profile.weights} />
           {profile.vaccinations && (
             <VaccinesCard petId={pet.id} vaccinations={profile.vaccinations} canRecord={alive && canRecord} />
           )}
           {(canRecord || canPrint) && <DocumentsCard petId={pet.id} canUpload={canRecord} canPrint={canPrint} />}
+          {canWritePatient && <RecordDeathCard petId={pet.id} deceased={pet.is_deceased} />}
         </div>
       </div>
     </div>

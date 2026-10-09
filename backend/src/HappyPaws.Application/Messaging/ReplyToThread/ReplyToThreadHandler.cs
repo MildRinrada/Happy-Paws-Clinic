@@ -107,7 +107,9 @@ public sealed class ReplyToThreadHandler(
                     new Dictionary<string, string>(StringComparer.Ordinal) { ["message"] = message.Text! })
                 {
                     BranchId = thread.BranchId ?? (currentUser.BranchIds.Count == 1 ? currentUser.BranchIds.First() : null),
-                    PreferredChannel = thread.LastInboundChannel is { } channel ? WireEnum.Of(channel) : null,
+                    // A customer who last wrote from the portal has no channel to try first: the
+                    // reply is in their chat page and web inbox, and the push takes the usual order.
+                    PreferredChannel = thread.LastInboundChannel?.ToDelivery() is { } channel ? WireEnum.Of(channel) : null,
                     Source = DeliverySource.Manual,
                     BatchId = message.Id,
                     SentByStaffId = staffId,

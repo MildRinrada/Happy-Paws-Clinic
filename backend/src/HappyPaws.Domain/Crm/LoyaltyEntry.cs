@@ -16,6 +16,12 @@ public enum LoyaltyEntryKind
 
     /// <summary>Spent points given back because the bill they were spent on was voided.</summary>
     Restore,
+
+    /// <summary>
+    /// Points given or taken by hand, with a reason (<c>docs/contract-extensions.md § 25</c>). Signed
+    /// as entered. Moves the balance, never the lifetime points the level is judged on.
+    /// </summary>
+    Adjust,
 }
 
 /// <summary>
@@ -37,7 +43,7 @@ public sealed class LoyaltyEntry : Entity
 
     public LoyaltyEntryKind Kind { get; private set; }
 
-    /// <summary>Signed: positive for earn and restore, negative for reverse and redeem.</summary>
+    /// <summary>Signed: positive for earn and restore, negative for reverse and redeem, either for adjust.</summary>
     public int Points { get; private set; }
 
     public string? InvoiceId { get; private set; }
@@ -51,6 +57,20 @@ public sealed class LoyaltyEntry : Entity
 
     public DateTimeOffset OccurredAt { get; private set; }
 
+    /// <summary>
+    /// When the points this row added stop counting, or null for never. Set when the row is written,
+    /// from the clinic's loyalty settings at that moment, so a later change to the settings never
+    /// reaches back to points already given. Only rows that add points carry one.
+    /// </summary>
+    public DateTimeOffset? ExpiresAt { get; private set; }
+
+    /// <summary>
+    /// On an earn row: how many satang bought one point when it was earned. A refund takes points
+    /// back at this rate, not today's. Null on rows written before the rate became a setting, which
+    /// were all earned at <see cref="LoyaltyRules.SatangPerPoint"/>.
+    /// </summary>
+    public long? SatangPerPoint { get; private set; }
+
     public static LoyaltyEntry Create(
         string customerId,
         LoyaltyEntryKind kind,
@@ -59,9 +79,16 @@ public sealed class LoyaltyEntry : Entity
         string? invoiceId = null,
         string? discountId = null,
         string? note = null,
-        string? staffId = null)
+        string? staffId = null,
+        DateTimeOffset? expiresAt = null,
+        long? satangPerPoint = null)
     {
-        var signed = kind is LoyaltyEntryKind.Earn or LoyaltyEntryKind.Restore ? Math.Abs(points) : -Math.Abs(points);
+        var signed = kind switch
+        {
+            LoyaltyEntryKind.Earn or LoyaltyEntryKind.Restore => Math.Abs(points),
+            LoyaltyEntryKind.Adjust => points,
+            _ => -Math.Abs(points),
+        };
 
         if (signed == 0)
         {
@@ -79,6 +106,8 @@ public sealed class LoyaltyEntry : Entity
             Note = note,
             StaffId = staffId,
             OccurredAt = occurredAt,
+            ExpiresAt = signed > 0 ? expiresAt : null,
+            SatangPerPoint = kind == LoyaltyEntryKind.Earn ? satangPerPoint : null,
         };
     }
 }

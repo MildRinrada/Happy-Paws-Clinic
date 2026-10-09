@@ -2,27 +2,26 @@
 
 import { useId, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { FormStatus } from '@/components/ui/form-status';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceAppointmentTypesAction } from '../../actions/appointment-settings-actions';
 import { appointmentSettingsText } from '../../content/appointment-settings';
-import { MAX_TYPES, defaultTypes, draftsFrom, emptyType, toTypeInput, typeProblems, type TypeDraft } from '../../lib/appointment-type-draft';
+import { MAX_TYPES, draftsFrom, emptyType, toTypeInput, typeProblems, type TypeDraft } from '../../lib/appointment-type-draft';
+import type { AppointmentTypes } from '../../types/appointment-settings.types';
 import { AppointmentTypeRow } from './appointment-type-row';
 
 /**
- * The whole set of appointment types, written in one go. The stored set cannot be read, so the form
- * starts from the four the contract names and says so; once saved it shows the set the backend
- * answered with, and sends that version as `If-Match` on the next save.
+ * The whole set of appointment types, written in one go. The form starts from the stored set and
+ * sends the version it was read at as `If-Match`; once saved it shows the set the backend answered
+ * with, and sends that version on the next save.
  */
-export function AppointmentTypesForm() {
+export function AppointmentTypesForm({ stored: initial }: { stored: AppointmentTypes }) {
   const text = appointmentSettingsText.types;
   const idPrefix = useId();
-  const [types, setTypes] = useState<TypeDraft[]>(defaultTypes);
-  const [version, setVersion] = useState<number>();
+  const [types, setTypes] = useState<TypeDraft[]>(() => draftsFrom(initial.types));
+  const [version, setVersion] = useState(initial.version);
   const [storedCount, setStoredCount] = useState<number>();
   const [checked, setChecked] = useState(false);
-  const [understood, setUnderstood] = useState(false);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(appointmentSettingsText.messages);
   const problems = typeProblems(types);
   // The backend names the type in its own sentence ("ระยะเวลาของ dental ต้อง..."), not by field.
@@ -45,7 +44,6 @@ export function AppointmentTypesForm() {
         setStoredCount(stored.types.length);
         setTypes(draftsFrom(stored.types));
         setChecked(false);
-        setUnderstood(false);
       },
     );
   }
@@ -90,11 +88,10 @@ export function AppointmentTypesForm() {
         <p className="text-sm text-ink-500">{text.max}</p>
       )}
 
-      <div className="space-y-3 border-t border-ink-100 pt-4">
-        <Checkbox label={text.acknowledge} checked={understood} onChange={(event) => setUnderstood(event.target.checked)} />
+      <div className="border-t border-ink-100 pt-4">
         <div className="flex flex-wrap items-center justify-end gap-3">
           <FormStatus message={checked && problems.some(Boolean) ? text.fix : refusal} savedText="" />
-          <Button type="submit" disabled={!understood || pending}>
+          <Button type="submit" disabled={pending}>
             {pending ? appointmentSettingsText.submitting : text.submit}
           </Button>
         </div>

@@ -68,15 +68,20 @@ public sealed class InventoryItemResolver(IInventoryItemRepository items, IAudit
     {
         if (itemId is { Length: > 0 })
         {
-            return await items.FindAsync(itemId.Trim(), cancellationToken)
+            var found = await items.FindAsync(itemId.Trim(), cancellationToken)
                 ?? throw new NotFoundException("inventory_item", itemId);
+
+            // Receiving and ordering are what "in use" means; a retired item takes neither (§ 25).
+            found.EnsureInUse();
+
+            return found;
         }
 
         var input = newItem ?? throw new InvalidOperationException("validator lets neither item_id nor new_item through");
 
         if (await items.FindByNameKeyAsync(InventoryItem.KeyOf(input.Name!), cancellationToken) is { } existing)
         {
-            throw Exists(existing.Id);
+            throw Exists(existing.Id, existing.IsRetired);
         }
 
         WireEnum.TryParse<InventoryItemKind>(input.Kind, out var kind);
@@ -107,11 +112,19 @@ public sealed class InventoryItemResolver(IInventoryItemRepository items, IAudit
         return item;
     }
 
-    /// <summary>The refusal for a name already taken. Also what a lost race on the unique index becomes.</summary>
-    public static ConflictException Exists(string? existingId) =>
+    /// <summary>
+    /// The refusal for a name already taken. Also what a lost race on the unique index becomes.
+    /// <c>details.retired</c> says when the item holding the name is retired, so the screen can offer
+    /// to bring it back instead (§ 25).
+    /// </summary>
+    public static ConflictException Exists(string? existingId, bool retired = false) =>
         new(ErrorCodes.InventoryItemExists, "มีรายการชื่อนี้ในคลังแล้ว ใช้ item_id ของรายการเดิม")
         {
             MessageEn = "An item with this name already exists.",
-            Details = existingId is null ? null : new Dictionary<string, object> { ["item_id"] = existingId },
+            Details = existingId is null
+                ? null
+                : retired
+                    ? new Dictionary<string, object> { ["item_id"] = existingId, ["retired"] = true }
+                    : new Dictionary<string, object> { ["item_id"] = existingId },
         };
 }

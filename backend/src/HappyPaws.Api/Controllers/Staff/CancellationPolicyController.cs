@@ -2,17 +2,43 @@ using HappyPaws.Api.Authorization;
 using HappyPaws.Api.Contracts.Appointments;
 using HappyPaws.Api.Http;
 using HappyPaws.Application.Appointments.Dtos;
+using HappyPaws.Application.Appointments.GetAppointmentRules;
 using HappyPaws.Application.Appointments.ReplaceCancellationPolicy;
 using HappyPaws.Domain.Access;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HappyPaws.Api.Controllers.Staff;
 
-/// <summary>The cancellation policy. Only <c>PUT</c> is in the contract; it answers with the policy as stored.</summary>
+/// <summary>
+/// The cancellation policy. Only <c>PUT</c> is in the contract; the <c>GET</c> is
+/// <c>docs/contract-extensions.md § 23</c>.
+/// </summary>
 [ApiController]
 [Route("staff/policies/cancellation")]
 public sealed class CancellationPolicyController : ControllerBase
 {
+    /// <summary>
+    /// <c>GET /staff/policies/cancellation</c> — the policy as stored, with <c>version</c> and an
+    /// <c>ETag</c> to send back as <c>If-Match</c>. Not in the API reference (§ 23). Read on
+    /// <c>settings:read</c>, the read side of the <c>settings:write</c> the <c>PUT</c> needs, as
+    /// <c>GET /clinic/settings/booking</c> is.
+    /// </summary>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpGet]
+    [RequireScope(Scopes.Settings.Read)]
+    [ProducesResponseType<CancellationPolicyDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<CancellationPolicyDto>> Get(
+        [FromServices] GetCancellationPolicyHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var policy = await handler.HandleAsync(cancellationToken);
+
+        Response.Headers.ETag = IfMatch.ToETag(policy.Version);
+
+        return Ok(policy);
+    }
+
     /// <summary>
     /// <c>PUT /staff/policies/cancellation</c> — "cutoff ค่าปรับ และจำนวนครั้งที่ยอมให้".
     /// <para>

@@ -39,6 +39,8 @@ export interface NewStaffAppointment {
   staff_id?: string;
   branch_id?: string;
   reason?: string;
+  /** An appointment type code from `GET /staff/appointment-types`; absent is `regular`. */
+  type?: string;
 }
 
 /**

@@ -3,14 +3,22 @@ import { deliveryLogPage, webhookEventLabels } from '../content/webhook-settings
 import type { WebhookDelivery } from '../types/integration.types';
 import { WebhookDeliveryResult } from './webhook-delivery-result';
 import { WebhookDeliveryStatusBadge } from './delivery-status-badge';
+import { RedeliverButton } from './redeliver-button';
 
-/** One row per event sent to the webhook, with how its latest attempt went. */
-export function WebhookDeliveryTable({ rows }: { rows: WebhookDelivery[] }) {
+interface WebhookDeliveryTableProps {
+  rows: WebhookDelivery[];
+  webhookId: string;
+  /** True while the webhook exists and is on: only then can a failed delivery be sent again. */
+  canRedeliver: boolean;
+}
+
+/** One row per event sent to the webhook, with how its latest attempt went, and "send again" on a failure. */
+export function WebhookDeliveryTable({ rows, webhookId, canRedeliver }: WebhookDeliveryTableProps) {
   const columns = deliveryLogPage.columns;
 
   return (
     <div className="overflow-x-auto rounded-xl border border-ink-200 bg-white">
-      <table className="w-full min-w-[720px] text-sm">
+      <table className="w-full min-w-[820px] text-sm">
         <thead className="border-b border-ink-100 text-left text-ink-500">
           <tr>
             <th scope="col" className="px-4 py-3 font-medium">{columns.time}</th>
@@ -18,6 +26,7 @@ export function WebhookDeliveryTable({ rows }: { rows: WebhookDelivery[] }) {
             <th scope="col" className="px-4 py-3 font-medium">{columns.status}</th>
             <th scope="col" className="px-4 py-3 font-medium">{columns.attempts}</th>
             <th scope="col" className="px-4 py-3 font-medium">{columns.result}</th>
+            {canRedeliver && <th scope="col" className="px-4 py-3 font-medium">{columns.action}</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-ink-100">
@@ -40,6 +49,11 @@ export function WebhookDeliveryTable({ rows }: { rows: WebhookDelivery[] }) {
               <td className="px-4 py-3">
                 <WebhookDeliveryResult delivery={row} />
               </td>
+              {canRedeliver && (
+                <td className="px-4 py-3">
+                  {row.status === 'failed' && <RedeliverButton webhookId={webhookId} deliveryId={row.id} />}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

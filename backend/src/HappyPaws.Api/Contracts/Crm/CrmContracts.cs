@@ -92,3 +92,27 @@ public sealed record SegmentCriteriaRequest(
     public SegmentCriteriaInput ToInput() =>
         new(Species, InactiveDays, VisitedWithinDays, MinSpendSatang, Tiers, HasActivePackage, BranchId);
 }
+
+/// <summary>
+/// <c>POST /staff/coupons/{id}/deactivate</c> (<c>docs/contract-extensions.md § 25</c>):
+/// <code>{ "reason": "โค้ดหลุดไปในกลุ่มแชต" }</code>
+/// </summary>
+public sealed record DeactivateCouponRequest(string? Reason = null);
+
+/// <summary>
+/// <c>POST /staff/loyalty/{customer_id}/adjustments</c> (§ 25):
+/// <code>{ "points": 50, "reason": "ชดเชยนัดที่คลินิกเลื่อน" }</code>
+/// </summary>
+public sealed record AdjustPointsRequest(int? Points = null, string? Reason = null);
+
+/// <summary>
+/// <c>PUT /clinic/settings/loyalty</c> (§ 25):
+/// <code>{ "satang_per_point": 10000, "point_value_satang": 100, "silver_min_points": 200,
+///   "gold_min_points": 1000, "points_expire_after_months": 12 }</code>
+/// </summary>
+public sealed record ReplaceLoyaltySettingsRequest(
+    long? SatangPerPoint = null,
+    long? PointValueSatang = null,
+    int? SilverMinPoints = null,
+    int? GoldMinPoints = null,
+    int? PointsExpireAfterMonths = null);

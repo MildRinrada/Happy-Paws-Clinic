@@ -5,7 +5,6 @@ using HappyPaws.Domain.Appointments;
 using HappyPaws.Domain.Customers;
 using HappyPaws.Domain.Identity;
 using HappyPaws.Domain.Messaging;
-using HappyPaws.Domain.Notifications;
 using HappyPaws.Domain.Staff;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,10 +22,13 @@ internal sealed class MessageThreadRepository(HappyPawsDbContext db) : IMessageT
     public Task<MessageThread?> FindTrackedForCustomerAsync(string customerId, CancellationToken cancellationToken = default) =>
         db.Set<MessageThread>().FirstOrDefaultAsync(thread => thread.CustomerId == customerId, cancellationToken);
 
-    public Task<bool> HasInboundAsync(DeliveryChannel channel, string externalId, CancellationToken cancellationToken = default) =>
+    public Task<bool> HasInboundAsync(MessageChannel channel, string externalId, CancellationToken cancellationToken = default) =>
         db.Set<ThreadMessage>().AnyAsync(
             message => message.Channel == channel && message.ExternalId == externalId,
             cancellationToken);
+
+    public Task<MessageThread?> FindForCustomerAsync(string customerId, CancellationToken cancellationToken = default) =>
+        db.Set<MessageThread>().AsNoTracking().FirstOrDefaultAsync(thread => thread.CustomerId == customerId, cancellationToken);
 
     public Task<string?> LatestBranchOfCustomerAsync(string customerId, CancellationToken cancellationToken = default) =>
         db.Set<Appointment>().AsNoTracking()
@@ -140,6 +142,46 @@ internal sealed class MessageThreadRepository(HappyPawsDbContext db) : IMessageT
                     latest.GetValueOrDefault(row.Thread.Id))),
             ],
             hasMore ? EncodeCursor(data[^1].Thread.LastMessageAt, data[^1].Awaiting, data[^1].Thread.Id) : null);
+    }
+
+    public async Task<CursorPage<ThreadMessageRow>> MessagesAsync(
+        string threadId,
+        CursorPageRequest page,
+        CancellationToken cancellationToken = default)
+    {
+        var messages = db.Set<ThreadMessage>().AsNoTracking().Where(message => message.ThreadId == threadId);
+
+        if (page.Cursor is { Length: > 0 } cursor)
+        {
+            var (sentAt, afterId) = Cursor.Decode(cursor);
+
+            messages = messages.Where(message =>
+                message.SentAt < sentAt
+                || (message.SentAt == sentAt && string.Compare(message.Id, afterId) < 0));
+        }
+
+        var limit = page.SafeLimit;
+
+        var rows = await messages
+            .OrderByDescending(message => message.SentAt).ThenByDescending(message => message.Id)
+            .Take(limit + 1)
+            .Select(message => new
+            {
+                Message = message,
+                Name = (
+                    from staff in db.Set<StaffMembership>()
+                    join user in db.Set<UserAccount>() on staff.UserId equals user.Id
+                    where staff.Id == message.SentByStaffId
+                    select user.DisplayName).FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var hasMore = rows.Count > limit;
+        var data = hasMore ? rows[..limit] : rows;
+
+        return new CursorPage<ThreadMessageRow>(
+            [.. data.Select(row => new ThreadMessageRow(row.Message, row.Name))],
+            hasMore ? Cursor.Encode(data[^1].Message.SentAt, data[^1].Message.Id) : null);
     }
 
     public async Task<IReadOnlyList<ThreadMessageRow>> RecentMessagesAsync(

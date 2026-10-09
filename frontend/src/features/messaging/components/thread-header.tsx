@@ -22,7 +22,11 @@ export function ThreadHeader({ thread }: { thread: MessageThread }) {
         </span>
       </div>
       {thread.reply_channel && (
-        <p className="text-xs text-ink-500">{messagesPage.thread.replyChannel(labelOf(channelLabels, thread.reply_channel))}</p>
+        <p className="text-xs text-ink-500">
+          {thread.reply_channel === 'portal'
+            ? messagesPage.thread.replyPortal
+            : messagesPage.thread.replyChannel(labelOf(channelLabels, thread.reply_channel))}
+        </p>
       )}
     </header>
   );

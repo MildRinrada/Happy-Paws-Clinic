@@ -2,19 +2,20 @@ import { Badge } from '@/components/ui/badge';
 import { OpenCaseButton } from '@/features/consultations/components/open-case-button';
 import { formatTime, minutesSince } from '@/lib/format/datetime';
 import { priorityLabel, statusLabel } from '../lib/ticket-labels';
-import type { TicketView } from '../types/queue.types';
+import type { TicketView, VetOption } from '../types/queue.types';
 import { TicketActions } from './ticket-actions';
 
 interface Props {
   view: TicketView;
   rooms: string[];
+  vets: VetOption[];
   canCall: boolean;
   canOrganise: boolean;
   canConsult: boolean;
 }
 
 /** One ticket on the board: the number large, because that is what gets read out. */
-export function TicketCard({ view, rooms, canCall, canOrganise, canConsult }: Props) {
+export function TicketCard({ view, rooms, vets, canCall, canOrganise, canConsult }: Props) {
   const { ticket } = view;
   const priority = priorityLabel[ticket.priority];
   const status = statusLabel[ticket.status];
@@ -73,7 +74,14 @@ export function TicketCard({ view, rooms, canCall, canOrganise, canConsult }: Pr
       )}
 
       <div className="mt-3 border-t border-ink-100 pt-3">
-        <TicketActions ticket={ticket} rooms={rooms} canCall={canCall} canOrganise={canOrganise} />
+        <TicketActions
+          ticket={ticket}
+          vetName={view.vetName}
+          rooms={rooms}
+          vets={vets}
+          canCall={canCall}
+          canOrganise={canOrganise}
+        />
         {/* A vet may fetch the patient themselves: opening the case is the call (contract-extensions § 8). */}
         {canConsult && ['waiting', 'called', 'in_room'].includes(ticket.status) && (
           <div className="mt-2">

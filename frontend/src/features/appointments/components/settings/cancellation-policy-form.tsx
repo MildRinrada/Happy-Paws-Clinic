@@ -2,13 +2,13 @@
 
 import { useId, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Field, Input } from '@/components/ui/field';
 import { FormStatus } from '@/components/ui/form-status';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceCancellationPolicyAction } from '../../actions/appointment-settings-actions';
 import { appointmentSettingsText } from '../../content/appointment-settings';
-import { defaultPolicy, draftFrom, toPolicyInput, type PolicyDraft, type PolicyField } from '../../lib/policy-draft';
+import { draftFrom, toPolicyInput, type PolicyDraft, type PolicyField } from '../../lib/policy-draft';
+import type { CancellationPolicy } from '../../types/appointment-settings.types';
 
 const FIELDS: { field: PolicyField; api: string; label: 'cutoffHours' | 'fee' | 'freeAllowance' | 'windowDays' }[] = [
   { field: 'cutoffHours', api: 'cutoff_hours', label: 'cutoffHours' },
@@ -18,17 +18,16 @@ const FIELDS: { field: PolicyField; api: string; label: 'cutoffHours' | 'fee' | 
 ];
 
 /**
- * The four values, written together. The stored policy cannot be read, so the form starts from the
- * backend's defaults; once saved it shows what the backend answered with, and the version it gave
- * goes out with the next save so a colleague's change in between is not silently replaced.
+ * The four values, written together. The form starts from the stored policy, and the version it was
+ * read at goes out as `If-Match`, so a colleague's change in between is refused rather than silently
+ * replaced. After a save it shows what the backend answered with, and that version is sent next.
  */
-export function CancellationPolicyForm() {
+export function CancellationPolicyForm({ policy }: { policy: CancellationPolicy }) {
   const text = appointmentSettingsText.policy;
   const id = useId();
-  const [draft, setDraft] = useState<PolicyDraft>(defaultPolicy);
-  const [version, setVersion] = useState<number>();
+  const [draft, setDraft] = useState<PolicyDraft>(() => draftFrom(policy));
+  const [version, setVersion] = useState(policy.version);
   const [bad, setBad] = useState<PolicyField[]>([]);
-  const [understood, setUnderstood] = useState(false);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(appointmentSettingsText.messages);
 
   function set(field: PolicyField, value: string) {
@@ -47,7 +46,6 @@ export function CancellationPolicyForm() {
       (stored) => {
         setVersion(stored.version);
         setDraft(draftFrom(stored));
-        setUnderstood(false);
       },
     );
   }
@@ -77,11 +75,10 @@ export function CancellationPolicyForm() {
 
       {saved && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-900">{text.stored}</p>}
 
-      <div className="space-y-3 border-t border-ink-100 pt-4">
-        <Checkbox label={text.acknowledge} checked={understood} onChange={(event) => setUnderstood(event.target.checked)} />
+      <div className="border-t border-ink-100 pt-4">
         <div className="flex flex-wrap items-center justify-end gap-3">
           <FormStatus message={message} savedText="" />
-          <Button type="submit" disabled={!understood || pending}>
+          <Button type="submit" disabled={pending}>
             {pending ? appointmentSettingsText.submitting : text.submit}
           </Button>
         </div>

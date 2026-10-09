@@ -154,7 +154,7 @@ public sealed class CreateCouponHandler(
                 }));
         }, cancellationToken);
 
-        return CouponDto.From(coupon!);
+        return CouponDto.From(coupon!, today);
     }
 
     /// <summary>

@@ -2,7 +2,7 @@
 
 import { formatBaht } from '@/lib/format/money';
 import { bookingPage } from '../content/booking-page';
-import type { BookableType, BookingDetails, BookingOptions } from '../types/booking.types';
+import type { BookingDetails, BookingOptions } from '../types/booking.types';
 import { BookingFieldset } from './booking-fieldset';
 import { ChoiceCard } from './choice-card';
 
@@ -13,14 +13,12 @@ interface DetailsStepProps {
   onNext: () => void;
 }
 
-const TYPES: BookableType[] = ['regular', 'follow_up'];
-
 /** Step 1: which pet, where, what service and what kind of visit, and anything for the vet. */
 export function DetailsStep({ options, value, onChange, onNext }: DetailsStepProps) {
   const text = bookingPage.details;
   const services = options.servicesByBranch[value.branchId] ?? [];
   const set = (patch: Partial<BookingDetails>) => onChange({ ...value, ...patch });
-  const ready = Boolean(value.petId && value.branchId && value.serviceId);
+  const ready = Boolean(value.petId && value.branchId && value.serviceId && options.types.some((type) => type.code === value.type));
 
   return (
     <div className="space-y-6">
@@ -78,19 +76,23 @@ export function DetailsStep({ options, value, onChange, onNext }: DetailsStepPro
       </BookingFieldset>
 
       <BookingFieldset legend={text.type}>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {TYPES.map((type) => (
-            <ChoiceCard
-              key={type}
-              name="type"
-              value={type}
-              checked={value.type === type}
-              onChange={() => set({ type })}
-              title={text.types[type].label}
-              detail={text.types[type].hint}
-            />
-          ))}
-        </div>
+        {options.types.length === 0 ? (
+          <p className="text-sm text-site-muted">{text.noTypes}</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {options.types.map((type) => (
+              <ChoiceCard
+                key={type.code}
+                name="type"
+                value={type.code}
+                checked={value.type === type.code}
+                onChange={() => set({ type: type.code })}
+                title={type.name}
+                detail={text.typeHints[type.code] ?? (type.duration_minutes ? text.typeMinutes(type.duration_minutes) : undefined)}
+              />
+            ))}
+          </div>
+        )}
       </BookingFieldset>
 
       <div className="space-y-2">

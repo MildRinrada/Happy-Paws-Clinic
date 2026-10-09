@@ -1,4 +1,5 @@
 import type { BadgeTone } from '@/components/ui/badge';
+import { channelLabels } from '@/features/notifications/content/delivery-labels';
 import type { ThreadStatus } from '../types/thread.types';
 
 /** How a thread's state reads in the list. */
@@ -21,4 +22,13 @@ export const kindLabels: Record<string, string> = {
   location: 'ส่งตำแหน่ง',
   sticker: 'ส่งสติกเกอร์',
   other: 'ส่งข้อความชนิดที่ระบบยังไม่รองรับ',
+};
+
+/**
+ * Where a customer wrote from: the delivery channels, plus `portal` for the portal's chat page
+ * (contract extension § 24), which is not a way to send anything and so is not in `channelLabels`.
+ */
+export const inboundChannelLabels: Record<string, string> = {
+  ...channelLabels,
+  portal: 'เว็บไซต์',
 };

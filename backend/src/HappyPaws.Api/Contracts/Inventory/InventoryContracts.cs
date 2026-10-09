@@ -105,3 +105,21 @@ public sealed record PurchaseOrderLineRequest(
     NewItemRequest? NewItem = null,
     int? Quantity = null,
     long? UnitCostSatang = null);
+
+/// <summary>
+/// <c>PATCH /staff/inventory/items/{id}</c> (<c>docs/contract-extensions.md § 25</c>). Every field is
+/// optional; <c>active: false</c> retires the item and <c>true</c> brings it back:
+/// <code>{ "unit_price_satang": 550, "reorder_level": 40 }</code>
+/// </summary>
+public sealed record UpdateItemRequest(
+    string? Name = null,
+    string? Unit = null,
+    long? UnitPriceSatang = null,
+    int? ReorderLevel = null,
+    bool? Active = null);
+
+/// <summary>
+/// <c>POST /staff/inventory/purchase-orders/{id}/cancel</c> (§ 25):
+/// <code>{ "reason": "ซัพพลายเออร์แจ้งว่าของหมด" }</code>
+/// </summary>
+public sealed record CancelPurchaseOrderRequest(string? Reason = null);

@@ -49,7 +49,42 @@ export interface TicketView {
   vetName?: string;
 }
 
+/** A vet the counter can put on a ticket: `POST /staff/queue/{id}/assign` with `staff_id`. */
+export interface VetOption {
+  id: string;
+  name: string;
+}
+
 export interface QueueView {
   board: QueueBoard;
   tickets: TicketView[];
+  /**
+   * The vets working at this branch, for the assign control. Empty when this session cannot read
+   * the staff list (`staff:read`), in which case the control is not offered.
+   */
+  vets: VetOption[];
+}
+
+/** What the history view narrows a day's tickets to. The backend has no status filter. */
+export type HistoryFilter = 'finished' | 'served' | 'left' | 'all';
+
+/** One exam room on the waiting-room screen: the numbers inside it now, and the vet there. */
+export interface DisplayRoom {
+  room: string;
+  vetName?: string;
+  inRoom: string[];
+}
+
+/**
+ * Everything the waiting-room screen shows, and nothing more: ticket numbers, rooms and vet names.
+ * No pet, owner or service ever reaches this shape, so none can reach a public screen.
+ */
+export interface DisplayView {
+  serviceDate: string;
+  waitingCount: number;
+  /** Called tickets, the latest call first, each with where to go. */
+  calls: { number: string; room?: string; vetName?: string }[];
+  rooms: DisplayRoom[];
+  /** The next tickets to be called, in the backend's call order. */
+  next: string[];
 }

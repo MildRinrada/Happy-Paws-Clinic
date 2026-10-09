@@ -1,6 +1,8 @@
 /** Where the "เชื่อมต่อระบบ" pages live. */
 export const integrationPaths = {
   webhooks: '/settings/integrations/webhooks',
+  apiKeys: '/settings/integrations/api-keys',
+  calendar: '/settings/integrations/calendar',
   webhookLog: (id: string) => `/settings/integrations/webhooks/${encodeURIComponent(id)}`,
   webhookLogPage: (id: string, cursor: string) => `/settings/integrations/webhooks/${encodeURIComponent(id)}?cursor=${encodeURIComponent(cursor)}`,
 };

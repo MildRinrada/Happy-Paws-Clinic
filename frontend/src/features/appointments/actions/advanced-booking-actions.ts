@@ -3,7 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { runAction } from '@/lib/actions/action-result';
-import { addToWaitingList, createRecurringSeries, detectConflicts } from '../api/advancedBooking';
+import {
+  addToWaitingList,
+  createRecurringSeries,
+  detectConflicts,
+  detectDayConflicts,
+  removeFromWaitingList,
+} from '../api/advancedBooking';
 import type { ConflictReport } from '../types/advanced-booking.types';
 
 /**
@@ -66,6 +72,7 @@ const series = z.object({
   rrule: z.string().min(1).max(300),
   staffId: id.optional(),
   reason: z.string().trim().max(1000).optional(),
+  type: z.string().regex(/^[a-z][a-z0-9_]{1,29}$/).optional(),
   idempotencyKey: z.uuid(),
 });
 
@@ -81,6 +88,7 @@ export async function createRecurringSeriesAction(input: z.infer<typeof series>)
         rrule: parsed.rrule,
         staff_id: parsed.staffId,
         reason: parsed.reason || undefined,
+        type: parsed.type,
       },
       parsed.idempotencyKey,
     ),
@@ -100,11 +108,13 @@ const waiting = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-/** Nothing on any page lists the waiting list, so nothing needs refreshing. */
+const WAITING_LIST_PATH = '/appointments/waiting-list';
+
+/** Adds an entry, and marks the list below the form stale so it shows. */
 export async function addToWaitingListAction(input: z.infer<typeof waiting>) {
   const parsed = waiting.parse(input);
 
-  return runAction(() =>
+  const result = await runAction(() =>
     addToWaitingList({
       pet_id: parsed.petId,
       service_id: parsed.serviceId,
@@ -115,4 +125,27 @@ export async function addToWaitingListAction(input: z.infer<typeof waiting>) {
       note: parsed.note || undefined,
     }),
   );
+
+  revalidatePath(WAITING_LIST_PATH);
+  return result;
+}
+
+/**
+ * `DELETE /staff/waiting-list/{id}`. An entry someone else removed first answers `404`; the list is
+ * refreshed either way, so the row goes.
+ */
+export async function removeFromWaitingListAction(input: { id: string }) {
+  const parsed = z.object({ id }).parse(input);
+  const result = await runAction(() => removeFromWaitingList(parsed.id));
+
+  revalidatePath(WAITING_LIST_PATH);
+  return result.ok ? { ok: true as const, data: undefined } : result;
+}
+
+const dayCheck = z.object({ date: day, branchId: id });
+
+/** `GET /staff/appointments/conflicts?date=` for the calendar's day. Reports only. */
+export async function checkDayConflictsAction(input: z.infer<typeof dayCheck>) {
+  const parsed = dayCheck.parse(input);
+  return runAction(() => detectDayConflicts(parsed.date, parsed.branchId));
 }

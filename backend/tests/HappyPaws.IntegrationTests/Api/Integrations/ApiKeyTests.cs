@@ -108,7 +108,8 @@ public class ApiKeyTests(IntegrationsFixture fixture)
         var db = scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>();
 
         var stored = await db.Set<ApiKey>().AsNoTracking().SingleAsync(row => row.Id == id, Token);
-        var secretPart = key[(key.LastIndexOf('_') + 1)..];
+        // Cut at the known prefix, not the last '_': the base64url secret may itself contain one.
+        var secretPart = key[(created.GetProperty("prefix").GetString()!.Length + 1)..];
 
         Assert.Equal(ApiKey.Hash(key), stored.SecretHash);
         Assert.DoesNotContain(secretPart, stored.SecretHash, StringComparison.Ordinal);

@@ -1,5 +1,6 @@
 using System.Globalization;
 using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Application.Inventory;
 using HappyPaws.Domain.Inventory;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +44,7 @@ internal sealed class PurchaseOrderRepository(HappyPawsDbContext db, IClock cloc
         CancellationToken cancellationToken = default)
     {
         var orders = db.Set<PurchaseOrder>().AsNoTracking()
-            .Where(order => order.Status != PurchaseOrderStatus.Received);
+            .Where(order => order.Status != PurchaseOrderStatus.Received && order.Status != PurchaseOrderStatus.Cancelled);
 
         if (branchIds is not null)
         {
@@ -72,5 +73,50 @@ internal sealed class PurchaseOrderRepository(HappyPawsDbContext db, IClock cloc
         [
             .. rows.Select(row => new OpenOrderLine(row.Id, row.Number, row.BranchId, row.SupplierName, row.ItemId, row.Outstanding, row.ExpectedOn)),
         ];
+    }
+
+    public async Task<CursorPage<PurchaseOrder>> ListAsync(
+        PurchaseOrderFilter filter,
+        CursorPageRequest page,
+        CancellationToken cancellationToken = default)
+    {
+        var branches = filter.BranchIds.ToArray();
+        var orders = db.Set<PurchaseOrder>().AsNoTracking()
+            .Where(order => branches.Contains(order.BranchId));
+
+        if (filter.Status is { } status)
+        {
+            orders = orders.Where(order => order.Status == status);
+        }
+
+        if (filter.Supplier is { Length: > 0 } supplier)
+        {
+            var pattern = $"%{supplier.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_")}%";
+            orders = orders.Where(order => EF.Functions.ILike(order.SupplierName, pattern));
+        }
+
+        if (page.Cursor is { Length: > 0 } cursor)
+        {
+            var (sortKey, id) = Cursor.Decode(cursor);
+            orders = orders.Where(order =>
+                order.OrderedAt < sortKey || (order.OrderedAt == sortKey && string.Compare(order.Id, id) < 0));
+        }
+
+        var rows = await orders
+            .Include(order => order.Lines)
+            .OrderByDescending(order => order.OrderedAt).ThenByDescending(order => order.Id)
+            .Take(page.SafeLimit + 1)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        if (rows.Count <= page.SafeLimit)
+        {
+            return new CursorPage<PurchaseOrder>(rows, null);
+        }
+
+        var data = rows.Take(page.SafeLimit).ToList();
+        var last = data[^1];
+
+        return new CursorPage<PurchaseOrder>(data, Cursor.Encode(last.OrderedAt, last.Id));
     }
 }

@@ -5,11 +5,15 @@ using HappyPaws.Domain.Inventory;
 
 namespace HappyPaws.Application.Inventory.ListItems;
 
-/// <summary><c>GET /staff/inventory/items?q=&amp;branch=&amp;status=</c>.</summary>
+/// <summary><c>GET /staff/inventory/items?q=&amp;branch=&amp;status=&amp;active=</c>.</summary>
 /// <param name="Search">Part of the item's name.</param>
 /// <param name="BranchId">One branch; every branch the caller may see when absent.</param>
 /// <param name="Status"><c>ok</c>, <c>low</c> or <c>out</c>: items with at least one listed branch in that state.</param>
-public sealed record ListItemsQuery(string? Search = null, string? BranchId = null, string? Status = null);
+/// <param name="Active">
+/// <c>true</c> for items in use, <c>false</c> for retired ones, absent for both
+/// (<c>docs/contract-extensions.md § 25</c>, not in the API reference).
+/// </param>
+public sealed record ListItemsQuery(string? Search = null, string? BranchId = null, string? Status = null, bool? Active = null);
 
 /// <summary>
 /// "ยาและเวชภัณฑ์ · คงเหลือรายสาขา" — the catalogue with each branch's stock.
@@ -37,7 +41,7 @@ public sealed class ListItemsHandler(IInventoryItemRepository items, InventoryBr
         }
 
         var scope = await branches.ForReadAsync(query.BranchId, cancellationToken);
-        var catalogue = await items.ListAsync(query.Search?.Trim(), cancellationToken);
+        var catalogue = await items.ListAsync(query.Search?.Trim(), query.Active is { } active ? !active : null, cancellationToken);
         var stock = await view.BuildAsync(catalogue, scope, cancellationToken);
 
         if (status is not { } filter)

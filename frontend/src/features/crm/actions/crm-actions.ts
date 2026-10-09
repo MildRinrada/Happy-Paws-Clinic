@@ -62,8 +62,10 @@ const coupon = z
 
 export async function createCouponAction(values: z.infer<typeof coupon>): Promise<ActionResult<Coupon>> {
   const input = coupon.parse(values);
+  const result = await runAction(() => createCoupon(input));
 
-  return runAction(() => createCoupon(input));
+  if (result.ok) revalidatePath('/crm/coupons');
+  return result;
 }
 
 const days = z.number().int().min(1).max(3650);
@@ -83,6 +85,8 @@ const segment = z.object({
 
 export async function createSegmentAction(values: z.infer<typeof segment>): Promise<ActionResult<Segment>> {
   const input = segment.parse(values);
+  const result = await runAction(() => createSegment(input));
 
-  return runAction(() => createSegment(input));
+  if (result.ok) revalidatePath('/crm/segments');
+  return result;
 }

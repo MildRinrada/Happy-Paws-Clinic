@@ -9,6 +9,7 @@ import { assignTicket } from '../api/assignTicket';
 import { callTicket } from '../api/callTicket';
 import { issueWalkInTicket } from '../api/issueWalkInTicket';
 import { leaveQueue } from '../api/leaveQueue';
+import { setTicketPriority } from '../api/setTicketPriority';
 import { skipTicket } from '../api/skipTicket';
 import type { QueueTicket } from '../types/queue.types';
 
@@ -47,8 +48,33 @@ export async function skipTicketAction(input: { ticketId: string; version: numbe
   return onTicket(input, skipTicket);
 }
 
-export async function leaveQueueAction(input: { ticketId: string; version: number }) {
-  return onTicket(input, (ticketId, version) => leaveQueue(ticketId, version));
+// 300: the length the backend stores for both reasons (`LeftReason`, `PriorityReason`).
+const reasonText = z.string().trim().max(300);
+
+const departure = ticketRef.extend({ reason: reasonText.optional() });
+
+/** Off the board as `left`. The reason is optional and kept on the ticket. */
+export async function leaveQueueAction(input: z.infer<typeof departure>) {
+  const { reason, ...ref } = departure.parse(input);
+
+  return onTicket(ref, (ticketId, version) => leaveQueue(ticketId, version, reason || undefined));
+}
+
+const priorityChange = ticketRef.extend({
+  priority: z.enum(['normal', 'urgent', 'emergency']),
+  reason: reasonText.optional(),
+});
+
+/**
+ * A new urgency for a ticket already on the board. Whether a reason is required (above `normal`
+ * it is) is the backend's rule; it answers `409 invalid_priority` and the form shows it.
+ */
+export async function setTicketPriorityAction(input: z.infer<typeof priorityChange>) {
+  const { reason, priority, ...ref } = priorityChange.parse(input);
+
+  return onTicket(ref, (ticketId, version) =>
+    setTicketPriority({ ticketId, version, priority, reason: reason || undefined }),
+  );
 }
 
 const assignment = ticketRef.extend({

@@ -34,6 +34,63 @@ public sealed record WaitingListEntryDto(
             entry.NotifiedCount);
 }
 
+/// <summary>
+/// One row of <c>GET /staff/waiting-list</c> (<c>docs/contract-extensions.md § 23</c>, not in the
+/// API reference): the entry, whether it is still waiting, and the two names a person reads.
+/// <para>
+/// <c>status</c> is worked out, not stored: <c>waiting</c> until <c>latest_on</c> has passed,
+/// <c>lapsed</c> after. The entry itself has no status column (see <see cref="WaitingListEntry"/>).
+/// </para>
+/// </summary>
+public sealed record WaitingListItemDto(
+    string Id,
+    string Status,
+    string CustomerId,
+    string PetId,
+    string PetName,
+    string ServiceId,
+    string ServiceName,
+    string? BranchId,
+    string? StaffId,
+    DateOnly EarliestOn,
+    DateOnly LatestOn,
+    string? Note,
+    DateTimeOffset AddedAt,
+    DateTimeOffset? LastNotifiedAt,
+    int NotifiedCount)
+{
+    public const string Waiting = "waiting";
+    public const string Lapsed = "lapsed";
+
+    public static WaitingListItemDto From(WaitingListEntry entry, string petName, string serviceName, DateOnly today) =>
+        new(
+            entry.Id,
+            entry.IsLapsed(today) ? Lapsed : Waiting,
+            entry.CustomerId,
+            entry.PetId,
+            petName,
+            entry.ServiceId,
+            serviceName,
+            entry.BranchId,
+            entry.StaffId,
+            entry.EarliestOn,
+            entry.LatestOn,
+            entry.Note,
+            entry.CreatedAt,
+            entry.LastNotifiedAt,
+            entry.NotifiedCount);
+}
+
+/// <summary>
+/// One type a customer may book themselves — <c>GET /portal/appointment-types</c>
+/// (<c>docs/contract-extensions.md § 23</c>). Only the code to send back, the name to show, and the
+/// length; the counter's rules (lead time, queue priority) are not the customer's to read.
+/// </summary>
+public sealed record OnlineAppointmentTypeDto(string Code, string Name, int? DurationMinutes)
+{
+    public static OnlineAppointmentTypeDto From(AppointmentType type) => new(type.Code, type.Name, type.DurationMinutes);
+}
+
 /// <summary>One appointment type and its rules.</summary>
 public sealed record AppointmentTypeDto(
     string Code,
@@ -47,14 +104,16 @@ public sealed record AppointmentTypeDto(
         new(type.Code, type.Name, type.DurationMinutes, type.OnlineBooking, type.LeadTimeMinutes, WireEnum.Of(type.QueuePriority));
 }
 
-/// <summary><c>PUT /staff/appointment-types</c> answers with the whole set and its version.</summary>
+/// <summary>
+/// <c>GET</c> and <c>PUT /staff/appointment-types</c> answer with the whole set and its version.
+/// </summary>
 public sealed record AppointmentTypesDto(uint Version, IReadOnlyList<AppointmentTypeDto> Types)
 {
     public static AppointmentTypesDto From(AppointmentTypeCatalog catalog) =>
         new(catalog.Version, [.. catalog.Types.Select(AppointmentTypeDto.From)]);
 }
 
-/// <summary><c>PUT /staff/policies/cancellation</c> — the policy as stored.</summary>
+/// <summary><c>GET</c> and <c>PUT /staff/policies/cancellation</c> — the policy as stored.</summary>
 public sealed record CancellationPolicyDto(
     uint Version,
     int CutoffHours,

@@ -1,5 +1,4 @@
 using HappyPaws.Domain.Common;
-using HappyPaws.Domain.Notifications;
 
 namespace HappyPaws.Domain.Messaging;
 
@@ -42,8 +41,11 @@ public sealed class MessageThread : Entity
     /// <summary>When the customer last wrote.</summary>
     public DateTimeOffset? LastInboundAt { get; private set; }
 
-    /// <summary>The channel the customer last wrote on: the one a reply tries first.</summary>
-    public DeliveryChannel? LastInboundChannel { get; private set; }
+    /// <summary>
+    /// The channel the customer last wrote on: the one a reply tries first. <c>portal</c> has no
+    /// channel to try first, so such a reply takes the usual order (and the web inbox, as always).
+    /// </summary>
+    public MessageChannel? LastInboundChannel { get; private set; }
 
     /// <summary>When staff last replied.</summary>
     public DateTimeOffset? LastReplyAt { get; private set; }
@@ -73,7 +75,7 @@ public sealed class MessageThread : Entity
     /// that is known, since that is the branch most likely to answer.
     /// </summary>
     public ThreadMessage Receive(
-        DeliveryChannel channel,
+        MessageChannel channel,
         MessageKind kind,
         string? text,
         string? externalId,

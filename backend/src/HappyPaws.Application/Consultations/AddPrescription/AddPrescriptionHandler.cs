@@ -161,7 +161,8 @@ public sealed class AddPrescriptionHandler(
     /// <summary>
     /// The item the prescriber picked from stock, or null when the drug was typed. An id that names
     /// no item is <c>404</c>; a supply (syringes, gauze) is never prescribed and is <c>422</c>.
-    /// The catalogue has no retired state, so every medicine in it is a valid pick.
+    /// A retired item is <c>409 inventory_item_retired</c> (<c>docs/contract-extensions.md § 25</c>);
+    /// prescriptions that already name it are untouched and can still be dispensed.
     /// </summary>
     private async Task<InventoryItem?> PickedItemAsync(string? itemId, CancellationToken cancellationToken)
     {
@@ -180,6 +181,8 @@ public sealed class AddPrescriptionHandler(
                 ["inventory_item_id"] = ["รายการนี้เป็นเวชภัณฑ์ ไม่ใช่ยา สั่งจ่ายไม่ได้"],
             });
         }
+
+        item.EnsureInUse();
 
         return item;
     }

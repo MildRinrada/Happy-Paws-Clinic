@@ -72,9 +72,18 @@ export interface Coupon {
   valid_until: string | null;
   branch_id: string | null;
   redeemed_count: number;
+  /** What is left of `max_redemptions`. Absent when unlimited. docs/contract-extensions.md § 25. */
+  remaining?: number;
+  status: CouponStatus;
   created_by_staff_id: string;
   created_at: string;
+  deactivated_at?: string;
+  deactivated_by_staff_id?: string;
+  deactivation_reason?: string;
 }
+
+/** Where a coupon stands today. docs/contract-extensions.md § 25. */
+export type CouponStatus = 'active' | 'scheduled' | 'used_up' | 'expired' | 'deactivated';
 
 /** What a segment asks of a customer. Every field left out is not a condition. */
 export interface SegmentCriteriaInput {
@@ -109,11 +118,13 @@ export interface Segment {
   customer_count: number;
   /** Of those, who agreed to marketing and has a LINE address: who a broadcast would reach. */
   reachable_count: number;
+  /** When the two counts were taken: at saving for a list row, now for a single read (§ 25). */
+  counted_at: string;
   created_by_staff_id: string;
   created_at: string;
 }
 
-export type PointsEntryKind = 'earn' | 'reverse' | 'redeem' | 'restore';
+export type PointsEntryKind = 'earn' | 'reverse' | 'redeem' | 'restore' | 'adjust';
 
 export interface PointsEntry {
   id: string;
@@ -124,6 +135,9 @@ export interface PointsEntry {
   invoice_number: string | null;
   note: string | null;
   occurred_at: string;
+  /** When the points this row added stop counting. Absent when they never do (§ 25). */
+  expires_at?: string;
+  staff_id?: string;
 }
 
 export interface CouponRedemption {
@@ -141,6 +155,30 @@ export interface LoyaltyRules {
   satang_per_point: number;
   point_value_satang: number;
   tiers: { tier: LoyaltyTier; min_points: number }[];
+  /** Absent when points never expire (§ 25). */
+  points_expire_after_months?: number;
+}
+
+/** `GET` and `PUT /clinic/settings/loyalty`. docs/contract-extensions.md § 25. */
+export interface LoyaltySettings {
+  satang_per_point: number;
+  point_value_satang: number;
+  silver_min_points: number;
+  gold_min_points: number;
+  points_expire_after_months?: number;
+  version: number;
+  updated_at?: string;
+}
+
+export type LoyaltySettingsInput = Omit<LoyaltySettings, 'version' | 'updated_at' | 'points_expire_after_months'> & {
+  points_expire_after_months: number | null;
+};
+
+/** `POST /staff/loyalty/{customer_id}/adjustments`: the row written and the balance after (§ 25). */
+export interface PointsAdjustment {
+  entry: PointsEntry;
+  points_balance: number;
+  lifetime_points: number;
 }
 
 /** `GET /staff/loyalty/{customer_id}`. Lists are newest first, at most 50 each. */
@@ -151,6 +189,10 @@ export interface CustomerLoyalty {
   tier: LoyaltyTier;
   next_tier: { tier: LoyaltyTier; points_needed: number } | null;
   rules: LoyaltyRules;
+  /** Points that ran out unspent (§ 25). */
+  expired_points: number;
+  /** The spendable points that expire soonest. Absent when none expire (§ 25). */
+  next_expiry?: { points: number; expires_at: string };
   history: PointsEntry[];
   coupon_redemptions: CouponRedemption[];
   packages: CrmPackage[];

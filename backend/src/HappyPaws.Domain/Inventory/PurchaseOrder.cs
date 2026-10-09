@@ -13,6 +13,13 @@ public enum PurchaseOrderStatus
 
     /// <summary>Everything ordered has arrived.</summary>
     Received,
+
+    /// <summary>
+    /// The rest will not come: whatever was outstanding when the order was cancelled is off the
+    /// order. What had arrived stays received. Not in the API reference:
+    /// <c>docs/contract-extensions.md § 25</c>.
+    /// </summary>
+    Cancelled,
 }
 
 /// <summary>
@@ -60,6 +67,14 @@ public sealed class PurchaseOrder : Entity
     public DateTimeOffset OrderedAt { get; private set; }
 
     public IReadOnlyList<PurchaseOrderLine> Lines => _lines;
+
+    public DateTimeOffset? CancelledAt { get; private set; }
+
+    public string? CancelledByStaffId { get; private set; }
+
+    public string? CancelReason { get; private set; }
+
+    public bool IsCancelled => Status == PurchaseOrderStatus.Cancelled;
 
     public Money TotalCost => _lines.Aggregate(Money.Zero, (total, line) => total + line.LineTotal);
 
@@ -119,6 +134,11 @@ public sealed class PurchaseOrder : Entity
     /// </summary>
     public PurchaseOrderLine Receive(string itemId, int quantity)
     {
+        if (IsCancelled)
+        {
+            throw new StateConflictException(nameof(PurchaseOrder), "cancelled", nameof(Receive));
+        }
+
         var line = LineFor(itemId)
             ?? throw new DomainException("invalid_movement", "ใบสั่งซื้อนี้ไม่มีรายการนี้");
 
@@ -126,6 +146,24 @@ public sealed class PurchaseOrder : Entity
         Recompute();
 
         return line;
+    }
+
+    /// <summary>
+    /// Calls off what has not arrived. Allowed while anything is outstanding, whether nothing or part
+    /// has been received; a fully received order has nothing left to cancel. Lines keep their received
+    /// quantities, and receipts already booked stay in stock.
+    /// </summary>
+    public void Cancel(string staffId, string? reason, DateTimeOffset now)
+    {
+        if (Status is PurchaseOrderStatus.Received or PurchaseOrderStatus.Cancelled)
+        {
+            throw new StateConflictException(nameof(PurchaseOrder), Status.ToString(), nameof(Cancel));
+        }
+
+        Status = PurchaseOrderStatus.Cancelled;
+        CancelledAt = now;
+        CancelledByStaffId = staffId;
+        CancelReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
     }
 
     private void Recompute() =>

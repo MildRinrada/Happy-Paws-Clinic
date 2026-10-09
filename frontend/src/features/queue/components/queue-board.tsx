@@ -66,6 +66,7 @@ export function QueueBoard({ view, rooms, canCall, canOrganise, canConsult }: Pr
                   key={item.ticket.id}
                   view={item}
                   rooms={rooms}
+                  vets={view.vets}
                   canCall={canCall}
                   canOrganise={canOrganise}
                   canConsult={canConsult}

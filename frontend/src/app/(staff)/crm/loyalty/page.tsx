@@ -40,6 +40,7 @@ export default async function CrmLoyaltyPage({
           customerName={view.customerName}
           customerPhone={view.customerPhone}
           canOpenCustomer={canReadCustomer}
+          canAdjust={context.can(Scope.CrmManage)}
         />
       )}
     </div>

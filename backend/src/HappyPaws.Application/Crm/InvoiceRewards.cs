@@ -1,5 +1,6 @@
 using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Billing;
+using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Auditing;
@@ -17,8 +18,11 @@ namespace HappyPaws.Application.Crm;
 /// covered quantity goes on the bill as a line priced zero, so revenue is counted once, when the
 /// package itself was paid for.</item>
 /// <item><b>Coupons</b> become a discount whose approver is the staff member who created the coupon.</item>
-/// <item><b>Points</b> are earned when a bill reaches <c>paid</c> (one per ฿100 paid), taken back in
-/// proportion when money is refunded, and spent as a discount at ฿1 a point.</item>
+/// <item><b>Points</b> are earned when a bill reaches <c>paid</c> (one per ฿100 paid by default), taken
+/// back in proportion when money is refunded, and spent as a discount at ฿1 a point by default. The
+/// numbers come from <see cref="LoyaltySettings"/> at the moment of each step, and the earn row keeps
+/// its rate so a refund uses the rate the points were earned at
+/// (<c>docs/contract-extensions.md § 25</c>).</item>
 /// <item>A <b>void</b> gives back everything the bill took: package uses, coupon uses and points.
 /// A <b>refund</b> does not, because the service and the discount happened.</item>
 /// </list>
@@ -30,7 +34,8 @@ public sealed class InvoiceRewards(
     ICrmLocks locks,
     IBilledServiceLookup billedServices,
     IAuditTrail audit,
-    ClinicDays clinicDays) : IInvoiceRewards
+    ClinicDays clinicDays,
+    IClinicSettingsStore settings) : IInvoiceRewards
 {
     public async Task AddServiceLineAsync(
         Invoice invoice,
@@ -162,21 +167,23 @@ public sealed class InvoiceRewards(
         // Two bills spending the same points at once would both see the old balance without this.
         await locks.LockCustomerAsync(invoice.CustomerId, cancellationToken);
 
-        var totals = await ledger.TotalsAsync(invoice.CustomerId, cancellationToken);
+        var totals = await ledger.TotalsAsync(invoice.CustomerId, now, cancellationToken);
 
         if (points > totals.Balance)
         {
             throw new DomainException("insufficient_points", $"แต้มไม่พอ ลูกค้ามี {Math.Max(totals.Balance, 0):N0} แต้ม");
         }
 
-        var amount = points * LoyaltyRules.PointValueSatang;
+        // Worth what a point is worth today: a change to the value applies to redemptions from now on.
+        var pointValue = (await settings.LoyaltyAsync(cancellationToken)).PointValueSatang;
+        var amount = points * pointValue;
         var room = invoice.Total.Satang - invoice.Paid.Satang;
 
         if (amount > room)
         {
             throw new DomainException(
                 "invalid_discount",
-                $"แลกแต้มได้ไม่เกินยอดค้างของบิล (สูงสุด {room / LoyaltyRules.PointValueSatang:N0} แต้ม)");
+                $"แลกแต้มได้ไม่เกินยอดค้างของบิล (สูงสุด {room / pointValue:N0} แต้ม)");
         }
 
         var discount = invoice.ApplyDiscount(amount, $"แลกแต้มสะสม {points:N0} แต้ม", staffId, staffId, now);
@@ -198,11 +205,20 @@ public sealed class InvoiceRewards(
 
         if (entries.All(entry => entry.Kind != LoyaltyEntryKind.Earn))
         {
-            var earned = LoyaltyRules.PointsFor(invoice.Paid.Satang);
+            var loyalty = await settings.LoyaltyAsync(cancellationToken);
+            var earned = loyalty.PointsFor(invoice.Paid.Satang);
 
             if (earned > 0)
             {
-                ledger.Add(LoyaltyEntry.Create(invoice.CustomerId, LoyaltyEntryKind.Earn, earned, now, invoice.Id, note: invoice.Number));
+                ledger.Add(LoyaltyEntry.Create(
+                    invoice.CustomerId,
+                    LoyaltyEntryKind.Earn,
+                    earned,
+                    now,
+                    invoice.Id,
+                    note: invoice.Number,
+                    expiresAt: loyalty.ExpiryFor(now),
+                    satangPerPoint: loyalty.SatangPerPoint));
             }
         }
 
@@ -216,11 +232,14 @@ public sealed class InvoiceRewards(
     {
         var entries = await ledger.ForInvoiceAsync(invoice.Id, cancellationToken);
 
-        if (entries.Any(entry => entry.Kind == LoyaltyEntryKind.Earn))
+        if (entries.FirstOrDefault(entry => entry.Kind == LoyaltyEntryKind.Earn) is { } earn)
         {
-            // Points follow the money the clinic kept: a bill of ฿1,000 refunded ฿300 keeps 7 points.
+            // Points follow the money the clinic kept: a bill of ฿1,000 refunded ฿300 keeps 7 points,
+            // at the rate the points were earned at, whatever the rate is today.
             var held = entries.Where(entry => entry.Kind is LoyaltyEntryKind.Earn or LoyaltyEntryKind.Reverse).Sum(entry => entry.Points);
-            var kept = LoyaltyRules.PointsFor(invoice.Paid.Satang - invoice.Refunded.Satang);
+            var kept = LoyaltyRules.PointsFor(
+                invoice.Paid.Satang - invoice.Refunded.Satang,
+                earn.SatangPerPoint ?? LoyaltyRules.SatangPerPoint);
 
             if (held > kept)
             {
@@ -257,8 +276,17 @@ public sealed class InvoiceRewards(
 
         if (spent > 0)
         {
+            // Given back as points added today, under today's expiry.
+            var loyalty = await settings.LoyaltyAsync(cancellationToken);
+
             ledger.Add(LoyaltyEntry.Create(
-                invoice.CustomerId, LoyaltyEntryKind.Restore, spent, now, invoice.Id, note: invoice.Number));
+                invoice.CustomerId,
+                LoyaltyEntryKind.Restore,
+                spent,
+                now,
+                invoice.Id,
+                note: invoice.Number,
+                expiresAt: loyalty.ExpiryFor(now)));
         }
 
         await CancelSoldPackagesAsync(invoice, "ยกเลิกบิลขายแพ็กเกจ", now, cancellationToken);

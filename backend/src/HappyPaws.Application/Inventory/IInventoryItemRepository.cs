@@ -16,13 +16,19 @@ public interface IInventoryItemRepository
         IReadOnlyCollection<string> itemIds,
         CancellationToken cancellationToken = default);
 
-    /// <summary>The catalogue by name, narrowed to names containing <paramref name="search"/> when given.</summary>
-    Task<IReadOnlyList<InventoryItem>> ListAsync(string? search, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The catalogue by name, narrowed to names containing <paramref name="search"/> when given, and
+    /// to items in use (<paramref name="retired"/> false) or retired ones (true) when given.
+    /// </summary>
+    Task<IReadOnlyList<InventoryItem>> ListAsync(
+        string? search,
+        bool? retired = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Medicines only, by name, narrowed to names containing <paramref name="search"/> when given,
-    /// at most <paramref name="limit"/> of them — the prescriber's drug picker
-    /// (<c>docs/contract-extensions.md § 20</c>).
+    /// Medicines in use only (never a retired item, <c>docs/contract-extensions.md § 25</c>), by name,
+    /// narrowed to names containing <paramref name="search"/> when given, at most
+    /// <paramref name="limit"/> of them — the prescriber's drug picker (§ 20).
     /// </summary>
     Task<IReadOnlyList<InventoryItem>> SearchMedicinesAsync(
         string? search,

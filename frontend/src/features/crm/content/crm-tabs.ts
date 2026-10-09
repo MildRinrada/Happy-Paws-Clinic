@@ -13,8 +13,9 @@ export interface CrmTab {
  */
 export const crmTabs: CrmTab[] = [
   { href: '/crm/packages', label: 'ขายแพ็กเกจ', scope: Scope.CrmManage },
-  { href: '/crm/coupons', label: 'สร้างคูปอง', scope: Scope.CrmManage },
-  { href: '/crm/segments', label: 'กลุ่มลูกค้า', scope: Scope.CrmManage },
+  { href: '/crm/customer-packages', label: 'แพ็กเกจของลูกค้า', scope: Scope.CrmRead },
+  { href: '/crm/coupons', label: 'คูปอง', scope: Scope.CrmRead },
+  { href: '/crm/segments', label: 'กลุ่มลูกค้า', scope: Scope.CrmRead },
   { href: '/crm/loyalty', label: 'แต้มและสมาชิก', scope: Scope.CrmRead },
 ];
 

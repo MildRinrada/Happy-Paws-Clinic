@@ -3,9 +3,12 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { loyaltyPage } from '../../content/loyalty-page';
 import { crmPaths } from '../../lib/crm-paths';
 import type { CustomerLoyalty } from '../../types/crm.types';
+import { pointsAdjustText } from '../../content/points-adjust';
 import { PackageList } from '../shared/package-list';
 import { CouponRedemptionList } from './coupon-redemption-list';
+import { PointsAdjustForm } from './points-adjust-form';
 import { PointsBalance } from './points-balance';
+import { PointsExpiryNote } from './points-expiry-note';
 import { PointsHistoryTable } from './points-history-table';
 import { TierProgress } from './tier-progress';
 
@@ -15,10 +18,12 @@ interface Props {
   customerPhone?: string;
   /** The link to the customer's own page, for a session that may open it. */
   canOpenCustomer: boolean;
+  /** The manual points form, for a session holding `crm:manage` (docs/contract-extensions.md § 25). */
+  canAdjust?: boolean;
 }
 
 /** One customer's points, level, history, coupons used and packages. */
-export function LoyaltyOverview({ loyalty, customerName, customerPhone, canOpenCustomer }: Props) {
+export function LoyaltyOverview({ loyalty, customerName, customerPhone, canOpenCustomer, canAdjust = false }: Props) {
   const text = loyaltyPage;
 
   return (
@@ -35,7 +40,10 @@ export function LoyaltyOverview({ loyalty, customerName, customerPhone, canOpenC
 
       <Card>
         <CardBody className="grid gap-6 sm:grid-cols-2">
-          <PointsBalance loyalty={loyalty} />
+          <div className="space-y-2">
+            <PointsBalance loyalty={loyalty} />
+            <PointsExpiryNote loyalty={loyalty} />
+          </div>
           <TierProgress loyalty={loyalty} />
         </CardBody>
       </Card>
@@ -49,6 +57,14 @@ export function LoyaltyOverview({ loyalty, customerName, customerPhone, canOpenC
         </Card>
 
         <div className="space-y-6">
+          {canAdjust && (
+            <Card>
+              <CardHeader title={pointsAdjustText.heading} />
+              <CardBody>
+                <PointsAdjustForm customerId={loyalty.customer_id} />
+              </CardBody>
+            </Card>
+          )}
           <Card>
             <CardHeader title={text.packages.heading} />
             <CardBody>

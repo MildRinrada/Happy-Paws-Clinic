@@ -22,9 +22,10 @@ namespace HappyPaws.Domain.Integrations;
 /// </para>
 /// <para>
 /// <b>It ends.</b> Every key has an <see cref="ExpiresAt"/>, at most
-/// <see cref="MaxLifetime"/> after it was made. The contract has no endpoint that revokes a key, so
-/// expiry is the only way one is guaranteed to stop; <see cref="RevokedAt"/> exists for the
-/// revocation endpoint proposed in <c>docs/features/integrations.md</c>.
+/// <see cref="MaxLifetime"/> after it was made, so a forgotten key stops by itself. A key can be
+/// stopped sooner with <c>DELETE /staff/api-keys/{id}</c> (<c>docs/contract-extensions.md § 22</c>),
+/// which sets <see cref="RevokedAt"/>; authentication reads the row on every request, so the very
+/// next request with that key is refused.
 /// </para>
 /// </summary>
 public sealed class ApiKey : Entity
@@ -137,6 +138,10 @@ public sealed class ApiKey : Entity
             Encoding.ASCII.GetBytes(Hash(presented)));
 
     public bool IsUsableAt(DateTimeOffset now) => RevokedAt is null && now < ExpiresAt;
+
+    /// <summary><c>revoked</c>, <c>expired</c> or <c>active</c>; revoked wins, because that was a decision.</summary>
+    public string StateAt(DateTimeOffset now) =>
+        RevokedAt is not null ? "revoked" : now >= ExpiresAt ? "expired" : "active";
 
     public bool NeedsLastUsedUpdate(DateTimeOffset now) =>
         LastUsedAt is not { } last || now - last >= LastUsedResolution;

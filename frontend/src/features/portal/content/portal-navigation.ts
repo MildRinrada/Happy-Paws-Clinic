@@ -18,6 +18,7 @@ export const PORTAL_HOME_HREF = '/portal';
 export const portalPaths = {
   book: '/portal/book',
   notifications: '/portal/notifications',
+  messages: '/portal/messages',
   account: '/portal/account',
   pets: '/portal/pets',
   editPet: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/edit`,
@@ -45,6 +46,7 @@ export const portalHeader = {
     { label: 'บัญชีของฉัน', href: portalPaths.account },
     { label: 'แพ็กเกจของฉัน', href: portalPaths.packages },
     { label: 'บิลและใบเสร็จ', href: portalPaths.invoices },
+    { label: 'แชทกับคลินิก', href: portalPaths.messages },
     { label: 'แจ้งเตือน', href: portalPaths.notifications },
     { label: 'หน้าเว็บคลินิก', href: '/' },
   ] satisfies SiteLink[],

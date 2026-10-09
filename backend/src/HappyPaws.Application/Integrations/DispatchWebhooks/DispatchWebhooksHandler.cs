@@ -113,9 +113,23 @@ public sealed class DispatchWebhooksHandler(
         var subscription = await webhooks.FindAsync(claimed.SubscriptionId, cancellationToken);
         var webhookEvent = await webhooks.FindEventAsync(claimed.EventId, cancellationToken);
 
+        // Switched off or deleted since it was queued (docs/contract-extensions.md § 22): stopped
+        // here, unsent, and no attempt is counted. Switching off also stops pending rows at once;
+        // this catches a row claimed in the moment between.
+        var halt = subscription switch
+        {
+            { IsDeleted: true } => WebhookDelivery.HaltedDeleted,
+            { Active: false } => WebhookDelivery.HaltedDisabled,
+            _ => null,
+        };
+
         WebhookSendResult result;
 
-        if (subscription is null || webhookEvent is null)
+        if (halt is not null)
+        {
+            result = new WebhookSendResult(false, null, halt, null, 0);
+        }
+        else if (subscription is null || webhookEvent is null)
         {
             result = new WebhookSendResult(false, null, "subscription_missing", null, 0);
         }
@@ -136,7 +150,11 @@ public sealed class DispatchWebhooksHandler(
                 return;
             }
 
-            if (result.Succeeded)
+            if (halt is not null)
+            {
+                delivery.Halt(at, halt);
+            }
+            else if (result.Succeeded)
             {
                 delivery.RecordSuccess(at, result.StatusCode ?? 200, result.ResponseBody, result.DurationMs);
             }
@@ -146,7 +164,7 @@ public sealed class DispatchWebhooksHandler(
             }
         }, cancellationToken);
 
-        if (!result.Succeeded)
+        if (!result.Succeeded && halt is null)
         {
             logger.LogInformation(
                 "Webhook delivery {DeliveryId} ({EventType}) to {SubscriptionId} failed: {Error}",

@@ -17,6 +17,8 @@
 | POST | `/portal/documents` | ส่งรูปอาการหรือผลจากคลินิกอื่น |
 | GET | `/portal/packages` | แพ็กเกจและสิทธิ์ที่เหลือ |
 | GET | `/portal/invoices` | บิลของตัวเอง `?unpaid=true` คือบิลที่ยังค้าง รายละเอียดอยู่ใน [บิลและการชำระเงิน](billing.md) |
+| GET | `/portal/thread` | บทสนทนากับคลินิกของตัวเอง ใหม่ไปเก่า (ส่วนขยาย § 24) |
+| POST | `/portal/thread/messages` | เขียนถึงคลินิก (ส่วนขยาย § 24) |
 
 หน้าเลื่อนนัดและยกเลิกนัดใช้ endpoint ที่พนักงานกับลูกค้าใช้ร่วมกัน คือ `GET /appointments/{id}`, `POST /appointments/{id}/reschedule` และ `POST /appointments/{id}/cancel` กติกาอยู่ใน [การจองและนัดหมาย](booking-and-appointments.md) และ [นัดขั้นสูง](advanced-booking.md)
 
@@ -112,6 +114,7 @@ POST /v1/portal/documents
 | แพ็กเกจ | `/portal/packages` | แพ็กเกจที่ใช้ได้อยู่ และที่ใช้ครบหรือหมดอายุแล้ว ลิงก์อยู่ในเมนูชื่อลูกค้า |
 | บิลและใบเสร็จ | `/portal/invoices?unpaid=` | ยอดค้างชำระรวม บิลทั้งหมดหรือเฉพาะที่ค้าง กดที่บิลเพื่อดูรายการ การชำระ และใบเสร็จ ลิงก์อยู่ในเมนูชื่อลูกค้า |
 | แจ้งเตือน | `/portal/notifications` | กล่องแจ้งเตือนเต็ม แยกแท็บทั้งหมดและยังไม่อ่าน |
+| แชทกับคลินิก | `/portal/messages?cursor=` | บทสนทนากับคลินิกและช่องพิมพ์ ลิงก์อยู่ในเมนูชื่อลูกค้าและปุ่มบนการ์ดนัด |
 | บัญชีของฉัน | `/portal/account` | ข้อมูลติดต่อ ช่องทางรับข้อความ รหัสผ่าน ความยินยอม อุปกรณ์ และคำขอ PDPA |
 
 `/portal/queue` ที่อยู่เดิมของการ์ดยังเปิดได้ และจะพาไป `/portal`
@@ -183,6 +186,17 @@ POST /v1/portal/documents
 - หน้าละ 20 ข้อความ ดูข้อความเก่ากว่าด้วยลิงก์ที่มี `cursor` API เดินหน้าได้อย่างเดียว จึงมีแค่ลิงก์กลับไปข้อความล่าสุด ไม่มีปุ่มย้อนทีละหน้า
 - ปุ่ม "อ่านแล้ว" ทีละข้อความ และ "อ่านแล้วทั้งหมด" เรียก `POST /portal/notifications/read` แล้วรีเฟรชตัวเลขบนกระดิ่ง
 
+### แชทกับคลินิก
+
+บทสนทนาเดียวกับที่พนักงานตอบในหน้า "ข้อความลูกค้า" ทั้งข้อความที่ลูกค้าพิมพ์ในหน้านี้และที่พิมพ์ถึงบัญชี LINE ของคลินิกจาก LINE ที่ผูกไว้ เป็นส่วนขยาย ดู [ข้อความลูกค้า](messaging.md#แชทใน-portal-ส่วนขยาย--24) และ [contract-extensions.md § 24](../contract-extensions.md)
+
+- ข้อความของลูกค้าอยู่ขวา ของคลินิกอยู่ซ้ายพร้อมชื่อผู้ตอบ หรือคำว่า "คลินิก" เมื่อไม่มีชื่อ ข้อความที่ลูกค้าส่งมาทาง LINE บอกว่า "ส่งทาง LINE"
+- หน้าแสดง 50 ข้อความล่าสุด ข้อความเก่ากว่าดูด้วยลิงก์ "ดูข้อความก่อนหน้า" (`cursor`) หน้าเก่าไม่มีช่องพิมพ์ และมีลิงก์กลับไปข้อความล่าสุด
+- ช่องพิมพ์รับ 1 ถึง 1,000 ตัวอักษร ส่งแล้วช่องว่างลงและข้อความขึ้นในบทสนทนา ข้อความที่ backend ปฏิเสธ เช่นส่งถี่เกิน 60 ครั้งต่อนาที ขึ้นเหนือช่องพิมพ์
+- หน้าอ่านใหม่ทุก 15 วินาทีขณะเปิดอยู่ (`LiveRefresh` ตัวเดียวกับการ์ดนัด) และหยุดเมื่อแท็บถูกซ่อน
+- เมื่อมีคำตอบใหม่ขึ้นบนจอ หน้ากดว่าอ่านแล้วให้สำเนา `thread.reply` ในกล่องแจ้งเตือน ตัวเลขบนกระดิ่งจึงลดลงเอง
+- มีคำเตือนว่าถ้าน้องป่วยฉุกเฉินให้โทรหาคลินิก อย่ารอคำตอบในแชท
+
 ### บัญชีของฉัน
 
 - **ข้อมูลส่วนตัวและช่องทางรับข้อความ** เขียนผ่าน `PATCH /me` ทั้งคู่ และใช้ `version` ร่วมกัน บันทึกฟอร์มหนึ่งแล้วอีกฟอร์มยังบันทึกต่อได้ การเปลี่ยนอีเมลหรือเบอร์โทรต้องใส่รหัสผ่านปัจจุบัน ช่องนี้จะขึ้นเมื่อแก้สองช่องนั้นเท่านั้น
@@ -217,7 +231,7 @@ POST /v1/portal/documents
 - **เช็กอินล่วงหน้า** เรียก `POST /appointments/{id}/check-in` พร้อม idempotency key การกดซ้ำไม่ทำให้ได้สองคิว ถ้า backend ปฏิเสธ เช่นยังไม่ถึงเวลา ข้อความจะขึ้นใต้ปุ่ม
 - **อัปเดตเองทุก 15 วินาที** ระหว่างที่เปิดหน้าอยู่ และหยุดเมื่อสลับแท็บหรือปิดจอ
 - ปุ่มเลื่อนนัดพาไปหน้าเลื่อนนัดของนัดนั้น ขึ้นเฉพาะนัดที่ยัง `booked` หรือ `confirmed` และยังไม่ถึงเวลานัด
-- ปุ่มแชทกับคลินิกพาไปหน้าติดต่อเรา (`/contact`) ซึ่งมี LINE เบอร์โทร และอีเมลของคลินิก เพราะ contract ไม่มี endpoint แชทของลูกค้า ข้อความที่ลูกค้าพิมพ์ถึงบัญชี LINE ของคลินิกจาก LINE ที่ผูกไว้แล้วจะเข้ากล่องข้อความของพนักงาน ดู [ข้อความลูกค้า](messaging.md) แก้ลิงก์ได้ที่ `frontend/src/features/portal/content/visit-card.ts`
+- ปุ่มแชทกับคลินิกพาไปหน้าแชทใน portal (`/portal/messages`) ดู [แชทกับคลินิก](#แชทกับคลินิก) แก้ลิงก์ได้ที่ `frontend/src/features/portal/content/visit-card.ts`
 
 ### ประวัติการรักษา
 
@@ -227,7 +241,7 @@ POST /v1/portal/documents
 
 ## ข้อจำกัดที่รู้อยู่
 
-- แชทกับคลินิกยังไม่มีหน้าเว็บใน portal ปุ่มแชทบนการ์ดพาไปหน้าติดต่อเรา ลูกค้าคุยกับคลินิกได้ทาง LINE เมื่อเคาน์เตอร์ผูก LINE ให้แล้ว การเพิ่มแชทใน portal ต้องมี endpoint ใหม่ ดูข้อเสนอใน [ข้อความลูกค้า](messaging.md#ยังไม่ได้ทำ)
+- หน้าแชทยังส่งรูปหรือไฟล์ไม่ได้ และยังไม่บอกว่าเจ้าหน้าที่อ่านแล้ว ดู [ข้อความลูกค้า](messaging.md#ยังไม่ได้ทำ)
 - ลูกค้าไม่เห็นตัวเลขของนโยบายก่อนเลื่อนหรือยกเลิก (cutoff ของการเลื่อน cutoff ของการยกเลิก ค่าปรับ และจำนวนครั้งที่ยอมให้) เพราะไม่มี endpoint ที่ลูกค้าอ่านได้ การเลื่อนที่เลยเวลาจะรู้ตอนกดยืนยัน
 - การเลื่อนนัดไม่กันเวลาไว้ระหว่างที่ลูกค้าอ่านหน้ายืนยัน
 - ชำระบิลผ่านเว็บไม่ได้ เพราะ contract ไม่มี endpoint ชำระของลูกค้า และยังไม่มี payment gateway ไม่มีไฟล์ PDF ของใบเสร็จให้ดาวน์โหลด และไม่มี endpoint อ่านบิลใบเดียว
@@ -247,6 +261,7 @@ POST /v1/portal/documents
 | แพ็กเกจ | `backend/src/HappyPaws.Domain/Crm/CustomerPackage.cs`, `backend/src/HappyPaws.Application/Crm/GetMyPackageBalance/`, `backend/src/HappyPaws.Application/Crm/Dtos/CrmDtos.cs` |
 | เลื่อนและยกเลิกนัด | `backend/src/HappyPaws.Application/Appointments/RescheduleAppointment/`, `CancelAppointment/`, หน้าเว็บ `frontend/src/features/portal/components/reschedule/`, `components/appointments/` |
 | บิลของลูกค้า | `backend/src/HappyPaws.Application/Billing/ListMyInvoices/`, หน้าเว็บ `frontend/src/features/portal/components/invoices/` |
+| แชทกับคลินิก | `backend/src/HappyPaws.Application/Messaging/Portal/`, หน้าเว็บ `frontend/src/app/(portal)/portal/messages/page.tsx`, `frontend/src/features/portal/components/chat/`, `actions/chat-actions.ts`, เทสต์ `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/PortalThreadTests.cs` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Portal/` |
 | หน้าเว็บของลูกค้า | `frontend/src/app/(portal)/portal/`, `frontend/src/features/portal/` (ข้อความทั้งหมดอยู่ใน `content/`) |
 | หัวเว็บและแถบล่างจอ | `frontend/src/components/layout/portal-header/`, `frontend/src/components/layout/portal-shell.tsx` |

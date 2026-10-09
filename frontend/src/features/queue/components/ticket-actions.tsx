@@ -3,17 +3,19 @@
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ActionResult } from '@/lib/actions/action-result';
-import {
-  assignTicketAction,
-  callTicketAction,
-  leaveQueueAction,
-  skipTicketAction,
-} from '../actions/queue-actions';
-import type { QueueTicket } from '../types/queue.types';
+import { assignTicketAction, callTicketAction, skipTicketAction } from '../actions/queue-actions';
+import { queueBoard } from '../content/queue-board';
+import type { QueueTicket, VetOption } from '../types/queue.types';
+import { AssignSelect } from './assign-select';
+import { LeaveDialog } from './leave-dialog';
+import { PriorityDialog } from './priority-dialog';
 
 interface Props {
   ticket: QueueTicket;
+  /** The vet's name as the board resolved it, for a vet no longer in the pick-list. */
+  vetName?: string;
   rooms: string[];
+  vets: VetOption[];
   /** What this session's scopes allow. Hides buttons; the backend is what refuses. */
   canCall: boolean;
   canOrganise: boolean;
@@ -23,12 +25,12 @@ interface Props {
  * The buttons on one ticket.
  *
  * Which ones appear follows the contract's state machine: a waiting or skipped ticket can be
- * called, a waiting or called one can be skipped, and anything not yet in a room can leave. The
- * ticket's `version`
- * rides along on every press, so two people working the same board cannot both act on a ticket
- * one of them has already moved — the second press is told so and the board redraws.
+ * called, a waiting or called one can be skipped, and anything not yet in a room can be given a
+ * vet or a room, or leave. Urgency can change for anything still on the board. The ticket's
+ * `version` rides along on every press, so two people working the same board cannot both act on
+ * a ticket one of them has already moved — the second press is told so and the board redraws.
  */
-export function TicketActions({ ticket, rooms, canCall, canOrganise }: Props) {
+export function TicketActions({ ticket, vetName, rooms, vets, canCall, canOrganise }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +48,14 @@ export function TicketActions({ ticket, rooms, canCall, canOrganise }: Props) {
   }
 
   const awaitingCall = ticket.status === 'waiting' || ticket.status === 'skipped';
+  const beforeRoom = ticket.status !== 'in_room';
+
+  // A vet put on the ticket who is not in today's list (moved branch, or the list is unreadable)
+  // still shows as chosen, rather than the select silently reading "จ่ายหมอ".
+  const vetChoices = vets.map((vet) => ({ value: vet.id, label: vet.name }));
+  if (ticket.staff_id && !vets.some((vet) => vet.id === ticket.staff_id)) {
+    vetChoices.unshift({ value: ticket.staff_id, label: vetName ?? ticket.staff_id });
+  }
 
   return (
     <div className="space-y-2">
@@ -64,36 +74,31 @@ export function TicketActions({ ticket, rooms, canCall, canOrganise }: Props) {
           </Button>
         )}
 
-        {canOrganise && rooms.length > 0 && ticket.status !== 'in_room' && (
-          <label className="flex items-center gap-1.5 text-sm text-ink-600">
-            <span className="sr-only">ห้องตรวจของคิว {ticket.number}</span>
-            <select
-              className="h-8 rounded-lg border border-ink-200 bg-white px-2 text-sm"
-              value={ticket.room_id ?? ''}
-              disabled={pending}
-              onChange={(event) => {
-                const roomId = event.target.value;
-
-                if (roomId) {
-                  run(() => assignTicketAction({ ...ref, roomId }));
-                }
-              }}
-            >
-              <option value="">เลือกห้อง</option>
-              {rooms.map((room) => (
-                <option key={room} value={room}>
-                  {room}
-                </option>
-              ))}
-            </select>
-          </label>
+        {canOrganise && beforeRoom && vets.length > 0 && (
+          <AssignSelect
+            label={queueBoard.vet.label(ticket.number)}
+            placeholder={queueBoard.vet.placeholder}
+            value={ticket.staff_id ?? ''}
+            options={vetChoices}
+            disabled={pending}
+            onPick={(staffId) => run(() => assignTicketAction({ ...ref, staffId }))}
+          />
         )}
 
-        {canOrganise && ticket.status !== 'in_room' && (
-          <Button size="sm" variant="ghost" disabled={pending} onClick={() => run(() => leaveQueueAction(ref))}>
-            ออกจากคิว
-          </Button>
+        {canOrganise && beforeRoom && rooms.length > 0 && (
+          <AssignSelect
+            label={queueBoard.room.label(ticket.number)}
+            placeholder={queueBoard.room.placeholder}
+            value={ticket.room_id ?? ''}
+            options={rooms.map((room) => ({ value: room, label: room }))}
+            disabled={pending}
+            onPick={(roomId) => run(() => assignTicketAction({ ...ref, roomId }))}
+          />
         )}
+
+        {canOrganise && <PriorityDialog ticket={ticket} />}
+
+        {canOrganise && beforeRoom && <LeaveDialog ticket={ticket} />}
       </div>
 
       {error && (

@@ -6,16 +6,18 @@ import { staffSettings } from '../../content/staff-settings';
 import { canChangeHolder } from '../../lib/scope-grants';
 import type { StaffDirectory } from '../../types/staff-settings.types';
 import type { StaffMember } from '../../types/staff.types';
+import { publicProfileText } from '../../content/public-profile';
 import { DeactivateConfirm } from './deactivate-confirm';
+import { PublicProfileForm } from './public-profile-form';
 import { ResendInvitationButton } from './resend-invitation-button';
 import { StaffMemberForm } from './staff-member-form';
 import { StaffMemberSummary } from './staff-member-summary';
 
-type Mode = 'view' | 'edit' | 'deactivate';
+type Mode = 'view' | 'edit' | 'profile' | 'deactivate';
 
 /**
  * One person and what can be done about them, which depends on their status:
- * - active: edit and deactivate, unless they hold more than the caller (the backend would refuse);
+ * - active: edit, public profile and deactivate, unless they hold more than the caller (the backend would refuse);
  * - invited: send again, the only change the API allows before acceptance;
  * - deactivated: nothing, as there is no endpoint to bring someone back.
  */
@@ -39,6 +41,9 @@ export function StaffMemberRow({ member, directory }: { member: StaffMember; dir
             <Button variant={mode === 'edit' ? 'primary' : 'secondary'} size="sm" onClick={() => setMode(mode === 'edit' ? 'view' : 'edit')}>
               {text.edit}
             </Button>
+            <Button variant={mode === 'profile' ? 'primary' : 'secondary'} size="sm" onClick={() => setMode(mode === 'profile' ? 'view' : 'profile')}>
+              {publicProfileText.open}
+            </Button>
             {!isSelf && (
               <Button variant="danger" size="sm" onClick={() => setMode('deactivate')}>
                 {text.deactivate}
@@ -52,6 +57,7 @@ export function StaffMemberRow({ member, directory }: { member: StaffMember; dir
 
       {/* Rows are keyed by id, so after a deactivation the row stays mounted; the status hides the panel. */}
       {member.status === 'active' && mode === 'edit' && <StaffMemberForm member={member} directory={directory} onDone={close} />}
+      {member.status === 'active' && mode === 'profile' && <PublicProfileForm member={member} onDone={close} />}
       {member.status === 'active' && mode === 'deactivate' && <DeactivateConfirm member={member} onCancel={close} />}
     </li>
   );

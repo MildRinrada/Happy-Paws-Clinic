@@ -9,11 +9,12 @@ public enum LoyaltyTier
 }
 
 /// <summary>
-/// How points are earned, what they are worth and where the levels start.
+/// The default points programme, and the arithmetic every programme shares.
 /// <para>
 /// The contract names points, levels and redemptions but no numbers, so these are the clinic's
-/// defaults, kept in one place (<c>docs/assumptions.md</c>, CRM section). There is no endpoint to
-/// change them; a clinic that wants other numbers changes them here.
+/// defaults (<c>docs/assumptions.md § 43</c>). A clinic changes them with
+/// <c>PUT /clinic/settings/loyalty</c> (<see cref="LoyaltySettings"/>); these values apply until it
+/// does, and to earn rows written before the rate was a setting.
 /// </para>
 /// </summary>
 public static class LoyaltyRules
@@ -24,35 +25,21 @@ public static class LoyaltyRules
     /// <summary>One point takes ฿1 off a bill.</summary>
     public const long PointValueSatang = 100;
 
-    /// <summary>The lowest lifetime points for each level, lowest level first.</summary>
-    public static IReadOnlyList<(LoyaltyTier Tier, int MinPoints)> Tiers { get; } =
-    [
-        (LoyaltyTier.Member, 0),
-        (LoyaltyTier.Silver, 200),
-        (LoyaltyTier.Gold, 1_000),
-    ];
+    public const int DefaultSilverMinPoints = 200;
+    public const int DefaultGoldMinPoints = 1_000;
 
-    /// <summary>Whole points for an amount, rounded down: ฿199 earns one point, not two.</summary>
-    public static int PointsFor(long satang) => satang <= 0 ? 0 : (int)(satang / SatangPerPoint);
+    private static readonly LoyaltySettings Defaults = LoyaltySettings.CreateDefault();
 
-    /// <summary>
-    /// The level for a customer's lifetime points (earned less reversed, never minus what was
-    /// spent). Spending points does not cost a customer their level.
-    /// </summary>
-    public static LoyaltyTier TierFor(int lifetimePoints) =>
-        Tiers.Last(tier => lifetimePoints >= tier.MinPoints || tier.MinPoints == 0).Tier;
+    /// <summary>The default lowest lifetime points for each level, lowest level first.</summary>
+    public static IReadOnlyList<(LoyaltyTier Tier, int MinPoints)> Tiers => Defaults.Tiers;
 
-    /// <summary>The next level up and how far away it is, or null at the top.</summary>
-    public static (LoyaltyTier Tier, int PointsNeeded)? NextTier(int lifetimePoints)
-    {
-        foreach (var (tier, minPoints) in Tiers)
-        {
-            if (minPoints > lifetimePoints)
-            {
-                return (tier, minPoints - lifetimePoints);
-            }
-        }
+    /// <summary>Whole points for an amount, rounded down: ฿199 earns one point at ฿100 a point, not two.</summary>
+    public static int PointsFor(long satang, long satangPerPoint = SatangPerPoint) =>
+        satang <= 0 || satangPerPoint <= 0 ? 0 : (int)(satang / satangPerPoint);
 
-        return null;
-    }
+    /// <summary>The default level for lifetime points (earned less reversed, never minus what was spent).</summary>
+    public static LoyaltyTier TierFor(int lifetimePoints) => Defaults.TierFor(lifetimePoints);
+
+    /// <summary>The next default level up and how far away it is, or null at the top.</summary>
+    public static (LoyaltyTier Tier, int PointsNeeded)? NextTier(int lifetimePoints) => Defaults.NextTier(lifetimePoints);
 }

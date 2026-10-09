@@ -6,11 +6,13 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { CalendarBoard } from '@/features/appointments/components/calendar/calendar-board';
+import { DayConflictCheck } from '@/features/appointments/components/calendar/day-conflict-check';
 import { DayNav } from '@/features/appointments/components/calendar/day-nav';
 import { waitingListText } from '@/features/appointments/content/advanced-booking';
 import { appointmentCalendar } from '@/features/appointments/content/appointment-calendar';
 import { appointmentPaths } from '@/features/appointments/lib/appointment-paths';
 import { calendarDay } from '@/features/appointments/lib/calendar-day';
+import { conflictLabels } from '@/features/appointments/lib/conflict-labels';
 import { loadCalendar } from '@/features/appointments/lib/load-calendar';
 import { isOpen } from '@/features/appointments/lib/status-labels';
 import { ApiError } from '@/lib/api/api-error';
@@ -74,6 +76,8 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
       <DayNav day={day} today={today} />
 
       {view.closedDay && <Alert tone="info">{text.closedDay}</Alert>}
+
+      {view.items.length > 0 && <DayConflictCheck day={day} branchId={branch.id} labels={conflictLabels(view.items)} />}
 
       <CalendarBoard
         view={view}

@@ -1,6 +1,5 @@
 using HappyPaws.Application.Common.Pagination;
 using HappyPaws.Domain.Messaging;
-using HappyPaws.Domain.Notifications;
 
 namespace HappyPaws.Application.Messaging;
 
@@ -18,13 +17,22 @@ public interface IMessageThreadRepository
     Task<MessageThread?> FindTrackedForCustomerAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>True when a message with the channel's own id is already stored: a webhook delivered twice.</summary>
-    Task<bool> HasInboundAsync(DeliveryChannel channel, string externalId, CancellationToken cancellationToken = default);
+    Task<bool> HasInboundAsync(MessageChannel channel, string externalId, CancellationToken cancellationToken = default);
 
     /// <summary>The branch the customer last booked at, or null when they never booked.</summary>
     Task<string?> LatestBranchOfCustomerAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>Threads awaiting a reply first, then the most recently active, each with its summary.</summary>
     Task<CursorPage<ThreadRow>> ListAsync(ThreadQuery query, CursorPageRequest page, CancellationToken cancellationToken = default);
+
+    /// <summary>The customer's thread, untracked, or null when they never wrote. For the portal's own read.</summary>
+    Task<MessageThread?> FindForCustomerAsync(string customerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A page of a thread's messages, newest first, with the writer's name. The cursor walks back
+    /// in time, so a chat screen opens on the latest messages and asks for older ones.
+    /// </summary>
+    Task<CursorPage<ThreadMessageRow>> MessagesAsync(string threadId, CursorPageRequest page, CancellationToken cancellationToken = default);
 
     /// <summary>The newest <paramref name="limit"/> messages of a thread, newest first, with the writer's name.</summary>
     Task<IReadOnlyList<ThreadMessageRow>> RecentMessagesAsync(string threadId, int limit, CancellationToken cancellationToken = default);

@@ -90,4 +90,10 @@ public static class ErrorCodes
 
     /// <summary>409 — a new coupon asks for a code another coupon already has.</summary>
     public const string CouponCodeTaken = "coupon_code_taken";
+
+    /// <summary>409 — a coupon that was switched off was redeemed (<c>docs/contract-extensions.md § 25</c>).</summary>
+    public const string CouponDeactivated = "coupon_deactivated";
+
+    /// <summary>409 — a retired inventory item was received, ordered or prescribed (§ 25).</summary>
+    public const string InventoryItemRetired = "inventory_item_retired";
 }

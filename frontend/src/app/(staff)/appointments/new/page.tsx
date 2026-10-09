@@ -5,12 +5,14 @@ import { Card, CardBody } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { getAppointmentTypes } from '@/features/appointments/api/appointmentSettings';
 import { NewAppointmentForm } from '@/features/appointments/components/new/new-appointment-form';
 import { appointmentCalendar, newAppointment } from '@/features/appointments/content/appointment-calendar';
 import { appointmentPaths } from '@/features/appointments/lib/appointment-paths';
 import { calendarDay } from '@/features/appointments/lib/calendar-day';
 import { loadVets } from '@/features/appointments/lib/load-calendar';
 import { listServices } from '@/features/service-catalog/api/listServices';
+import { optional } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 
 export const metadata: Metadata = { title: newAppointment.metaTitle };
@@ -28,7 +30,12 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
   }
 
   const day = calendarDay(params.date);
-  const [services, vets] = await Promise.all([listServices(context.branch.id).catch(() => []), loadVets(context.branch.id)]);
+  const [services, vets, types] = await Promise.all([
+    listServices(context.branch.id).catch(() => []),
+    loadVets(context.branch.id),
+    // Readable on appointment:read; without it the booking is regular, as before types existed.
+    optional(getAppointmentTypes()),
+  ]);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -45,6 +52,7 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
             vets={vets}
             initialDay={day}
             canCheck={context.can(Scope.AppointmentRead)}
+            types={types?.types ?? []}
           />
         </CardBody>
       </Card>

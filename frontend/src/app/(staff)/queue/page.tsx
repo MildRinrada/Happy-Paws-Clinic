@@ -5,6 +5,7 @@ import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { IssueTicketDialog } from '@/features/queue/components/issue-ticket-dialog';
 import { QueueBoard } from '@/features/queue/components/queue-board';
 import { QueueLiveIndicator } from '@/features/queue/components/queue-live-indicator';
+import { QueueNavLinks } from '@/features/queue/components/queue-nav-links';
 import { loadQueueView } from '@/features/queue/lib/load-queue-view';
 import type { QueueView } from '@/features/queue/types/queue.types';
 import { listServices } from '@/features/service-catalog/api/listServices';
@@ -61,8 +62,9 @@ export default async function QueuePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <QueueLiveIndicator branchId={branch.id} />
+          <QueueNavLinks branchId={branch.id} />
           {canOrganise && <IssueTicketDialog branchId={branch.id} services={services} />}
         </div>
       </header>

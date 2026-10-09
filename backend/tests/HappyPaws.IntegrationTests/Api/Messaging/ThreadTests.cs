@@ -237,7 +237,7 @@ public class ThreadTests(DeliveryFixture fixture) : IAsyncLifetime
         {
             var db = scope.ServiceProvider.GetRequiredService<HappyPawsDbContext>();
             await db.Set<MessageThread>().Where(thread => thread.Id == threadId)
-                .ExecuteUpdateAsync(set => set.SetProperty(thread => thread.LastInboundChannel, DeliveryChannel.Sms), Token);
+                .ExecuteUpdateAsync(set => set.SetProperty(thread => thread.LastInboundChannel, MessageChannel.Sms), Token);
         }
 
         using var client = Staff();

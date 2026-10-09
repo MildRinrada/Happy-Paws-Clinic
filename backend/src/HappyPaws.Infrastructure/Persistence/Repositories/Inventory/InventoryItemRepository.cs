@@ -32,16 +32,33 @@ internal sealed class InventoryItemRepository(HappyPawsDbContext db) : IInventor
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<InventoryItem>> ListAsync(string? search, CancellationToken cancellationToken = default) =>
-        await Named(db.Set<InventoryItem>().AsNoTracking(), search)
+    public async Task<IReadOnlyList<InventoryItem>> ListAsync(
+        string? search,
+        bool? retired = null,
+        CancellationToken cancellationToken = default)
+    {
+        var items = Named(db.Set<InventoryItem>().AsNoTracking(), search);
+
+        items = retired switch
+        {
+            true => items.Where(item => item.RetiredAt != null),
+            false => items.Where(item => item.RetiredAt == null),
+            null => items,
+        };
+
+        return await items
             .OrderBy(item => item.NameKey).ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<InventoryItem>> SearchMedicinesAsync(
         string? search,
         int limit,
         CancellationToken cancellationToken = default) =>
-        await Named(db.Set<InventoryItem>().AsNoTracking().Where(item => item.Kind == InventoryItemKind.Medicine), search)
+        await Named(
+                db.Set<InventoryItem>().AsNoTracking()
+                    .Where(item => item.Kind == InventoryItemKind.Medicine && item.RetiredAt == null),
+                search)
             .OrderBy(item => item.NameKey).ThenBy(item => item.Id)
             .Take(limit)
             .ToListAsync(cancellationToken);

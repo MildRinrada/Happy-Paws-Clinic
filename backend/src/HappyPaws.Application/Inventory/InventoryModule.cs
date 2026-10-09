@@ -1,9 +1,12 @@
 using HappyPaws.Application.Inventory.AdjustStock;
+using HappyPaws.Application.Inventory.CancelPurchaseOrder;
 using HappyPaws.Application.Inventory.CreatePurchaseOrder;
 using HappyPaws.Application.Inventory.Dispensing;
 using HappyPaws.Application.Inventory.ListAlerts;
 using HappyPaws.Application.Inventory.ListItems;
+using HappyPaws.Application.Inventory.ListPurchaseOrders;
 using HappyPaws.Application.Inventory.RecordMovement;
+using HappyPaws.Application.Inventory.UpdateItem;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application.Inventory;
@@ -26,6 +29,11 @@ public static class InventoryModule
         services.AddScoped<AdjustStockHandler>();
         services.AddScoped<ListAlertsHandler>();
         services.AddScoped<CreatePurchaseOrderHandler>();
+
+        // docs/contract-extensions.md § 25: editing and retiring items, reading and cancelling orders.
+        services.AddScoped<UpdateItemHandler>();
+        services.AddScoped<ListPurchaseOrdersHandler>();
+        services.AddScoped<CancelPurchaseOrderHandler>();
 
         return services;
     }

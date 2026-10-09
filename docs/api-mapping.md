@@ -455,7 +455,7 @@ handler ตัวเดียวรับทั้งสอง route แยก�
 | PUT | `/staff/integrations/lab` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/LabIntegrationController` | `Integrations/ConfigureLabProvider/` | `Integrations` (ไม่มีตัวเชื่อมแล็บ) | ✅ |
 | GET | `/staff/integrations/calendar/ics` | *(ไม่ระบุ)* พนักงานทุกคน หรือ token ในลิงก์ | `Staff/CalendarFeedController` | `Integrations/GetCalendarFeed/` | `Integrations` | ✅ |
 
-scope ที่เลือกและเหตุผลอยู่ใน [assumptions.md § 2](./assumptions.md) รายละเอียดทั้งหมด (รูปร่างคำขอและคำตอบ สิ่งที่ event แต่ละตัวพาไป และข้อเสนอ endpoint ที่ยังขาด) อยู่ใน [การเชื่อมต่อระบบ](features/integrations.md)
+scope ที่เลือกและเหตุผลอยู่ใน [assumptions.md § 2](./assumptions.md) รายละเอียดทั้งหมด (รูปร่างคำขอและคำตอบ และสิ่งที่ event แต่ละตัวพาไป) อยู่ใน [การเชื่อมต่อระบบ](features/integrations.md) รายการ แก้ ปิด ลบ หมุน secret ส่งซ้ำ ยกเลิก key และสร้างลิงก์ปฏิทินใหม่ เป็นส่วนขยาย อยู่ในตารางด้านล่างและ [contract-extensions.md § 22](./contract-extensions.md)
 
 **event ของ webhook ขาออก** 16 ตัวใน `Domain/Integrations/WebhookEventTypes.cs` ถูกเขียนลงตาราง outbox `webhook_events` ใน transaction เดียวกับการเปลี่ยนแปลงทางธุรกิจ (`IWebhookOutbox`) งานเบื้องหลัง `webhooks` แตกเป็น `webhook_deliveries` หนึ่งแถวต่อ webhook แล้วส่งจาก `Infrastructure/Webhooks/` พร้อม HMAC-SHA256 ใน `X-Signature` ส่งไม่สำเร็จลองใหม่อีก 5 ครั้งห่างกัน 1, 5, 25, 125 และ 625 นาที (ครั้งสุดท้ายราว 13 ชั่วโมงหลังเหตุการณ์ ภายใน 24 ชั่วโมงตาม contract)
 
@@ -503,12 +503,33 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | PATCH | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/UpdateAutomation/` | § 19 | ✅ |
 | DELETE | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/DeleteAutomation/` | § 19 | ✅ |
 | GET | `/staff/prescriptions/drug-options` | `rx:write` | `Staff/PrescriptionsController` | `Prescriptions/ListDrugOptions/` | § 20 | ✅ |
+| GET | `/staff/webhooks` | `integration:manage` | `Staff/WebhooksController` | `Integrations/ListWebhooks/` | § 22 | ✅ |
+| PATCH | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/UpdateWebhookSubscription/` | § 22 | ✅ |
+| DELETE | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/DeleteWebhookSubscription/` | § 22 | ✅ |
+| POST | `/staff/webhooks/{id}/rotate-secret` | `integration:manage` | `Staff/WebhooksController` | `Integrations/RotateWebhookSecret/` | § 22 | ✅ |
+| POST | `/staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` | `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/RedeliverWebhookDelivery/` | § 22 | ✅ |
+| GET | `/staff/api-keys` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/ListApiKeys/` | § 22 | ✅ |
+| DELETE | `/staff/api-keys/{id}` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/RevokeApiKey/` | § 22 | ✅ |
+| POST | `/staff/integrations/calendar/token` | พนักงานทุกคน ลิงก์ของตัวเองเท่านั้น | `Staff/CalendarTokenController` | `Integrations/RotateCalendarFeed/` | § 22 | ✅ |
+| GET | `/staff/policies/cancellation` | `settings:read` | `Staff/CancellationPolicyController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
+| GET | `/staff/appointment-types` | `appointment:read` | `Staff/AppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
+| GET | `/portal/appointment-types` | `portal` | `Portal/PortalAppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
+| GET | `/staff/waiting-list` | `appointment:write` | `Staff/WaitingListController` | `Appointments/ListWaitingList/` | § 23 | ✅ |
+| DELETE | `/staff/waiting-list/{id}` | `appointment:write` | `Staff/WaitingListController` | `Appointments/RemoveFromWaitingList/` | § 23 | ✅ |
+| GET | `/portal/thread` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`GetMyThreadHandler`) | § 24 | ✅ |
+| POST | `/portal/thread/messages` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`WriteToClinicHandler`) | § 24 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
 § 20 เพิ่ม `inventory_item_id` ที่ไม่บังคับในคำขอ `POST /staff/consultations/{id}/prescriptions` และช่องเดียวกันในใบสั่งยาของคำตอบเคส คำขอที่มีแค่ชื่อยาทำงานเหมือนเดิมทุกอย่าง
 
 § 21 เพิ่มค่า `xlsx` และ `pdf` ให้ช่อง `format` ที่ไม่บังคับของ `POST /staff/reports/exports` ค่าเริ่มต้นยังเป็น `csv` ไม่มี endpoint ใหม่
+
+§ 22 เพิ่มรหัส `webhook_disabled` และ `webhook_deleted` ในช่อง `last_error` ของประวัติการส่ง (`GET /staff/webhooks/{id}/deliveries`) สำหรับรายการที่ระบบหยุดเพราะ webhook ถูกปิดหรือถูกลบ เป็นการเพิ่มค่า ไม่ได้เปลี่ยนรูปของคำตอบ
+
+§ 23 ไม่เปลี่ยนเส้นเดิมของ contract แถวของ `GET /staff/waiting-list` มี `status`, `pet_name` และ `service_name` เพิ่มจากรูปของคำตอบ `POST /staff/waiting-list` และการถอนคิวรอเขียน audit `waiting_list.removed`
+
+§ 24 ไม่เปลี่ยนรูปของ `/staff/threads` แต่เพิ่มค่า `portal` ให้ช่อง `channel` ของข้อความขาเข้าและช่อง `reply_channel` คำตอบถึงกล่องที่ลูกค้าเขียนล่าสุดจาก portal ไม่มีช่องทางให้ลองก่อน จึงเข้ากล่องแจ้งเตือนและส่งทาง LINE, SMS หรืออีเมลตามลำดับปกติ
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 

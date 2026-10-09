@@ -8,7 +8,7 @@ URL ของ webhook มาจากคนพิมพ์ แต่เซิร
 
 | ชั้น | ที่ไหน | ทำอะไร |
 |---|---|---|
-| ตอนสร้าง | `Domain/Integrations/WebhookUrl.cs` | บังคับ `https` ไม่มี user info ไม่มี fragment ไม่รับ `localhost` ชื่อที่ลงท้าย `.local`, `.localhost`, `.internal` และ IP ที่ไม่ใช่สาธารณะ |
+| ตอนสร้างและตอนแก้ URL | `Domain/Integrations/WebhookUrl.cs` | บังคับ `https` ไม่มี user info ไม่มี fragment ไม่รับ `localhost` ชื่อที่ลงท้าย `.local`, `.localhost`, `.internal` และ IP ที่ไม่ใช่สาธารณะ `PATCH /staff/webhooks/{id}` ใช้ฟังก์ชันเดียวกับ `POST` ไม่ใช่สำเนา |
 | ก่อนส่ง | `Infrastructure/Webhooks/WebhookAddressGuard.cs` | resolve ชื่อ ถ้าที่อยู่ **ใดก็ได้** ไม่ใช่สาธารณะ ไม่ส่ง (`address_blocked`) |
 | ตอนต่อ socket | `Infrastructure/Webhooks/WebhookHttpHandler.cs` | connect callback resolve และตรวจซ้ำ แล้วต่อไปยังที่อยู่ที่เพิ่งตรวจ กัน DNS rebinding |
 | คำตอบ | `WebhookHttpHandler.cs`, `WebhookHttpSender.cs` | ไม่ตาม redirect ไม่ใช้ proxy ไม่ใช้คุกกี้ timeout ทั้งครั้ง อ่านคำตอบไม่เกิน 4 KB เก็บ 1,000 ตัวอักษร |
@@ -22,9 +22,16 @@ URL ของ API แล็บ (`PUT /staff/integrations/lab`) ใช้กต�
 ## ลายเซ็น webhook
 
 - HMAC-SHA256 ด้วย secret ของ webhook บน `<timestamp>.<body>` ส่งใน `X-Signature: sha256=<hex>` พร้อม `X-Webhook-Timestamp` การลงนาม timestamp ด้วยทำให้ผู้รับปฏิเสธคำขอที่ถูกดักแล้วส่งซ้ำได้
-- secret สุ่ม 256 bit สร้างฝั่งเซิร์ฟเวอร์ (`whsec_...`) แสดงครั้งเดียวตอนสร้าง คำตอบมี `Cache-Control: no-store`
+- secret สุ่ม 256 bit สร้างฝั่งเซิร์ฟเวอร์ (`whsec_...`) แสดงครั้งเดียวตอนสร้าง หรือตอนหมุน (`POST /staff/webhooks/{id}/rotate-secret`) คำตอบมี `Cache-Control: no-store` รายการ webhook และ audit ไม่มี secret
+- หมุนแล้ว secret เดิมหยุดลงนามทันที ไม่มีช่วงซ้อน ปลายทางที่ยังใช้ค่าเดิมจะปฏิเสธ และการส่งลองใหม่ตามรอบปกติ
 - secret ต้องอ่านกลับได้เพื่อใช้ลงนาม จึงเก็บแบบเข้ารหัสด้วย Data Protection ไม่ใช่ hash ([ข้อมูลและความลับ](data-and-secrets.md#ความลับที่เข้ารหัสด้วย-data-protection))
 - ไม่มีการส่งแบบไม่ลงนาม ถ้าถอดรหัส secret ไม่ได้ การส่งล้มเหลวด้วย `secret_unavailable`
+
+## ปิดและลบ webhook
+
+- ปิด (`active: false`) หยุดการแตก event และหยุด delivery ที่รอส่งทันทีใน transaction เดียว ตัวส่งตรวจซ้ำก่อนส่งทุกครั้ง แถวที่ถูกจองไปก่อนกดปิดจึงไม่ถูกส่ง
+- ลบแล้วแถวยังอยู่เพื่อเก็บประวัติการส่ง แต่ secret ที่เข้ารหัสถูกล้างเป็นค่าว่าง และ query string ถูกตัดออกจาก URL เพราะอาจมี token ของผู้รับ ไม่มีความลับเหลือในแถวที่ลบแล้ว
+- ทุกการแก้ ลบ หมุน secret และส่งซ้ำเขียน audit ปลายทางใน audit ไม่มี query string
 
 ## ข้อมูลที่ออกไปกับ webhook
 
@@ -44,16 +51,18 @@ outbox เขียนใน transaction เดียวกับงาน ก�
 | ขอบเขต | ใช้ได้เฉพาะ endpoint ที่ประกาศ `RequireScope` เส้นของคน (`/me`, เซสชัน ฟีดปฏิทิน) ได้ `403` และ `POST /auth/logout` แบบทุกอุปกรณ์ไม่เพิกถอนเซสชันของผู้สร้าง |
 | 2FA | key ไม่มีปัจจัยที่สอง จึงถือ scope ที่ต้องใช้ 2FA ไม่ได้เลย แทนที่จะได้รับการยกเว้น |
 | rate limit | ถังของตัวเองต่อ key (`RateLimits:PerApiKeyPerMinute`) แยกจากผู้สร้าง |
-| audit | การออก key บันทึก `integration.api_key_created` ทุกแถว audit ที่เกิดจาก key มี `via_api_key` ใน `details` |
+| ยกเลิก | `DELETE /staff/api-keys/{id}` ตั้ง `revoked_at` คำขอถัดไปของ key ได้ `401` เพราะการยืนยันตัวอ่านแถวจากฐานข้อมูลทุกคำขอและไม่มี cache ไม่ใช้ `If-Match` เพื่อไม่ให้การยกเลิกชนกับ `last_used_at` ที่ key เขียนทุกนาที |
+| รายการ | `GET /staff/api-keys` มี prefix scope สาขา สถานะ และเวลา ไม่มีตัว key หรือ hash ผู้ที่ผูกสาขาเห็นและยกเลิกได้เฉพาะ key ที่ทุกสาขาเป็นของตัวเอง |
+| audit | การออก key บันทึก `integration.api_key_created` การยกเลิกบันทึก `integration.api_key_revoked` ทุกแถว audit ที่เกิดจาก key มี `via_api_key` ใน `details` |
 
-**ยังยกเลิก key ก่อนหมดอายุไม่ได้** contract ไม่มี endpoint นี้ คอลัมน์ `revoked_at` และการตรวจตอนยืนยันตัวมีแล้ว ระหว่างนี้วิธีหยุด key ทันทีคือปิดบัญชีผู้สร้าง หรือเอา scope ออกจาก role ของผู้สร้าง ข้อเสนอ `DELETE /staff/api-keys/{id}` อยู่ใน [การเชื่อมต่อระบบ](../features/integrations.md#ข้อเสนอส่วนขยาย-ยังไม่ได้ขออนุมัติ-ยังไม่ได้ทำ)
+**key ที่หลุดหยุดได้ทันที** ด้วยปุ่มยกเลิก key ในหน้า API key ([contract-extensions.md § 22](../contract-extensions.md)) ไม่ต้องปิดบัญชีผู้สร้างหรือแก้ role ของเขาอีก
 
 ## ฟีดปฏิทิน
 
 - token ในลิงก์ (`hpcal_` และ 256 bit) เป็น credential ฐานข้อมูลเก็บ SHA-256 ไว้ค้นหา และ ciphertext ไว้แสดงลิงก์เดิม
 - token ให้สิทธิ์อ่านฟีดของเจ้าของเท่านั้น และถูกตรวจกับสถานะของเจ้าของทุกครั้ง
 - ฟีดไม่มีอาการ เหตุผลของนัด ผลวินิจฉัย หรือข้อมูลติดต่อของเจ้าของ ตอบด้วย `Cache-Control: private, no-store`
-- token อยู่ใน URL จึงไปอยู่ใน log ของ proxy และประวัติของแอปปฏิทินได้ เป็นข้อแลกเปลี่ยนที่ฟีดปฏิทินทุกเจ้ามี ลิงก์ที่หลุดใช้ได้จนกว่าเจ้าของถูกปิดบัญชี เพราะยังไม่มีทางสร้างลิงก์ใหม่
+- token อยู่ใน URL จึงไปอยู่ใน log ของ proxy และประวัติของแอปปฏิทินได้ เป็นข้อแลกเปลี่ยนที่ฟีดปฏิทินทุกเจ้ามี ลิงก์ที่หลุดหยุดได้ด้วยปุ่ม "สร้างลิงก์ใหม่" (`POST /staff/integrations/calendar/token`) ซึ่งแทนทั้ง hash และ ciphertext ลิงก์เดิมได้ `401` ทันที เจ้าของทำได้กับลิงก์ของตัวเองเท่านั้น API key ทำไม่ได้
 
 ## ค่าตั้งของผู้ให้บริการ
 
@@ -67,5 +76,6 @@ outbox เขียนใน transaction เดียวกับงาน ก�
 | กติกาที่อยู่และ URL | `backend/src/HappyPaws.Domain/Integrations/WebhookAddressRules.cs`, `WebhookUrl.cs` |
 | ตัวส่งและการตรวจตอนส่ง | `backend/src/HappyPaws.Infrastructure/Webhooks/` |
 | ลายเซ็น | `backend/src/HappyPaws.Application/Integrations/Webhooks/WebhookSignature.cs` |
-| API key | `backend/src/HappyPaws.Domain/Integrations/ApiKey.cs`, `backend/src/HappyPaws.Application/Integrations/ApiKeys/ApiKeyAuthenticator.cs`, `backend/src/HappyPaws.Api/Authorization/ApiKeyAuthenticationHandler.cs`, `InteractiveCallerRequirement.cs` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/`, `backend/tests/HappyPaws.IntegrationTests/Webhooks/WebhookHttpHandlerTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Integrations/` |
+| API key | `backend/src/HappyPaws.Domain/Integrations/ApiKey.cs`, `backend/src/HappyPaws.Application/Integrations/ApiKeys/ApiKeyAuthenticator.cs`, `ApiKeyReach.cs`, `RevokeApiKey/`, `backend/src/HappyPaws.Api/Authorization/ApiKeyAuthenticationHandler.cs`, `InteractiveCallerRequirement.cs` |
+| ปิด ลบ และหมุน secret ของ webhook | `backend/src/HappyPaws.Domain/Integrations/WebhookSubscription.cs`, `backend/src/HappyPaws.Application/Integrations/UpdateWebhookSubscription/`, `DeleteWebhookSubscription/`, `RotateWebhookSecret/`, `DispatchWebhooks/DispatchWebhooksHandler.cs` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/` (รวม `WebhookManagementTests.cs`, `ApiKeyManagementTests.cs`, `CalendarTokenTests.cs`), `backend/tests/HappyPaws.IntegrationTests/Webhooks/WebhookHttpHandlerTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Integrations/` |

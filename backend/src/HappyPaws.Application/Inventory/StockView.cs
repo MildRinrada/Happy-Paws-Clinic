@@ -78,7 +78,9 @@ public sealed class StockView(
                     item.CreatedAt,
                     branches.Sum(branch => branch.OnHand),
                     branches.Sum(branch => branch.Available),
-                    branches);
+                    branches,
+                    !item.IsRetired,
+                    item.RetiredAt);
             }),
         ];
     }

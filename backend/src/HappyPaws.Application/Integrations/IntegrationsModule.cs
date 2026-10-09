@@ -4,11 +4,19 @@ using HappyPaws.Application.Integrations.ConfigureLineChannel;
 using HappyPaws.Application.Integrations.ConfigurePaymentProvider;
 using HappyPaws.Application.Integrations.CreateApiKey;
 using HappyPaws.Application.Integrations.CreateWebhookSubscription;
+using HappyPaws.Application.Integrations.DeleteWebhookSubscription;
 using HappyPaws.Application.Integrations.DispatchWebhooks;
 using HappyPaws.Application.Integrations.GetCalendarFeed;
 using HappyPaws.Application.Integrations.HandleLineWebhook;
+using HappyPaws.Application.Integrations.ListApiKeys;
 using HappyPaws.Application.Integrations.ListLineFollowers;
 using HappyPaws.Application.Integrations.ListWebhookDeliveries;
+using HappyPaws.Application.Integrations.ListWebhooks;
+using HappyPaws.Application.Integrations.RedeliverWebhookDelivery;
+using HappyPaws.Application.Integrations.RevokeApiKey;
+using HappyPaws.Application.Integrations.RotateCalendarFeed;
+using HappyPaws.Application.Integrations.RotateWebhookSecret;
+using HappyPaws.Application.Integrations.UpdateWebhookSubscription;
 using HappyPaws.Application.Integrations.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +45,17 @@ public static class IntegrationsModule
         services.AddScoped<ConfigurePaymentProviderHandler>();
         services.AddScoped<ConfigureLabProviderHandler>();
         services.AddScoped<CalendarFeedHandler>();
+
+        // docs/contract-extensions.md § 22: managing what the create calls made.
+        services.AddScoped<ListWebhooksHandler>();
+        services.AddScoped<UpdateWebhookSubscriptionHandler>();
+        services.AddScoped<DeleteWebhookSubscriptionHandler>();
+        services.AddScoped<RotateWebhookSecretHandler>();
+        services.AddScoped<RedeliverWebhookDeliveryHandler>();
+        services.AddScoped<ApiKeyReach>();
+        services.AddScoped<ListApiKeysHandler>();
+        services.AddScoped<RevokeApiKeyHandler>();
+        services.AddScoped<RotateCalendarFeedHandler>();
 
         return services;
     }

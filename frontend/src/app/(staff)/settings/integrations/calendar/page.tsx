@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { getCalendarLink } from '@/features/integrations/api/calendarLink';
 import { CalendarLinkCard } from '@/features/integrations/components/calendar-link-card';
+import { RotateCalendarLinkButton } from '@/features/integrations/components/rotate-calendar-link-button';
 import { calendarFeedPage } from '@/features/integrations/content/calendar-feed';
 import { feedUrl } from '@/features/integrations/lib/feed-url';
 import { authed } from '@/lib/auth/session';
@@ -24,6 +25,7 @@ export default async function CalendarFeedPage() {
     <div className="space-y-6">
       <PageHeader title={calendarFeedPage.title} subtitle={calendarFeedPage.subtitle} />
       <CalendarLinkCard mineUrl={feedUrl(link.path)} branchUrl={link.can_view_branch ? feedUrl(link.path, 'branch') : undefined} />
+      <RotateCalendarLinkButton />
     </div>
   );
 }

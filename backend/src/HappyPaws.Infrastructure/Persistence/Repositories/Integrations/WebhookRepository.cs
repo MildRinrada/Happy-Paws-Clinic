@@ -22,6 +22,28 @@ internal sealed class WebhookRepository(HappyPawsDbContext db) : IWebhookReposit
         db.Set<WebhookSubscription>().AsNoTracking()
             .FirstOrDefaultAsync(subscription => subscription.Id == subscriptionId, cancellationToken);
 
+    public Task<WebhookSubscription?> LoadAsync(string subscriptionId, CancellationToken cancellationToken = default) =>
+        db.Set<WebhookSubscription>().FirstOrDefaultAsync(subscription => subscription.Id == subscriptionId, cancellationToken);
+
+    // A deleted subscription keeps its row with an empty secret (WebhookSubscription.IsDeleted).
+    public async Task<IReadOnlyList<WebhookSubscription>> ListAsync(CancellationToken cancellationToken = default) =>
+        await db.Set<WebhookSubscription>().AsNoTracking()
+            .Where(subscription => subscription.SecretCiphertext != string.Empty)
+            .OrderByDescending(subscription => subscription.CreatedAt).ThenByDescending(subscription => subscription.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task<int> HaltPendingAsync(string subscriptionId, string reason, DateTimeOffset at, CancellationToken cancellationToken = default) =>
+        db.Set<WebhookDelivery>()
+            .Where(delivery => delivery.SubscriptionId == subscriptionId && delivery.Status == WebhookDeliveryStatus.Pending)
+            .ExecuteUpdateAsync(
+                set => set
+                    .SetProperty(delivery => delivery.Status, WebhookDeliveryStatus.Failed)
+                    .SetProperty(delivery => delivery.NextAttemptAt, (DateTimeOffset?)null)
+                    .SetProperty(delivery => delivery.CompletedAt, at)
+                    .SetProperty(delivery => delivery.LastError, reason)
+                    .SetProperty(delivery => delivery.UpdatedAt, at),
+                cancellationToken);
+
     public async Task<IReadOnlyList<WebhookSubscription>> ListActiveAsync(CancellationToken cancellationToken = default) =>
         await db.Set<WebhookSubscription>().AsNoTracking()
             .Where(subscription => subscription.Active)

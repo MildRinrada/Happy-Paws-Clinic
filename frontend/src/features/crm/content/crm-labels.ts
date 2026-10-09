@@ -30,6 +30,7 @@ export const pointsKindLabels: Record<PointsEntryKind, string> = {
   reverse: 'หักแต้มคืนเพราะคืนเงิน',
   redeem: 'แลกแต้มเป็นส่วนลด',
   restore: 'คืนแต้มที่แลกไว้',
+  adjust: 'ปรับแต้มโดยพนักงาน',
 };
 
 export const packageText = {

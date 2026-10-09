@@ -34,6 +34,8 @@ export interface NewRecurringSeries {
   staff_id?: string;
   branch_id?: string;
   reason?: string;
+  /** An appointment type code; absent is `regular`. */
+  type?: string;
 }
 
 /** Every visit in the course, in order, under one `series_id`. */
@@ -59,6 +61,16 @@ export interface NewWaitingListEntry {
   branch_id?: string;
   staff_id?: string;
   note?: string;
+}
+
+/** Worked out by the backend: `waiting` through `latest_on`, `lapsed` after. */
+export type WaitingListStatus = 'waiting' | 'lapsed';
+
+/** One row of `GET /staff/waiting-list`: the entry, its status, and the names to show. */
+export interface WaitingListItem extends WaitingListEntry {
+  status: WaitingListStatus;
+  pet_name: string;
+  service_name: string;
 }
 
 /** One entry on the waiting list, as the backend stored it. */

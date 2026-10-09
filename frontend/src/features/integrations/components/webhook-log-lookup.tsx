@@ -9,8 +9,8 @@ import { webhookSettingsPage } from '../content/webhook-settings';
 import { integrationPaths, isWebhookId } from '../lib/integration-paths';
 
 /**
- * Opens one webhook's delivery log by its id. There is no list of webhooks in the contract yet, so
- * the id given when it was made is the way in.
+ * Opens one webhook's delivery log by its id. Live webhooks are reached from the list; this is the
+ * way to a deleted one's log, which stays readable for 30 days (docs/contract-extensions.md § 22).
  */
 export function WebhookLogLookup() {
   const text = webhookSettingsPage.lookup;

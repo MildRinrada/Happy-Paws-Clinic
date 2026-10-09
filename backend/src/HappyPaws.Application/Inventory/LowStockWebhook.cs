@@ -17,7 +17,8 @@ public static class LowStockWebhook
 {
     public static void Report(IWebhookOutbox webhooks, InventoryItem item, string branchId, int before, int after)
     {
-        if (StockLevels.StatusOf(before, item.ReorderLevel) == StockStatus.Ok
+        if (!item.IsRetired
+            && StockLevels.StatusOf(before, item.ReorderLevel) == StockStatus.Ok
             && StockLevels.StatusOf(after, item.ReorderLevel) != StockStatus.Ok)
         {
             webhooks.Enqueue(
