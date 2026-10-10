@@ -45,6 +45,12 @@ public sealed record SubjectQuery(
 /// <param name="Label">The vaccine's name, or the plan's title.</param>
 /// <param name="StaffName">The vet, for an appointment that has one.</param>
 /// <param name="SessionNumber">The session's number in its plan.</param>
+/// <param name="QuietUntil">
+/// When the patient's recorded death was last undone, for a dose or a plan session: a reminder
+/// whose send time is at or before it fell due while the record was closed, and is not sent late.
+/// Null for appointments, which a death cancels and which are only booked again afterwards. See
+/// <c>docs/contract-extensions.md § 29</c>.
+/// </param>
 public sealed record AutomationSubject(
     AutomationSubjectKind Kind,
     string SubjectId,
@@ -58,7 +64,8 @@ public sealed record AutomationSubject(
     string? AppointmentId = null,
     string? Label = null,
     string? StaffName = null,
-    int? SessionNumber = null);
+    int? SessionNumber = null,
+    DateTimeOffset? QuietUntil = null);
 
 /// <summary>
 /// Finds what a rule's trigger watches, already narrowed by its condition.

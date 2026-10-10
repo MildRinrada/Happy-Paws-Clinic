@@ -3,8 +3,13 @@ export const queueBoard = {
   links: {
     history: 'ประวัติคิว',
     display: 'เปิดจอห้องรอ',
-    displayHint: 'เปิดในแท็บใหม่ สำหรับจอทีวีในห้องรอ',
+    displayHint: 'เปิดในแท็บใหม่ด้วยบัญชีนี้ สำหรับจอทีวีในห้องรอ',
+    displays: 'จอห้องรอ',
+    displaysHint: 'ตั้งจอทีวีด้วยรหัสของจอเอง ไม่ต้องเข้าสู่ระบบบนทีวี',
   },
+
+  /** The urgency reason under a ticket (docs/contract-extensions.md § 31). */
+  priorityReason: (reason: string) => `เหตุผลที่เร่งด่วน: ${reason}`,
 
   messages: {
     conflict: 'มีคนเปลี่ยนบัตรนี้ไปก่อนแล้ว กระดานโหลดใหม่ให้แล้ว ลองอีกครั้ง',

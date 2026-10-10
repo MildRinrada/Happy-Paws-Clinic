@@ -29,6 +29,10 @@ public sealed class QueueController : ControllerBase
     /// <param name="room">Narrows the board to one consulting room.</param>
     /// <param name="date">Clinic-local day. Defaults to today in clinic time.</param>
     /// <param name="includeFinished">Adds served and departed tickets to the day's view.</param>
+    /// <param name="status">
+    /// Comma-separated statuses, e.g. <c>served,left</c>; exactly those, finished or not. Not in the
+    /// API reference, see <c>docs/contract-extensions.md § 31</c>.
+    /// </param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="cancellationToken">Aborts with the request.</param>
     [HttpGet]
@@ -39,10 +43,11 @@ public sealed class QueueController : ControllerBase
         [FromQuery] string? room,
         [FromQuery] DateOnly? date,
         [FromQuery(Name = "include_finished")] bool includeFinished,
+        [FromQuery] string? status,
         [FromServices] GetQueueBoardHandler handler,
         CancellationToken cancellationToken) =>
         Ok(await handler.HandleAsync(
-            new GetQueueBoardQuery(branch, room, date, includeFinished), cancellationToken));
+            new GetQueueBoardQuery(branch, room, date, includeFinished, status), cancellationToken));
 
     /// <summary>
     /// <c>POST /staff/queue/tickets</c> — "ออกบัตรคิวให้ walk-in ที่ยังไม่มีนัด".

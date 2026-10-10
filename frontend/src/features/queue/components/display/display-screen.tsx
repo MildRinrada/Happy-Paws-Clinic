@@ -8,6 +8,8 @@ interface Props {
   view: DisplayView;
   branchId: string;
   branchName: string;
+  /** `/display/stream` for a screen set up with its own token; the session proxy otherwise. */
+  streamPath?: string;
 }
 
 /**
@@ -15,10 +17,10 @@ interface Props {
  * viewport height, the newest call takes most of the screen, the next numbers sit to its right,
  * and the exam rooms run along the bottom. Numbers, rooms and vet names only.
  */
-export function DisplayScreen({ view, branchId, branchName }: Props) {
+export function DisplayScreen({ view, branchId, branchName, streamPath }: Props) {
   return (
     <div className="flex h-dvh flex-col gap-[3vh] overflow-hidden p-[3vh]">
-      <DisplayHeader branchId={branchId} branchName={branchName} serviceDate={view.serviceDate} />
+      <DisplayHeader branchId={branchId} branchName={branchName} serviceDate={view.serviceDate} streamPath={streamPath} />
 
       <div className="grid min-h-0 flex-1 grid-cols-[2fr_1fr] gap-[3vh]">
         <DisplayCalls calls={view.calls} />

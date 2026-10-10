@@ -7,7 +7,7 @@ import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { HistoryFilterForm } from '@/features/queue/components/history-filter-form';
 import { HistoryTable } from '@/features/queue/components/history-table';
 import { queueHistory } from '@/features/queue/content/queue-history';
-import { matchesFilter, readHistoryQuery } from '@/features/queue/lib/history-filters';
+import { readHistoryQuery, statusesFor } from '@/features/queue/lib/history-filters';
 import { loadQueueView } from '@/features/queue/lib/load-queue-view';
 import type { QueueView } from '@/features/queue/types/queue.types';
 import { ApiError } from '@/lib/api/api-error';
@@ -24,8 +24,10 @@ interface Props {
 /**
  * One day's queue looked back on: finished tickets by default, any status or any day by choice.
  *
- * Built on the same `GET /staff/queue` as the board, with `date` and `include_finished=true`.
- * The backend has no status filter, so the status choice narrows the day here.
+ * Built on the same `GET /staff/queue` as the board, with `date`, `include_finished=true` and,
+ * for every choice but "all", `status=` (docs/contract-extensions.md § 31). Each row carries the
+ * reasons and times the backend now sends: when the patient went in, when the visit ended, and why
+ * the ticket left or was raised.
  */
 export default async function QueueHistoryPage({ searchParams }: Props) {
   const context = await loadStaffContext();
@@ -44,7 +46,9 @@ export default async function QueueHistoryPage({ searchParams }: Props) {
   let view: QueueView;
 
   try {
-    view = await authed(() => loadQueueView(branch.id, { date: query.date, includeFinished: true }));
+    view = await authed(() =>
+      loadQueueView(branch.id, { date: query.date, includeFinished: true, statuses: statusesFor(query.filter) }),
+    );
   } catch (error) {
     if (error instanceof ApiError && (error.status === 403 || error.status === 422)) {
       return <Alert>{error.message}</Alert>;
@@ -52,7 +56,7 @@ export default async function QueueHistoryPage({ searchParams }: Props) {
     throw error;
   }
 
-  const tickets = view.tickets.filter((item) => matchesFilter(item.ticket.status, query.filter));
+  const { tickets } = view;
 
   return (
     <div className="space-y-5">
@@ -66,8 +70,6 @@ export default async function QueueHistoryPage({ searchParams }: Props) {
       <HistoryFilterForm query={query} today={clinicDay(new Date())} />
 
       <HistoryTable tickets={tickets} />
-
-      <p className="text-xs text-ink-500">{queueHistory.limitations}</p>
     </div>
   );
 }

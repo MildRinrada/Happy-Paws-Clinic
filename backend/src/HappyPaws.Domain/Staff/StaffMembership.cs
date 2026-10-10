@@ -118,4 +118,16 @@ public sealed partial class StaffMembership : Entity
         _branchIds.Clear();
         _branchIds.AddRange(branchIds.Distinct(StringComparer.Ordinal));
     }
+
+    /// <summary>
+    /// A vet, for the purpose of putting them on a queue ticket: the <c>veterinarian</c> staff type,
+    /// or anyone in the veterinary department. The same rule the queue board's vet picker has always
+    /// used, now also checked by <c>POST /staff/queue/{id}/assign</c> (<c>docs/contract-extensions.md § 31</c>).
+    /// </summary>
+    public bool IsVeterinarian =>
+        string.Equals(StaffType, "veterinarian", StringComparison.Ordinal)
+        || string.Equals(Department, Departments.Veterinary, StringComparison.Ordinal);
+
+    /// <summary>Works at this branch: assigned to it, or bound to no branch at all.</summary>
+    public bool WorksAt(string branchId) => _branchIds.Count == 0 || _branchIds.Contains(branchId);
 }

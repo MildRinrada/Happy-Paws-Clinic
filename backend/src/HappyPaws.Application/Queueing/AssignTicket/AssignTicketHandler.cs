@@ -34,10 +34,15 @@ public sealed class AssignTicketValidator : AbstractValidator<AssignTicketComman
 /// send an owner to a door that does not exist, and the queue board is read by people in a waiting
 /// room rather than by a developer who can tell that <c>room_22</c> was meant to be <c>room_2</c>.
 /// </para>
+/// <para>
+/// The vet is checked the same way (<see cref="TicketVetGuard"/>): an active vet at the ticket's
+/// branch, or <c>422</c> at <c>staff_id</c>. <c>docs/contract-extensions.md § 31</c>.
+/// </para>
 /// </summary>
 public sealed class AssignTicketHandler(
     QueueAccess access,
     IBookingCatalog catalog,
+    TicketVetGuard vets,
     IQueueEventStream events,
     IUnitOfWork unitOfWork,
     RequestValidator validator)
@@ -66,6 +71,13 @@ public sealed class AssignTicketHandler(
                     throw new ValidationFailedException(
                         new Dictionary<string, string[]> { ["room_id"] = ["ไม่พบห้องตรวจนี้ในสาขา"] });
                 }
+            }
+
+            // Only a change is checked: re-sending the vet already on the ticket (a retry, or a
+            // room move that repeats the vet) does not fail because that vet has since left.
+            if (command.StaffId is { Length: > 0 } staffId && staffId != ticket.StaffId)
+            {
+                await vets.EnsureVetAtBranchAsync(staffId, ticket.BranchId, token);
             }
 
             ticket.Assign(command.StaffId, command.RoomId);

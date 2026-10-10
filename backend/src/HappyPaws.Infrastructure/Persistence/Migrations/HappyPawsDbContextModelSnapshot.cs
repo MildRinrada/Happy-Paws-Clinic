@@ -5616,6 +5616,94 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("prescriptions", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Queueing.QueueDisplay", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset?>("ClaimedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("SetupCodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("setup_code_hash");
+
+                    b.Property<DateTimeOffset?>("SetupExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("setup_expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_queue_displays");
+
+                    b.HasIndex("SetupCodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_queue_displays_setup_code_hash")
+                        .HasFilter("setup_code_hash IS NOT NULL");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_queue_displays_token_hash")
+                        .HasFilter("token_hash IS NOT NULL");
+
+                    b.HasIndex("BranchId", "CreatedAt")
+                        .HasDatabaseName("ix_queue_displays_branch_id_created_at");
+
+                    b.ToTable("queue_displays", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Queueing.QueueTicket", b =>
                 {
                     b.Property<string>("Id")
@@ -7044,6 +7132,16 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_prescriptions_pets_pet_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Queueing.QueueDisplay", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_queue_displays_branches_branch_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Queueing.QueueTicket", b =>

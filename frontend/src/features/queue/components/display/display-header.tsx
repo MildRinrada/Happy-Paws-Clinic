@@ -7,10 +7,12 @@ interface Props {
   branchId: string;
   branchName: string;
   serviceDate: string;
+  /** The stream this screen listens on; the session proxy unless the screen has its own token. */
+  streamPath?: string;
 }
 
 /** The top line of the screen: where, which day, the time, and whether it is still live. */
-export function DisplayHeader({ branchId, branchName, serviceDate }: Props) {
+export function DisplayHeader({ branchId, branchName, serviceDate, streamPath }: Props) {
   return (
     <header className="flex items-end justify-between gap-[2vw]">
       <div className="min-w-0">
@@ -23,7 +25,7 @@ export function DisplayHeader({ branchId, branchName, serviceDate }: Props) {
         <p className="font-display text-[clamp(1.5rem,5vh,4.5rem)] font-semibold leading-none">
           <DisplayClock />
         </p>
-        <DisplayLive branchId={branchId} />
+        <DisplayLive branchId={branchId} streamPath={streamPath} />
       </div>
     </header>
   );

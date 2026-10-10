@@ -8,6 +8,8 @@ using HappyPaws.Application.Patients.GetPet;
 using HappyPaws.Application.Patients.ListPets;
 using HappyPaws.Application.Patients.MarkPetDeceased;
 using HappyPaws.Application.Patients.RecordAllergy;
+using HappyPaws.Application.Patients.UndoPetDeceased;
+using HappyPaws.Application.Patients.UpdatePet;
 using HappyPaws.Domain.Access;
 using Microsoft.AspNetCore.Mvc;
 
@@ -84,7 +86,11 @@ public sealed class PetsController : ControllerBase
                 request.Species,
                 request.PrimaryCustomerId,
                 request.Breed,
-                request.MicrochipNumber),
+                request.MicrochipNumber,
+                request.Sex,
+                request.BirthDate,
+                request.BirthDateEstimated,
+                request.Neutered),
             cancellationToken);
 
         Response.Headers.ETag = IfMatch.ToETag(pet.Version);
@@ -117,6 +123,52 @@ public sealed class PetsController : ControllerBase
         Response.Headers.ETag = IfMatch.ToETag(detail.Pet.Version);
 
         return Ok(detail);
+    }
+
+    /// <summary>
+    /// <c>PATCH /staff/pets/{id}</c>. Not in the API reference; see
+    /// <c>docs/contract-extensions.md § 28</c>.
+    /// <para>
+    /// Name, species, breed, chip, sex, birth date and neuter status. <c>If-Match</c> is required:
+    /// two people correcting the same card at once must not overwrite each other blind. The owner's
+    /// four fields stay on <c>PATCH /portal/pets/{id}</c>. A closed record can be corrected, except
+    /// its neuter status.
+    /// </para>
+    /// </summary>
+    /// <param name="id">Pet id.</param>
+    /// <param name="request">Only what changes.</param>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpPatch("{id}")]
+    [RequireScope(Scopes.Patient.Write)]
+    [ProducesResponseType<PetSummaryDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<PetSummaryDto>> Update(
+        string id,
+        [FromBody] UpdatePetRequest request,
+        [FromServices] UpdatePetHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var pet = await handler.HandleAsync(
+            new UpdatePetCommand(
+                id,
+                request.Name,
+                request.Species,
+                request.Breed,
+                request.MicrochipNumber,
+                request.Sex,
+                request.BirthDate,
+                request.BirthDateEstimated,
+                request.Neutered,
+                request.Clear,
+                IfMatch.Parse(Request.Headers.IfMatch)),
+            cancellationToken);
+
+        Response.Headers.ETag = IfMatch.ToETag(pet.Version);
+
+        return Ok(pet);
     }
 
     /// <summary>
@@ -169,4 +221,33 @@ public sealed class PetsController : ControllerBase
         CancellationToken cancellationToken) =>
         handler.HandleAsync(
             new MarkPetDeceasedCommand(id, request.OccurredAt, request.Note), cancellationToken);
+
+    /// <summary>
+    /// <c>POST /staff/pets/{id}/deceased/undo</c>, a death recorded by mistake. Not in the API
+    /// reference; see <c>docs/contract-extensions.md § 29</c>.
+    /// <para>
+    /// A <c>POST</c> on an action rather than a <c>DELETE</c> on the death: the reason is required,
+    /// and a body on <c>DELETE</c> is one that proxies and clients may drop. The visits the death
+    /// cancelled stay cancelled and come back in the answer to be rebooked by hand; the owner is
+    /// not messaged.
+    /// </para>
+    /// </summary>
+    /// <param name="id">Pet id.</param>
+    /// <param name="request">Why the death is taken back.</param>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpPost("{id}/deceased/undo")]
+    [RequireScope(Scopes.Patient.Write)]
+    [ProducesResponseType<PetDeceasedUndoneResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public Task<PetDeceasedUndoneResult> UndoDeceased(
+        string id,
+        [FromBody] UndoDeceasedRequest request,
+        [FromServices] UndoPetDeceasedHandler handler,
+        CancellationToken cancellationToken) =>
+        handler.HandleAsync(
+            new UndoPetDeceasedCommand(id, request.Reason, IfMatch.Parse(Request.Headers.IfMatch)),
+            cancellationToken);
 }

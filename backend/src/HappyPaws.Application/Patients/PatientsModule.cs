@@ -11,6 +11,8 @@ using HappyPaws.Application.Patients.MarkPetDeceased;
 using HappyPaws.Application.Patients.Portal;
 using HappyPaws.Application.Patients.RecordAllergy;
 using HappyPaws.Application.Patients.RecordVaccination;
+using HappyPaws.Application.Patients.UndoPetDeceased;
+using HappyPaws.Application.Patients.UpdatePet;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application.Patients;
@@ -31,6 +33,11 @@ public static class PatientsModule
         // against something, and a patient can be deceased with nothing able to say so.
         services.AddScoped<RecordAllergyHandler>();
         services.AddScoped<MarkPetDeceasedHandler>();
+
+        // contract-extensions § 28 and § 29: staff's edit of the identity card, and taking back a
+        // death recorded by mistake.
+        services.AddScoped<UpdatePetHandler>();
+        services.AddScoped<UndoPetDeceasedHandler>();
 
         services.AddScoped<ListVaccinationsHandler>();
         services.AddScoped<RecordVaccinationHandler>();

@@ -3,10 +3,10 @@ namespace HappyPaws.Api.Contracts.Patients;
 /// <summary>
 /// <c>POST /staff/pets</c> — "ออก HN อัตโนมัติ · ผูกเจ้าของหลัก".
 /// <para>
-/// No hospital number: it is issued by the server, which is what "อัตโนมัติ" means. The fields here
-/// are the ones <c>GET /staff/pets/{id}</c> is specified to return — date of birth, sex and neuter
-/// status are absent because the reference never names them, not because a veterinary record does
-/// not want them. See <c>docs/assumptions.md § 25</c>.
+/// No hospital number: it is issued by the server, which is what "อัตโนมัติ" means. Sex, birth date
+/// and neuter status are optional and not in the API reference; see
+/// <c>docs/contract-extensions.md § 28</c>. <c>sex</c> is <c>male</c>, <c>female</c> or
+/// <c>unknown</c>; <c>birth_date</c> is <c>YYYY-MM-DD</c> and not in the future.
 /// </para>
 /// </summary>
 public sealed record CreatePetRequest(
@@ -14,7 +14,37 @@ public sealed record CreatePetRequest(
     string Species,
     string PrimaryCustomerId,
     string? Breed = null,
-    string? MicrochipNumber = null);
+    string? MicrochipNumber = null,
+    string? Sex = null,
+    DateOnly? BirthDate = null,
+    bool BirthDateEstimated = false,
+    bool? Neutered = null);
+
+/// <summary>
+/// <c>PATCH /staff/pets/{id}</c>, staff's correction of the identity card. Not in the API
+/// reference; see <c>docs/contract-extensions.md § 28</c>.
+/// <para>
+/// Send only what changes. An empty <c>breed</c> or <c>microchip_number</c> clears it;
+/// <c>clear: ["birth_date", "neutered"]</c> sets those back to unknown. Nickname, photo, diet and
+/// behaviour are the owner's and are not accepted here.
+/// </para>
+/// </summary>
+public sealed record UpdatePetRequest(
+    string? Name = null,
+    string? Species = null,
+    string? Breed = null,
+    string? MicrochipNumber = null,
+    string? Sex = null,
+    DateOnly? BirthDate = null,
+    bool? BirthDateEstimated = null,
+    bool? Neutered = null,
+    IReadOnlyList<string>? Clear = null);
+
+/// <summary>
+/// <c>POST /staff/pets/{id}/deceased/undo</c>, a death recorded by mistake. The reason is required.
+/// Not in the API reference; see <c>docs/contract-extensions.md § 29</c>.
+/// </summary>
+public sealed record UndoDeceasedRequest(string? Reason = null);
 
 /// <summary>
 /// <c>POST /staff/pets/{id}/owners</c> — "เพิ่มผู้ดูแลร่วม · กำหนดสิทธิ์ดูประวัติ".

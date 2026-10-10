@@ -76,6 +76,14 @@ public sealed class AutomationEvaluator(
                 continue;
             }
 
+            // A reminder that fell due while the patient was recorded deceased is stale once the
+            // death is undone. Reminders resume from the undo, not from the catch-up window
+            // (contract-extensions § 29).
+            if (subject.QuietUntil is { } quietUntil && sendAt <= quietUntil)
+            {
+                continue;
+            }
+
             // A visit that has begun, or one the message would only reach after it began ("the
             // morning of at 08:00" for a 07:30 appointment), is not reminded about.
             if (subject.StartsAt is { } startsAt && (startsAt <= now || startsAt <= sendAt))

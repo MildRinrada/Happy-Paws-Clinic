@@ -9,11 +9,11 @@ import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replacePublicProfileAction } from '../../actions/public-profile-actions';
 import { publicProfileText } from '../../content/public-profile';
 import type { StaffMember } from '../../types/staff.types';
+import { ProfilePhotoField } from './profile-photo-field';
 
 const textFields = [
   { key: 'job_title', label: publicProfileText.jobTitle, hint: publicProfileText.jobTitleHint, max: 120 },
   { key: 'specialty', label: publicProfileText.specialty, hint: publicProfileText.specialtyHint, max: 120 },
-  { key: 'photo_path', label: publicProfileText.photoPath, hint: publicProfileText.photoPathHint, max: 300 },
 ] as const;
 
 /**
@@ -74,6 +74,14 @@ export function PublicProfileForm({ member, onDone }: { member: StaffMember; onD
           />
         </Field>
       </div>
+
+      <ProfilePhotoField
+        staffId={member.id}
+        saved={current}
+        value={draft.photo_path}
+        onChange={(photoPath) => set('photo_path', photoPath)}
+        error={errors.photo_path}
+      />
 
       <Field label={text.bio} htmlFor={`${id}-bio`} hint={text.bioHint} error={errors.bio}>
         <Textarea id={`${id}-bio`} value={draft.bio} maxLength={600} onChange={(event) => set('bio', event.target.value)} />

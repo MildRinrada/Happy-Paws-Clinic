@@ -7,11 +7,13 @@ import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { loadVets } from '@/features/appointments/lib/load-calendar';
 import { AllergiesCard } from '@/features/pets/components/profile/allergies-card';
 import { DocumentsCard } from '@/features/pets/components/profile/documents-card';
+import { EditPetCard } from '@/features/pets/components/profile/edit-pet-card';
 import { OwnersCard } from '@/features/pets/components/profile/owners-card';
 import { PetFacts } from '@/features/pets/components/profile/pet-facts';
 import { RecordDeathCard } from '@/features/pets/components/profile/record-death-card';
 import { TimelineCard } from '@/features/pets/components/profile/timeline-card';
 import { TreatmentPlanCard } from '@/features/pets/components/profile/treatment-plan-card';
+import { UndoDeathCard } from '@/features/pets/components/profile/undo-death-card';
 import { VaccinesCard } from '@/features/pets/components/profile/vaccines-card';
 import { WeightCard } from '@/features/pets/components/profile/weight-card';
 import { petProfile } from '@/features/pets/content/pet-profile';
@@ -103,6 +105,7 @@ export default async function PetPage({
 
         <div className="space-y-6">
           <PetFacts pet={pet} />
+          {canWritePatient && <EditPetCard pet={pet} />}
           <OwnersCard petId={pet.id} owners={profile.owners} canManage={alive && canWritePatient} />
           <WeightCard latest={latest_weight} series={profile.weights} />
           {profile.vaccinations && (
@@ -110,6 +113,7 @@ export default async function PetPage({
           )}
           {(canRecord || canPrint) && <DocumentsCard petId={pet.id} canUpload={canRecord} canPrint={canPrint} />}
           {canWritePatient && <RecordDeathCard petId={pet.id} deceased={pet.is_deceased} />}
+          {canWritePatient && <UndoDeathCard petId={pet.id} deceased={pet.is_deceased} />}
         </div>
       </div>
     </div>

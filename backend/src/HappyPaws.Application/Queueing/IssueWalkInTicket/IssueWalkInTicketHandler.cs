@@ -52,6 +52,7 @@ public sealed class IssueWalkInTicketHandler(
     IBookingCatalog catalog,
     IClinicSettingsStore settings,
     BranchGuard branchGuard,
+    TicketVetGuard vets,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
@@ -85,6 +86,12 @@ public sealed class IssueWalkInTicketHandler(
 
             var service = await catalog.FindServiceAsync(command.ServiceId, token)
                 ?? throw new NotFoundException("service", command.ServiceId);
+
+            // The same check as assigning a vet later (docs/contract-extensions.md § 31).
+            if (command.StaffId is { Length: > 0 } staffId)
+            {
+                await vets.EnsureVetAtBranchAsync(staffId, branch, token);
+            }
 
             var queue = await settings.QueueAsync(token);
             var sequence = await numbers.NextAsync(branch, serviceDate, queue.ResetDaily, token);

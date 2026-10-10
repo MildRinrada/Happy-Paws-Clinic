@@ -23,7 +23,13 @@ public sealed class InteractiveCallerAuthorizationHandler(ICurrentUser currentUs
         AuthorizationHandlerContext context,
         InteractiveCallerRequirement requirement)
     {
-        if (currentUser.ApiKeyId is null)
+        // A waiting-room screen is not a person either. Its token is refused by authentication on
+        // every route that does not accept it; this is the second lock on the same door, for the two
+        // routes that do (docs/contract-extensions.md § 30).
+        var display = currentUser.DisplayId is not null;
+        var displayRoute = context.Resource is HttpContext http && DisplayTokenAuthenticationHandler.RouteAccepts(http);
+
+        if (currentUser.ApiKeyId is null && (!display || displayRoute))
         {
             context.Succeed(requirement);
         }

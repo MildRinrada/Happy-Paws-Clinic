@@ -8,6 +8,7 @@ import { fieldErrors } from '@/lib/actions/field-errors';
 import { registerPetAction } from '../actions/pet-actions';
 import { registerPet } from '../content/register-pet';
 import type { PetSummary } from '../types/pet.types';
+import { IdentityFields, unknownIdentity, type IdentityValues } from './identity/identity-fields';
 import { SpeciesField } from './species-field';
 
 interface RegisterPetFormProps {
@@ -16,13 +17,17 @@ interface RegisterPetFormProps {
   onCancel: () => void;
 }
 
-/** Name, species, and optionally breed and chip. The list above re-reads itself once it saves. */
+/**
+ * Name, species, and optionally breed, chip, sex, birth date and neuter status. The list above
+ * re-reads itself once it saves.
+ */
 export function RegisterPetForm({ customerId, onSaved, onCancel }: RegisterPetFormProps) {
   const text = registerPet;
   const [name, setName] = useState('');
   const [species, setSpecies] = useState(text.species[0] ?? '');
   const [breed, setBreed] = useState('');
   const [microchip, setMicrochip] = useState('');
+  const [identity, setIdentity] = useState<IdentityValues>(unknownIdentity);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -34,7 +39,7 @@ export function RegisterPetForm({ customerId, onSaved, onCancel }: RegisterPetFo
 
     startTransition(async () => {
       try {
-        const result = await registerPetAction({ customerId, name, species, breed, microchip });
+        const result = await registerPetAction({ customerId, name, species, breed, microchip, ...identity });
 
         if (result.ok) {
           onSaved(result.data);
@@ -90,6 +95,8 @@ export function RegisterPetForm({ customerId, onSaved, onCancel }: RegisterPetFo
             aria-invalid={Boolean(errors.microchip_number)}
           />
         </Field>
+
+        <IdentityFields values={identity} onChange={setIdentity} errors={errors} />
       </div>
 
       <div className="flex justify-end gap-2">

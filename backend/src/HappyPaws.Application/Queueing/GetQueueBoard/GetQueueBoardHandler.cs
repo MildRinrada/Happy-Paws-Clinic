@@ -13,12 +13,19 @@ namespace HappyPaws.Application.Queueing.GetQueueBoard;
 /// <c>IncludeFinished</c> false (the default) is the counter's live board; true adds served and
 /// departed tickets, for looking back over the day.
 /// </para>
+/// <para>
+/// <c>Status</c> is a contract extension (<c>docs/contract-extensions.md § 31</c>): a comma-separated
+/// list of wire statuses (<c>served,left</c>). When given, the board is exactly those statuses,
+/// finished or not, and <c>IncludeFinished</c> has nothing left to decide. <c>waiting_count</c>
+/// counts within what is returned, as it already does for <c>room</c>.
+/// </para>
 /// </summary>
 public sealed record GetQueueBoardQuery(
     string? BranchId = null,
     string? RoomId = null,
     DateOnly? Date = null,
-    bool IncludeFinished = false);
+    bool IncludeFinished = false,
+    string? Status = null);
 
 /// <summary>
 /// Today's queue for one branch, in the order tickets will be called.
@@ -38,6 +45,7 @@ public sealed class GetQueueBoardHandler(
         GetQueueBoardQuery query,
         CancellationToken cancellationToken = default)
     {
+        var statuses = ParseStatuses(query.Status);
         var branchId = await ResolveBranchAsync(query.BranchId, cancellationToken);
 
         branchGuard.EnsureCanAccess(branchId);
@@ -45,7 +53,12 @@ public sealed class GetQueueBoardHandler(
         var serviceDate = query.Date ?? ClinicToday();
 
         var board = await tickets.BoardAsync(
-            branchId, serviceDate, query.RoomId, query.IncludeFinished, cancellationToken);
+            branchId, serviceDate, query.RoomId, query.IncludeFinished || statuses is not null, cancellationToken);
+
+        if (statuses is not null)
+        {
+            board = [.. board.Where(ticket => statuses.Contains(ticket.Status))];
+        }
 
         return new QueueBoardDto(
             branchId,
@@ -53,6 +66,41 @@ public sealed class GetQueueBoardHandler(
             query.RoomId,
             board.Count(ticket => QueueTicketTransitions.AwaitingCallStatuses.Contains(ticket.Status)),
             [.. board.Select(QueueTicketDto.From)]);
+    }
+
+    /// <summary>
+    /// <c>served,left</c> → the two statuses; null when no filter was asked for. An unknown value is
+    /// <c>422</c> at <c>status</c>, not silently ignored: a history page that asked for a typo
+    /// would otherwise show a whole day as if it were the answer.
+    /// </summary>
+    private static HashSet<QueueTicketStatus>? ParseStatuses(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return null;
+        }
+
+        var parsed = new HashSet<QueueTicketStatus>();
+
+        foreach (var part in status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var match = Enum.GetValues<QueueTicketStatus>()
+                .Where(candidate => QueueTicketDto.ToWireStatus(candidate) == part)
+                .Select(candidate => (QueueTicketStatus?)candidate)
+                .FirstOrDefault();
+
+            if (match is not { } known)
+            {
+                throw new ValidationFailedException(new Dictionary<string, string[]>
+                {
+                    ["status"] = ["สถานะต้องเป็น waiting, called, in_room, skipped, served หรือ left คั่นด้วยจุลภาค"],
+                });
+            }
+
+            parsed.Add(known);
+        }
+
+        return parsed.Count == 0 ? null : parsed;
     }
 
     private DateOnly ClinicToday() =>

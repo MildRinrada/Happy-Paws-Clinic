@@ -13,9 +13,10 @@ using Microsoft.IdentityModel.Tokens;
 namespace HappyPaws.Api.Extensions;
 
 /// <summary>
-/// Bearer token validation for this clinic instance: a person's JWT access token, or a machine
-/// client's API key (<c>hp_…</c>). Both arrive as <c>Authorization: Bearer</c>; a policy scheme
-/// looks at the token's prefix and forwards to the one that can read it.
+/// Bearer token validation for this clinic instance: a person's JWT access token, a machine
+/// client's API key (<c>hp_…</c>), or a waiting-room screen's display token (<c>hpdsp_…</c>,
+/// <c>docs/contract-extensions.md § 30</c>). All arrive as <c>Authorization: Bearer</c>; a policy
+/// scheme looks at the token's prefix and forwards to the one that can read it.
 /// </summary>
 public static class AuthenticationExtensions
 {
@@ -23,6 +24,9 @@ public static class AuthenticationExtensions
     public const string ClinicScheme = "Clinic";
 
     public const string ApiKeyScheme = "ApiKey";
+
+    /// <summary>A waiting-room screen's token, <c>hpdsp_…</c> (<c>docs/contract-extensions.md § 30</c>).</summary>
+    public const string DisplayScheme = "DisplayToken";
 
     public static IServiceCollection AddClinicAuthentication(this IServiceCollection services)
     {
@@ -33,12 +37,15 @@ public static class AuthenticationExtensions
 
         services
             .AddAuthentication(ClinicScheme)
-            .AddPolicyScheme(ClinicScheme, "JWT or API key", options => options.ForwardDefaultSelector = context =>
-                ApiKeyAuthenticationHandler.Presented(context.Request) is not null
-                    ? ApiKeyScheme
-                    : JwtBearerDefaults.AuthenticationScheme)
+            .AddPolicyScheme(ClinicScheme, "JWT, API key or display token", options => options.ForwardDefaultSelector = context =>
+                DisplayTokenAuthenticationHandler.Presented(context.Request) is not null
+                    ? DisplayScheme
+                    : ApiKeyAuthenticationHandler.Presented(context.Request) is not null
+                        ? ApiKeyScheme
+                        : JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer()
-            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyScheme, displayName: null, _ => { });
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyScheme, displayName: null, _ => { })
+            .AddScheme<AuthenticationSchemeOptions, DisplayTokenAuthenticationHandler>(DisplayScheme, displayName: null, _ => { });
 
         services
             .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)

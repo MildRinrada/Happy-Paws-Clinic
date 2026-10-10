@@ -25,6 +25,19 @@ QueueStreamController (API)             ตรวจผู้เรียก แ
 QueueEventBroker (singleton)            รับ Publish จาก handler หลัง commit
 ```
 
+จอห้องรอที่ใช้ token ของตัวเอง ([ส่วนขยาย § 30](contract-extensions.md)) เดินอีกทางหนึ่ง ไม่ผ่าน middleware และไม่ใช้คุกกี้ของพนักงาน
+
+```text
+EventSource บนทีวี
+   │  GET /display/stream?branch=brn_x   (same origin, คุกกี้ hp_display ที่ผูก path /display)
+   ▼
+app/(screen)/display/stream/route.ts    อ่าน hp_display แล้วเปิดสตรีมไปที่ API
+   │  GET /v1/queue/stream?branch=brn_x
+   │  Authorization: Bearer hpdsp_...
+   ▼
+QueueStreamController (API)             ตรวจว่าเป็นสาขาของจอ แล้วส่ง event โดยตัด ticket_id ออก
+```
+
 route handler ส่ง body ของ API ต่อไปทั้งก้อนโดยไม่แตะ และตั้ง `runtime = 'nodejs'` กับ `dynamic = 'force-dynamic'` เพื่อให้ถือ socket ได้นานและไม่ถูก cache
 
 **ทำไมต้องผ่าน Next.js** `EventSource` ของเบราว์เซอร์ตั้ง header เองไม่ได้ และ token อยู่ในคุกกี้ที่ script อ่านไม่ได้ ทางเลือกคือใส่ token ใน query string ซึ่งจะไปโผล่ใน access log และ cache ของ proxy ทุกตัวระหว่างทาง จึงให้เบราว์เซอร์ต่อเข้า origin ของตัวเอง แล้วเซิร์ฟเวอร์ Next.js แนบ token ให้ เหมือนคำขออื่นทุกเส้น การตีความนี้บันทึกไว้ใน [จุดกำกวมของสัญญา](assumptions.md)
@@ -40,8 +53,12 @@ route handler ส่ง body ของ API ต่อไปทั้งก้อ�
 | API: `branch` ว่าง | 422 `validation_failed` |
 | API: พนักงานที่มี `queue:read` แต่ไม่ได้อยู่สาขานั้น (`BranchGuard`) | 403 |
 | API: ไม่ใช่พนักงานที่มี `queue:read` และไม่ใช่ลูกค้า | 403 |
+| API: token ของจอที่ถูกยกเลิก หมดอายุ หรือไม่รู้จัก | 401 |
+| API: token ของจอ แต่ `branch` ไม่ใช่สาขาของจอ | 403 |
 
 route handler ส่ง 401 และ 403 จาก API ต่อไปตรง ๆ เพื่อให้เบราว์เซอร์หยุด ไม่วนต่อใหม่ไม่รู้จบกับสตรีมที่เซสชันนี้ดูไม่ได้
+
+endpoint นี้ติด `[AcceptsDisplayToken]` เป็นหนึ่งในสองเส้นที่ token ของจอใช้ได้ (อีกเส้นคือ `GET /queue/display-board`) เส้นอื่นทุกเส้นปฏิเสธ token ของจอตั้งแต่ขั้นยืนยันตัว
 
 endpoint นี้ไม่มี `[RequireScope]` เพราะสัญญาให้ทั้งพนักงานและลูกค้าใช้ การตัดสินจึงอยู่ใน `ResolveAudience` ของ controller และด้วยเหตุนี้กติกา 2FA ของ `[RequireScope]` จึงไม่ถูกตรวจที่เส้นนี้
 
@@ -51,6 +68,7 @@ endpoint นี้ไม่มี `[RequireScope]` เพราะสัญญ�
 |---|---|---|
 | พนักงาน | มี `queue:read` และเข้าสาขานั้นได้ | ทุกเหตุการณ์ของสาขา |
 | ลูกค้า | token มี `customer_id` | เฉพาะเหตุการณ์ของบัตรที่เป็นของตัวเอง |
+| จอห้องรอ (ส่วนขยาย § 30) | token ของจอที่ยังใช้ได้ และ `branch` เป็นสาขาของจอ | ทุกเหตุการณ์ของสาขา แต่ข้อมูลมีแค่ `branch_id` ไม่มี `ticket_id` |
 
 ลูกค้าไม่ได้เหตุการณ์ของบัตรคนอื่นแม้แต่ id เพราะจำนวนเหตุการณ์ก็บอกได้ว่าคลินิกรับคนไข้เร็วแค่ไหน ฝั่ง API รองรับลูกค้าแล้ว แต่ยังไม่มีหน้าพอร์ทัลบนเว็บที่ใช้
 
@@ -68,6 +86,8 @@ data: {"ticket_id":"tkt_...","branch_id":"brn_main"}
 
 : ping                                                  comment ทุก 20 วินาที
 ```
+
+จอห้องรอที่ใช้ token ได้ทุกบรรทัดเหมือนกัน ยกเว้น `data` ที่เป็น `{"branch_id":"brn_main"}` เสมอ กระดานของจอ (`GET /queue/display-board`) ไม่มีรหัสบัตรให้จับคู่อยู่แล้ว การส่งรหัสบัตรไปที่เครื่องในที่สาธารณะจึงไม่มีประโยชน์อะไร
 
 `board.refresh` ที่ส่งตอนเปิดสตรีมทำให้หน้าเว็บที่ต่อใหม่หลังหลุดอ่านกระดานใหม่ ไม่ต้องเดาว่าระหว่างหลุดเกิดอะไรขึ้น ส่วน `: ping` เป็น comment ที่ client ไม่สนใจ แต่ทำให้ proxy ไม่ตัด socket ที่เงียบ
 
@@ -106,18 +126,20 @@ handler รู้จักแค่ interface `IQueueEventStream` (`Application/
 
 - `features/queue/hooks/use-queue-stream.ts` เปิด `EventSource` หนึ่งตัวต่อสาขา ฟังสามเหตุการณ์ แล้วรวมเหตุการณ์ที่มาติดกันภายใน 150 มิลลิวินาทีเป็นการเรียก callback ครั้งเดียว เพราะการปิดเคสหนึ่งครั้งส่งหลายเหตุการณ์ต่อกัน
 - `features/queue/components/queue-live-indicator.tsx` ส่ง `router.refresh()` เป็น callback และแสดงสถานะ "กำลังเชื่อมต่อ" "อัปเดตสด" หรือข้อความว่าหลุดและกำลังต่อใหม่ สถานะนี้สำคัญเท่ากับการอัปเดต เพราะกระดานที่หยุดอัปเดตเงียบ ๆ ดูเหมือนช่วงเช้าที่คนไข้น้อย
-- สายที่หลุดกลางทาง `EventSource` ต่อใหม่เอง ถ้าการต่อถูกปฏิเสธ (401, 403, 502) เบราว์เซอร์ปิด `EventSource` ถาวร hook จึงเปิดตัวใหม่เองหลังรอ 2 วินาที เพิ่มเป็นเท่าตัวจนถึง 1 นาที จอเรียกคิวในห้องรอ (`/queue/display`) ใช้ hook เดียวกัน ดู [คิว](features/queue.md#จอเรียกคิวในห้องรอ)
+- สายที่หลุดกลางทาง `EventSource` ต่อใหม่เอง ถ้าการต่อถูกปฏิเสธ (401, 403, 502) เบราว์เซอร์ปิด `EventSource` ถาวร hook จึงเปิดตัวใหม่เองหลังรอ 2 วินาที เพิ่มเป็นเท่าตัวจนถึง 1 นาที จอเรียกคิวในห้องรอใช้ hook เดียวกัน `/queue/display` ต่อที่ `/api/queue/stream` ส่วน `/display` ส่ง `streamPath` เป็น `/display/stream` ดู [คิว](features/queue.md#จอเรียกคิวในห้องรอ)
 - เมื่อ access token หมดอายุแล้วสตรีมหลุด การต่อใหม่ผ่าน middleware ซึ่ง refresh token ให้ก่อน
 
 ## ข้อจำกัด
 
 - broker อยู่ใน process เดียว รัน API สองตัวแล้วผู้ฟังของตัวหนึ่งจะไม่เห็นเหตุการณ์ของอีกตัว
-- token ถูกตรวจตอนเปิดสตรีมครั้งเดียว สตรีมที่เปิดอยู่จะไม่ถูกตัดเมื่อ access token หมดอายุหรือเซสชันถูกเพิกถอน จนกว่าการเชื่อมต่อจะหลุดเอง
+- token ของคนถูกตรวจตอนเปิดสตรีมครั้งเดียว สตรีมที่เปิดอยู่จะไม่ถูกตัดเมื่อ access token หมดอายุหรือเซสชันถูกเพิกถอน จนกว่าการเชื่อมต่อจะหลุดเอง ส่วน token ของจอถูกอ่านจากฐานข้อมูลซ้ำทุก heartbeat (20 วินาที) จอที่ถูกยกเลิกหรือหมดอายุจึงถูกปิดสตรีมภายใน 20 วินาที
 - ถ้า API ตอบ 401 หรือ 403 hook ลองต่อใหม่ไปเรื่อย ๆ ทุก 1 นาที ป้ายบนหน้าจอขึ้นว่ากำลังต่อใหม่ ไม่ได้แยกว่าเซสชันหมดหรือไม่มีสิทธิ์ เพราะ `EventSource` ไม่บอก status code
 - heartbeat กับเหตุการณ์เขียนลง response จากสอง task โดยไม่มีตัวล็อก ถ้าเกิดตรงกันพอดีมีโอกาสที่บรรทัดจะปนกัน ยังไม่มีเทสต์ครอบกรณีนี้
 - ไม่มี id ของเหตุการณ์ (`id:`) จึงใช้ `Last-Event-ID` ขอเหตุการณ์ที่พลาดไม่ได้ ระบบพึ่ง `board.refresh` ตอนต่อใหม่แทน
 
 ## เทสต์
+
+สตรีมของจอห้องรออยู่ใน `QueueDisplayTests.cs` คือ จอเปิดสตรีมของสาขาตัวเองได้และข้อมูลมีแค่ `branch_id` สาขาอื่นได้ `403` token ที่ถูกยกเลิกเปิดสตรีมไม่ได้ (`401`) และสตรีมที่เปิดค้างอยู่ปิดเองที่ heartbeat ถัดไปหลังการยกเลิก
 
 `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/QueueStreamTests.cs` มี 9 ข้อ ครอบ: เปิดสตรีมแล้วได้ `board.refresh` ก่อน, เรียกคิวแล้วพนักงานได้ `ticket.called`, ข้ามคิวได้ `board.refresh`, ผู้ฟังต่างสาขาไม่เห็นกัน, ลูกค้าเห็นเฉพาะบัตรตัวเอง, เจ้าของเห็นบัตรตัวเองถูกเรียก, ต้องเข้าสู่ระบบ, พนักงานดูสาขาที่ไม่ได้อยู่ไม่ได้ และ client ที่ตัดการเชื่อมต่อไม่ทิ้งผู้ฟังค้าง ฝั่งหน้าเว็บยังไม่มีเทสต์
 
@@ -130,6 +152,8 @@ handler รู้จักแค่ interface `IQueueEventStream` (`Application/
 | `backend/src/HappyPaws.Infrastructure/Realtime/QueueEventBroker.cs` | กระจายเหตุการณ์ใน process |
 | `backend/src/HappyPaws.Api/Controllers/Realtime/QueueStreamController.cs` | ตรวจผู้เรียก เขียน event และ heartbeat |
 | `frontend/src/app/api/queue/stream/route.ts` | ส่งต่อสตรีมพร้อมแนบ token |
+| `frontend/src/app/(screen)/display/stream/route.ts` | ส่งต่อสตรีมของจอห้องรอพร้อมแนบ token ของจอ |
+| `backend/src/HappyPaws.Api/Authorization/DisplayTokenAuthenticationHandler.cs` | ยืนยันตัวด้วย token ของจอ เฉพาะเส้นที่ติด `[AcceptsDisplayToken]` |
 | `frontend/src/lib/api/event-stream.ts` | เปิดสตรีมไปที่ API (ที่เดียวที่เรียก `fetch` แบบสตรีม) |
 | `frontend/src/features/queue/hooks/use-queue-stream.ts` | `EventSource` และการรวมเหตุการณ์ |
 | `frontend/src/features/queue/components/queue-live-indicator.tsx` | สั่งอ่านใหม่และแสดงสถานะการเชื่อมต่อ |

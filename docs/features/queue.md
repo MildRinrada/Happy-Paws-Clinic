@@ -8,7 +8,7 @@
 
 | Endpoint | สิทธิ์ | ทำอะไร |
 |---|---|---|
-| `GET /staff/queue?branch=&room=&date=&include_finished=` | `queue:read` | กระดานของวัน เรียงตามลำดับที่จะถูกเรียก |
+| `GET /staff/queue?branch=&room=&date=&include_finished=&status=` | `queue:read` | กระดานของวัน เรียงตามลำดับที่จะถูกเรียก `status` เป็น **ส่วนขยาย** |
 | `POST /staff/queue/tickets` | `queue:write` | ออกบัตรให้ walk-in ต้องมี `Idempotency-Key` |
 | `POST /staff/queue/{id}/assign` | `queue:write` | จ่ายหมอ ห้องตรวจ หรือทั้งสองอย่าง |
 | `POST /staff/queue/{id}/call` | `queue:call` | เรียกคิว แล้วแจ้งเจ้าของ |
@@ -16,9 +16,14 @@
 | `POST /staff/queue/{id}/priority` | `queue:write` | เปลี่ยนความเร่งด่วน **ส่วนขยาย** |
 | `POST /staff/queue/{id}/leave` | `queue:write` | เจ้าของกลับบ้านแล้ว **ส่วนขยาย** |
 | `GET /portal/queue/{id}` | `portal` | บัตรของลูกค้าเอง และเหลืออีกกี่คิว |
-| `GET /queue/stream?branch=` (SSE) | ทั้งสองฝั่ง | อัปเดตสด ดู [realtime](../realtime.md) |
+| `GET /queue/stream?branch=` (SSE) | ทั้งสองฝั่ง และ token ของจอ | อัปเดตสด ดู [realtime](../realtime.md) |
+| `POST /staff/queue/displays` | `queue:write` | สร้างจอห้องรอ ตอบรหัสตั้งจอครั้งเดียว **ส่วนขยาย** |
+| `GET /staff/queue/displays?branch=` | `queue:write` | รายการจอห้องรอ **ส่วนขยาย** |
+| `DELETE /staff/queue/displays/{id}` | `queue:write` | ยกเลิกจอ **ส่วนขยาย** |
+| `POST /queue/displays/claim` | ไม่ต้องเข้าสู่ระบบ | ทีวีแลกรหัสตั้งจอเป็น token **ส่วนขยาย** |
+| `GET /queue/display-board?branch=` | token ของจอ | กระดานที่ย่อแล้วสำหรับจอ **ส่วนขยาย** |
 
-สองเส้นที่ติด **ส่วนขยาย** ไม่อยู่ใน contract เหตุผลอยู่ใน [endpoint ส่วนขยาย](../contract-extensions.md) ทุก path อยู่ใต้ `/v1`
+เส้นและช่องที่ติด **ส่วนขยาย** ไม่อยู่ใน contract เหตุผลอยู่ใน [endpoint ส่วนขยาย](../contract-extensions.md) ข้อ 1, 2, 30 และ 31 ทุก path อยู่ใต้ `/v1`
 
 ## สถานะ 6 แบบ
 
@@ -103,8 +108,9 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 - **เรียก** บันทึกบัตรก่อน แล้วจึงส่ง `ticket.called` และส่งแจ้งเตือน `queue.called` (เลขคิวและห้อง) ให้เจ้าของ นอก transaction ช่องทางแจ้งเตือนที่ค้างหรือล้มจึงไม่ทำให้การเรียกล้ม ถ้า process ตายระหว่างนั้น เจ้าของไม่ได้ข้อความแต่กระดานยังถูกต้อง
 - **ข้าม** เขียนทับ `skipped_at` และเพิ่ม `skip_count`
 - **ออกจากคิว** มี `reason` ได้ แยกจาก `served` เพื่อไม่ให้การมาที่ไม่ได้ตรวจเข้าไปอยู่ในตัวเลขของวัน
-- **จ่ายหมอและห้อง** ต้องส่งอย่างน้อยหนึ่งอย่าง ห้องต้องอยู่ในทะเบียนห้องตรวจของสาขา (ไม่อย่างนั้น `422`) ไม่ใช่การเปลี่ยนสถานะ ทำได้แม้อยู่ในห้องแล้ว จึงย้ายห้องกลางการตรวจได้
+- **จ่ายหมอและห้อง** ต้องส่งอย่างน้อยหนึ่งอย่าง ห้องต้องอยู่ในทะเบียนห้องตรวจของสาขา (ไม่อย่างนั้น `422`) หมอต้องเป็นสัตวแพทย์ที่ยังทำงานอยู่และทำงานที่สาขาของบัตร คือตำแหน่ง `veterinarian` หรือแผนก `veterinary` และผูกกับสาขานั้นหรือไม่ผูกสาขาเลย (ไม่อย่างนั้น `422` ที่ช่อง `staff_id`) ตรวจเฉพาะเมื่อหมอเปลี่ยน `staff_id` ตอนออกบัตร walk-in ใช้กติกาเดียวกัน ([ส่วนขยาย § 31](../contract-extensions.md)) ไม่ใช่การเปลี่ยนสถานะ ทำได้แม้อยู่ในห้องแล้ว จึงย้ายห้องกลางการตรวจได้
 - **`If-Match`** ทุกการกระทำบนบัตรรับ `If-Match` ถ้าส่งมา version ไม่ตรงได้ `409 version_conflict` หน้าเว็บส่งทุกครั้ง
+- **เหตุผลและเวลา** บัตรในคำตอบฝั่งพนักงานมี `priority_reason`, `entered_room_at`, `served_at`, `left_at` และ `left_reason` เมื่อมีค่า เจ้าของสัตว์ที่เช็กอินเอง หน้า portal และจอห้องรอไม่ได้ห้าช่องนี้ ([ส่วนขยาย § 31](../contract-extensions.md))
 
 ## หน้าของลูกค้า
 
@@ -120,8 +126,8 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 | เปิดการเชื่อมต่อ | `board.refresh` ทันที ให้ client อ่านกระดานใหม่ |
 
 - ส่งหลัง commit เสมอ กระดานจึงไม่ประกาศสิ่งที่ยังไม่เกิด
-- ข้อมูลใน event มีแค่ `ticket_id` และ `branch_id` เป็นสัญญาณว่า "มีอะไรเปลี่ยน" ไม่ใช่ตัวข้อมูล
-- พนักงานต้องมี `queue:read` และอยู่ในสาขานั้น ลูกค้าได้เฉพาะ event ของบัตรตัวเอง
+- ข้อมูลใน event มีแค่ `ticket_id` และ `branch_id` เป็นสัญญาณว่า "มีอะไรเปลี่ยน" ไม่ใช่ตัวข้อมูล จอห้องรอที่ใช้ token ของตัวเองได้แค่ `branch_id`
+- พนักงานต้องมี `queue:read` และอยู่ในสาขานั้น ลูกค้าได้เฉพาะ event ของบัตรตัวเอง token ของจอได้ทุก event ของสาขาของจอเท่านั้น
 - ตัวกระจาย event อยู่ใน process เดียว (`QueueEventBroker`) ใช้ได้กับ API instance เดียว รายละเอียดอยู่ใน [realtime](../realtime.md)
 
 ## กระดานคิวบนเว็บ
@@ -137,6 +143,8 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 - ส่วนหัวของหน้าแสดงสาขา วันที่ และจำนวนที่รอเรียก มีปุ่ม "ประวัติคิว" และ "เปิดจอห้องรอ" (เปิดแท็บใหม่)
 - สามคอลัมน์ตามทางที่สัตว์เดินผ่านคลินิก คือ รอเรียก (`waiting` และ `skipped`) กำลังเรียก (`called`) และในห้องตรวจ (`in_room`) บัตรที่ตรวจเสร็จหรือออกจากคิวไม่แสดง
 - การ์ดแต่ละใบมีเลขคิวตัวใหญ่ ชื่อและข้อมูลสัตว์ สถานะ ความเร่งด่วน ป้ายแดง "มีประวัติแพ้ยา" เมื่อสัตว์มีบันทึกแพ้ยา บริการ เวลาออกบัตรและนาทีที่รอ หมอ ห้อง และจำนวนครั้งที่ถูกข้าม บัตรฉุกเฉินมีขอบแดง
+- บัตรที่เร่งด่วนหรือฉุกเฉินแสดง "เหตุผลที่เร่งด่วน" ใต้รายละเอียด และบนป้ายความเร่งด่วนเมื่อชี้เมาส์
+- ส่วนหัวมีปุ่ม "จอห้องรอ" สำหรับคนที่ถือ `queue:write` ไปหน้าจัดการจอ ดู [จอเรียกคิวในห้องรอ](#จอเรียกคิวในห้องรอ)
 
 ### ปุ่ม
 
@@ -183,22 +191,59 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 
 หน้า `/queue/history` (`frontend/src/app/(staff)/queue/history/page.tsx`) ดูบัตรที่จบแล้วของวันนี้หรือวันอื่น ต้องมี `queue:read` เหมือนกระดาน
 
-- อ่านจาก `GET /staff/queue` ตัวเดียวกับกระดาน ส่ง `date` และ `include_finished=true` ไม่มี endpoint ใหม่
+- อ่านจาก `GET /staff/queue` ตัวเดียวกับกระดาน ส่ง `date`, `include_finished=true` และ `status` ไม่มี endpoint ใหม่
 - ตัวกรองอยู่ใน query string `?date=YYYY-MM-DD&status=` เป็นฟอร์ม GET ธรรมดา บุ๊กมาร์กหรือส่งลิงก์ต่อได้ ใช้ได้ก่อน script โหลด
-- `status` มี `finished` (ค่าเริ่มต้น คือ `served` กับ `left`) `served` `left` และ `all` backend ไม่มีตัวกรองสถานะ หน้าเว็บจึงกรองเองหลังอ่านทั้งวัน
+- ตัวเลือกสถานะมี `finished` (ค่าเริ่มต้น คือ `served` กับ `left`) `served` `left` และ `all` หน้าเว็บแปลงเป็น `status=served,left` และอื่น ๆ ให้ backend กรอง (`all` ไม่ส่ง `status`) ตัวกรองนี้เป็นส่วนขยาย § 31 ส่งสถานะที่ไม่รู้จักได้ `422`
 - วันที่ไม่ส่งหรือผิดรูปแบบใช้วันนี้ตามเวลาคลินิก ช่องเลือกวันเลือกวันในอนาคตไม่ได้
-- ตารางมีเลขคิว สัตว์ บริการ สถานะ ความเร่งด่วน จำนวนครั้งที่ถูกข้าม หมอ ห้อง เวลาออกบัตร และเวลาเรียก เรียงตามลำดับที่ API ส่งมา เป็นหน้าดูอย่างเดียว ไม่มีปุ่ม
-- เหตุผลที่ออกจากคิว เหตุผลของความเร่งด่วน และเวลาที่ตรวจเสร็จหรือออกจากคิว ไม่แสดง เพราะ API ไม่ส่งมา ดูข้อจำกัด
+- ตารางมีเลขคิว สัตว์ บริการ สถานะ ความเร่งด่วน จำนวนครั้งที่ถูกข้าม หมอ ห้อง เวลาออกบัตร เวลาเรียก เวลาเข้าห้อง เวลาจบ (ตรวจเสร็จหรือออกจากคิว) และเหตุผล (ที่ออกจากคิวและที่เร่งด่วน) เรียงตามลำดับที่ API ส่งมา เป็นหน้าดูอย่างเดียว ไม่มีปุ่ม
 
 ## จอเรียกคิวในห้องรอ
 
-หน้า `/queue/display` (`frontend/src/app/(display)/queue/display/page.tsx`) สำหรับทีวีในห้องรอ เปิดจากปุ่ม "เปิดจอห้องรอ" บนกระดาน ซึ่งเปิดแท็บใหม่พร้อม `?branch=` ของสาขาที่กำลังดู
+จอทีวีในห้องรอเปิดได้สองแบบ หน้าตาเหมือนกันทุกอย่าง ต่างกันที่สิ่งที่ทีวีถือไว้
 
-### อยู่นอกหน้าตาของ console
+| | `/display` (แนะนำ) | `/queue/display` (แบบเดิม) |
+|---|---|---|
+| ทีวีถืออะไร | token ของจอเอง ในคุกกี้ `hp_display` ([ส่วนขยาย § 30](../contract-extensions.md)) | เซสชันพนักงานเต็มตัว |
+| ใครจับทีวีได้ เปิดอะไรได้ | กระดานที่ย่อแล้วและ stream ของสาขานั้น ไม่มีอย่างอื่น | ทุกหน้าของ console ด้วยสิทธิ์ของบัญชีนั้น |
+| หลุดเมื่อไร | เมื่อมีคนกดยกเลิกจอ หรือถึงวันหมดอายุที่ตั้งไว้ | เมื่อบัญชีเปลี่ยนรหัสผ่าน ถูกปิด หรือปิดทีวีไว้นานเกิน 30 วัน |
+| อ่านข้อมูลจาก | `GET /queue/display-board` ที่ backend ย่อไว้แล้ว | `GET /staff/queue` แล้วย่อฝั่งเซิร์ฟเวอร์ของหน้าเว็บ |
 
-- หน้านี้อยู่ใน route group `(display)` ที่มี layout ของตัวเอง ไม่มีเมนูข้างและแถบบนของ console แต่ URL ยังอยู่ใต้ `/queue` middleware ที่ครอบ `/queue/:path*` อยู่แล้วจึงต่ออายุเซสชันให้โดยไม่ต้องแก้ middleware ส่วน `/queue` เดิมยังอยู่ใน `(staff)` เหมือนเดิม
+### ตั้งจอด้วย token ของจอ
+
+1. ที่ console เปิด **คิว > จอห้องรอ** (`/queue/displays`) ต้องมี `queue:write` ตั้งชื่อจอ เลือกอายุ (ค่าเริ่มต้นคือจนกว่าจะยกเลิก) แล้วกด "สร้างรหัสตั้งจอ"
+2. การ์ดแสดงรหัสตั้งจอ 8 ตัว (`ABCD-EFGH`) ลิงก์ตั้งจอพร้อมปุ่มคัดลอก และ QR ของลิงก์ ครั้งเดียว รหัสใช้ได้ครั้งเดียวภายใน 30 นาที
+3. บนเบราว์เซอร์ของทีวี เปิด `/display/setup` แล้วพิมพ์รหัส (ตัวเล็กหรือเว้นวรรคก็ได้) หรือเปิดลิงก์ตั้งจอ ซึ่งใส่รหัสให้เองหลัง `#` จอที่มีกล้อง เช่น แท็บเล็ต สแกน QR ได้
+4. หน้าตั้งจอส่งรหัสผ่าน server action ไปแลกเป็น token ที่ `POST /queue/displays/claim` แล้วเก็บ token ในคุกกี้ httpOnly ชื่อ `hp_display` ที่ผูก path `/display` แล้วพาไป `/display` เอง กดเต็มจอ เช่น F11 หรือโหมด kiosk ของเบราว์เซอร์
+5. ไม่ต้องเข้าสู่ระบบบนทีวี และไม่ต้องจดรหัสไว้ รหัสที่ใช้แล้วหรือเกิน 30 นาทีเปิดอะไรไม่ได้อีก
+
+รายละเอียดว่าทำไมเป็นรหัส ไม่ใช่ token ในลิงก์ และ token ถูกเก็บอย่างไร อยู่ใน [ส่วนขยาย § 30](../contract-extensions.md) และ [token ของจอห้องรอ](../security/integrations.md#token-ของจอห้องรอ)
+
+**ลิงก์ตั้งจอ** คือ `<ที่อยู่เว็บที่ใช้เปิด console>/display/setup#code=ABCD-EFGH` ใช้ที่อยู่ที่คนกดสร้างใช้อยู่ (ค่า `Origin` ของ server action) คลินิกที่เปิดเว็บในเครือข่ายภายในจึงได้ลิงก์ที่ทีวีในเครือข่ายเดียวกันเปิดได้ หน้าตั้งจออ่านรหัสจากหลัง `#` ซึ่งเบราว์เซอร์ไม่ส่งไปเซิร์ฟเวอร์ แล้วลบออกจากแถบที่อยู่ด้วย `history.replaceState` ก่อนส่ง
+
+**คุกกี้ของจอ** `hp_display` เป็น httpOnly `SameSite=Lax` `Secure` บน production `Path=/display` จึงถูกส่งไปแค่ `/display`, `/display/setup` และ `/display/stream` ไม่ถูกส่งไป console และ script บนหน้าอ่านไม่ได้ อายุ 400 วัน หรือถึงวันหมดอายุของจอถ้ามี เบราว์เซอร์เดียวกันมีทั้งเซสชันพนักงานและคุกกี้ของจอได้ สองอย่างไม่ปนกัน
+
+**route ของจอ** อยู่ใน route group `(screen)` ที่ไม่มี layout ของ console และไม่ตรวจเซสชันพนักงาน middleware ไม่ครอบ `/display` อยู่แล้ว จึงไม่ต้องแก้ `src/middleware.ts`
+
+| route | ทำอะไร |
+|---|---|
+| `/display` | อ่านคุกกี้ ไม่มีก็ไป `/display/setup` มีก็อ่าน `GET /queue/display-board` ด้วย token แล้วแสดงจอ ถ้าได้ `401` แสดง "จอนี้ถูกยกเลิกหรือหมดอายุแล้ว" พร้อมลิงก์ไปตั้งจอใหม่ และไม่ลองต่อเอง |
+| `/display/setup` | ช่องใส่รหัส และรับรหัสจากลิงก์ |
+| `/display/stream` | route handler ที่อ่านคุกกี้ของจอแล้วต่อ `GET /queue/stream` ของ backend ให้ `EventSource` แบบเดียวกับ `/api/queue/stream` ของ console |
+
+**ยกเลิกจอ** ปุ่ม "ยกเลิกจอ" ในตารางถามยืนยันอีกครั้ง แล้วเรียก `DELETE /staff/queue/displays/{id}` คำขอถัดไปของจอได้ `401` stream ที่เปิดอยู่ปิดภายใน 20 วินาที และหน้าจออ่านใหม่ทุก 1 นาที จึงขึ้นข้อความว่าถูกยกเลิกภายในหนึ่งนาที จอที่หายหรือคุกกี้ถูกล้าง ให้ยกเลิกจอเดิมแล้วสร้างใหม่
+
+**ตารางจอ** แสดงชื่อ สถานะ (รอตั้งบนทีวี รหัสหมดเวลา ใช้งานอยู่ หมดอายุ ยกเลิกแล้ว) เวลาสร้าง เวลาตั้งบนทีวี เวลาที่รหัสยังใช้ได้ เวลาที่เห็นล่าสุด วันหมดอายุ และเวลายกเลิก ไม่มี token หรือรหัสในรายการ
+
+### เปิดด้วยเซสชันพนักงาน (แบบเดิม)
+
+หน้า `/queue/display` (`frontend/src/app/(display)/queue/display/page.tsx`) เปิดจากปุ่ม "เปิดจอห้องรอ" บนกระดาน ซึ่งเปิดแท็บใหม่พร้อม `?branch=` ของสาขาที่กำลังดู ยังใช้ได้เหมือนเดิม เหมาะกับการเปิดดูชั่วคราวจากเครื่องของพนักงาน ไม่เหมาะกับทีวีที่ตั้งทิ้งไว้
+
+- หน้านี้อยู่ใน route group `(display)` ที่มี layout ของตัวเอง ไม่มีเมนูข้างและแถบบนของ console แต่ URL ยังอยู่ใต้ `/queue` middleware ที่ครอบ `/queue/:path*` อยู่แล้วจึงต่ออายุเซสชันให้
 - layout ของ `(display)` ตรวจว่าเป็นพนักงานแบบเดียวกับ layout ของ console หน้าต้องมี `queue:read`
 - `?branch=` ปักจอไว้กับสาขาเดียว สาขาที่บัญชีเข้าไม่ได้ถูกเมิน แล้วใช้สาขาที่เลือกไว้ล่าสุดในเบราว์เซอร์นั้นแทน
+- ชื่อหมอมาจาก `GET /staff/members` ถ้าบัญชีไม่มี `staff:read` จอแสดงแค่ห้อง
+- access token อายุ 15 นาที refresh token อายุ 30 วันแบบเลื่อน การอ่านใหม่ทุกนาทีผ่าน middleware ซึ่ง refresh ให้ เซสชันจึงเลื่อนไปเรื่อย ๆ ตราบที่จอเปิดอยู่ เซสชันจบเมื่อเปลี่ยนรหัสผ่าน ปิดบัญชี เพิกถอนเซสชัน หรือระบบเห็น refresh token ถูกใช้ซ้ำ แล้วการอ่านรอบถัดไปพาจอไปหน้าเข้าสู่ระบบ
+- ความเสี่ยงคือทีวีถือเซสชันพนักงานเต็มตัว ถ้าต้องตั้งทิ้งไว้ ให้ใช้ `/display` แทน
 
 ### หน้าตา
 
@@ -207,6 +252,7 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 - ซ้าย "กำลังเรียก" เลขที่เรียกล่าสุดใหญ่ที่สุดบนจอ พร้อม "เชิญที่ ห้อง" และชื่อหมอ ถ้าบัตรยังไม่มีห้องเขียนว่าเชิญที่เคาน์เตอร์ ใต้ลงมาเป็นเลขที่เรียกก่อนหน้าแต่ยังไม่เข้าห้องอีกไม่เกิน 3 ใบ เรียงจากเรียกล่าสุด
 - ขวา "คิวถัดไป" 6 ใบแรกที่รอเรียก (`waiting` และ `skipped`) ตามลำดับที่ API ส่งมา ไม่เรียงใหม่ และ "รออีก N คิว" จาก `waiting_count`
 - ล่าง "กำลังตรวจ" ทุกห้องตรวจของสาขา ชื่อห้อง ชื่อหมอ และเลขคิวที่อยู่ในห้อง ห้องที่ไม่มีใครเขียนว่าว่าง สาขาที่ไม่มีทะเบียนห้องไม่แสดงแถวนี้
+- ทั้งสองแบบใช้ `DisplayScreen` และ `buildDisplayView` ตัวเดียวกัน
 
 ### แสดงอะไรบนจอสาธารณะ
 
@@ -214,36 +260,17 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 
 - contract ไม่ได้พูดถึงจอในห้องรอเลย และไม่มีที่ไหนให้คนอื่นเห็นชื่อสัตว์ของลูกค้า ชื่อสัตว์คู่กับเวลาที่มาบอกได้ว่าบ้านไหนพาสัตว์มาหาหมอวันนั้น จึงเลือกทางที่ปลอดภัยกว่า เจ้าของรู้เลขคิวของตัวเองจากบัตร การแจ้งเตือน หรือการ์ดใน portal อยู่แล้ว
 - ความเร่งด่วนไม่แสดง เพราะคำว่า "ฉุกเฉิน" ข้างเลขคิวบอกเรื่องสุขภาพของสัตว์ตัวนั้นต่อคนทั้งห้อง
-- ชื่อหมอแสดงได้ เพราะคลินิกเปิดชื่อหมอบนหน้าทีมของเราอยู่แล้ว (`GET /team`) ชื่อมาจาก `GET /staff/members` ถ้าบัญชีของจอไม่มี `staff:read` จอแสดงแค่ห้อง ไม่แสดงรหัสพนักงานแทน
-- ข้อมูลถูกย่อฝั่ง server (`build-display-view.ts`) ก่อนส่งถึงเบราว์เซอร์ หน้าที่ทีวีได้รับจึงมีแค่ตัวเลข ชื่อห้อง และชื่อหมอ ไม่มีรหัสสัตว์หรือรหัสลูกค้า ส่วน stream ยังส่ง `ticket_id` และ `branch_id` ตามเดิม
+- ชื่อหมอแสดงได้ เพราะคลินิกเปิดชื่อหมอบนหน้าทีมของเราอยู่แล้ว (`GET /team`)
+- `/display` ได้ข้อมูลที่ backend ย่อแล้ว (`GET /queue/display-board`) ไม่มีรหัสบัตร สัตว์ ลูกค้า หรือบริการ ไม่มีความเร่งด่วน บัตรที่ถูกข้ามเป็น `waiting` และ stream ของจอส่งแค่ `branch_id` ไม่มี `ticket_id` ข้อมูลที่จอไม่ควรเห็นจึงไม่ออกจาก API เลย
+- `/queue/display` ย่อฝั่งเซิร์ฟเวอร์ของหน้าเว็บ (`build-display-view.ts`) ก่อนส่งถึงเบราว์เซอร์ หน้าที่ทีวีได้รับจึงมีแค่ตัวเลข ชื่อห้อง และชื่อหมอ แต่ stream ของเซสชันพนักงานยังส่ง `ticket_id` และ `branch_id`
 
 ### อัปเดตสดและต่อใหม่เอง
 
-- ใช้ `use-queue-stream.ts` ตัวเดียวกับกระดาน ทุก event ทำ `router.refresh()` อ่านกระดานใหม่ฝั่ง server
-- อ่านใหม่ทุก 1 นาทีแม้ไม่มี event เพื่อจับกรณี stream เงียบไปเอง เปลี่ยนเป็นวันใหม่หลังเที่ยงคืน และทำให้เซสชันถูกใช้อยู่เสมอ
+- ใช้ `use-queue-stream.ts` ตัวเดียวกับกระดาน `/display` เปิดที่ `/display/stream` ส่วน `/queue/display` เปิดที่ `/api/queue/stream` ทุก event ทำ `router.refresh()` อ่านกระดานใหม่ฝั่ง server
+- อ่านใหม่ทุก 1 นาทีแม้ไม่มี event เพื่อจับกรณี stream เงียบไปเอง เปลี่ยนเป็นวันใหม่หลังเที่ยงคืน และ (แบบเดิม) ทำให้เซสชันถูกใช้อยู่เสมอ
 - stream ที่ถูกปฏิเสธต่อใหม่เองตามที่เขียนไว้ในหัวข้ออัปเดตสดด้านบน
-- error boundary ของ `(display)` แสดงข้อความว่าขาดการเชื่อมต่อชั่วคราว แล้วลองใหม่เองทุก 15 วินาที เพราะไม่มีใครยืนอยู่หน้าทีวีเพื่อกดลองใหม่
+- error boundary ของทั้งสองแบบแสดงข้อความว่าขาดการเชื่อมต่อชั่วคราว แล้วลองใหม่เองทุก 15 วินาที เพราะไม่มีใครยืนอยู่หน้าทีวีเพื่อกดลองใหม่ จอที่ถูกยกเลิก (`401`) ไม่ใช่ข้อผิดพลาด จึงไม่ลองใหม่
 - ขอ screen wake lock เมื่อเบราว์เซอร์รองรับ จอจะไม่หรี่เอง และขอใหม่ทุกครั้งที่แท็บกลับมาแสดง
-
-### วิธีตั้งบนทีวี
-
-เข้าสู่ระบบบนเบราว์เซอร์ของทีวีด้วยบัญชีพนักงาน เปิด `/queue/display?branch=รหัสสาขา` (หรือกดปุ่มจากกระดาน) แล้วเปิดเต็มจอ เช่น F11 หรือโหมด kiosk ของเบราว์เซอร์
-
-### เซสชันบนทีวี
-
-จอใช้เซสชันพนักงานธรรมดา ไม่มี token แยกสำหรับจอ
-
-- access token อายุ 15 นาที refresh token อายุ 30 วันแบบเลื่อน การอ่านใหม่ทุกนาทีผ่าน middleware ซึ่ง refresh ให้เมื่อ access token หมด เซสชันจึงเลื่อนไปเรื่อย ๆ ตราบที่จอเปิดอยู่ ถ้าปิดทีวีไว้นานเกิน 30 วันต้องเข้าสู่ระบบใหม่
-- เซสชันจบเมื่อเปลี่ยนรหัสผ่าน ปิดบัญชี เพิกถอนเซสชัน หรือระบบเห็น refresh token ถูกใช้ซ้ำ (เช่น คัดลอกคุกกี้ชุดเดียวกันไปเปิดสองเครื่อง) เมื่อจบ การอ่านใหม่รอบถัดไปพาจอไปหน้าเข้าสู่ระบบ ไม่ค้างตัวเลขเก่าไว้ แต่ต้องมีคนไปเข้าสู่ระบบที่ทีวีใหม่ ถ้าบัญชีเปิด 2FA ต้องมีแอปยืนยันติดตัวไปด้วย
-- ความเสี่ยงหลักคือทีวีถือเซสชันพนักงานเต็มตัว ใครจับคีย์บอร์ดหรือเมาส์ของทีวีได้ เปิดหน้าอื่นของ console ด้วยสิทธิ์ของบัญชีนั้นได้
-- ระหว่างนี้ให้ใช้บัญชีเฉพาะสำหรับจอ ผูกสาขาเดียว ให้ role ที่มีแค่ `queue:read` (เพิ่ม `staff:read` ถ้าอยากเห็นชื่อหมอ แต่ `staff:read` เห็นรายชื่อและอีเมลพนักงานด้วย) และเปิดเบราว์เซอร์แบบ kiosk
-
-**ข้อเสนอที่ยังไม่ได้ทำ (ต้องแก้ backend)** token สำหรับจอโดยเฉพาะ
-
-1. `POST /staff/queue/displays` (`queue:write`) สร้างจอหนึ่งเครื่อง ผูกกับสาขาเดียว ตอบ token สุ่มยาวครั้งเดียว ฐานข้อมูลเก็บแค่ hash มี `GET /staff/queue/displays` ดูรายการพร้อมเวลาที่ใช้ล่าสุด และ `DELETE /staff/queue/displays/{id}` เพิกถอน
-2. token ใช้ได้สองเส้นเท่านั้น คือ `GET /queue/display-board?branch=` ที่ตอบแค่เลขคิว สถานะ ห้อง และชื่อหมอ (รูปเดียวกับ `DisplayView` ของหน้าเว็บ) และ `GET /queue/stream` ของสาขานั้น ไม่มี scope อื่น ไม่มี refresh token อยู่ได้จนถูกเพิกถอน
-3. หน้าเว็บย้ายจอไปที่ route ที่ไม่ผ่านเซสชันพนักงาน เช่น `/display` คนตั้งจอวาง token ครั้งเดียว Next.js เก็บในคุกกี้ httpOnly แยก ใช้ได้เฉพาะ path ของจอ
-4. ผลที่ได้ จอไม่หลุดเพราะเรื่องของบัญชีพนักงาน คนที่จับทีวีได้ไม่ได้อะไรเกินจอ และ API ไม่ต้องส่งรหัสสัตว์หรือรหัสลูกค้าให้จอเลย
 
 ### ยังไม่มีบนเว็บ
 
@@ -252,10 +279,10 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 ## ข้อจำกัด
 
 - **แจ้งเตือนตอนเรียกคิวส่งจริงเมื่อตั้งค่าช่องทางแล้ว** ข้อความ `queue.called` ผ่านประตูความยินยอม แล้วออกทาง LINE, SMS หรืออีเมลตามลำดับที่ระบบเลือก ทุกครั้งที่ลองส่งอยู่ในประวัติการส่ง ถ้ายังไม่ตั้งช่องทางใดเลย (เครื่องนักพัฒนา) ข้อความไปจบที่ `LoggingNotificationChannel` และประวัติบันทึก `skipped` `channel_not_configured` ดู [การแจ้งเตือน](notifications.md)
-- **API ไม่ส่งข้อมูลบางส่วนของบัตร** ตารางเก็บเหตุผลที่ออกจากคิว เหตุผลของความเร่งด่วน เวลาเข้าห้อง เวลาตรวจเสร็จ และเวลาออกจากคิว แต่ `QueueTicketDto` ไม่ส่ง เหตุผลที่กรอกจึงบันทึกได้แต่ดูย้อนหลังบนเว็บไม่ได้ (เหตุผลของความเร่งด่วนยังอยู่ใน audit log)
-- **จ่ายหมอไม่ตรวจว่าเป็นหมอจริง** `assign` เก็บ `staff_id` ตามที่ส่งมา ไม่ตรวจว่ามีพนักงานคนนี้ เป็นสัตวแพทย์ หรืออยู่สาขานี้ รายชื่อบนเว็บเป็นตัวกันเพียงชั้นเดียว
-- **`GET /staff/queue` ไม่มีตัวกรองสถานะหรือช่วงวัน** ประวัติคิวจึงดูได้ทีละวันและกรองสถานะฝั่งหน้าเว็บ
-- **จอห้องรอใช้เซสชันพนักงาน** ดู [เซสชันบนทีวี](#เซสชันบนทีวี)
+- **`GET /staff/queue` ไม่มีตัวกรองช่วงวัน** ประวัติคิวจึงดูได้ทีละวัน ตัวกรองสถานะมีแล้ว (§ 31)
+- **จ่ายหมอไม่ตรวจกะงาน** ตรวจว่าเป็นสัตวแพทย์ที่ยังทำงานอยู่ในสาขา แต่ไม่ตรวจว่ามีกะวันนั้น
+- **จอห้องรอที่หลุดต้องสร้างใหม่** ไม่มีการออกรหัสตั้งจอใหม่ให้จอเดิม และ token ไม่หมดอายุเองถ้าไม่ได้ตั้งวันหมดอายุ ต้องยกเลิกเมื่อเลิกใช้จอ
+- **จอแบบเดิม (`/queue/display`) ยังใช้เซสชันพนักงาน** ทีวีที่ตั้งทิ้งไว้ควรใช้ `/display`
 - **ความเร่งด่วนตอนออกบัตร walk-in ไม่เขียน audit log** เก็บเหตุผลและผู้ตั้งไว้บนบัตรเท่านั้น แต่ข้อความใต้ช่องเหตุผลในฟอร์มบอกว่าบันทึกใน audit log การเปลี่ยนผ่าน endpoint `priority` เท่านั้นที่เขียน audit log
 - **ยกเลิกนัดที่เช็กอินแล้ว บัตรยังอยู่บนกระดาน** ต้องกดออกจากคิวเอง
 - **ออกบัตร walk-in ไม่ตรวจว่าบริการเปิดอยู่หรือเปิดที่สาขานั้น** ตรวจแค่ว่ามีบริการนี้
@@ -272,13 +299,17 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 | ลำดับการเรียกและเลขคิว | `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/QueueRepositories.cs` |
 | index | `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Queueing/QueueTicketConfiguration.cs` |
 | ตั้งค่าเลขคิว | `backend/src/HappyPaws.Domain/Clinics/QueueSettings.cs` |
-| controller | `backend/src/HappyPaws.Api/Controllers/Staff/QueueController.cs`, `Staff/QueueTicketActionsController.cs`, `Portal/PortalQueueController.cs`, `Realtime/QueueStreamController.cs` |
+| controller | `backend/src/HappyPaws.Api/Controllers/Staff/QueueController.cs`, `Staff/QueueTicketActionsController.cs`, `Staff/QueueDisplaysController.cs`, `Portal/PortalQueueController.cs`, `Realtime/QueueStreamController.cs`, `Display/DisplayBoardController.cs`, `Display/DisplayClaimController.cs` |
+| จอห้องรอแบบ token (backend) | `backend/src/HappyPaws.Domain/Queueing/QueueDisplay.cs`, `backend/src/HappyPaws.Application/Queueing/Displays/`, `backend/src/HappyPaws.Api/Authorization/DisplayTokenAuthenticationHandler.cs`, `AcceptsDisplayTokenAttribute.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/QueueDisplayRepository.cs`, `Configurations/Queueing/QueueDisplayConfiguration.cs` |
+| ตรวจหมอบนบัตร | `backend/src/HappyPaws.Application/Queueing/TicketVetGuard.cs` |
 | ตัวกระจาย event | `backend/src/HappyPaws.Infrastructure/Realtime/QueueEventBroker.cs`, `backend/src/HappyPaws.Domain/Queueing/QueueEventTypes.cs` |
 | หน้ากระดาน | `frontend/src/app/(staff)/queue/page.tsx`, `frontend/src/features/queue/` |
 | ปุ่มบนบัตร | `frontend/src/features/queue/components/ticket-actions.tsx`, `assign-select.tsx`, `priority-dialog.tsx`, `leave-dialog.tsx`, `queue-dialog.tsx`, `lib/vet-options.ts` |
 | ประวัติคิว | `frontend/src/app/(staff)/queue/history/page.tsx`, `frontend/src/features/queue/lib/history-filters.ts`, `components/history-*.tsx` |
-| จอห้องรอ | `frontend/src/app/(display)/layout.tsx`, `(display)/error.tsx`, `(display)/queue/display/page.tsx`, `frontend/src/features/queue/lib/load-display-view.ts`, `lib/build-display-view.ts`, `components/display/` |
+| หน้าจัดการจอห้องรอ | `frontend/src/app/(staff)/queue/displays/page.tsx`, `frontend/src/features/queue/components/displays/`, `actions/display-actions.ts`, `api/queueDisplays.ts` |
+| จอห้องรอแบบ token (หน้าเว็บ) | `frontend/src/app/(screen)/layout.tsx`, `(screen)/display/page.tsx`, `(screen)/display/setup/page.tsx`, `(screen)/display/stream/route.ts`, `frontend/src/features/queue/components/display/display-setup-form.tsx`, `screen-stopped.tsx`, `actions/display-setup-actions.ts`, `api/displayBoard.ts`, `lib/load-screen-view.ts`, `frontend/src/lib/display/`, `frontend/src/lib/api/server-client.ts` (`displayApi`) |
+| จอห้องรอแบบเดิม | `frontend/src/app/(display)/layout.tsx`, `(display)/error.tsx`, `(display)/queue/display/page.tsx`, `frontend/src/features/queue/lib/load-display-view.ts`, `lib/build-display-view.ts`, `components/display/` |
 | ข้อความภาษาไทยของหน้าใหม่ | `frontend/src/features/queue/content/` |
 | ส่งต่อ SSE | `frontend/src/app/api/queue/stream/route.ts`, `frontend/src/lib/api/event-stream.ts`, `frontend/src/features/queue/hooks/use-queue-stream.ts` |
 | คำภาษาไทยของสถานะ | `frontend/src/features/queue/lib/ticket-labels.ts` |
-| เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Queueing/QueueTicketStateMachineTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/` |
+| เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Queueing/QueueTicketStateMachineTests.cs`, `QueueDisplayTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/` (รวม `QueueDisplayTests.cs`, `DisplayClaimLimitTests.cs`, `QueueTicketDetailTests.cs`) |

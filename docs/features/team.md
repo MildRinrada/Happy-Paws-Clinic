@@ -2,7 +2,7 @@
 
 หน้ารวมบุคลากรของคลินิกบนเว็บไซต์สาธารณะ แยกตามแผนกชัดเจน คือ สัตวแพทย์ ผู้ช่วยสัตวแพทย์ ต้อนรับ การเงิน บริหาร และทีมสนับสนุน การ์ดสัตวแพทย์บนหน้าแรกก็อ่านจากข้อมูลชุดเดียวกัน ฝั่งพนักงานกรองรายชื่อได้ทั้งตามแผนกและตาม role
 
-ฟีเจอร์นี้ไม่อยู่ใน contract เป็นส่วนขยายที่เจ้าของงานขอเพิ่ม เหตุผลและสิ่งที่ตั้งใจไม่ทำอยู่ใน [ส่วนขยายของสัญญา § 10](../contract-extensions.md)
+ฟีเจอร์นี้ไม่อยู่ใน contract เป็นส่วนขยายที่เจ้าของงานขอเพิ่ม เหตุผลและสิ่งที่ตั้งใจไม่ทำอยู่ใน [ส่วนขยายของสัญญา § 10](../contract-extensions.md) ส่วนการอัปโหลดรูปอยู่ใน § 32 ของหน้าเดียวกัน
 
 ## ใครใช้ ใช้ทำอะไร
 
@@ -10,7 +10,7 @@
 |---|---|
 | ทุกคน | ดูหน้าทีมของเรา และการ์ดสัตวแพทย์บนหน้าแรก |
 | พนักงานที่มี `staff:read` | ดูรายชื่อพนักงาน กรองตามแผนกหรือ role และดูจำนวนคนในแต่ละแผนก |
-| พนักงานที่มี `staff:manage` | ย้ายคนไปแผนกอื่น แก้โปรไฟล์สาธารณะ และเปิดปิดการแสดงบนเว็บ |
+| พนักงานที่มี `staff:manage` | ย้ายคนไปแผนกอื่น แก้โปรไฟล์สาธารณะ อัปโหลดหรือเอารูปออก และเปิดปิดการแสดงบนเว็บ |
 | ผู้ดูแลเซิร์ฟเวอร์ | ใส่บุคลากรตัวอย่างด้วยคำสั่ง `seed-staff` |
 
 ## แผนกกับ role ต่างกันอย่างไร
@@ -46,14 +46,28 @@
 | `job_title` | ตำแหน่งที่คนทั่วไปอ่าน เช่น สัตวแพทย์ประจำ ไม่เกิน 120 ตัวอักษร |
 | `specialty` | ความเชี่ยวชาญ เช่น อายุรกรรมสัตว์เล็ก ไม่เกิน 120 ตัวอักษร |
 | `bio` | แนะนำตัวสั้น ๆ ไม่เกิน 600 ตัวอักษร |
-| `photo_path` | รูป เป็น path ใต้ `/public` ของหน้าเว็บ ขึ้นต้นด้วย `/` ไม่รับ URL ภายนอก |
+| `photo_path` | รูป มีได้สองแบบ คือรูปที่อัปโหลด (`storage:staff-photos/...` ค่าที่ได้จากการขอ URL อัปโหลด ดูหัวข้อถัดไป) หรือ path ใต้ `/public` ของหน้าเว็บที่ขึ้นต้นด้วย `/` ไม่รับ URL ภายนอก |
 | `career_start_year` | ปี ค.ศ. ที่เริ่มทำงานสายนี้ ตั้งแต่ 1950 ถึงปีปัจจุบัน หน้าเว็บคำนวณเป็นจำนวนปีประสบการณ์ |
 | `show_on_website` | แสดงบนเว็บหรือไม่ **ปิดไว้ก่อนเสมอ** |
 
 - `PUT` แทนที่ทั้งก้อน ช่องที่ไม่ส่งถูกล้าง ข้อความที่เป็นช่องว่างถือเป็นค่าว่าง
 - ค่าที่ผิดกติกาตอบ `409 invalid_public_profile`
-- ทุกการแก้บันทึก audit `staff.public_profile_updated` พร้อมค่าก่อนและหลัง เพราะเป็นการเผยแพร่ชื่อและหน้าของคนจริง
+- ทุกการแก้บันทึก audit `staff.public_profile_updated` พร้อมค่าก่อนและหลัง เพราะเป็นการเผยแพร่ชื่อและหน้าของคนจริง การขอ URL อัปโหลดรูปก็บันทึก action เดียวกัน ด้วย details `photo_upload`
 - คนที่แก้ได้ต้องมี `staff:manage` และอยู่ภายใต้กติกาเดิมของการแก้พนักงาน คือแก้ได้เฉพาะคนในสาขาของตัวเอง และแก้คนที่มีสิทธิ์มากกว่าตัวเองไม่ได้
+
+## รูป
+
+อัปโหลดรูปได้จากหน้าจอพนักงาน ไม่ต้องวางไฟล์ในโฟลเดอร์ของหน้าเว็บอีก ทำงานแบบเดียวกับรูปปกบทความ
+
+1. `POST /staff/members/{id}/public-profile/photo` ส่ง `content_type` และ `size_bytes` รับ JPEG, PNG หรือ WebP ไม่เกิน 5 MB ไม่รับ SVG ตอบ URL ที่ลงชื่อแล้วอายุ 15 นาที และค่า `photo_path` เช่น `storage:staff-photos/stf_.../photo-3f2a...c9.jpg`
+2. เบราว์เซอร์ส่งไฟล์ไปที่ URL นั้นตรง ๆ
+3. บันทึกโปรไฟล์ด้วย `PUT` ตามปกติ โดยใส่ค่า `photo_path` จากข้อ 1 รูปขึ้นเว็บตอนนี้
+
+- การขอ URL ยังไม่เปลี่ยนอะไรบนเว็บ รูปที่เลือกแล้วไม่บันทึกจึงไม่ขึ้นเว็บ
+- ค่า `storage:` ต้องเป็นรูปที่อัปโหลดให้คนนั้นเอง และไฟล์ต้องมาถึงแล้ว ไม่อย่างนั้นตอบ `409 invalid_public_profile`
+- เก็บรูปไว้คือส่ง `photo_path` ค่าเดิมกลับไป เอารูปออกคือไม่ส่งช่องนี้ เหมือนทุกช่องในโปรไฟล์
+- ค่าเก็บในคอลัมน์ `photo_path` เดิม ค่าที่ขึ้นต้นด้วย `/` ยังเป็นไฟล์ใต้ `/public` เหมือนเดิม ไม่มี migration
+- ไฟล์รูปเก่าที่ถูกแทนหรือเอาออกยังอยู่ในที่เก็บ แต่ไม่มีลิงก์ใดชี้ไป
 
 ## Endpoint
 
@@ -64,12 +78,15 @@
 | GET | `/staff/members?department=&role=` | `staff:read` | endpoint เดิมของ contract ที่เพิ่มตัวกรองสองตัว |
 | PATCH | `/staff/members/{id}` | `staff:manage` | endpoint เดิม เพิ่มช่อง `department` |
 | PUT | `/staff/members/{id}/public-profile` | `staff:manage` | แทนที่โปรไฟล์สาธารณะ ใช้ `If-Match` ได้ |
+| POST | `/staff/members/{id}/public-profile/photo` | `staff:manage` | ขอ URL อัปโหลดรูป และค่า `photo_path` ของรูปนั้น (§ 32) |
 
 **ใครขึ้นใน `GET /team`** ต้องครบสามข้อ คือยังทำงานอยู่ (ไม่ถูกปิดใช้งาน) บัญชียังใช้งานได้ และ `show_on_website` เป็น `true`
 
 **ลำดับในแผนก** คนที่เริ่มทำงานก่อนขึ้นก่อน ปีเท่ากันเรียงตามชื่อ คนที่ไม่ได้ใส่ปีอยู่ท้าย
 
-**สิ่งที่ `GET /team` ส่ง** มีแค่ `id`, `display_name`, `job_title`, `specialty`, `bio`, `photo_path` และ `years_of_experience` ไม่มีอีเมล เบอร์โทร role สาขา เลขใบอนุญาต หรือสถานะบัญชี มีเทสต์ยืนยันเรื่องนี้
+**สิ่งที่ `GET /team` ส่ง** มีแค่ `id`, `display_name`, `job_title`, `specialty`, `bio`, `photo_path`, `photo_url` และ `years_of_experience` ไม่มีอีเมล เบอร์โทร role สาขา เลขใบอนุญาต หรือสถานะบัญชี มีเทสต์ยืนยันเรื่องนี้
+
+**รูปบน `GET /team`** รูปที่อัปโหลดมาเป็น `photo_url` ลิงก์ที่ลงชื่อแล้วอายุหนึ่งชั่วโมง สร้างใหม่ทุกครั้งที่อ่าน และสร้างเฉพาะคนที่รายการนี้แสดง คนที่ซ่อนไว้ไม่มีลิงก์ให้คนนอกเลย `photo_path` ส่งเฉพาะ path ที่ขึ้นต้นด้วย `/` ค่า `storage:` ไม่ออกไปทางนี้ ฝั่งพนักงานได้ `photo_url` อายุ 30 นาทีใน `public_profile` ไว้ดูตัวอย่าง รวมคนที่ยังไม่แสดงบนเว็บ
 
 ตัวอย่างคำตอบ
 
@@ -124,7 +141,8 @@ docker compose run --rm api seed-staff
 - ปุ่ม "ดูโปรไฟล์" บนการ์ดหน้าแรกพาไปที่การ์ดของคนนั้นบนหน้าทีม (`/team#stf_...`)
 - คำอธิบายใต้ชื่อแต่ละแผนกและข้อความอื่นที่ไม่ได้มาจาก API แก้ได้ที่ `features/team/content/team-page.ts`
 - ถ้าเรียก API ไม่ได้ หน้ายังเปิดได้และบอกว่าโหลดรายชื่อไม่ได้ ถ้าคลินิกยังไม่ได้ตั้งให้ใครแสดงเลย ส่วนสัตวแพทย์บนหน้าแรกถูกซ่อน และหน้าทีมบอกว่ายังไม่มีรายชื่อ
-- รูปที่ยังไม่มีแสดงเป็นกรอบเส้นประ ใส่รูปจริงโดยวางไฟล์ใต้ `frontend/public/images/team/` แล้วตั้ง `photo_path` เช่น `/images/team/mint.jpg`
+- การ์ดใช้ `MemberPhoto` แสดง `photo_url` ก่อน ถ้าไม่มีใช้ `photo_path` และถ้าไม่มีทั้งสองแสดงเป็นกรอบเส้นประ ลิงก์ที่หมดอายุ เช่นเปิดหน้าค้างไว้เกินหนึ่งชั่วโมง กลับไปแสดงแบบเดียวกับไม่มีรูปแทนรูปเสีย
+- รูปที่อัปโหลดแสดงด้วย `<img>` ธรรมดา ไม่ผ่าน `next/image` เพราะเป็นลิงก์อายุสั้นจากโดเมนของ API จึงไม่ต้องตั้ง `images.remotePatterns` รูปแบบ `/images/...` ยังผ่าน `next/image` เหมือนเดิม
 - การ์ดสัตวแพทย์บนหน้าแรกเดิมมีป้าย "ว่างวันนี้" ตอนนี้เป็นตำแหน่งแทน เพราะยังไม่มีข้อมูลกะทำงานจริงให้คำนวณ
 
 ## หน้าจอพนักงาน
@@ -132,7 +150,8 @@ docker compose run --rm api seed-staff
 แก้ทั้งแผนกและโปรไฟล์สาธารณะได้ที่ **ตั้งค่า > พนักงานและสิทธิ์** (`/settings/staff`) ไม่มีแท็บแยก เพราะทั้งสองอย่างเป็นข้อมูลของพนักงานคนนั้น
 
 - **แผนก** กด **แก้ไข** ที่แถวของคนนั้น แล้วเลือกแผนกจากรายการ ส่งผ่าน `PATCH /staff/members/{id}`
-- **โปรไฟล์บนเว็บ** ปุ่มข้าง **แก้ไข** เปิดฟอร์มตำแหน่งที่แสดง ความเชี่ยวชาญ รูป ปีที่เริ่มทำงาน แนะนำตัว และช่องติ๊ก **แสดงคนนี้บนหน้าทีมของเรา** ส่งผ่าน `PUT /staff/members/{id}/public-profile` ครั้งละทั้งก้อน ช่องที่เว้นว่างถูกล้าง
+- **โปรไฟล์บนเว็บ** ปุ่มข้าง **แก้ไข** เปิดฟอร์มตำแหน่งที่แสดง ความเชี่ยวชาญ ปีที่เริ่มทำงาน รูป แนะนำตัว และช่องติ๊ก **แสดงคนนี้บนหน้าทีมของเรา** ส่งผ่าน `PUT /staff/members/{id}/public-profile` ครั้งละทั้งก้อน ช่องที่เว้นว่างถูกล้าง
+- **รูป** ในฟอร์มแสดงรูปปัจจุบัน ปุ่ม **เลือกรูป** อัปโหลดทันทีแล้วแสดงตัวอย่างจากไฟล์ในเครื่อง ปุ่ม **เอารูปออก** ล้างรูป ทั้งสองอย่างมีผลบนเว็บเมื่อกดบันทึก ช่อง path แบบเดิมอยู่ใต้ **ขั้นสูง** สำหรับไฟล์ที่วางไว้ใต้ `frontend/public` แล้ว
 - ปุ่มทั้งสองขึ้นเฉพาะคนที่ยังทำงานอยู่ และเมื่อบัญชีที่เปิดหน้าถือ `staff:manage` และมีสิทธิ์ไม่น้อยกว่าคนนั้น ซึ่งเป็นกติกาเดียวกับที่ backend ตรวจ
 - คนที่ตั้งให้แสดงบนเว็บมีป้าย **แสดงบนเว็บ** ในรายชื่อ
 - ส่ง `version` ไปเป็น `If-Match` ถ้ามีคนแก้คนเดียวกันไปก่อน หน้าบอกให้โหลดใหม่ ค่าที่ผิดกติกา (`409 invalid_public_profile`) ขึ้นเป็นข้อความของ backend ใต้ฟอร์ม
@@ -140,7 +159,7 @@ docker compose run --rm api seed-staff
 
 ## ข้อจำกัดที่รู้อยู่
 
-- ยังไม่มีการอัปโหลดรูป API รับแค่ path ใต้ `/public` ของหน้าเว็บ ต้องวางไฟล์ในโฟลเดอร์ของหน้าเว็บเองก่อน แล้วพิมพ์ path ในฟอร์ม
+- ระบบไม่ย่อหรือครอปรูปที่อัปโหลด และไม่ลบไฟล์รูปเก่าออกจากที่เก็บ
 - พนักงานแก้โปรไฟล์ของตัวเองไม่ได้ ต้องให้คนที่มี `staff:manage` แก้ให้
 - แผนกเป็นรายการตายตัวหกแผนก คลินิกเพิ่มเองไม่ได้
 - ยังไม่มีหน้าแยกของแต่ละคน และยังจองนัดกับหมอคนที่เลือกจากหน้าทีมไม่ได้
@@ -151,11 +170,12 @@ docker compose run --rm api seed-staff
 |---|---|
 | รายการแผนก | `backend/src/HappyPaws.Domain/Staff/Departments.cs` |
 | แผนกและโปรไฟล์บนพนักงาน | `backend/src/HappyPaws.Domain/Staff/StaffMembership.cs`, `StaffMembership.PublicProfile.cs` |
-| use case | `backend/src/HappyPaws.Application/Staff/` (`ListTeam`, `ListDepartments`, `ReplacePublicProfile`, `SeedStaff`, `ListStaffMembers`, `UpdateStaffMember`) |
+| use case | `backend/src/HappyPaws.Application/Staff/` (`ListTeam`, `ListDepartments`, `ReplacePublicProfile`, `Photos`, `SeedStaff`, `ListStaffMembers`, `UpdateStaffMember`) |
+| รูปที่อัปโหลด | `backend/src/HappyPaws.Domain/Staff/StaffPhoto.cs` (รูปของค่า `storage:`), `backend/src/HappyPaws.Application/Staff/Photos/` |
 | บุคลากรตัวอย่าง | `backend/src/HappyPaws.Application/Staff/SeedStaff/SampleStaff.cs` |
 | migration | `backend/src/HappyPaws.Infrastructure/Persistence/Migrations/20261001152132_StaffDepartmentsAndPublicProfiles.cs` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Public/TeamController.cs`, `Controllers/Staff/StaffMembersController.cs` |
 | คำสั่ง `seed-staff` | `backend/src/HappyPaws.Api/Operator/OperatorCommands.cs` |
-| เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Staff/DepartmentTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Staff/TeamTests.cs`, `DepartmentAccessTests.cs` |
-| หน้าเว็บ | `frontend/src/features/team/`, `frontend/src/app/(public)/team/page.tsx`, `frontend/src/features/home/components/vets/` |
-| หน้าจอพนักงาน | `frontend/src/features/staff/components/settings/public-profile-form.tsx`, `staff-member-row.tsx`, `staff-member-form.tsx`, `actions/public-profile-actions.ts`, `content/public-profile.ts` |
+| เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Staff/DepartmentTests.cs`, `StaffPhotoTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Staff/TeamTests.cs`, `DepartmentAccessTests.cs`, `StaffPhotoTests.cs` |
+| หน้าเว็บ | `frontend/src/features/team/` (รูปอยู่ที่ `components/member-photo.tsx`), `frontend/src/app/(public)/team/page.tsx`, `frontend/src/features/home/components/vets/` |
+| หน้าจอพนักงาน | `frontend/src/features/staff/components/settings/public-profile-form.tsx`, `profile-photo-field.tsx`, `profile-photo-preview.tsx`, `profile-photo-path-field.tsx`, `staff-member-row.tsx`, `staff-member-form.tsx`, `actions/public-profile-actions.ts`, `lib/photo-rules.ts`, `content/public-profile.ts` |

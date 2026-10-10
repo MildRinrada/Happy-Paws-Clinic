@@ -1,7 +1,7 @@
-import { ImageSlot } from '@/components/shared/image-slot';
 import { teamPage } from '../content/team-page';
 import { memberSummary } from '../lib/team-text';
 import type { TeamMember } from '../types/team.types';
+import { MemberPhoto } from './member-photo';
 
 /** One person on the team page: photo, name, title, field and years, and a few words from them. */
 export function TeamMemberCard({ member }: { member: TeamMember }) {
@@ -9,9 +9,8 @@ export function TeamMemberCard({ member }: { member: TeamMember }) {
 
   return (
     <li id={member.id} className="scroll-mt-6 overflow-hidden rounded-2xl border border-site-border bg-white">
-      <ImageSlot
-        src={member.photo_path}
-        alt={member.display_name}
+      <MemberPhoto
+        member={member}
         label={teamPage.photoLabel}
         sizes="(min-width: 1024px) 22vw, (min-width: 640px) 50vw, 100vw"
         className="h-[196px] border-x-0 border-t-0"

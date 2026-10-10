@@ -34,6 +34,12 @@ export interface MyPet {
   allergies: { substance: string; severity: string }[];
   /** Whether `GET /portal/pets/{id}/records` will open for this owner. */
   may_view_history: boolean;
+  /** Recorded by staff, read-only here (docs/contract-extensions.md § 28). */
+  sex?: 'male' | 'female' | 'unknown';
+  /** `YYYY-MM-DD`. */
+  birth_date?: string | null;
+  birth_date_estimated?: boolean;
+  neutered?: boolean | null;
 }
 
 /** One message in the owner's inbox. */

@@ -29,6 +29,10 @@ namespace HappyPaws.Infrastructure.Persistence.Repositories.Automation;
 /// Every query drops deceased patients and merged customer records, and applies the rule's
 /// condition (branch, species, vaccine, service) in SQL. Statuses compare as the text EF writes.
 /// </para>
+/// <para>
+/// Doses and sessions carry <c>pets.deceased_undone_at</c> as <see cref="AutomationSubject.QuietUntil"/>,
+/// so a reminder that fell due while a death was recorded by mistake is not sent once it is undone.
+/// </para>
 /// </summary>
 internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock clock)
     : IAutomationSubjectReader
@@ -41,7 +45,8 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
         $"""
         SELECT * FROM (
             SELECT l.id, l.next_due_on, c.id AS customer_id, c.display_name, p.id AS pet_id, p.name,
-                   COALESCE(con.branch_id, {LatestBranch}) AS branch_id, l.vaccine_name
+                   COALESCE(con.branch_id, {LatestBranch}) AS branch_id, l.vaccine_name,
+                   p.deceased_undone_at
             FROM (
                 SELECT DISTINCT ON (v.pet_id, lower(v.vaccine_name))
                        v.id, v.pet_id, v.vaccine_name, v.next_due_on, v.consultation_id
@@ -87,7 +92,8 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
                    COALESCE(a.starts_at, (s.item->>'plannedAt')::timestamptz) AS starts_at,
                    c.id AS customer_id, c.display_name, p.id AS pet_id, p.name,
                    COALESCE(a.branch_id, con.branch_id, {LatestBranch}) AS branch_id,
-                   t.title, a.id AS appointment_id, a.status AS appointment_status, t.service_id
+                   t.title, a.id AS appointment_id, a.status AS appointment_status, t.service_id,
+                   p.deceased_undone_at
             FROM treatment_plans t
             CROSS JOIN LATERAL jsonb_array_elements(t.sessions) AS s(item)
             JOIN pets p ON p.id = t.pet_id
@@ -134,7 +140,8 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
         reader.GetString(4),
         reader.GetString(5),
         reader.NullableString(6),
-        Label: reader.GetString(7));
+        Label: reader.GetString(7),
+        QuietUntil: NullableInstant(reader, 8));
 
     private static AutomationSubject Appointment(DbDataReader reader, TimeZoneInfo zone)
     {
@@ -171,8 +178,12 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
             reader.NullableString(7),
             AppointmentId: reader.NullableString(9),
             Label: reader.GetString(8),
-            SessionNumber: number);
+            SessionNumber: number,
+            QuietUntil: NullableInstant(reader, 12));
     }
+
+    private static DateTimeOffset? NullableInstant(DbDataReader reader, int ordinal) =>
+        reader.IsDBNull(ordinal) ? null : reader.GetFieldValue<DateTimeOffset>(ordinal);
 
     private static DateOnly DayOf(DateTimeOffset instant, TimeZoneInfo zone) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, zone).DateTime);

@@ -49,7 +49,7 @@ public interface IAppointmentRepository
 
     /// <summary>
     /// A patient's appointments cancelled with <paramref name="reason"/> at or after
-    /// <paramref name="since"/>, read-only, earliest start first.
+    /// <paramref name="since"/> (ever, when null), read-only, earliest start first.
     /// <para>
     /// Used when a recorded death is undone: these are the visits the death cancelled, listed so
     /// the counter can rebook them by hand. See <c>docs/contract-extensions.md § 29</c>.
@@ -58,7 +58,7 @@ public interface IAppointmentRepository
     Task<IReadOnlyList<Appointment>> CancelledForPetAsync(
         string petId,
         string reason,
-        DateTimeOffset since,
+        DateTimeOffset? since,
         CancellationToken cancellationToken = default);
 
     /// <summary><c>GET /staff/appointments?date=&amp;status=</c> — today's board for the clinic or one vet.</summary>

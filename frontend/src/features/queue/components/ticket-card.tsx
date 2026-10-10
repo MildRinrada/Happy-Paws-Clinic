@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { OpenCaseButton } from '@/features/consultations/components/open-case-button';
 import { formatTime, minutesSince } from '@/lib/format/datetime';
+import { queueBoard } from '../content/queue-board';
 import { priorityLabel, statusLabel } from '../lib/ticket-labels';
 import type { TicketView, VetOption } from '../types/queue.types';
 import { TicketActions } from './ticket-actions';
@@ -38,7 +39,11 @@ export function TicketCard({ view, rooms, vets, canCall, canOrganise, canConsult
 
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Badge tone={status.tone}>{status.text}</Badge>
-          {priority && <Badge tone={priority.tone}>{priority.text}</Badge>}
+          {priority && (
+            <span title={ticket.priority_reason}>
+              <Badge tone={priority.tone}>{priority.text}</Badge>
+            </span>
+          )}
           {/* The contract: "แสดงเป็นแถบเตือนแดงทุกหน้าที่เกี่ยวข้อง". */}
           {view.hasAllergy && <Badge tone="red">มีประวัติแพ้ยา</Badge>}
         </div>
@@ -68,6 +73,10 @@ export function TicketCard({ view, rooms, vets, canCall, canOrganise, canConsult
           <dd className="truncate text-ink-800">{ticket.room_id ?? 'ยังไม่ระบุ'}</dd>
         </div>
       </dl>
+
+      {priority && ticket.priority_reason && (
+        <p className="mt-2 text-sm text-ink-700">{queueBoard.priorityReason(ticket.priority_reason)}</p>
+      )}
 
       {ticket.skip_count > 0 && (
         <p className="mt-2 text-sm text-amber-800">ถูกข้ามแล้ว {ticket.skip_count} ครั้ง</p>

@@ -31,11 +31,12 @@ export function readHistoryQuery(params: Record<string, string | string[] | unde
   };
 }
 
-/** Whether a ticket belongs in the view. The backend has no status filter, so this is the page's. */
-export function matchesFilter(status: TicketStatus, filter: HistoryFilter): boolean {
-  const statuses = FILTERS[filter];
-
-  return statuses === null || statuses.includes(status);
+/**
+ * The statuses a filter asks the backend for, as `status=` on `GET /staff/queue`
+ * (docs/contract-extensions.md § 31). `undefined` for every status.
+ */
+export function statusesFor(filter: HistoryFilter): readonly TicketStatus[] | undefined {
+  return FILTERS[filter] ?? undefined;
 }
 
 export const HISTORY_FILTERS = Object.keys(FILTERS) as HistoryFilter[];

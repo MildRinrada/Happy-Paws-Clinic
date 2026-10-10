@@ -39,4 +39,11 @@ public static class ClinicClaimTypes
     /// principal, never on a person's access token.
     /// </summary>
     public const string ApiKey = "key";
+
+    /// <summary>
+    /// The waiting-room screen a request authenticated as, e.g. <c>dsp_01J…</c>. Present only on a
+    /// display token's principal, beside one <see cref="Branch"/> claim and nothing else: no subject,
+    /// no membership, no scope (<c>docs/contract-extensions.md § 30</c>).
+    /// </summary>
+    public const string Display = "dsp";
 }

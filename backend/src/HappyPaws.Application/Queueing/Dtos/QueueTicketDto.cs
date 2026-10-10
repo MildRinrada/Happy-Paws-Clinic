@@ -8,6 +8,13 @@ namespace HappyPaws.Application.Queueing.Dtos;
 /// Lives in the Queueing module rather than with the booking DTOs even though check-in is what
 /// creates it: the ticket belongs to the queue, and the appointment result simply carries one.
 /// </para>
+/// <para>
+/// The last five fields are a contract extension (<c>docs/contract-extensions.md § 31</c>): the
+/// reasons and times the ticket already stores, for the counter's history. Staff responses only.
+/// <see cref="ForCustomer"/> drops them on the one shared route that returns this shape to an owner
+/// (checking in their own appointment), and the waiting-room screen never sees this shape. Absent
+/// rather than null when unset, like every optional field in the API.
+/// </para>
 /// </summary>
 public sealed record QueueTicketDto(
     string Id,
@@ -25,7 +32,12 @@ public sealed record QueueTicketDto(
     string? RoomId,
     int SkipCount,
     DateTimeOffset IssuedAt,
-    DateTimeOffset? CalledAt)
+    DateTimeOffset? CalledAt,
+    string? PriorityReason = null,
+    DateTimeOffset? EnteredRoomAt = null,
+    DateTimeOffset? ServedAt = null,
+    DateTimeOffset? LeftAt = null,
+    string? LeftReason = null)
 {
     public static QueueTicketDto From(QueueTicket ticket) =>
         new(
@@ -44,7 +56,19 @@ public sealed record QueueTicketDto(
             ticket.RoomId,
             ticket.SkipCount,
             ticket.IssuedAt,
-            ticket.CalledAt);
+            ticket.CalledAt,
+            ticket.PriorityReason,
+            ticket.EnteredRoomAt,
+            ticket.ServedAt,
+            ticket.LeftAt,
+            ticket.LeftReason);
+
+    /// <summary>
+    /// The same ticket for its owner: without the reasons and the room and service times, which
+    /// are the counter's notes rather than the owner's (<c>docs/contract-extensions.md § 31</c>).
+    /// </summary>
+    public QueueTicketDto ForCustomer() =>
+        this with { PriorityReason = null, EnteredRoomAt = null, ServedAt = null, LeftAt = null, LeftReason = null };
 
     /// <summary>
     /// <c>InRoom</c> → <c>in_room</c>. Spelled out rather than derived from the enum name, because

@@ -151,6 +151,9 @@ public static class EntityId
     /// <summary>A staff member's calendar subscription link.</summary>
     public const string CalendarFeed = "cal";
 
+    /// <summary>A waiting-room screen and its token (<c>docs/contract-extensions.md § 30</c>).</summary>
+    public const string QueueDisplay = "dsp";
+
     public static string New(string prefix)
     {
         Span<byte> buffer = stackalloc byte[16];

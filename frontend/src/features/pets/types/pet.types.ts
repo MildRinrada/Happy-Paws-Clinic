@@ -1,3 +1,6 @@
+/** Not in the API reference; see docs/contract-extensions.md § 28. */
+export type PetSex = 'male' | 'female' | 'unknown';
+
 /** A patient as the registry lists them — `GET /staff/pets`. */
 export interface PetSummary {
   id: string;
@@ -13,6 +16,13 @@ export interface PetSummary {
   nickname?: string;
   diet?: string;
   behaviour?: string;
+  /** Staff's half of the card (§ 28). Null fields are left out of the answer. */
+  sex?: PetSex;
+  /** `YYYY-MM-DD`. */
+  birth_date?: string;
+  birth_date_estimated?: boolean;
+  /** Absent means nobody knows yet. */
+  neutered?: boolean;
 }
 
 export type AllergySeverity = 'mild' | 'moderate' | 'severe';
@@ -49,6 +59,26 @@ export interface NewPet {
   primary_customer_id: string;
   breed?: string;
   microchip_number?: string;
+  sex?: PetSex;
+  birth_date?: string;
+  birth_date_estimated?: boolean;
+  neutered?: boolean;
+}
+
+/**
+ * `PATCH /staff/pets/{id}` (§ 28). Send only what changes; an empty breed or chip clears it, and
+ * `clear` sets the birth date or neuter status back to unknown.
+ */
+export interface PetChanges {
+  name?: string;
+  species?: string;
+  breed?: string;
+  microchip_number?: string;
+  sex?: PetSex;
+  birth_date?: string;
+  birth_date_estimated?: boolean;
+  neutered?: boolean;
+  clear?: ('birth_date' | 'neutered')[];
 }
 
 export type TimelineKind = 'visit' | 'medicine' | 'vaccination' | 'lab';
@@ -176,4 +206,24 @@ export interface PetDeceasedResult {
   pet_id: string;
   deceased_at: string;
   cancelled_appointment_ids: string[];
+}
+
+/** A visit the death cancelled, listed when the death is undone so the counter can rebook it. */
+export interface CancelledVisit {
+  id: string;
+  branch_id: string;
+  service_id: string;
+  staff_id?: string;
+  starts_at: string;
+  ends_at: string;
+  /** Its time has already gone by. */
+  has_passed: boolean;
+}
+
+/** `POST /staff/pets/{id}/deceased/undo` (§ 29): the record is open again; what the death did is not undone. */
+export interface PetDeceasedUndone {
+  pet_id: string;
+  undone_at: string;
+  previous_deceased_at: string;
+  cancelled_appointments: CancelledVisit[];
 }

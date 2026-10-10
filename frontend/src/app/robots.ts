@@ -33,6 +33,8 @@ const PRIVATE_PATHS = [
   '/queue',
   '/schedules',
   '/settings',
+  // the waiting-room screen that runs on its own token (docs/contract-extensions.md § 30)
+  '/display',
   // route handlers
   '/api/',
 ];

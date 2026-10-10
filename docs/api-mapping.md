@@ -193,13 +193,13 @@ route ที่ใช้ร่วมเหล่านี้ **ไม่มี a
 
 | Method | Endpoint | Scope | Controller | Use case | Domain | |
 |---|---|---|---|---|---|---|
-| GET | `/staff/queue?branch=&room=` | `queue:read` | `Staff/QueueController` | `Queueing/GetQueueBoard/` | `Queueing` | ✅ |
+| GET | `/staff/queue?branch=&room=&date=&include_finished=&status=` | `queue:read` | `Staff/QueueController` | `Queueing/GetQueueBoard/` | `Queueing` | ✅ |
 | POST | `/staff/queue/tickets` | `queue:write` | `Staff/QueueController` | `Queueing/IssueWalkInTicket/` | `Queueing` | ✅ |
 | POST | `/staff/queue/{id}/assign` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/AssignTicket/` | `Queueing` | ✅ |
 | POST | `/staff/queue/{id}/call` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/CallTicket/` | `Queueing`, `Notifications` | ✅ |
 | POST | `/staff/queue/{id}/skip` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/SkipTicket/` | `Queueing` | ✅ |
 | GET | `/portal/queue/{id}` | portal | `Portal/PortalQueueController` | `Queueing/GetMyTicket/` | `Queueing` | ✅ |
-| SSE | `/queue/stream?branch=` | ทั้งสองฝั่ง | `Realtime/QueueStreamController` | ส่งจาก `IQueueEventStream` | `Queueing` | ✅ |
+| SSE | `/queue/stream?branch=` | ทั้งสองฝั่ง และ token ของจอ (ส่วนขยาย § 30) | `Realtime/QueueStreamController` | ส่งจาก `IQueueEventStream` | `Queueing` | ✅ |
 
 SSE เป็นเส้นเดียวใน contract ที่ไม่ใช่ REST ตัวส่งอยู่ที่ `Infrastructure/Realtime/QueueEventBroker.cs` เป็นการกระจายภายใน process เดียว เพราะหนึ่งคลินิกคือหนึ่ง deployment ไม่มีอะไรต้องประสานข้ามเครื่อง controller เปิด stream แล้วส่ง domain event ต่อ (`ticket.called`, `ticket.updated`, `board.refresh`) ไม่มี `[RequireScope]` ด้วยเหตุผลเดียวกับ route นัดที่ใช้ร่วม และกรองให้ลูกค้าเห็นเฉพาะคิวของตัวเอง
 
@@ -209,6 +209,8 @@ SSE เป็นเส้นเดียวใน contract ที่ไม่ใ
 
 - **การออกเลขทำภายใต้ advisory lock** ต่อสาขาต่อวัน ใน transaction ของการเช็กอินหรือ walk-in และมี unique index บน `(branch_id, service_date, number)` เป็นด่านสุดท้าย ทั้งสองทางเข้าคิวใช้ตัวออกเลขเดียวกัน walk-in กับนัดที่เช็กอินจึงไม่มีทางได้เลขซ้ำกัน
 - **`skipped` เป็นสถานะรอ ไม่ใช่ทางออก** contract ขอให้ "เลื่อนไปท้ายแถว" คิวที่ถูกข้ามจึงยังอยู่ และเรียงหลังทุกคนที่ยังไม่ถูกข้าม ดู [assumptions.md § 17](./assumptions.md)
+- **จอห้องรอมี token ของตัวเอง** ห้าเส้นของ § 30 ให้ทีวีเปิดกระดานที่ย่อแล้วและ stream ของสาขาได้โดยไม่มีเซสชันพนักงาน token ใช้ได้สองเส้นนั้นเท่านั้น ดู [ส่วนขยาย contract](#ส่วนขยาย-contract)
+- **บัตรคิวฝั่งพนักงานมีเหตุผลและเวลา** และ `GET /staff/queue` กรองสถานะได้ (§ 31) `assign` ตรวจว่าเป็นหมอของสาขา
 - **มีอีกสอง route ที่ contract ไม่ได้นิยาม** คือ `priority` และ `leave` ลำดับการเรียกคือ `priority` ก่อน แล้วคิวที่ยังไม่ถูกข้าม แล้วเวลาที่ถูกข้าม แล้ว `number` เคสฉุกเฉินจึงแซงทุกคนรวมถึงคนที่ถูกข้ามไปแล้ว ทั้งสองเส้นอยู่ใน [ส่วนขยาย contract](#ส่วนขยาย-contract)
 
 ## Consultation and Medical record
@@ -463,7 +465,7 @@ scope ที่เลือกและเหตุผลอยู่ใน [ass
 
 ## ส่วนขยาย contract
 
-endpoint 72 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20 และ 22 ถึง 25) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) และสองเส้นของการจองโดยยังไม่สมัคร (§ 27) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 80 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) และสองเส้นของการจองโดยยังไม่สมัคร (§ 27) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -539,6 +541,14 @@ endpoint 72 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | POST | `/staff/articles/{id}/cover` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/RequestArticleCoverHandler` | § 26 | ✅ |
 | POST | `/booking/guest/start` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`StartGuestBookingHandler`) | § 27 | ✅ |
 | POST | `/booking/guest/verify` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`VerifyGuestBookingHandler`) | § 27 | ✅ |
+| PATCH | `/staff/pets/{id}` | `patient:write` | `Staff/PetsController` | `Patients/UpdatePet/` | § 28 | ✅ |
+| POST | `/staff/pets/{id}/deceased/undo` | `patient:write` | `Staff/PetsController` | `Patients/UndoPetDeceased/` | § 29 | ✅ |
+| POST | `/staff/queue/displays` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/CreateQueueDisplayHandler` | § 30 | ✅ |
+| GET | `/staff/queue/displays?branch=` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/ListQueueDisplaysHandler` | § 30 | ✅ |
+| DELETE | `/staff/queue/displays/{id}` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/RevokeQueueDisplayHandler` | § 30 | ✅ |
+| POST | `/queue/displays/claim` | สาธารณะ จำกัดต่อ IP | `Display/DisplayClaimController` | `Queueing/Displays/ClaimQueueDisplayHandler` | § 30 | ✅ |
+| GET | `/queue/display-board?branch=` | token ของจอเท่านั้น | `Display/DisplayBoardController` | `Queueing/Displays/GetDisplayBoardHandler` | § 30 | ✅ |
+| POST | `/staff/members/{id}/public-profile/photo` | `staff:manage` | `Staff/StaffMembersController` | `Staff/Photos/RequestStaffPhotoHandler` | § 32 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -557,6 +567,17 @@ endpoint 72 เส้นที่ **ไม่อยู่** ใน `API Referenc
 § 26 เพิ่มช่อง `cover_image_url` (ลิงก์รูปปกที่ลงชื่อแล้ว อายุหนึ่งชั่วโมง มีเฉพาะบทความที่เผยแพร่อยู่) ในคำตอบของ `GET /articles` และ `GET /articles/{slug}` ซึ่งเป็นส่วนขยาย § 9 อยู่แล้ว และเพิ่ม scope `content:manage` เป็น scope แรกที่ไม่อยู่ในรายการของ contract ตอบ `409 article_slug_taken` เมื่อ slug ซ้ำกับบทความอื่น รวมบทความที่ลบไปแล้ว
 
 § 27 เพิ่มช่อง `new_pet` (`name`, `species`) ที่ไม่บังคับใน `POST /portal/appointments` ใช้แทน `pet_id` เพื่อลงทะเบียนสัตว์ใหม่ใน transaction เดียวกับนัด คำขอที่มี `pet_id` ทำงานเหมือนเดิม ส่งทั้งสองช่องหรือไม่ส่งเลยได้ `422` และเพิ่มจุดประสงค์ `booking` ของรหัส OTP ซึ่ง `POST /auth/otp/request` ไม่รับ สองเส้นใหม่ไม่ต้องเข้าสู่ระบบ มี rate limit ต่อ IP ของตัวเอง (`guest-hold` และ `guest-verify`) และ `verify` เขียนคุกกี้ refresh แบบเดียวกับ `POST /auth/login`
+
+
+§ 28 เพิ่มช่องที่ไม่บังคับ `sex`, `birth_date`, `birth_date_estimated` และ `neutered` ในคำขอ `POST /staff/pets` และสี่ช่องเดียวกันในคำตอบของสัตว์ทุกเส้น (`GET /staff/pets`, `GET /staff/pets/{id}`, สัตว์ใน `GET /staff/customers/{id}` และ `GET /portal/pets`) ช่องที่ไม่ทราบไม่อยู่ในคำตอบ ยกเว้น `sex` ที่เป็น `unknown` และ `birth_date_estimated` ที่เป็น `false` วันเกิดในอนาคตตอบ `422` ที่ช่อง `birth_date` audit ใหม่ `pet.updated` ไม่มี webhook event ใหม่ migration `PetIdentityAndUndoDeath`
+
+§ 29 ไม่เปลี่ยนเส้นเดิมของ contract `POST /staff/pets/{id}/deceased` ทำงานเหมือนเดิม เส้นใหม่เขียน audit `pet.deceased_undone` และคอลัมน์ภายใน `pets.deceased_undone_at` (migration เดียวกับ § 28) ทำให้การแจ้งเตือนวัคซีนและนัดในแผนการรักษาที่ถึงเวลาส่งก่อนการยกเลิกไม่ถูกส่งย้อนหลัง
+
+§ 30 ให้เส้นเดิมของ contract `GET /queue/stream?branch=` รับ token ของจอ (`Bearer hpdsp_...`) เป็นผู้ฟังแบบที่สาม เฉพาะสาขาของจอ ข้อมูลของ event ที่ส่งให้จอมีแค่ `branch_id` ไม่มี `ticket_id` และ stream ของจอถูกตรวจซ้ำทุก heartbeat จึงปิดเองภายใน 20 วินาทีหลังจอถูกยกเลิก พนักงานและลูกค้ายังได้ข้อมูลเหมือนเดิม token ของจอใช้กับเส้นอื่นไม่ได้เลย (`401`) audit ใหม่ `queue.display_created`, `queue.display_claimed`, `queue.display_revoked` ไม่มี scope ใหม่ migration `QueueDisplays`
+
+§ 31 ไม่มี endpoint ใหม่ บัตรคิวในคำตอบฝั่งพนักงาน (`GET /staff/queue`, `POST /staff/queue/tickets`, การกระทำบนบัตรทุกเส้น และ `POST /appointments/{id}/check-in` เมื่อพนักงานเรียก) มีช่องที่ไม่บังคับเพิ่มห้าช่อง คือ `priority_reason`, `entered_room_at`, `served_at`, `left_at` และ `left_reason` เจ้าของสัตว์ที่เช็กอินเองไม่ได้ห้าช่องนี้ `GET /staff/queue` รับ `status` ที่ไม่บังคับ (สถานะคั่นด้วยจุลภาค ค่าที่ไม่รู้จักได้ `422`) และ `assign` กับ `staff_id` ของการออกบัตร walk-in ตอบ `422` ที่ช่อง `staff_id` เมื่อไม่ใช่สัตวแพทย์ที่ยังทำงานอยู่ในสาขาของบัตร เป็นการแก้บั๊ก รูปของคำขอและคำตอบไม่เปลี่ยน
+
+§ 32 เพิ่มช่อง `photo_url` (ลิงก์รูปที่อัปโหลด ลงชื่อแล้ว อายุหนึ่งชั่วโมง มีเฉพาะคนที่แสดงบนเว็บ) ในคำตอบของ `GET /team` และ `photo_url` อายุ 30 นาทีใน `public_profile` ฝั่งพนักงาน ซึ่งเป็นส่วนขยาย § 10 อยู่แล้ว `photo_path` เดิมรับค่าแบบใหม่ที่ขึ้นต้นด้วย `storage:` สำหรับรูปที่อัปโหลด ส่วนค่าที่ขึ้นต้นด้วย `/` ทำงานเหมือนเดิม และ `GET /team` ไม่ส่งค่า `storage:` ออกไป ไม่มี migration
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -581,7 +602,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
 | ทำแล้วและมีเทสต์ (✅) | **160** |
-| เพิ่มนอก contract | **72** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
+| เพิ่มนอก contract | **80** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
 
@@ -589,7 +610,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-72 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25 และ § 27) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
+80 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28 และ § 31) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
 
 ## โค้ด
 

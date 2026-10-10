@@ -132,6 +132,10 @@ internal sealed class ClinicApiFactory(
                 // in a fixture of their own.
                 ["RateLimits:GuestHoldsPerIpPerHour"] = "1000",
                 ["RateLimits:GuestVerifiesPerIpPerHour"] = "1000",
+
+                // The same for trading a waiting-room screen's setup code (§ 30), tested in the
+                // limits fixture below.
+                ["RateLimits:DisplayClaimsPerIpPerHour"] = "1000",
             }));
 
         if (settings is not null)

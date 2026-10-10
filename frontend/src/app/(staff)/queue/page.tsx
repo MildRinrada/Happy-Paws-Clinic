@@ -64,7 +64,7 @@ export default async function QueuePage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <QueueLiveIndicator branchId={branch.id} />
-          <QueueNavLinks branchId={branch.id} />
+          <QueueNavLinks branchId={branch.id} canManageDisplays={canOrganise} />
           {canOrganise && <IssueTicketDialog branchId={branch.id} services={services} />}
         </div>
       </header>

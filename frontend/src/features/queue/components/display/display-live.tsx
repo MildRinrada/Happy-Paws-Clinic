@@ -25,10 +25,10 @@ const dots: Record<StreamState, string> = {
  * - A screen wake lock, where the browser has one, stops the TV from dimming. It is released by
  *   the browser when the tab is hidden, so it is asked for again when the tab comes back.
  */
-export function DisplayLive({ branchId }: { branchId: string }) {
+export function DisplayLive({ branchId, streamPath }: { branchId: string; streamPath?: string }) {
   const router = useRouter();
   const refresh = useCallback(() => router.refresh(), [router]);
-  const state = useQueueStream(branchId, refresh);
+  const state = useQueueStream(branchId, refresh, streamPath);
 
   useEffect(() => {
     const timer = setInterval(refresh, SAFETY_REFRESH_MS);

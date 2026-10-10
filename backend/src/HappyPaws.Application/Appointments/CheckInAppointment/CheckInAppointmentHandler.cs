@@ -52,6 +52,7 @@ public sealed class CheckInAppointmentHandler(
 
         Domain.Appointments.Appointment? admitted = null;
         QueueTicket? ticket = null;
+        var audience = AppointmentAudience.Customer;
 
         // Everything is inside the transaction, including the load: a retry resets the change
         // tracker, so an appointment fetched beforehand would be detached and its check-in lost
@@ -60,7 +61,7 @@ public sealed class CheckInAppointmentHandler(
         {
             var appointment = await GetAppointmentHandler.Load(appointments, command.AppointmentId, token);
 
-            await access.AuthoriseAsync(appointment, Scopes.Appointment.CheckIn, token);
+            audience = await access.AuthoriseAsync(appointment, Scopes.Appointment.CheckIn, token);
 
             var existing = await tickets.FindByAppointmentAsync(appointment.Id, token);
             if (existing is not null)
@@ -103,9 +104,20 @@ public sealed class CheckInAppointmentHandler(
         events.Publish(new QueueEvent(
             QueueEventTypes.TicketUpdated, ticket!.BranchId, ticket.Id, ticket.CustomerId));
 
-        return Result(admitted!, ticket);
+        return Result(admitted!, ticket, audience);
     }
 
-    private static CheckInResultDto Result(Domain.Appointments.Appointment appointment, QueueTicket ticket) =>
-        new(AppointmentDto.From(appointment), QueueTicketDto.From(ticket));
+    /// <summary>
+    /// An owner checking themselves in gets the ticket without the counter's notes (the priority
+    /// reason and the room and service times, <c>docs/contract-extensions.md § 31</c>).
+    /// </summary>
+    private static CheckInResultDto Result(
+        Domain.Appointments.Appointment appointment,
+        QueueTicket ticket,
+        AppointmentAudience audience)
+    {
+        var dto = QueueTicketDto.From(ticket);
+
+        return new(AppointmentDto.From(appointment), audience == AppointmentAudience.Staff ? dto : dto.ForCustomer());
+    }
 }

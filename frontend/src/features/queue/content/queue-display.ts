@@ -27,4 +27,25 @@ export const queueDisplay = {
     title: 'จอขาดการเชื่อมต่อชั่วคราว',
     body: 'กำลังลองใหม่อัตโนมัติ',
   },
+
+  /** The screen that runs on its own token at `/display` (docs/contract-extensions.md § 30). */
+  screen: {
+    stopped: 'จอนี้ถูกยกเลิกหรือหมดอายุแล้ว',
+    stoppedBody: 'ขอรหัสตั้งจอใหม่จากหน้า "จอห้องรอ" ในระบบพนักงาน แล้วเปิด',
+    setupLink: 'ตั้งจอนี้ใหม่',
+    wrongBranch: 'จอนี้ใช้กับสาขานี้ไม่ได้',
+  },
+
+  setup: {
+    metaTitle: 'ตั้งจอห้องรอ · Happy Paws Clinic',
+    title: 'ตั้งจอห้องรอ',
+    body: 'ใส่รหัสตั้งจอ 8 ตัวที่แสดงในหน้า "จอห้องรอ" ของระบบพนักงาน รหัสใช้ได้ครั้งเดียวภายใน 30 นาที',
+    code: 'รหัสตั้งจอ',
+    codeHint: 'เช่น ABCD-EFGH ตัวพิมพ์เล็กหรือเว้นวรรคก็ได้',
+    submit: 'ตั้งจอ',
+    pending: 'กำลังตั้งจอ…',
+    fromLink: 'กำลังตั้งจอจากลิงก์…',
+    done: (name: string) => `ตั้งจอ "${name}" แล้ว กำลังเปิดคิว…`,
+    unreachable: 'ติดต่อระบบไม่ได้ ลองอีกครั้ง',
+  },
 } as const;

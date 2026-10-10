@@ -29,6 +29,8 @@
 | access token | ไม่เก็บ | JWT ลงนาม ตรวจด้วยกุญแจ | ลายเซ็น |
 | API key | 32 ไบต์ และ prefix 10 ตัว | SHA-256 ของ key ทั้งก้อนใน `api_keys.secret_hash` | หาด้วย prefix แล้ว `FixedTimeEquals` |
 | token ของลิงก์ปฏิทิน | 32 ไบต์ | SHA-256 ใน `calendar_feeds.token_hash` และ ciphertext ไว้แสดงลิงก์เดิม | ค้นด้วย hash |
+| token ของจอห้องรอ (`hpdsp_`) | 32 ไบต์ | SHA-256 ใน `queue_displays.token_hash` ไม่มี ciphertext ไม่มีที่ไหนแสดงซ้ำ | ค้นด้วย hash แล้ว `FixedTimeEquals` |
+| รหัสตั้งจอห้องรอ | 8 ตัวจาก 30 ตัวอักษร | SHA-256 ใน `queue_displays.setup_code_hash` ล้างทิ้งตอนแลกเป็น token หรือตอนยกเลิก | ค้นด้วย hash ใช้ได้ครั้งเดียว อายุ 30 นาที |
 | URL อัปโหลดและดาวน์โหลดไฟล์ | ไม่เก็บ | ลงชื่อด้วย HMAC-SHA256 บอกสิทธิ์ key ชนิด ขนาด และเวลาหมดอายุไว้ในตัว | `FixedTimeEquals` |
 
 รหัส OTP มีแค่ล้านแบบ hash จึงกันการเดาไม่ได้ถ้าใครได้สำเนาฐานข้อมูลไป สิ่งที่กันจริงคืออายุ 5 นาที และการใช้ได้ครั้งเดียว ลิงก์รีเซ็ตวาง token ไว้หลัง `#` เหมือนลิงก์คำเชิญ

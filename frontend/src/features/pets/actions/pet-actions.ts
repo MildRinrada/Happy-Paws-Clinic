@@ -14,11 +14,17 @@ const newPet = z.object({
   species: z.string().trim().min(1).max(60),
   breed: z.string().trim().max(120),
   microchip: z.string().trim().max(40),
+  sex: z.enum(['male', 'female', 'unknown']),
+  /** `YYYY-MM-DD`, or empty for "not known". */
+  birthDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal('')]),
+  birthDateEstimated: z.boolean(),
+  neutered: z.enum(['yes', 'no', 'unknown']),
 });
 
 /**
  * Registers a pet under the customer whose page the counter is on. The HN comes back in the
- * answer, issued by the server; a chip already on another patient is refused on its field.
+ * answer, issued by the server; a chip already on another patient is refused on its field. Sex,
+ * birth date and neuter status are optional (docs/contract-extensions.md § 28).
  */
 export async function registerPetAction(values: z.infer<typeof newPet>) {
   const input = newPet.parse(values);
@@ -29,6 +35,10 @@ export async function registerPetAction(values: z.infer<typeof newPet>) {
       primary_customer_id: input.customerId,
       breed: input.breed || undefined,
       microchip_number: input.microchip || undefined,
+      sex: input.sex === 'unknown' ? undefined : input.sex,
+      birth_date: input.birthDate || undefined,
+      birth_date_estimated: input.birthDate ? input.birthDateEstimated : undefined,
+      neutered: input.neutered === 'unknown' ? undefined : input.neutered === 'yes',
     }),
   );
 

@@ -35,6 +35,27 @@ public static class QueueSeed
             },
             cancellationToken);
 
+    /// <summary>Drives a ticket through the room to <c>served</c>, the way closing a consultation does.</summary>
+    public static Task MarkServedAsync(ApiFixture fixture, string ticketId, CancellationToken cancellationToken) =>
+        MutateAsync(
+            fixture,
+            ticketId,
+            ticket =>
+            {
+                if (ticket.Status == QueueTicketStatus.Waiting)
+                {
+                    ticket.Call("stf_seed", DateTimeOffset.UtcNow);
+                }
+
+                if (ticket.Status == QueueTicketStatus.Called)
+                {
+                    ticket.EnterRoom(DateTimeOffset.UtcNow);
+                }
+
+                ticket.MarkServed(DateTimeOffset.UtcNow);
+            },
+            cancellationToken);
+
     /// <summary>Reads a ticket back outside the request's change tracker.</summary>
     public static async Task<QueueTicket?> ReloadAsync(
         ApiFixture fixture,

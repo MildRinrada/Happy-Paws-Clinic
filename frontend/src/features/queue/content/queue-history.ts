@@ -33,9 +33,15 @@ export const queueHistory = {
     room: 'ห้อง',
     issued: 'ออกบัตร',
     called: 'เรียก',
+    enteredRoom: 'เข้าห้อง',
+    finished: 'จบ',
+    reasons: 'เหตุผล',
   },
 
   none: 'ไม่ระบุ',
   skipped: (count: number) => `ถูกข้าม ${count} ครั้ง`,
-  limitations: 'เหตุผลที่ออกจากคิวและเวลาที่ตรวจเสร็จยังไม่มีในข้อมูลที่ API ส่งมา',
+  servedAt: (time: string) => `ตรวจเสร็จ ${time}`,
+  leftAt: (time: string) => `ออกจากคิว ${time}`,
+  leftReason: (reason: string) => `ออกจากคิว: ${reason}`,
+  priorityReason: (reason: string) => `เร่งด่วน: ${reason}`,
 } as const;

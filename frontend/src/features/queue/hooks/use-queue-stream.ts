@@ -9,6 +9,13 @@ const EVENTS = ['ticket.called', 'ticket.updated', 'board.refresh'] as const;
 const RETRY_FIRST_MS = 2_000;
 const RETRY_MAX_MS = 60_000;
 
+/**
+ * Where the browser opens the stream. The console and the staff-session screen use the session
+ * proxy; a screen set up with its own token uses `/display/stream`, which only its cookie reaches
+ * (docs/contract-extensions.md § 30).
+ */
+export const DEFAULT_STREAM_PATH = '/api/queue/stream';
+
 export type StreamState = 'connecting' | 'live' | 'reconnecting';
 
 /**
@@ -28,7 +35,11 @@ export type StreamState = 'connecting' | 'live' | 'reconnecting';
  * day, the waiting-room display above all, therefore comes back by itself once the API does; the
  * new request passes the middleware, which refreshes the session first.
  */
-export function useQueueStream(branchId: string, onChange: () => void): StreamState {
+export function useQueueStream(
+  branchId: string,
+  onChange: () => void,
+  streamPath: string = DEFAULT_STREAM_PATH,
+): StreamState {
   const [state, setState] = useState<StreamState>('connecting');
 
   // Held in a ref so a new callback identity on each render does not tear the connection down.
@@ -51,7 +62,7 @@ export function useQueueStream(branchId: string, onChange: () => void): StreamSt
 
     const connect = () => {
       // Same origin: the route handler attaches the bearer token the browser cannot read.
-      const current = new EventSource(`/api/queue/stream?branch=${encodeURIComponent(branchId)}`);
+      const current = new EventSource(`${streamPath}?branch=${encodeURIComponent(branchId)}`);
       source = current;
 
       current.onopen = () => {
@@ -82,7 +93,7 @@ export function useQueueStream(branchId: string, onChange: () => void): StreamSt
       clearTimeout(retry);
       source?.close();
     };
-  }, [branchId]);
+  }, [branchId, streamPath]);
 
   return state;
 }

@@ -5,6 +5,8 @@ import type {
   InviteStaffInput,
   StaffListFilters,
   StaffMember,
+  StaffPhotoType,
+  StaffPhotoUpload,
   StaffPublicProfile,
   StaffTypeOption,
   UpdateStaffInput,
@@ -60,6 +62,15 @@ export function updateStaffMember(id: string, version: number, input: UpdateStaf
  */
 export function replacePublicProfile(id: string, version: number, profile: StaffPublicProfile): Promise<StaffMember> {
   return staffApi().put<StaffMember>(`/staff/members/${encodeURIComponent(id)}/public-profile`, { body: profile, ifMatch: version });
+}
+
+/**
+ * `POST /staff/members/{id}/public-profile/photo` — a signed URL for a new photo, and the
+ * `photo_path` value that names it. Nothing changes until the profile is saved with that value.
+ * Extension, § 32.
+ */
+export function requestStaffPhoto(id: string, file: { content_type: StaffPhotoType; size_bytes: number }): Promise<StaffPhotoUpload> {
+  return staffApi().post<StaffPhotoUpload>(`/staff/members/${encodeURIComponent(id)}/public-profile/photo`, { body: file });
 }
 
 /** `POST /staff/members/{id}/deactivate` — revokes every session; the name stays on old records. */

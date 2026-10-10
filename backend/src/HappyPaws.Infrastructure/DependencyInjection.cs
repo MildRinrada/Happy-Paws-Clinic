@@ -21,6 +21,7 @@ using HappyPaws.Application.Patients;
 using HappyPaws.Application.Patients.Documents;
 using HappyPaws.Application.Prescriptions;
 using HappyPaws.Application.Queueing;
+using HappyPaws.Application.Queueing.Displays;
 using HappyPaws.Application.Reporting;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.ServiceCatalog;
@@ -143,6 +144,7 @@ public static class DependencyInjection
         // ---- Queue module ----
         services.AddScoped<IQueueTicketRepository, QueueTicketRepository>();
         services.AddScoped<IQueueNumberGenerator, QueueNumberGenerator>();
+        services.AddScoped<IQueueDisplayRepository, QueueDisplayRepository>();
 
         // Singleton: the broker *is* the subscriber list, so a scoped one would hand every request
         // its own empty set of listeners and nothing would ever be delivered.

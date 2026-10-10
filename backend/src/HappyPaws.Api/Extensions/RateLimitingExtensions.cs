@@ -47,6 +47,13 @@ public static class RateLimitingExtensions
     /// </summary>
     public const string GuestVerifyPolicy = "guest-verify";
 
+    /// <summary>
+    /// <c>POST /queue/displays/claim</c> (<c>docs/contract-extensions.md § 30</c>): setup-code guesses
+    /// per address (<c>RateLimits:DisplayClaimsPerIpPerHour</c>, 30), keyed like the guest policies.
+    /// A clinic sets up a handful of screens a year; thirty an hour is room for typos, not for guessing.
+    /// </summary>
+    public const string DisplayClaimPolicy = "display-claim";
+
     public static IServiceCollection AddClinicRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var perToken = configuration.GetValue("RateLimits:PerTokenPerMinute", 600);
@@ -60,13 +67,21 @@ public static class RateLimitingExtensions
             var perApiKey = configuration.GetValue("RateLimits:PerApiKeyPerMinute", perToken);
             var guestHolds = configuration.GetValue("RateLimits:GuestHoldsPerIpPerHour", 30);
             var guestVerifies = configuration.GetValue("RateLimits:GuestVerifiesPerIpPerHour", 60);
+            var perDisplay = configuration.GetValue("RateLimits:PerDisplayPerMinute", 120);
+            var displayClaims = configuration.GetValue("RateLimits:DisplayClaimsPerIpPerHour", 30);
 
             // An API key gets its own window, apart from the person who made it: a sync job
             // running hot must not lock its creator out of the counter screen, nor the reverse.
+            // A waiting-room screen gets its own too, keyed by the screen: it has no subject, and
+            // falling back to the address would put it in one bucket with every visitor behind the
+            // website's server. A screen reads the board once a minute and once per burst of events,
+            // so 120 a minute is far above a busy morning (docs/contract-extensions.md § 30).
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
                 context => context.User.FindFirst(ClinicClaimTypes.ApiKey) is not null
                     ? Partition(context, perApiKey)
-                    : Partition(context, perToken));
+                    : context.User.FindFirst(ClinicClaimTypes.Display) is not null
+                        ? Partition(context, perDisplay)
+                        : Partition(context, perToken));
 
             options.AddPolicy(MessagingPolicy, context =>
                 Partition(context, messaging, suffix: ":messaging"));
@@ -79,6 +94,9 @@ public static class RateLimitingExtensions
 
             options.AddPolicy(GuestVerifyPolicy, context =>
                 PerAddressPerHour(context, guestVerifies, ":guest-verify"));
+
+            options.AddPolicy(DisplayClaimPolicy, context =>
+                PerAddressPerHour(context, displayClaims, ":display-claim"));
 
             options.OnRejected = async (context, cancellationToken) =>
             {
@@ -115,6 +133,7 @@ public static class RateLimitingExtensions
     private static RateLimitPartition<string> Partition(HttpContext context, int permitPerMinute, string suffix = "")
     {
         var subject = context.User.FindFirst(ClinicClaimTypes.ApiKey)?.Value
+            ?? context.User.FindFirst(ClinicClaimTypes.Display)?.Value
             ?? context.User.FindFirst(ClinicClaimTypes.Subject)?.Value
             ?? context.Connection.RemoteIpAddress?.ToString()
             ?? "unknown";

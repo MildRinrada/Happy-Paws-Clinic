@@ -1,5 +1,6 @@
 using HappyPaws.Application.Queueing.AssignTicket;
 using HappyPaws.Application.Queueing.CallTicket;
+using HappyPaws.Application.Queueing.Displays;
 using HappyPaws.Application.Queueing.GetMyTicket;
 using HappyPaws.Application.Queueing.GetQueueBoard;
 using HappyPaws.Application.Queueing.IssueWalkInTicket;
@@ -21,6 +22,15 @@ public static class QueueingModule
     public static IServiceCollection AddQueueingModule(this IServiceCollection services)
     {
         services.AddScoped<QueueAccess>();
+        services.AddScoped<TicketVetGuard>();
+
+        // Waiting-room screens (docs/contract-extensions.md § 30).
+        services.AddScoped<QueueDisplayAuthenticator>();
+        services.AddScoped<CreateQueueDisplayHandler>();
+        services.AddScoped<ListQueueDisplaysHandler>();
+        services.AddScoped<RevokeQueueDisplayHandler>();
+        services.AddScoped<ClaimQueueDisplayHandler>();
+        services.AddScoped<GetDisplayBoardHandler>();
 
         services.AddScoped<GetQueueBoardHandler>();
         services.AddScoped<IssueWalkInTicketHandler>();

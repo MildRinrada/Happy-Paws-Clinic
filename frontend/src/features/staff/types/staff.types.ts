@@ -5,9 +5,22 @@ export interface StaffPublicProfile {
   job_title?: string;
   specialty?: string;
   bio?: string;
+  /** A path under the site's /public, or an uploaded photo as `storage:staff-photos/...` (§ 32). */
   photo_path?: string;
   career_start_year?: number;
   show_on_website: boolean;
+  /** Answer only: a signed preview link to an uploaded photo, good for half an hour. Never sent back. */
+  photo_url?: string;
+}
+
+/** The media types the API takes for a photo (§ 32). */
+export type StaffPhotoType = 'image/jpeg' | 'image/png' | 'image/webp';
+
+/** `POST /staff/members/{id}/public-profile/photo`: where to send the file, and the value that names it. */
+export interface StaffPhotoUpload {
+  /** Put this in `photo_path` on the next save, once the file is in. */
+  photo_path: string;
+  upload: { url: string; method: string; headers: Record<string, string>; expires_at: string };
 }
 
 /**

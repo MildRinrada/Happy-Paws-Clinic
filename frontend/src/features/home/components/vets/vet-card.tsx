@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ImageSlot } from '@/components/shared/image-slot';
+import { MemberPhoto } from '@/features/team/components/member-photo';
 import { memberHref, memberSummary } from '@/features/team/lib/team-text';
 import type { TeamMember } from '@/features/team/types/team.types';
 import { vetProfileLabel } from '../../content/vets';
@@ -9,9 +9,8 @@ import { JobTitleBadge } from './job-title-badge';
 export function VetCard({ vet }: { vet: TeamMember }) {
   return (
     <li className="overflow-hidden rounded-2xl border border-site-border bg-white">
-      <ImageSlot
-        src={vet.photo_path}
-        alt={vet.display_name}
+      <MemberPhoto
+        member={vet}
         label="รูปสัตวแพทย์"
         sizes="(min-width: 1024px) 22vw, (min-width: 640px) 50vw, 100vw"
         className="h-[196px] border-x-0 border-t-0"

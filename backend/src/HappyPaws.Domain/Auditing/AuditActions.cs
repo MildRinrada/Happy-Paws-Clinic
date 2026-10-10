@@ -297,6 +297,18 @@ public static class AuditActions
 
     public const string QueuePriorityChanged = "queue.priority_changed";
 
+    /// <summary>
+    /// A waiting-room screen was made and its setup code shown (<c>docs/contract-extensions.md § 30</c>):
+    /// a credential that opens a branch's queue without a person signed in.
+    /// </summary>
+    public const string QueueDisplayCreated = "queue.display_created";
+
+    /// <summary>The TV traded its setup code for its token. Nobody is signed in, so the row has no actor.</summary>
+    public const string QueueDisplayClaimed = "queue.display_claimed";
+
+    /// <summary>A screen's token was stopped. Its next request is refused.</summary>
+    public const string QueueDisplayRevoked = "queue.display_revoked";
+
     /// <summary>A bill was raised, by hand or by closing a case.</summary>
     public const string InvoiceIssued = "invoice.issued";
 
@@ -466,6 +478,7 @@ public static class AuditActions
         StaffPublicProfileUpdated, StaffSeeded,
         RoleCreated, RolePermissionsReplaced, MedicalRecordSettingsChanged,
         AppointmentCancelled, AppointmentNoShow, CancellationPolicyChanged, WaitingListEntryRemoved, QueuePriorityChanged,
+        QueueDisplayCreated, QueueDisplayClaimed, QueueDisplayRevoked,
         InvoiceIssued, InvoiceVoided, InvoiceDiscounted,
         PaymentCollected, PaymentRefunded, ReceiptIssued, ServicePricingChanged,
         ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced,
@@ -492,6 +505,7 @@ public static class AuditResources
     public const string Appointment = "appointment";
     public const string WaitingList = "waiting_list";
     public const string QueueTicket = "queue_ticket";
+    public const string QueueDisplay = "queue_display";
     public const string UserAccount = "user_account";
     public const string Consent = "consent";
     public const string DataRequest = "data_request";

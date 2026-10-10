@@ -1,6 +1,6 @@
 # การเชื่อมต่อระบบภายนอก
 
-webhook ขาออก API key ฟีดปฏิทิน และค่าตั้งของผู้ให้บริการ เป็นทางที่ข้อมูลออกจากระบบ หรือที่เครื่องอื่นเข้ามาโดยไม่มีคนเข้าสู่ระบบ หน้านี้บอกว่าแต่ละทางกันอะไรไว้ การทำงานทั้งหมดอยู่ใน [การเชื่อมต่อระบบ](../features/integrations.md)
+webhook ขาออก API key ฟีดปฏิทิน token ของจอห้องรอ และค่าตั้งของผู้ให้บริการ เป็นทางที่ข้อมูลออกจากระบบ หรือที่เครื่องอื่นเข้ามาโดยไม่มีคนเข้าสู่ระบบ หน้านี้บอกว่าแต่ละทางกันอะไรไว้ การทำงานทั้งหมดอยู่ใน [การเชื่อมต่อระบบ](../features/integrations.md)
 
 ## SSRF ของ webhook
 
@@ -64,6 +64,27 @@ outbox เขียนใน transaction เดียวกับงาน ก�
 - ฟีดไม่มีอาการ เหตุผลของนัด ผลวินิจฉัย หรือข้อมูลติดต่อของเจ้าของ ตอบด้วย `Cache-Control: private, no-store`
 - token อยู่ใน URL จึงไปอยู่ใน log ของ proxy และประวัติของแอปปฏิทินได้ เป็นข้อแลกเปลี่ยนที่ฟีดปฏิทินทุกเจ้ามี ลิงก์ที่หลุดหยุดได้ด้วยปุ่ม "สร้างลิงก์ใหม่" (`POST /staff/integrations/calendar/token`) ซึ่งแทนทั้ง hash และ ciphertext ลิงก์เดิมได้ `401` ทันที เจ้าของทำได้กับลิงก์ของตัวเองเท่านั้น API key ทำไม่ได้
 
+## token ของจอห้องรอ
+
+ทีวีในห้องรอเปิดคิวได้โดยไม่ถือเซสชันพนักงาน ([contract-extensions.md § 30](../contract-extensions.md)) เป็นเครื่องที่ตั้งอยู่ในที่สาธารณะ ไม่มีคนเฝ้า จึงได้ credential ที่เล็กที่สุดเท่าที่ทำได้
+
+| เรื่อง | กติกา |
+|---|---|
+| ความลับสองชั้น | รหัสตั้งจอ 8 ตัว แสดงครั้งเดียวใน console ใช้ได้ครั้งเดียวภายใน 30 นาที แลกเป็น token (`hpdsp_` และ 256 bit) ซึ่งตอบครั้งเดียวให้เซิร์ฟเวอร์ Next.js ของทีวี คนไม่เคยเห็น token |
+| การเก็บ | SHA-256 ของรหัสและของ token ใน `queue_displays` ไม่มีคอลัมน์ใดเก็บค่าจริง รายการจอไม่มีทั้งสองอย่างและไม่มี hash การแลกเป็น UPDATE เดียวที่มีเงื่อนไขว่ารหัสยังเป็นค่านี้และยังไม่มี token สองเครื่องที่พิมพ์รหัสเดียวกันพร้อมกันได้ token เครื่องเดียว |
+| ใช้ได้ที่ไหน | `GET /queue/display-board` และ `GET /queue/stream` ของสาขาของจอเท่านั้น สองเส้นนี้ติด `[AcceptsDisplayToken]` เส้นอื่นทุกเส้นได้ `401` จาก `DisplayTokenAuthenticationHandler` ก่อนถึง policy ใด ๆ และ `InteractiveCallerRequirement` ปฏิเสธซ้ำอีกชั้น บนเส้นสาธารณะ token ไม่ถูกนับ มีเทสต์ลองสิบเส้น |
+| principal | claim `dsp` และ `brn` เท่านั้น ไม่มี `sub` สมาชิกพนักงาน ลูกค้า scope หรือ 2FA |
+| ข้อมูลที่ออกไป | เลขคิว สถานะ (`waiting`, `called`, `in_room`) ห้อง ชื่อหมอ เวลาเรียก จำนวนที่รอ และห้องตรวจของสาขา ไม่มีรหัสหรือชื่อของสัตว์และเจ้าของ บริการ ความเร่งด่วน หรือรหัสบัตร stream ส่งให้จอแค่ `branch_id` |
+| ตรวจทุกคำขอ | อ่านแถวทุกคำขอ ไม่มี cache stream ที่เปิดอยู่ถูกอ่านซ้ำทุก 20 วินาที |
+| ยกเลิก | `DELETE /staff/queue/displays/{id}` (`queue:write` ในสาขาของตัวเอง) คำขอถัดไปได้ `401` stream ปิดภายใน 20 วินาที รหัสที่ยังไม่ใช้ใช้ไม่ได้ทันที |
+| อายุ | ไม่บังคับ ไม่เกิน 2 ปี ไม่ตั้งคือจนกว่าจะยกเลิก |
+| rate limit | การแลกรหัส 30 ครั้งต่อชั่วโมงต่อ IP คำขอของจอ 120 ครั้งต่อนาทีต่อจอ ดู [การป้องกันระดับคำขอ](request-protection.md) |
+| audit | `queue.display_created`, `queue.display_claimed` (ไม่มีผู้กระทำ) และ `queue.display_revoked` |
+
+**ฝั่งหน้าเว็บ** token อยู่ในคุกกี้ `hp_display` แบบ httpOnly `Path=/display` script บนหน้าอ่านไม่ได้ และเบราว์เซอร์ส่งไปแค่ `/display`, `/display/setup` และ `/display/stream` รหัสตั้งจอที่มากับลิงก์อยู่หลัง `#` เบราว์เซอร์ไม่ส่งส่วนนี้ไปเซิร์ฟเวอร์ และหน้าตั้งจอลบออกจากแถบที่อยู่ก่อนส่ง รหัสที่อาจค้างในประวัติของเบราว์เซอร์ใช้ไม่ได้แล้วหลังใช้ครั้งแรกหรือหลัง 30 นาที token ไม่เคยอยู่ใน URL ใดเลย
+
+**ความเสี่ยงที่เหลือ** คนที่คัดลอกคุกกี้จากทีวีไปได้ เปิดจอของสาขานั้นที่อื่นได้จนกว่าจะถูกยกเลิก ซึ่งเห็นแค่สิ่งที่จอในห้องรอแสดงต่อทุกคนอยู่แล้ว token ไม่ผูกกับ IP หรืออุปกรณ์ และไม่หมดอายุเองถ้าไม่ได้ตั้ง จอที่เลิกใช้จึงต้องกดยกเลิก
+
 ## ค่าตั้งของผู้ให้บริการ
 
 - ความลับ (`secret_key`, `webhook_secret`, `api_key`) เขียนได้อย่างเดียว เข้ารหัสก่อนเก็บ ไม่มี endpoint คืนค่า audit บันทึกแค่ว่าช่องไหนเปลี่ยน
@@ -78,4 +99,5 @@ outbox เขียนใน transaction เดียวกับงาน ก�
 | ลายเซ็น | `backend/src/HappyPaws.Application/Integrations/Webhooks/WebhookSignature.cs` |
 | API key | `backend/src/HappyPaws.Domain/Integrations/ApiKey.cs`, `backend/src/HappyPaws.Application/Integrations/ApiKeys/ApiKeyAuthenticator.cs`, `ApiKeyReach.cs`, `RevokeApiKey/`, `backend/src/HappyPaws.Api/Authorization/ApiKeyAuthenticationHandler.cs`, `InteractiveCallerRequirement.cs` |
 | ปิด ลบ และหมุน secret ของ webhook | `backend/src/HappyPaws.Domain/Integrations/WebhookSubscription.cs`, `backend/src/HappyPaws.Application/Integrations/UpdateWebhookSubscription/`, `DeleteWebhookSubscription/`, `RotateWebhookSecret/`, `DispatchWebhooks/DispatchWebhooksHandler.cs` |
-| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/` (รวม `WebhookManagementTests.cs`, `ApiKeyManagementTests.cs`, `CalendarTokenTests.cs`), `backend/tests/HappyPaws.IntegrationTests/Webhooks/WebhookHttpHandlerTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Integrations/` |
+| token ของจอห้องรอ | `backend/src/HappyPaws.Domain/Queueing/QueueDisplay.cs`, `backend/src/HappyPaws.Application/Queueing/Displays/`, `backend/src/HappyPaws.Api/Authorization/DisplayTokenAuthenticationHandler.cs`, `AcceptsDisplayTokenAttribute.cs`, `InteractiveCallerRequirement.cs`, `frontend/src/lib/display/display-session.ts` |
+| เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Integrations/` (รวม `WebhookManagementTests.cs`, `ApiKeyManagementTests.cs`, `CalendarTokenTests.cs`), `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/QueueDisplayTests.cs`, `DisplayClaimLimitTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Webhooks/WebhookHttpHandlerTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Integrations/` |

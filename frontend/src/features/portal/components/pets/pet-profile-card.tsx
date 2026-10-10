@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { identityFacts } from '@/features/pets/lib/describe-pet';
 import { formatLongDate } from '@/lib/format/datetime';
 import { petDocuments } from '../../content/pet-documents';
 import { portalPaths } from '../../content/portal-navigation';
@@ -9,7 +10,10 @@ import { PetAvatar } from '../shared/pet-avatar';
 import { AllergyTags } from './allergy-tags';
 import { PetFacts } from './pet-facts';
 
-/** One pet: who it is, the clinic's facts, the owner's notes, allergies, and its records. */
+/**
+ * One pet: who it is, the clinic's facts (sex, birth date, age and neuter status read-only, as
+ * staff recorded them), the owner's notes, allergies, and its records.
+ */
 export function PetProfileCard({ pet }: { pet: MyPet }) {
   const text = portalPets.facts;
 
@@ -31,6 +35,7 @@ export function PetProfileCard({ pet }: { pet: MyPet }) {
         facts={[
           { label: text.hospitalNumber, value: pet.hospital_number },
           { label: text.microchip, value: pet.microchip_number },
+          ...identityFacts(pet),
           {
             label: text.weight,
             value: pet.latest_weight && text.weightValue(pet.latest_weight.weight_kg, formatLongDate(pet.latest_weight.recorded_at)),

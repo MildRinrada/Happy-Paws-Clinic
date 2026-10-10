@@ -70,6 +70,7 @@ public async Task<IActionResult> IssueTicket(...)
 | `GET /booking/availability` | ดูช่วงว่างก่อนเข้าสู่ระบบ | ไม่มี |
 | `POST /auth/staff/login`, `/auth/2fa/verify`, `/auth/refresh`, `/auth/logout` | ยังไม่มี token | รหัสผ่าน challenge หรือ refresh token |
 | `POST /staff/members/invitations/{id}/accept` | ผู้ถูกเชิญยังไม่มีบัญชี | token ในลิงก์ |
+| `POST /queue/displays/claim` | ทีวียังไม่มี credential (ส่วนขยาย § 30) | รหัสตั้งจอที่ใช้ได้ครั้งเดียวภายใน 30 นาที และเพดาน 30 ครั้งต่อชั่วโมงต่อ IP |
 | `GET /staff/integrations/calendar/ics` | แอปปฏิทินส่ง bearer token ไม่ได้ | token ในลิงก์ หรือพนักงานที่เข้าสู่ระบบอยู่ ตรวจใน `CalendarFeedHandler` ดู [การเชื่อมต่อระบบ](features/integrations.md) |
 
 ### Endpoint ที่ยืนยันตัวตนแล้วแต่ไม่มี `RequireScope`
@@ -80,7 +81,8 @@ public async Task<IActionResult> IssueTicket(...)
 |---|---|
 | `/me`, `/me/capabilities`, `/me/password`, `/me/sessions` | เป็นข้อมูลของบัญชีผู้เรียกเอง |
 | `GET /appointments/{id}` และ `reschedule`, `cancel`, `confirm`, `check-in` | `AppointmentAccess` รับพนักงานด้วย scope และสาขา รับลูกค้าด้วยการดูแลสัตว์ตัวนั้น คนอื่นได้ 404 |
-| `GET /queue/stream` | พนักงานต้องมี `queue:read` และอยู่สาขานั้น ลูกค้าเห็นเฉพาะเหตุการณ์ของคิวตัวเอง |
+| `GET /queue/stream` | พนักงานต้องมี `queue:read` และอยู่สาขานั้น ลูกค้าเห็นเฉพาะเหตุการณ์ของคิวตัวเอง token ของจอเห็นเฉพาะสาขาของจอ |
+| `GET /queue/display-board` | token ของจอเท่านั้น คนอื่นได้ 403 (ส่วนขยาย § 30) |
 | `GET`/`PUT /portal/consents`, `POST /portal/data-requests` | ใช้รหัสลูกค้าจาก token (`RequireCustomerId`) ไม่รับจาก request |
 
 ข้อสังเกต endpoint กลุ่มนี้ไม่ผ่านด่าน 2FA เพราะด่าน 2FA ติดมากับ policy ของ `RequireScope` เท่านั้น
@@ -93,6 +95,14 @@ public async Task<IActionResult> IssueTicket(...)
 - **key ไม่มี 2FA** จึงถือ scope ระดับ 2FA ไม่ได้ตั้งแต่ตอนสร้าง (`ApiKeyScopeRules`) แทนที่จะได้รับการยกเว้น
 
 รายละเอียดอยู่ใน [การเชื่อมต่อระบบภายนอก](security/integrations.md)
+
+### token ของจอห้องรอ
+
+จอห้องรอที่ตั้งด้วยรหัสตั้งจอเรียกด้วย `Authorization: Bearer hpdsp_...` ([ส่วนขยาย § 30](./contract-extensions.md)) ต่างจาก API key ตรงที่ไม่ได้ทำแทนใคร principal มีแค่รหัสจอกับสาขาเดียว ไม่มีบัญชี สมาชิก หรือ scope
+
+- **เปิดทีละเส้น** `DisplayTokenAuthenticationHandler` ยืนยันตัวให้เฉพาะ route ที่ติด `[AcceptsDisplayToken]` คือ `GET /queue/display-board` และ `GET /queue/stream` route อื่นทุกเส้นได้ `401` ตั้งแต่ขั้นยืนยันตัว ก่อนถึง fallback policy หรือ `RequireScope`
+- **กุญแจดอกที่สอง** `InteractiveCallerRequirement` ปฏิเสธ principal ของจอบน route ที่ไม่ติดเครื่องหมายด้วย ถ้าวันหนึ่งขั้นยืนยันตัวพลาด จอก็ยังไม่ผ่าน default และ fallback policy
+- **เส้นสาธารณะ** token ไม่ถูกนับ คำตอบเหมือนคนที่ไม่ได้เข้าสู่ระบบ
 
 ## 2FA เป็นเงื่อนไขของสิทธิ์
 

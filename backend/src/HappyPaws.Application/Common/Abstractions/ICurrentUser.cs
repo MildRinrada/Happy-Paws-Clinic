@@ -46,6 +46,13 @@ public interface ICurrentUser
     /// log and the handlers that are for people only tell the difference.
     /// </summary>
     string? ApiKeyId => null;
+
+    /// <summary>
+    /// The waiting-room screen (<c>dsp_…</c>) this request authenticated as, or null. A display is
+    /// not a person and acts for nobody: it has no user, staff or customer id and no scope, and its
+    /// one branch is in <see cref="BranchIds"/> (<c>docs/contract-extensions.md § 30</c>).
+    /// </summary>
+    string? DisplayId => null;
 }
 
 /// <summary>

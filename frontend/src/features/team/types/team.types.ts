@@ -11,6 +11,8 @@ export interface TeamMember {
   /** Path under the site's /public folder. */
   photo_path?: string;
   years_of_experience?: number;
+  /** A signed link to an uploaded photo, good for an hour, minted for this page (§ 32). Shown before `photo_path`. */
+  photo_url?: string;
 }
 
 /** One department of `GET /team`, with its listed members. */

@@ -28,6 +28,18 @@ export function staffApi(): HttpClient {
   });
 }
 
+/**
+ * Calls the backend as a waiting-room screen, with the display token from the screen's own cookie
+ * (docs/contract-extensions.md § 30). The backend accepts that token on the display board and the
+ * queue stream only; anywhere else it is a 401.
+ */
+export function displayApi(displayToken: string): HttpClient {
+  return createHttpClient({
+    baseUrl: serverEnv.apiBaseUrl(),
+    authHeaders: () => ({ Authorization: `Bearer ${displayToken}` }),
+  });
+}
+
 /** Calls the contract's public reads — `/clinic`, `/services` — with no credentials at all. */
 export function publicApi(): HttpClient {
   return createHttpClient({ baseUrl: serverEnv.apiBaseUrl() });
