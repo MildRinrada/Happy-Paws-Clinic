@@ -1,0 +1,30 @@
+/** The notes-to-SOAP panel in the consulting room. */
+export const soapDraftText = {
+  title: 'ร่างบันทึกด้วย AI',
+  intro: 'พิมพ์บันทึกย่อ แล้วให้ AI จัดลงช่องของฟอร์ม AI ไม่บันทึกอะไรเอง',
+  notesLabel: 'บันทึกย่อ',
+  notesHint: 'ไม่เกิน 4,000 ตัวอักษร เช่น อาการ สิ่งที่ตรวจพบ แผนที่คิดไว้',
+  notesPlaceholder: 'เช่น อาเจียน 2 วัน ไม่กินอาหาร T 39.5 ท้องอืดเล็กน้อย นัดดูอาการ 3 วัน',
+  run: 'ร่างบันทึก',
+  emptyNotes: 'พิมพ์บันทึกย่อก่อน',
+  apply: 'ใส่ลงในฟอร์ม',
+  applied: 'ใส่ลงฟอร์มแล้ว ช่องบันทึกอาการบันทึกเองตามปกติ ส่วนผลตรวจรายระบบกดบันทึกผลตรวจเอง',
+  discard: 'ทิ้งร่างนี้',
+  fields: {
+    chief_complaint: 'อาการสำคัญ',
+    subjective: 'S ข้อมูลจากเจ้าของ',
+    objective: 'O สิ่งที่ตรวจพบ',
+    assessment: 'A การประเมิน',
+    plan: 'P แผนการรักษา',
+    examination: 'ผลตรวจรายระบบ',
+  } as Record<string, string>,
+  normal: 'ปกติ',
+  abnormal: 'ผิดปกติ',
+  emptyField: 'ไม่มีข้อมูลในบันทึกย่อ',
+  warningsTitle: 'ตรวจคำเหล่านี้ก่อน: ไม่พบในบันทึกย่อ',
+  warningReasons: {
+    dose_not_in_notes: 'ขนาดยา',
+    number_not_in_notes: 'ตัวเลข',
+    term_not_in_notes: 'คำ',
+  } as Record<string, string>,
+} as const;

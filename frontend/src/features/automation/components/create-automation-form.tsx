@@ -15,6 +15,7 @@ import { initialCondition, initialTiming, toCreateInput } from '../lib/automatio
 import type { AutomationChannel, AutomationTriggerType } from '../types/automation.types';
 import { ChannelField } from './channel-field';
 import { ConditionFields } from './condition-fields';
+import { LapsedConsentNote } from './lapsed-consent-note';
 import { RuleNameField } from './rule-name-field';
 import { TimingFields } from './timing-fields';
 
@@ -28,6 +29,17 @@ export function CreateAutomationForm({ branch }: { branch?: { id: string; name: 
   const [channel, setChannel] = useState<AutomationChannel>('auto');
   const [enabled, setEnabled] = useState(false);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit({ conflict: formMessages.conflict, unreachable: formMessages.unreachable });
+
+  /** A lapsed customer is only written to after their day, so the form's "14 days before" becomes "7 days after". */
+  function chooseTrigger(next: AutomationTriggerType) {
+    setType(next);
+
+    if (next === 'customer_lapsed') {
+      setTiming((current) => ({ ...current, mode: 'days', days: automationsPage.create.lapsedDefaultDays }));
+    } else if (type === 'customer_lapsed') {
+      setTiming((current) => ({ ...current, days: initialTiming.days }));
+    }
+  }
 
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,7 +57,7 @@ export function CreateAutomationForm({ branch }: { branch?: { id: string; name: 
           <div className="grid gap-4 sm:grid-cols-2">
             <RuleNameField id="automation-name" value={name} error={errors.name} onChange={setName} />
             <Field label={text.trigger} htmlFor="automation-trigger" error={errors['trigger.type']}>
-              <Select id="automation-trigger" value={type} onChange={(event) => setType(event.target.value as AutomationTriggerType)}>
+              <Select id="automation-trigger" value={type} onChange={(event) => chooseTrigger(event.target.value as AutomationTriggerType)}>
                 {triggerChoices.map((choice) => (
                   <option key={choice.value} value={choice.value}>
                     {choice.label}
@@ -55,6 +67,7 @@ export function CreateAutomationForm({ branch }: { branch?: { id: string; name: 
             </Field>
           </div>
 
+          {type === 'customer_lapsed' && <LapsedConsentNote />}
           <TimingFields trigger={type} value={timing} errors={errors} onChange={setTiming} />
           <ConditionFields trigger={type} value={condition} errors={errors} onChange={setCondition} />
 

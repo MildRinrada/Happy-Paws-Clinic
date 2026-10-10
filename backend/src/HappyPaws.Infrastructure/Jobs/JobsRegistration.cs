@@ -34,11 +34,13 @@ public static class JobsRegistration
         services.AddScoped<ReportExportJob>();
         services.AddScoped<HousekeepingJob>();
         services.AddScoped<WebhookJob>();
+        services.AddScoped<DailyBriefJob>();
 
         AddHost<AutomationJob>(services, "automations", options => options.Automations);
         AddHost<ReportExportJob>(services, JobSignal.ReportExports, options => options.ReportExports);
         AddHost<HousekeepingJob>(services, "housekeeping", options => options.Housekeeping);
         AddHost<WebhookJob>(services, "webhooks", options => options.Webhooks);
+        AddHost<DailyBriefJob>(services, "daily-briefs", options => options.DailyBriefs);
 
         return services;
     }

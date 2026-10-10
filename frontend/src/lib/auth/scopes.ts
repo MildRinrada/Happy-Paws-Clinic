@@ -78,4 +78,6 @@ export const Scope = {
   ReceiptIssue: 'receipt:issue',
   /** Not in the contract: approved with the article routes (docs/contract-extensions.md § 26). */
   ContentManage: 'content:manage',
+  /** Not in the contract: the staff AI assistant (docs/contract-extensions.md § 34). */
+  AiUse: 'ai:use',
 } as const;

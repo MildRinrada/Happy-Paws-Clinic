@@ -113,17 +113,19 @@ public class DefaultRolesTests
     }
 
     [Fact]
-    public void The_admin_holds_everything_except_the_two_the_contract_withholds()
+    public void The_admin_holds_everything_except_the_two_the_contract_withholds_and_ai_use()
     {
         var admin = new ScopeSet(ScopesOf(DefaultRoles.ClinicAdmin));
 
-        // "ทุกอย่างยกเว้น billing:payout, settings:danger".
+        // "ทุกอย่างยกเว้น billing:payout, settings:danger". ai:use (§ 34) was approved for vets,
+        // the counter and the owner only.
         Assert.False(admin.Allows(Scopes.Payment.Payout));
         Assert.False(admin.Allows(Scopes.Settings.Danger));
+        Assert.False(admin.Allows(Scopes.Ai.Use));
         Assert.False(admin.IsUnrestricted);
 
         Assert.All(
-            ScopeCatalogue.All.Where(scope => scope is not (Scopes.Payment.Payout or Scopes.Settings.Danger)),
+            ScopeCatalogue.All.Where(scope => scope is not (Scopes.Payment.Payout or Scopes.Settings.Danger or Scopes.Ai.Use)),
             scope => Assert.True(admin.Allows(scope)));
     }
 

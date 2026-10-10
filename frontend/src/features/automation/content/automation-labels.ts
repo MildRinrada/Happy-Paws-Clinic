@@ -7,12 +7,14 @@ export const triggerLabels: Record<AutomationTriggerType, string> = {
   vaccine_due: 'ครบกำหนดวัคซีน',
   appointment_upcoming: 'ก่อนถึงนัด',
   treatment_plan_session: 'ก่อนถึงรอบแผนการรักษา',
+  customer_lapsed: 'ลูกค้าหายไปนานกว่าปกติ (คิดถึงน้อง)',
 };
 
 export const triggerChoices: { value: AutomationTriggerType; label: string }[] = [
   { value: 'vaccine_due', label: triggerLabels.vaccine_due },
   { value: 'appointment_upcoming', label: triggerLabels.appointment_upcoming },
   { value: 'treatment_plan_session', label: triggerLabels.treatment_plan_session },
+  { value: 'customer_lapsed', label: triggerLabels.customer_lapsed },
 ];
 
 export const automationChannelLabels: Record<AutomationChannel, string> = {
@@ -38,4 +40,5 @@ export const subjectLabels: Record<string, string> = {
   vaccination: 'วัคซีน',
   appointment: 'นัดหมาย',
   treatment_plan_session: 'รอบแผนการรักษา',
+  customer: 'ลูกค้าที่หายไป',
 };

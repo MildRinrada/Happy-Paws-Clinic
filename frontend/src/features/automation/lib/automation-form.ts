@@ -7,9 +7,15 @@ export const initialTiming: TimingValue = { mode: 'days', days: '14', hours: '24
 
 export const initialCondition: ConditionValue = { species: '', vaccineName: '', unconfirmedOnly: false };
 
+/**
+ * Triggers whose subject is a day with no time in it (a due date, the day a customer was due back),
+ * so they only count in days.
+ */
+export const countsInDaysOnly = (type: AutomationTriggerType) => type === 'vaccine_due' || type === 'customer_lapsed';
+
 /** The form's text fields as the API's trigger. A number field left empty is sent as 0 and refused there. */
 export function toTrigger(type: AutomationTriggerType, timing: TimingValue): AutomationTrigger {
-  const mode = type === 'vaccine_due' ? 'days' : timing.mode;
+  const mode = countsInDaysOnly(type) ? 'days' : timing.mode;
 
   return mode === 'hours'
     ? { type, offset_hours: Number(timing.hours) || 0 }

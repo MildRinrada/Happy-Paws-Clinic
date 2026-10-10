@@ -32,14 +32,16 @@ public static class SecondFactorScopes
 /// Anything in the catalogue that its creator holds, except: the 2FA-level scopes
 /// (<see cref="SecondFactorScopes"/>), <c>integration:manage</c> (a key that can mint keys or
 /// repoint webhooks would outlive anyone's attempt to shut it out) and <c>staff:manage</c> (a key
-/// that can invite staff can make itself a person). Wildcards are refused too: a key lists what it
+/// that can invite staff can make itself a person), and <c>ai:use</c> (the AI allowance is a monthly
+/// budget for people at the clinic; a script holding a key could spend it in an afternoon, see
+/// <c>docs/contract-extensions.md § 34</c>). Wildcards are refused too: a key lists what it
 /// does, so a scope added in a later release is not granted to it silently.
 /// </para>
 /// </summary>
 public static class ApiKeyScopeRules
 {
     private static readonly HashSet<string> Withheld = new(
-        [.. SecondFactorScopes.All, Scopes.Integration.Manage, Scopes.Staff.Manage],
+        [.. SecondFactorScopes.All, Scopes.Integration.Manage, Scopes.Staff.Manage, Scopes.Ai.Use],
         StringComparer.Ordinal);
 
     /// <summary>True when a key may carry <paramref name="scope"/>, whoever creates it.</summary>

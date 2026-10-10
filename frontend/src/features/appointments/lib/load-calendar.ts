@@ -6,6 +6,8 @@ import { vetNames } from '@/features/portal/lib/display-names';
 import { listServices } from '@/features/service-catalog/api/listServices';
 import { listStaffMembers } from '@/features/staff/api/listStaffMembers';
 import { optional } from '@/lib/api/api-error';
+import { clinicDay } from '@/lib/format/datetime';
+import { getAttendanceRisk } from '../api/getAttendanceRisk';
 import { listAppointments } from '../api/staffAppointments';
 import { appointmentCalendar } from '../content/appointment-calendar';
 import type { Appointment } from '../types/appointment.types';
@@ -68,13 +70,21 @@ export async function loadCalendar(day: string, branchId: string): Promise<Calen
   const petIds = [...new Set(appointments.map((appointment) => appointment.pet_id))];
   const customerIds = [...new Set(appointments.map((appointment) => appointment.customer_id))];
 
-  const [pets, customers, services, vets, hours] = await Promise.all([
+  // Risk is worked out for today and later only (docs/contract-extensions.md § 33); a past day's
+  // visits have already been attended or not.
+  const ahead = day >= clinicDay(new Date()) && appointments.length > 0;
+
+  const [pets, customers, services, vets, hours, risk] = await Promise.all([
     Promise.all(petIds.map((id) => optional(getPet(id)))),
     Promise.all(customerIds.map((id) => optional(getCustomer(id)))),
     optional(listServices(branchId)),
     loadVets(branchId),
     getOpeningHours().catch(() => null),
+    ahead ? optional(getAttendanceRisk(day, branchId)) : Promise.resolve(null),
   ]);
+
+  const risks = risk?.data ?? [];
+  const riskById = new Map(risks.map((row) => [row.appointment_id, row]));
 
   const petById = new Map(petIds.map((id, index) => [id, pets[index]]));
   const customerById = new Map(customerIds.map((id, index) => [id, customers[index]]));
@@ -95,6 +105,7 @@ export async function loadCalendar(day: string, branchId: string): Promise<Calen
         customerPhone: customer?.phone,
         serviceName: serviceById.get(appointment.service_id),
         vetName: appointment.staff_id ? vetById.get(appointment.staff_id) : undefined,
+        risk: riskById.get(appointment.id),
       };
     })
     .sort((a, b) => a.appointment.starts_at.localeCompare(b.appointment.starts_at));
@@ -132,5 +143,6 @@ export async function loadCalendar(day: string, branchId: string): Promise<Calen
     endMinute: Math.ceil(endMinute / 60) * 60,
     closedDay,
     vets,
+    risks,
   };
 }

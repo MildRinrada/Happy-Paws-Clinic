@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { appointmentCalendar, appointmentDetail } from '../../content/appointment-calendar';
 import type { CalendarItem, VetOption } from '../../types/calendar.types';
 import { AppointmentStatusBadge } from '../appointment-status-badge';
+import { RiskReasons } from '../calendar/risk-reasons';
 import { AppointmentActions } from './appointment-actions';
 import { DetailRows } from './detail-rows';
 
@@ -68,6 +69,8 @@ export function AppointmentPanel({ item, vets, permissions, isToday, onClose }: 
           )}
 
           <DetailRows item={item} />
+
+          <RiskReasons risk={item.risk} />
 
           {item.appointment.late_cancellation && (
             <p className="text-sm text-amber-800">{appointmentDetail.lateCancellation}</p>

@@ -13,6 +13,8 @@ import { loadBusinessReports, loadOperationsReports } from '@/features/analytics
 import { readReportRange, type ReportSearchParams, type ReportTab } from '@/features/analytics/lib/report-range';
 import { ReportExportControl } from '@/features/reporting/components/report-export-control';
 import { exportableReports } from '@/features/reporting/lib/exportable-reports';
+import { getDailyBrief } from '@/features/staff-ai/api/getDailyBrief';
+import { DailyBriefCard } from '@/features/staff-ai/components/brief/daily-brief-card';
 import { optional } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -59,17 +61,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // "ส่งออกรายงาน": only with report:export, and only the reports whose screen this session may read.
   const exportable = exportableReports(can);
 
-  const [todayView, operations, business] = await Promise.all([
+  const [todayView, operations, business, brief] = await Promise.all([
     canToday ? authed(() => optional(getTodayDashboard(branch.id))) : Promise.resolve(null),
     showTab && range.tab === 'operations' ? authed(() => loadOperationsReports(range, branch.id)) : Promise.resolve(null),
     showTab && range.tab === 'business'
       ? authed(() => loadBusinessReports(range, branch.id, { read: canAnalytics, hr: canHr }))
       : Promise.resolve(null),
+    // The AI morning brief (docs/contract-extensions.md § 34). Always answers, "disabled" when the AI is off.
+    canToday ? authed(() => optional(getDailyBrief(branch.id))) : Promise.resolve(null),
   ]);
 
   return (
     <div className="max-w-6xl space-y-6">
       <PageHeader title={dashboardPage.title} subtitle={dashboardPage.subtitle(branch.name)} />
+
+      {brief && brief.status !== 'disabled' && <DailyBriefCard brief={brief} />}
 
       {todayView && <TodayOverview today={todayView} />}
 

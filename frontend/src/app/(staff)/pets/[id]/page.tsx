@@ -21,6 +21,8 @@ import { recordDeath } from '@/features/pets/content/record-death';
 import { loadPetProfile, type PetProfile } from '@/features/pets/lib/load-pet-profile';
 import { prescriptionPaths } from '@/features/prescriptions/lib/prescription-paths';
 import { listServices } from '@/features/service-catalog/api/listServices';
+import { PetSummaryCard } from '@/features/staff-ai/components/pet-summary/pet-summary-card';
+import { loadAiUsage } from '@/features/staff-ai/lib/load-ai-usage';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -64,6 +66,8 @@ export default async function PetPage({
   const canWritePatient = context.can(Scope.PatientWrite);
   const canPlan = alive && context.can(Scope.ConsultWrite);
   const canPrint = context.can(Scope.RecordRead);
+  // "สรุปด้วย AI" reads the pet's file: record:read, and the assistant on for this session (§ 34).
+  const canSummarize = canPrint && (await loadAiUsage()) !== null;
   const branchId = context.branch?.id;
 
   // What the plan form picks from, read only for someone who may plan.
@@ -99,6 +103,7 @@ export default async function PetPage({
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-6">
           <AllergiesCard petId={pet.id} allergies={allergies} canRecord={alive && canRecord} />
+          {canSummarize && <PetSummaryCard petId={pet.id} />}
           {canPlan && <TreatmentPlanCard petId={pet.id} branchId={branchId} services={services} vets={vets} />}
           <TimelineCard petId={pet.id} history={profile.history} paged={Boolean(cursor)} />
         </div>

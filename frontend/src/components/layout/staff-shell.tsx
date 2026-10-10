@@ -13,6 +13,8 @@ interface NavItem {
   label: string;
   /** The scopes the screens behind the link are built on; holding any one shows the link. */
   scopes: string[];
+  /** Shown only when the staff AI assistant is switched on for this deployment (§ 34). */
+  ai?: boolean;
 }
 
 const navigation: NavItem[] = [
@@ -28,6 +30,7 @@ const navigation: NavItem[] = [
   { href: '/crm', label: 'แพ็กเกจและโปรโมชัน', scopes: [Scope.CrmRead, Scope.CrmManage] },
   { href: '/notifications', label: 'แจ้งเตือนลูกค้า', scopes: [Scope.NotifyRead, Scope.NotifySend, Scope.AutomationRead] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
+  { href: '/ai', label: 'ผู้ช่วย AI', scopes: [Scope.AiUse], ai: true },
   { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead, Scope.ContentManage] },
 ];
 
@@ -47,8 +50,17 @@ function entryOf(href: string, context: StaffContext): string {
  * ต้องเปิดเมนูใดให้บัญชีนี้") and it is a convenience only: typing the address of a hidden screen
  * reaches a page whose data the backend then refuses.
  */
-export function StaffShell({ context, children }: { context: StaffContext; children: ReactNode }) {
-  const items = navigation.filter((item) => item.scopes.some(context.can));
+export function StaffShell({
+  context,
+  aiEnabled = false,
+  children,
+}: {
+  context: StaffContext;
+  /** True when this session holds `ai:use` and the assistant is on (docs/contract-extensions.md § 34). */
+  aiEnabled?: boolean;
+  children: ReactNode;
+}) {
+  const items = navigation.filter((item) => item.scopes.some(context.can) && (!item.ai || aiEnabled));
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">

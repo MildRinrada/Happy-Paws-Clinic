@@ -2,6 +2,7 @@
 
 import { Field, Input, Select } from '@/components/ui/field';
 import { automationsPage } from '../content/automations-page';
+import { countsInDaysOnly } from '../lib/automation-form';
 import type { AutomationTriggerType } from '../types/automation.types';
 
 export interface TimingValue {
@@ -22,16 +23,19 @@ interface TimingFieldsProps {
 
 /**
  * When the rule sends: so many days before at a time of day, or so many hours before the start.
- * A vaccine's due date has no time of day, so it only counts in days.
+ * A vaccine's due date and a lapsed customer's due-back day have no time of day, so they only count
+ * in days; the lapsed one only after the day (a negative number).
  */
 export function TimingFields({ trigger, value, errors, onChange, idPrefix = 'automation' }: TimingFieldsProps) {
   const text = automationsPage.create;
-  const mode = trigger === 'vaccine_due' ? 'days' : value.mode;
+  const daysOnly = countsInDaysOnly(trigger);
+  const lapsed = trigger === 'customer_lapsed';
+  const mode = daysOnly ? 'days' : value.mode;
   const set = (change: Partial<TimingValue>) => onChange({ ...value, ...change });
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      {trigger !== 'vaccine_due' && (
+      {!daysOnly && (
         <Field label={text.timingMode} htmlFor={`${idPrefix}-mode`}>
           <Select id={`${idPrefix}-mode`} value={mode} onChange={(event) => set({ mode: event.target.value as TimingValue['mode'] })}>
             <option value="days">{text.modeDays}</option>
@@ -42,8 +46,21 @@ export function TimingFields({ trigger, value, errors, onChange, idPrefix = 'aut
 
       {mode === 'days' ? (
         <>
-          <Field label={text.offsetDays} htmlFor={`${idPrefix}-days`} hint={text.offsetDaysHint} error={errors['trigger.offset_days']}>
-            <Input id={`${idPrefix}-days`} type="number" inputMode="numeric" value={value.days} onChange={(event) => set({ days: event.target.value })} />
+          <Field
+            label={lapsed ? text.offsetDaysLapsed : text.offsetDays}
+            htmlFor={`${idPrefix}-days`}
+            hint={lapsed ? text.offsetDaysLapsedHint : text.offsetDaysHint}
+            error={errors['trigger.offset_days']}
+          >
+            <Input
+              id={`${idPrefix}-days`}
+              type="number"
+              inputMode="numeric"
+              min={lapsed ? -90 : undefined}
+              max={lapsed ? -1 : undefined}
+              value={value.days}
+              onChange={(event) => set({ days: event.target.value })}
+            />
           </Field>
           <Field label={text.sendTime} htmlFor={`${idPrefix}-time`} error={errors['trigger.send_time']}>
             <Input id={`${idPrefix}-time`} type="time" value={value.time} onChange={(event) => set({ time: event.target.value })} />

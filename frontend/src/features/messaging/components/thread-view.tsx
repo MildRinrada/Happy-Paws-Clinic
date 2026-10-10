@@ -8,10 +8,12 @@ import { ThreadHeader } from './thread-header';
 interface ThreadViewProps {
   thread: MessageThread;
   canReply: boolean;
+  /** Offer an AI-drafted reply in the reply box (docs/contract-extensions.md § 34). */
+  aiDraft?: boolean;
 }
 
 /** One conversation and, for someone who may answer, the reply box under it. */
-export function ThreadView({ thread, canReply }: ThreadViewProps) {
+export function ThreadView({ thread, canReply, aiDraft = false }: ThreadViewProps) {
   return (
     <Card>
       <ThreadHeader thread={thread} />
@@ -19,7 +21,7 @@ export function ThreadView({ thread, canReply }: ThreadViewProps) {
         <MessageList messages={thread.messages} hasMore={thread.has_more_messages} />
       </div>
       {canReply ? (
-        <ReplyBox key={thread.id} threadId={thread.id} />
+        <ReplyBox key={thread.id} threadId={thread.id} aiDraft={aiDraft} />
       ) : (
         <p className="border-t border-ink-100 px-5 py-3 text-sm text-ink-600">{messagesPage.reply.noWrite}</p>
       )}

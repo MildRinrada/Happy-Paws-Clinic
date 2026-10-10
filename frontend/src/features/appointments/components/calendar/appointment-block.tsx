@@ -3,6 +3,7 @@ import type { PlacedItem } from '../../lib/block-layout';
 import { offsetPx, PX_PER_MINUTE } from '../../lib/grid-scale';
 import { appointmentBlockTone } from '../../lib/status-labels';
 import { formatTime } from '@/lib/format/datetime';
+import { RiskMarker } from './risk-marker';
 
 interface AppointmentBlockProps {
   placed: PlacedItem;
@@ -40,6 +41,7 @@ export function AppointmentBlock({ placed, gridStart, onOpen }: AppointmentBlock
             !
           </span>
         )}
+        <RiskMarker risk={item.risk} />
       </span>
       <span className="block truncate text-ink-600">{item.serviceName ?? text.unnamedService}</span>
     </button>

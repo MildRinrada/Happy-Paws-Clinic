@@ -29,8 +29,14 @@ public sealed record CreateAutomationCommand(
     AutomationActionInput? Action = null,
     bool? Enabled = null);
 
-/// <param name="Type"><c>vaccine_due</c>, <c>appointment_upcoming</c> or <c>treatment_plan_session</c>.</param>
-/// <param name="OffsetDays">Days before the subject's day (negative is after, for vaccines).</param>
+/// <param name="Type">
+/// <c>vaccine_due</c>, <c>appointment_upcoming</c>, <c>treatment_plan_session</c> or
+/// <c>customer_lapsed</c> (<c>docs/contract-extensions.md § 33</c>).
+/// </param>
+/// <param name="OffsetDays">
+/// Days before the subject's day (negative is after: a vaccine follow-up, or -1 to -90 days after a
+/// lapsed customer's due-back day).
+/// </param>
 /// <param name="OffsetHours">Hours before the subject's start.</param>
 /// <param name="SendTime"><c>HH:mm</c> clinic time, with <paramref name="OffsetDays"/>; 09:00 when absent.</param>
 public sealed record AutomationTriggerInput(string? Type, int? OffsetDays = null, int? OffsetHours = null, string? SendTime = null);
@@ -115,9 +121,13 @@ public sealed class CreateAutomationValidator : AbstractValidator<CreateAutomati
 
         if (trigger.OffsetHours is { } hours)
         {
-            if (type == AutomationTrigger.VaccineDue)
+            if (!AutomationRule.AllowsHours(type))
             {
-                context.AddFailure("trigger.offset_hours", "การเตือนวัคซีนนับเป็นวัน ใช้ offset_days");
+                context.AddFailure(
+                    "trigger.offset_hours",
+                    type == AutomationTrigger.VaccineDue
+                        ? "การเตือนวัคซีนนับเป็นวัน ใช้ offset_days"
+                        : "การชวนลูกค้าที่หายไปนับเป็นวัน ใช้ offset_days");
             }
             else if (hours is < 1 or > AutomationRule.MaxOffsetHours)
             {
@@ -132,9 +142,7 @@ public sealed class CreateAutomationValidator : AbstractValidator<CreateAutomati
             return;
         }
 
-        var (min, max) = type == AutomationTrigger.VaccineDue
-            ? (AutomationRule.MinVaccineOffsetDays, AutomationRule.MaxOffsetDays)
-            : (0, AutomationRule.MaxVisitOffsetDays);
+        var (min, max) = AutomationRule.OffsetDaysRange(type);
 
         if (trigger.OffsetDays < min || trigger.OffsetDays > max)
         {
@@ -162,7 +170,7 @@ public sealed class CreateAutomationValidator : AbstractValidator<CreateAutomati
             context.AddFailure("condition.vaccine_name", "เงื่อนไขชื่อวัคซีนใช้ได้กับการเตือนวัคซีนเท่านั้น");
         }
 
-        if (!string.IsNullOrWhiteSpace(condition.ServiceId) && type == AutomationTrigger.VaccineDue)
+        if (!string.IsNullOrWhiteSpace(condition.ServiceId) && !AutomationRule.AllowsService(type))
         {
             context.AddFailure("condition.service_id", "เงื่อนไขบริการใช้ได้กับนัดและแผนการรักษาเท่านั้น");
         }

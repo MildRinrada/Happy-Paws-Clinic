@@ -2,6 +2,7 @@ import { formatTime } from '@/lib/format/datetime';
 import { appointmentCalendar } from '../../content/appointment-calendar';
 import type { CalendarItem } from '../../types/calendar.types';
 import { AppointmentStatusBadge } from '../appointment-status-badge';
+import { RiskBadge } from './risk-badge';
 
 /** One appointment as a row: time, pet, service and vet, with its state. */
 export function AgendaRow({ item, onOpen }: { item: CalendarItem; onOpen: () => void }) {
@@ -21,7 +22,10 @@ export function AgendaRow({ item, onOpen }: { item: CalendarItem; onOpen: () => 
             {[item.serviceName ?? text.unnamedService, item.vetName ?? text.noVet].join(' / ')}
           </span>
         </span>
-        <AppointmentStatusBadge status={appointment.status} />
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <AppointmentStatusBadge status={appointment.status} />
+          <RiskBadge risk={item.risk} />
+        </span>
       </button>
     </li>
   );

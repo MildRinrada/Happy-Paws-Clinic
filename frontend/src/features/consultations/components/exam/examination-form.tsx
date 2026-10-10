@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/field';
 import { recordExaminationAction } from '../../actions/consultation-actions';
 import { consultationPage } from '../../content/consultation-page';
+import { useIncomingFormDraft } from '../../hooks/use-form-draft';
 import { usePartSubmit } from '../../hooks/use-part-submit';
 import type { Finding } from '../../types/consultation.types';
 
@@ -45,6 +46,18 @@ export function ExaminationForm({ consultationId, findings, editable }: Examinat
     setSaved(false);
     setRows((current) => ({ ...current, [system]: { ...current[system]!, ...change } }));
   };
+
+  // Findings drafted by the AI panel (docs/contract-extensions.md § 34) go onto the rows of the
+  // same body systems. Nothing is saved until the vet presses the form's own save button.
+  useIncomingFormDraft((draft) => {
+    if (!editable) return;
+
+    for (const finding of draft.findings) {
+      if (systems.includes(finding.body_system)) {
+        update(finding.body_system, { answer: finding.is_normal ? 'normal' : 'abnormal', note: finding.note ?? '' });
+      }
+    }
+  });
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

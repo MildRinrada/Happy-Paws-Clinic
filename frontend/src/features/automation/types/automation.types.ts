@@ -1,6 +1,7 @@
 /** Shapes from `/staff/automations` and `/staff/reminders/upcoming`. Field names are the API's snake_case ones. */
 
-export type AutomationTriggerType = 'vaccine_due' | 'appointment_upcoming' | 'treatment_plan_session';
+/** `customer_lapsed` is docs/contract-extensions.md § 33: a customer later back than their own usual gap. */
+export type AutomationTriggerType = 'vaccine_due' | 'appointment_upcoming' | 'treatment_plan_session' | 'customer_lapsed';
 
 export type AutomationChannel = 'auto' | 'line' | 'sms' | 'email';
 
@@ -80,7 +81,7 @@ export interface Reminder {
   pet_name: string;
   branch_id?: string;
   subject: {
-    type: 'vaccination' | 'appointment' | 'treatment_plan_session';
+    type: 'vaccination' | 'appointment' | 'treatment_plan_session' | 'customer';
     id: string;
     due_on: string;
     starts_at?: string;

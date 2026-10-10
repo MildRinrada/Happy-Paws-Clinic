@@ -53,6 +53,7 @@ using HappyPaws.Infrastructure.Persistence.Repositories.Clinics;
 using HappyPaws.Infrastructure.Persistence.Repositories.Consultations;
 using HappyPaws.Infrastructure.Persistence.Repositories.Crm;
 using HappyPaws.Infrastructure.Persistence.Repositories.Customers;
+using HappyPaws.Infrastructure.Persistence.Repositories.Forecasting;
 using HappyPaws.Infrastructure.Persistence.Repositories.Identity;
 using HappyPaws.Infrastructure.Persistence.Repositories.Laboratory;
 using HappyPaws.Infrastructure.Persistence.Repositories.MedicalRecords;
@@ -112,6 +113,10 @@ public static class DependencyInjection
 
         // The website assistant's model: Gemini, an OpenAI-format server (Ollama, vLLM) or none.
         services.AddAssistantModel(configuration);
+
+        // The staff AI assistant's model (docs/contract-extensions.md § 34): the same adapters, from
+        // StaffAi:*, falling back to Assistant:* when it names no provider.
+        services.AddStaffAiModel(configuration);
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
@@ -235,6 +240,9 @@ public static class DependencyInjection
         services.AddScoped<IOperationalStatsQueries, OperationalStatsQueries>();
         services.AddScoped<IBusinessAnalyticsQueries, BusinessAnalyticsQueries>();
 
+        // ---- Statistical forecasts (docs/contract-extensions.md § 33) ----
+        services.AddScoped<HappyPaws.Application.Forecasting.IForecastQueries, ForecastQueries>();
+
         // ---- Reminders and automation ----
         // Rules, the "already sent" claims, and the subject queries the one evaluator reads.
         services.AddScoped<IAutomationRuleRepository, AutomationRuleRepository>();
@@ -243,6 +251,13 @@ public static class DependencyInjection
 
         // ---- Customer threads ----
         services.AddScoped<IMessageThreadRepository, MessageThreadRepository>();
+
+        // ---- Staff AI assistant (docs/contract-extensions.md § 34) ----
+        // The monthly counter, the summary cache, the morning briefs and the patient-file reader.
+        services.AddScoped<HappyPaws.Application.StaffAi.IStaffAiUsageStore, Persistence.StaffAi.StaffAiUsageStore>();
+        services.AddScoped<HappyPaws.Application.StaffAi.PetSummary.IPetSummaryCache, Persistence.StaffAi.PetSummaryCache>();
+        services.AddScoped<HappyPaws.Application.StaffAi.DailyBrief.IDailyBriefStore, Persistence.StaffAi.DailyBriefStore>();
+        services.AddScoped<HappyPaws.Application.StaffAi.IStaffAiReader, Persistence.StaffAi.StaffAiReader>();
 
         // ---- Report exports ----
         services.AddScoped<IReportExportRepository, ReportExportRepository>();

@@ -65,9 +65,9 @@ public sealed record ReminderDto(
     }
 }
 
-/// <param name="Type"><c>vaccination</c>, <c>appointment</c> or <c>treatment_plan_session</c>.</param>
-/// <param name="Id">The record; a session is <c>{plan id}:{number}</c>.</param>
-/// <param name="DueOn">Its clinic day.</param>
+/// <param name="Type"><c>vaccination</c>, <c>appointment</c>, <c>treatment_plan_session</c> or <c>customer</c>.</param>
+/// <param name="Id">The record; a session is <c>{plan id}:{number}</c>; a lapsed customer is the customer id.</param>
+/// <param name="DueOn">Its clinic day; for a lapsed customer, the day they would usually have been back by.</param>
 /// <param name="StartsAt">Its start, when it has one.</param>
 /// <param name="Label">The vaccine or the plan.</param>
 /// <param name="AppointmentId">The appointment, when there is one.</param>

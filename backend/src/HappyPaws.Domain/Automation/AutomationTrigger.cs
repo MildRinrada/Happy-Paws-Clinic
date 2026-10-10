@@ -14,6 +14,13 @@ public enum AutomationTrigger
 
     /// <summary>A session of a treatment plan is coming up, booked or not yet booked.</summary>
     TreatmentPlanSession,
+
+    /// <summary>
+    /// A customer is later back than their own usual gap between visits ("คิดถึงน้อง"): the lapsed
+    /// rule of <c>docs/contract-extensions.md § 33</c>, the same one <c>GET /staff/customers/due-back</c>
+    /// reads. A message nobody asked for, so it goes out under marketing consent, not care.
+    /// </summary>
+    CustomerLapsed,
 }
 
 /// <summary>Where a rule's message goes. <see cref="Auto"/> lets the router try LINE, then SMS, then email.</summary>
@@ -31,4 +38,7 @@ public enum AutomationSubjectKind
     Vaccination,
     Appointment,
     TreatmentPlanSession,
+
+    /// <summary>The customer themselves, for <see cref="AutomationTrigger.CustomerLapsed"/>.</summary>
+    Customer,
 }

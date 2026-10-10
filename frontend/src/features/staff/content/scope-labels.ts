@@ -5,6 +5,7 @@
  */
 
 const resources: Record<string, string> = {
+  ai: 'ผู้ช่วย AI',
   analytics: 'วิเคราะห์ข้อมูล',
   appointment: 'นัดหมาย',
   audit: 'บันทึกการใช้งาน (audit log)',
@@ -62,6 +63,7 @@ const actions: Record<string, string> = {
   adjust: 'ปรับยอด',
   purchase: 'สั่งซื้อ',
   export: 'ส่งออก',
+  use: 'ใช้งาน',
 };
 
 export const resourceLabel = (resource: string) => resources[resource] ?? resource;

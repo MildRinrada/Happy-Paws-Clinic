@@ -44,7 +44,7 @@ public sealed record AutomationDto(
         rule.CreatedAt);
 }
 
-/// <param name="Type"><c>vaccine_due</c>, <c>appointment_upcoming</c> or <c>treatment_plan_session</c>.</param>
+/// <param name="Type"><c>vaccine_due</c>, <c>appointment_upcoming</c>, <c>treatment_plan_session</c> or <c>customer_lapsed</c>.</param>
 /// <param name="OffsetDays">Days before the subject's day.</param>
 /// <param name="OffsetHours">Hours before the subject's start.</param>
 /// <param name="SendTime">Clinic time of day, <c>HH:mm</c>, with <paramref name="OffsetDays"/>.</param>

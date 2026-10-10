@@ -5,6 +5,7 @@ import { Field, Textarea } from '@/components/ui/field';
 import { formatTime } from '@/lib/format/datetime';
 import { saveNotesAction } from '../../actions/consultation-actions';
 import { consultationPage } from '../../content/consultation-page';
+import { useIncomingFormDraft } from '../../hooks/use-form-draft';
 import type { ConsultationNotes } from '../../types/consultation.types';
 
 const FIELDS: (keyof ConsultationNotes)[] = ['chief_complaint', 'subjective', 'objective', 'assessment', 'plan'];
@@ -65,6 +66,21 @@ export function NotesForm({ consultationId, initial, editable }: NotesFormProps)
     setValues((current) => ({ ...current, [field]: value }));
     setDirty((current) => new Set(current).add(field));
   }
+
+  // A draft handed over from the AI panel (docs/contract-extensions.md § 34). An empty box takes
+  // the draft; one the vet already wrote in keeps its text and gets the draft below it. The
+  // fields then save the way they always do.
+  useIncomingFormDraft((draft) => {
+    if (!editable) return;
+
+    for (const field of FIELDS) {
+      const offered = draft.notes[field]?.trim();
+      if (!offered) continue;
+
+      const current = latest.current[field].trim();
+      change(field, current ? `${current}\n${offered}` : offered);
+    }
+  });
 
   return (
     <div className="space-y-4">

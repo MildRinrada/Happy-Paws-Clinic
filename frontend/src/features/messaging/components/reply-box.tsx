@@ -5,14 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Field, Textarea } from '@/components/ui/field';
 import { FormStatus } from '@/components/ui/form-status';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { ReplyDraftButton } from '@/features/staff-ai/components/reply/reply-draft-button';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replyToThreadAction } from '../actions/reply-actions';
 import { messagesPage } from '../content/messages-page';
 
 const MAX_LENGTH = 1000;
 
-/** The answer to a customer. The backend picks the channel; the result shows on the message itself. */
-export function ReplyBox({ threadId }: { threadId: string }) {
+interface ReplyBoxProps {
+  threadId: string;
+  /** Offer "ร่างคำตอบ", which puts an AI draft in the box (docs/contract-extensions.md § 34). */
+  aiDraft?: boolean;
+}
+
+/**
+ * The answer to a customer. The backend picks the channel; the result shows on the message itself.
+ * An AI draft only fills the box: the reply goes out when staff press send, as any other.
+ */
+export function ReplyBox({ threadId, aiDraft = false }: ReplyBoxProps) {
   const id = useId();
   const [text, setText] = useState('');
   const [emptyError, setEmptyError] = useState<string>();
@@ -53,6 +63,16 @@ export function ReplyBox({ threadId }: { threadId: string }) {
           }}
         />
       </Field>
+      {aiDraft && (
+        <ReplyDraftButton
+          threadId={threadId}
+          onDraft={(draft) => {
+            touch();
+            setEmptyError(undefined);
+            setText(draft);
+          }}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? messagesPage.reply.sending : messagesPage.reply.send}

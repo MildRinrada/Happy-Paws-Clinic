@@ -5,6 +5,7 @@ import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { getScheduleCalendar } from '@/features/schedules/api/schedules';
 import { AddShiftForm } from '@/features/schedules/components/add-shift-form';
 import { AssignmentRulesSection } from '@/features/schedules/components/assignment-rules-section';
+import { ForecastLink } from '@/features/schedules/components/forecast/forecast-link';
 import { RosterTable } from '@/features/schedules/components/roster-table';
 import { TimeOffForm } from '@/features/schedules/components/time-off-form';
 import { WeekNav } from '@/features/schedules/components/week-nav';
@@ -53,7 +54,16 @@ export default async function SchedulesPage({ searchParams }: SchedulesPageProps
 
   return (
     <div className="max-w-6xl space-y-6">
-      <PageHeader title={schedulePage.title} subtitle={schedulePage.subtitle(branch.name)} actions={<WeekNav days={days} />} />
+      <PageHeader
+        title={schedulePage.title}
+        subtitle={schedulePage.subtitle(branch.name)}
+        actions={
+          <>
+            <WeekNav days={days} />
+            {context.can(Scope.StatsRead) && <ForecastLink />}
+          </>
+        }
+      />
       <RosterTable days={days} staff={calendar.staff} today={today} />
 
       {canWrite && (

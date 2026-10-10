@@ -59,6 +59,11 @@ public sealed class ConsentGate(IConsentRepository consents)
         // Listed although unlisted keys already default to marketing, so that nobody reads its
         // absence as an oversight and "fixes" it into the service bucket.
         ["clinic.announcement"] = ConsentPurpose.Marketing,
+
+        // "คิดถึงน้อง" to a customer who has not been back for longer than usual
+        // (docs/contract-extensions.md § 33). Nothing is due and nobody asked: it is an invitation
+        // to come back, which is marketing however kindly worded.
+        ["customer.lapsed"] = ConsentPurpose.Marketing,
     };
 
     public static ConsentPurpose PurposeOf(string templateKey) =>

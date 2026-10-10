@@ -9,7 +9,8 @@ namespace HappyPaws.Infrastructure.Jobs;
 ///   "Automations":   { "Enabled": true, "IntervalSeconds": 60, "CatchUpHours": 12 },
 ///   "ReportExports": { "Enabled": true, "IntervalSeconds": 15 },
 ///   "Housekeeping":  { "Enabled": true, "IntervalSeconds": 3600 },
-///   "Webhooks":      { "Enabled": true, "IntervalSeconds": 10 }
+///   "Webhooks":      { "Enabled": true, "IntervalSeconds": 10 },
+///   "DailyBriefs":   { "Enabled": true, "IntervalSeconds": 300 }
 /// }
 /// </code>
 /// <para>
@@ -36,6 +37,12 @@ public sealed class JobsOptions
 
     /// <summary>The webhook outbox and its deliveries. Each claims its rows, so instances share the work.</summary>
     public JobSchedule Webhooks { get; set; } = new() { IntervalSeconds = 10 };
+
+    /// <summary>
+    /// The staff AI's morning brief (<c>docs/contract-extensions.md § 34</c>). Every five minutes is
+    /// often enough: the brief is due from 07:00 and each branch's is written once that day.
+    /// </summary>
+    public JobSchedule DailyBriefs { get; set; } = new() { IntervalSeconds = 300 };
 }
 
 /// <summary>One job's switch and how often it runs.</summary>

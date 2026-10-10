@@ -63,6 +63,28 @@ public class AutomationRuleTests
         Assert.Throws<DomainException>(() => Rule(trigger, days));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(7)]
+    [InlineData(-91)]
+    public void A_lapsed_customer_is_written_to_one_to_ninety_days_after_their_due_back_day(int days)
+    {
+        Assert.Throws<DomainException>(() => Rule(AutomationTrigger.CustomerLapsed, days));
+
+        var rule = Rule(AutomationTrigger.CustomerLapsed, days: -7);
+        Assert.Equal(AutomationSubjectKind.Customer, rule.SubjectKind);
+        Assert.Equal((-90, -1), AutomationRule.OffsetDaysRange(AutomationTrigger.CustomerLapsed));
+    }
+
+    [Fact]
+    public void A_lapsed_customer_rule_counts_days_and_has_no_service()
+    {
+        Assert.Throws<DomainException>(() => Rule(AutomationTrigger.CustomerLapsed, days: null, hours: 24));
+        Assert.Throws<DomainException>(() => Rule(AutomationTrigger.CustomerLapsed, days: -7, service: "svc_1"));
+        Assert.Throws<DomainException>(() => Rule(AutomationTrigger.CustomerLapsed, days: -7, vaccine: "Rabies"));
+        Assert.Throws<DomainException>(() => Rule(AutomationTrigger.CustomerLapsed, days: -7, unconfirmedOnly: true));
+    }
+
     [Fact]
     public void An_overdue_follow_up_counts_days_after_the_due_date()
     {

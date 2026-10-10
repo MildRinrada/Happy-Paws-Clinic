@@ -103,4 +103,16 @@ public static class ErrorCodes
     /// (<c>docs/contract-extensions.md § 26</c>).
     /// </summary>
     public const string ArticleSlugTaken = "article_slug_taken";
+
+    /// <summary>
+    /// 503: the staff AI assistant is switched off on this deployment, or the model did not answer
+    /// usably. Never carries the provider's own words (<c>docs/contract-extensions.md § 34</c>).
+    /// </summary>
+    public const string AiUnavailable = "ai_unavailable";
+
+    /// <summary>
+    /// 429: this month's AI allowance for the deployment is spent; <c>details</c> has the month,
+    /// the limit and what is used (<c>docs/contract-extensions.md § 34</c>).
+    /// </summary>
+    public const string AiQuotaExceeded = "ai_quota_exceeded";
 }

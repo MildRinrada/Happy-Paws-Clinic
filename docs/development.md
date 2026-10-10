@@ -118,6 +118,11 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 | `Jobs__ReportExports__Enabled`, `IntervalSeconds` | `true`, 15 | งานสร้างไฟล์ส่งออกรายงาน |
 | `Jobs__Housekeeping__Enabled`, `IntervalSeconds` | `true`, 3600 | งานลบ hold และ idempotency key ที่หมดอายุเกินหนึ่งวัน |
 | `Jobs__Webhooks__Enabled`, `IntervalSeconds` | `true`, 10 | งานแตก outbox เป็น delivery และส่ง webhook |
+| `Jobs__DailyBriefs__Enabled`, `IntervalSeconds` | `true`, 300 | งานเขียนสรุปเช้าของผู้ช่วย AI พนักงาน ทำงานเมื่อเปิด AI และเลย `StaffAi__DailyBriefHour` แล้ว |
+| `StaffAi__Provider` | ว่าง | ผู้ช่วย AI สำหรับพนักงาน ว่างคือยืม `Assistant__Provider`, `Model`, `ApiKey`, `BaseUrl` ทั้งชุด `gemini` หรือ `openai` ใช้ชุดของตัวเอง `off` ปิดเฉพาะผู้ช่วยพนักงาน ดู [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md) |
+| `StaffAi__Model`, `ApiKey`, `BaseUrl` | ว่าง | ใช้เมื่อตั้ง `StaffAi__Provider` เอง ตั้ง `ApiKey` ด้วยตัวแปรแวดล้อมเท่านั้น |
+| `StaffAi__MonthlyCalls` | 1500 | โควตาต่อเดือนของทั้ง deployment ตั้งโดยผู้ให้บริการระบบ `0` คือปิด |
+| `StaffAi__TimeoutSeconds`, `MaxOutputTokens`, `MaxToolRounds`, `DailyBriefHour` | 60, 2048, 4, 7 | เวลารอโมเดล เพดาน token ขาออก รอบเรียกเครื่องมือต่อคำถาม และชั่วโมงที่เริ่มเขียนสรุปเช้า |
 | `Webhooks__TimeoutSeconds` | 10 | เวลาสูงสุดของการส่ง webhook หนึ่งครั้ง (1 ถึง 30) |
 | `Webhooks__AllowLocalhostInDevelopment` | `true` | ให้ webhook และ URL ของแล็บเป็น `http://localhost` ได้ใน Development เท่านั้น นอก Development ไม่มีผล ช่วงส่วนตัวและ metadata ถูกปฏิเสธเสมอ |
 | `RateLimits__PerApiKeyPerMinute` | เท่ากับ `PerTokenPerMinute` (600) | จำนวนคำขอต่อนาทีของ API key หนึ่งอัน นับแยกจากผู้สร้าง |
@@ -198,7 +203,7 @@ $env:Messaging__Line__PortalUrl = "https://yourclinic.com/portal"
 
 ## ตัวตั้งเวลาเบื้องหลัง
 
-API มีงานเบื้องหลังสี่งาน แต่ละงานเป็น `BackgroundService` ใน `backend/src/HappyPaws.Infrastructure/Jobs/` เปิดเองเมื่อรัน API ไม่ทำงานตอนรันคำสั่ง operator
+API มีงานเบื้องหลังห้างาน แต่ละงานเป็น `BackgroundService` ใน `backend/src/HappyPaws.Infrastructure/Jobs/` เปิดเองเมื่อรัน API ไม่ทำงานตอนรันคำสั่ง operator
 
 | งาน | รอบ | ทำอะไร |
 |---|---|---|
@@ -206,6 +211,7 @@ API มีงานเบื้องหลังสี่งาน แต่ล
 | `report-exports` | 15 วินาที | สร้างไฟล์ที่สั่งจาก `POST /staff/reports/exports` |
 | `housekeeping` | 1 ชั่วโมง | ลบ booking hold ที่หมดอายุและไม่ได้กลายเป็นนัด และ idempotency key ที่หมดอายุ เมื่อเลยมาแล้วหนึ่งวัน และ event ของ webhook พร้อมประวัติการส่งที่เก่ากว่า 30 วัน |
 | `webhooks` | 10 วินาที | แตก event ใน outbox เป็น delivery แล้วส่งที่ถึงเวลา ดู [การเชื่อมต่อระบบ](features/integrations.md) |
+| `daily-briefs` | 5 นาที | เขียนสรุปเช้าของแต่ละสาขาวันละครั้งหลัง 07:00 เวลาคลินิก เมื่อเปิดผู้ช่วย AI พนักงาน ดู [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md) |
 
 **ปิดบนเครื่องตัวเอง** ตั้งตัวแปรก่อนรัน API ใน Terminal เดียวกัน
 
@@ -221,6 +227,7 @@ $env:Jobs__Automations__Enabled = "false"    # ปิดเฉพาะการ
 - ถ้าปิดงาน `webhooks` event จะค้างใน outbox และส่งเมื่อเปิดอีกครั้ง
 - เปิดหลาย instance พร้อมกันได้ ข้อความเตือนจองด้วย unique key งานส่งออกและ webhook จองด้วย `FOR UPDATE SKIP LOCKED` จึงไม่ทำซ้ำ
 - ชุด integration test ตั้ง `Jobs:Enabled = false` เสมอ (`Fixtures/ApiFixture.cs`) เทสต์เรียก `RunAutomationsHandler`, `RunReportExportsHandler`, `DispatchWebhooksHandler` และ `HousekeepingJob` เอง
+- สรุปเช้าจองด้วย key (สาขา, วันที่) ในคำสั่ง `INSERT ... ON CONFLICT` เดียว หลาย instance จึงไม่เขียนซ้ำ เทสต์เรียก `GenerateDailyBriefsHandler` เองที่เวลาที่เลือก
 
 ## กุญแจเข้ารหัสความลับ
 

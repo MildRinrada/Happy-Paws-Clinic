@@ -13,6 +13,7 @@ export interface InventoryTab {
 export const inventoryTabs: InventoryTab[] = [
   { href: '/inventory', label: 'รายการยา', scope: Scope.InventoryRead, exact: true },
   { href: '/inventory/alerts', label: 'แจ้งเตือน', scope: Scope.InventoryRead },
+  { href: '/inventory/forecast', label: 'คาดการณ์', scope: Scope.InventoryRead },
   { href: '/inventory/movements', label: 'รับเข้า จ่ายออก', scope: Scope.InventoryWrite },
   { href: '/inventory/adjustments', label: 'ปรับยอด', scope: Scope.InventoryAdjust },
   { href: '/inventory/purchase-orders', label: 'สั่งซื้อ', scope: Scope.InventoryPurchase },

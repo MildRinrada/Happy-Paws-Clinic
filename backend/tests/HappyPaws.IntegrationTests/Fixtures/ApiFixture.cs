@@ -126,6 +126,7 @@ internal sealed class ClinicApiFactory(
                 ["Assistant:ApiKey"] = "test-key",
                 ["Assistant:MessagesPerMinute"] = "1000",
                 ["Assistant:DailyConversationTurns"] = "0",
+                ["StaffAi:CallsPerMinutePerUser"] = "1000",
 
                 // Every test client is the same address, so the per-address caps on booking
                 // without signing up (docs/contract-extensions.md § 27) are lifted here and tested

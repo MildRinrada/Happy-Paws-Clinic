@@ -114,4 +114,10 @@ public static class NotificationTemplates
 
     /// <summary>An announcement to a list of customers. Marketing: it needs that consent.</summary>
     public const string ClinicAnnouncement = "clinic.announcement";
+
+    /// <summary>
+    /// "คิดถึงน้อง" — a customer later back than their own usual gap, from the <c>customer_lapsed</c>
+    /// reminder rule (<c>docs/contract-extensions.md § 33</c>). Marketing: it needs that consent.
+    /// </summary>
+    public const string CustomerLapsed = "customer.lapsed";
 }

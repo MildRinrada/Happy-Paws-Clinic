@@ -414,6 +414,26 @@ public static class AuditActions
     /// <summary>An article was deleted. The row stays so its address is never reused.</summary>
     public const string ArticleDeleted = "article.deleted";
 
+    // ---- The staff AI assistant (docs/contract-extensions.md § 34) ------------------------------
+
+    // One row per use, naming what was read. Never the prompt or the answer: those hold the
+    // clinical record and the customer's words, and the audit log is not a second copy of either.
+
+    /// <summary>
+    /// A pet's record was summarised by the AI for a vet, freshly or from the cache. The model was
+    /// shown the patient's file, so it is in the access log beside <see cref="PetHistoryViewed"/>.
+    /// </summary>
+    public const string AiPetSummary = "ai.pet_summary";
+
+    /// <summary>A SOAP draft was made from a vet's short notes on an open case. Nothing was saved.</summary>
+    public const string AiSoapDraft = "ai.soap_draft";
+
+    /// <summary>A message to an owner was drafted: aftercare from a case, or a reply in a thread. Nothing was sent.</summary>
+    public const string AiOwnerMessageDraft = "ai.owner_message_draft";
+
+    /// <summary>The clinic's numbers were asked about. Details name the tools that ran, never the question.</summary>
+    public const string AiAsk = "ai.ask";
+
     // ---- Reminders and reports -----------------------------------------------------------------
 
     /// <summary>
@@ -453,6 +473,7 @@ public static class AuditActions
         PrescriptionsViewed,
         LabResultsViewed,
         DocumentGenerated,
+        AiPetSummary,
     ];
 
     /// <summary>Every action this platform is expected to write. Asserted against in a unit test.</summary>
@@ -488,6 +509,7 @@ public static class AuditActions
         PackageSold, PackageUsed, PackageCancelled, CouponCreated, SegmentCreated,
         InventoryItemUpdated, PurchaseOrderCancelled, CouponDeactivated, LoyaltyAdjusted, LoyaltySettingsChanged,
         ArticleCreated, ArticleUpdated, ArticlePublished, ArticleUnpublished, ArticleDeleted,
+        AiPetSummary, AiSoapDraft, AiOwnerMessageDraft, AiAsk,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -533,4 +555,8 @@ public static class AuditResources
     public const string Coupon = "coupon";
     public const string Segment = "segment";
     public const string Article = "article";
+    public const string MessageThread = "message_thread";
+
+    /// <summary>The staff AI assistant itself, for <c>ai.ask</c>, which reads reports rather than one record.</summary>
+    public const string AiAssistant = "ai_assistant";
 }

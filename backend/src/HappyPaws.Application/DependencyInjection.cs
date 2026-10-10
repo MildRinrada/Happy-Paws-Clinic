@@ -13,6 +13,7 @@ using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Consultations;
 using HappyPaws.Application.Crm;
+using HappyPaws.Application.Forecasting;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Application.Customers;
 using HappyPaws.Application.Identity;
@@ -28,6 +29,7 @@ using HappyPaws.Application.Reporting;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Application.ServiceCatalog;
 using HappyPaws.Application.Staff;
+using HappyPaws.Application.StaffAi;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application;
@@ -82,6 +84,8 @@ public static class DependencyInjection
         services.AddReportingModule();
         services.AddInventoryModule();
         services.AddMessagingModule();
+        services.AddForecastingModule();
+        services.AddStaffAiModule();
 
         return services;
     }

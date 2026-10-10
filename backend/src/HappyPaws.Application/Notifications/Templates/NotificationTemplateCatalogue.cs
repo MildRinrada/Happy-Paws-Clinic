@@ -119,6 +119,15 @@ public static class NotificationTemplateCatalogue
             "{clinic}: เปิดบัญชีออนไลน์ด้วยเบอร์นี้ ดูนัดและประวัติสัตว์เลี้ยง"),
 
         new(
+            NotificationTemplates.CustomerLapsed,
+            "คิดถึงน้อง (ลูกค้าที่หายไป)",
+            StaffSendable: false,
+            [new("pet_name", MaxLength: 200), new("date", Required: false, MaxLength: 40)],
+            "คลินิกคิดถึง {pet_name}",
+            "ไม่ได้เจอ {pet_name} มาสักพักแล้ว ถ้าถึงเวลาตรวจสุขภาพหรือมีเรื่องอยากปรึกษา นัดกับคลินิกได้เลย",
+            "{clinic}: คิดถึง{pet_name} นัดตรวจสุขภาพได้เลย"),
+
+        new(
             NotificationTemplates.ClinicAnnouncement,
             "ประกาศ (LINE)",
             StaffSendable: false,

@@ -26,6 +26,7 @@ export const automationsPage = {
     daysBefore: (days: number, time: string) => `${days} วันก่อน เวลา ${time} น.`,
     sameDay: (time: string) => `วันนั้น เวลา ${time} น.`,
     daysAfter: (days: number, time: string) => `${days} วันหลังครบกำหนด เวลา ${time} น.`,
+    daysAfterDueBack: (days: number, time: string) => `${days} วันหลังวันที่ควรกลับมา เวลา ${time} น.`,
   },
   conditions: {
     species: (value: string) => `เฉพาะ${value}`,
@@ -79,6 +80,9 @@ export const automationsPage = {
     modeHours: 'นับเป็นชั่วโมง',
     offsetDays: 'กี่วันก่อน',
     offsetDaysHint: 'ใส่ 0 คือวันเดียวกัน วัคซีนใส่ค่าติดลบได้ คือหลังครบกำหนด',
+    offsetDaysLapsed: 'กี่วันก่อน (ใส่ค่าติดลบ)',
+    offsetDaysLapsedHint: 'ใส่ -1 ถึง -90 เช่น -7 คือส่ง 7 วันหลังวันที่ลูกค้าควรกลับมาตามรอบของตัวเอง',
+    lapsedDefaultDays: '-7',
     offsetHours: 'กี่ชั่วโมงก่อน',
     sendTime: 'ส่งเวลา',
     species: 'เฉพาะชนิดสัตว์',
@@ -93,5 +97,14 @@ export const automationsPage = {
     submit: 'สร้างกติกา',
     submitting: 'กำลังสร้าง…',
     created: 'สร้างแล้ว',
+  },
+
+  /** The "คิดถึงน้อง" trigger (docs/contract-extensions.md § 33). */
+  lapsed: {
+    consentTitle: 'ใช้ความยินยอมรับข่าวสาร ไม่ใช่ความยินยอมเรื่องการรักษา',
+    consentBody:
+      'ข้อความชวนกลับมาเป็นข้อความการตลาด ลูกค้าที่ยังไม่ได้ยินยอมรับข่าวสาร (ค่าตั้งต้นคือไม่ยินยอม) จะถูกข้ามและบันทึกว่าไม่มีความยินยอม แม้จะรับข้อความเตือนวัคซีนหรือนัดได้ตามปกติ',
+    ruleBody:
+      'ลูกค้าที่มาอย่างน้อย 3 ครั้ง และหายไปนานกว่ารอบปกติของตัวเอง (มากกว่า 1.5 เท่าของระยะห่างกลางระหว่างครั้ง หรือระยะห่างกลางบวก 30 วัน แล้วแต่ค่าไหนมากกว่า) ยังมีสัตว์ที่มีชีวิต และยังไม่มีนัดล่วงหน้า แต่ละคนได้ข้อความหนึ่งครั้งต่อการหายไปหนึ่งรอบ',
   },
 };

@@ -27,8 +27,8 @@ public class ConsentGateTests
             {
                 var key = (string)constant.GetRawConstantValue()!;
 
-                // The one template that is marketing on purpose, asserted on its own below.
-                if (key != NotificationTemplates.ClinicAnnouncement)
+                // The templates that are marketing on purpose, asserted on their own below.
+                if (key is not (NotificationTemplates.ClinicAnnouncement or NotificationTemplates.CustomerLapsed))
                 {
                     data.Add(key);
                 }
@@ -62,6 +62,17 @@ public class ConsentGateTests
     {
         // A campaign to a list of owners is the case the marketing toggle exists for.
         Assert.Equal(ConsentPurpose.Marketing, ConsentGate.PurposeOf(NotificationTemplates.ClinicAnnouncement));
+    }
+
+    [Fact]
+    public void A_we_miss_you_message_to_a_lapsed_customer_needs_marketing_consent()
+    {
+        // docs/contract-extensions.md § 33: nothing is due and nobody asked. However kindly worded,
+        // an invitation to come back is marketing, and must not ride on the care purpose that is on
+        // by default.
+        Assert.Equal(ConsentPurpose.Marketing, ConsentGate.PurposeOf(NotificationTemplates.CustomerLapsed));
+        Assert.Equal(ConsentPurpose.Marketing, ConsentGate.PurposeOf(
+            HappyPaws.Application.Automation.AutomationMessages.TemplateFor(HappyPaws.Domain.Automation.AutomationTrigger.CustomerLapsed)));
     }
 
     [Fact]

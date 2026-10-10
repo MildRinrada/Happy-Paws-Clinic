@@ -6475,6 +6475,124 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("idempotency_records", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Infrastructure.Persistence.StaffAi.DailyBriefRow", b =>
+                {
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateOnly>("BriefDate")
+                        .HasColumnType("date")
+                        .HasColumnName("brief_date");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset>("ClaimedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<DateTimeOffset?>("GeneratedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("generated_at");
+
+                    b.Property<string>("Numbers")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("numbers");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("text")
+                        .HasColumnName("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("BranchId", "BriefDate")
+                        .HasName("pk_staff_ai_daily_briefs");
+
+                    b.ToTable("staff_ai_daily_briefs", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Infrastructure.Persistence.StaffAi.PetSummaryRow", b =>
+                {
+                    b.Property<string>("PetId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("pet_id");
+
+                    b.Property<string>("Citations")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("citations");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("generated_at");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("text");
+
+                    b.HasKey("PetId")
+                        .HasName("pk_staff_ai_pet_summaries");
+
+                    b.ToTable("staff_ai_pet_summaries", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Infrastructure.Persistence.StaffAi.StaffAiUsageRow", b =>
+                {
+                    b.Property<string>("Month")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("month");
+
+                    b.Property<string>("Feature")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("feature");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("Used")
+                        .HasColumnType("integer")
+                        .HasColumnName("used");
+
+                    b.HasKey("Month", "Feature")
+                        .HasName("pk_staff_ai_usage");
+
+                    b.ToTable("staff_ai_usage", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_staff_ai_usage_used_not_negative", "used >= 0");
+                        });
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Appointments.Appointment", b =>
                 {
                     b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
@@ -7195,6 +7313,26 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_staff_memberships_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Infrastructure.Persistence.StaffAi.DailyBriefRow", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_staff_ai_daily_briefs_branches_branch_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Infrastructure.Persistence.StaffAi.PetSummaryRow", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Patients.Pet", null)
+                        .WithMany()
+                        .HasForeignKey("PetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_staff_ai_pet_summaries_pets_pet_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Billing.Invoice", b =>

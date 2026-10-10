@@ -465,7 +465,7 @@ scope ที่เลือกและเหตุผลอยู่ใน [ass
 
 ## ส่วนขยาย contract
 
-endpoint 80 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) และสองเส้นของการจองโดยยังไม่สมัคร (§ 27) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 90 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) สองเส้นของการจองโดยยังไม่สมัคร (§ 27) สี่เส้นของการคาดการณ์ด้วยสถิติ (§ 33) และหกเส้นของผู้ช่วย AI สำหรับพนักงาน (§ 34) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -549,6 +549,16 @@ endpoint 80 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | POST | `/queue/displays/claim` | สาธารณะ จำกัดต่อ IP | `Display/DisplayClaimController` | `Queueing/Displays/ClaimQueueDisplayHandler` | § 30 | ✅ |
 | GET | `/queue/display-board?branch=` | token ของจอเท่านั้น | `Display/DisplayBoardController` | `Queueing/Displays/GetDisplayBoardHandler` | § 30 | ✅ |
 | POST | `/staff/members/{id}/public-profile/photo` | `staff:manage` | `Staff/StaffMembersController` | `Staff/Photos/RequestStaffPhotoHandler` | § 32 | ✅ |
+| GET | `/staff/inventory/forecast?branch=&cover_days=` | `inventory:read` | `Staff/ForecastsController` | `Forecasting/Inventory/GetInventoryForecastHandler` | § 33 | ✅ |
+| GET | `/staff/stats/demand-forecast?branch=&from=&to=` | `stats:read` | `Staff/ForecastsController` | `Forecasting/Demand/GetDemandForecastHandler` | § 33 | ✅ |
+| GET | `/staff/appointments/attendance-risk?branch=&date=` | `appointment:read` | `Staff/ForecastsController` | `Forecasting/Attendance/GetAttendanceRiskHandler` | § 33 | ✅ |
+| GET | `/staff/customers/due-back?reason=&branch=&cursor=` | `crm:read` | `Staff/ForecastsController` | `Forecasting/DueBack/ListDueBackHandler` | § 33 | ✅ |
+| POST | `/staff/ai/pets/{id}/summary` | `record:read` + `ai:use` | `Staff/StaffAiController` | `StaffAi/PetSummary/SummarizePetHandler` | § 34 | ✅ |
+| POST | `/staff/ai/consultations/{id}/soap-draft` | `consult:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/SoapDraft/DraftSoapHandler` | § 34 | ✅ |
+| POST | `/staff/ai/drafts/owner-message` | `message:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/OwnerMessage/DraftOwnerMessageHandler` | § 34 | ✅ |
+| POST | `/staff/ai/ask` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Ask/AskHandler` | § 34 | ✅ |
+| GET | `/staff/ai/daily-brief?branch_id=` | `dashboard:read` | `Staff/StaffAiController` | `StaffAi/DailyBrief/GetDailyBriefHandler` | § 34 | ✅ |
+| GET | `/staff/ai/usage` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Usage/GetStaffAiUsageHandler` | § 34 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -578,6 +588,10 @@ endpoint 80 เส้นที่ **ไม่อยู่** ใน `API Referenc
 § 31 ไม่มี endpoint ใหม่ บัตรคิวในคำตอบฝั่งพนักงาน (`GET /staff/queue`, `POST /staff/queue/tickets`, การกระทำบนบัตรทุกเส้น และ `POST /appointments/{id}/check-in` เมื่อพนักงานเรียก) มีช่องที่ไม่บังคับเพิ่มห้าช่อง คือ `priority_reason`, `entered_room_at`, `served_at`, `left_at` และ `left_reason` เจ้าของสัตว์ที่เช็กอินเองไม่ได้ห้าช่องนี้ `GET /staff/queue` รับ `status` ที่ไม่บังคับ (สถานะคั่นด้วยจุลภาค ค่าที่ไม่รู้จักได้ `422`) และ `assign` กับ `staff_id` ของการออกบัตร walk-in ตอบ `422` ที่ช่อง `staff_id` เมื่อไม่ใช่สัตวแพทย์ที่ยังทำงานอยู่ในสาขาของบัตร เป็นการแก้บั๊ก รูปของคำขอและคำตอบไม่เปลี่ยน
 
 § 32 เพิ่มช่อง `photo_url` (ลิงก์รูปที่อัปโหลด ลงชื่อแล้ว อายุหนึ่งชั่วโมง มีเฉพาะคนที่แสดงบนเว็บ) ในคำตอบของ `GET /team` และ `photo_url` อายุ 30 นาทีใน `public_profile` ฝั่งพนักงาน ซึ่งเป็นส่วนขยาย § 10 อยู่แล้ว `photo_path` เดิมรับค่าแบบใหม่ที่ขึ้นต้นด้วย `storage:` สำหรับรูปที่อัปโหลด ส่วนค่าที่ขึ้นต้นด้วย `/` ทำงานเหมือนเดิม และ `GET /team` ไม่ส่งค่า `storage:` ออกไป ไม่มี migration
+
+§ 33 เพิ่มค่า `customer_lapsed` ให้ `trigger.type` ของ `POST` และ `PATCH /staff/automations` (`offset_days` -1 ถึง -90 เท่านั้น) และค่า `customer` ให้ `subject.type` ของ `POST /staff/automations/{id}/simulate` และ `GET /staff/reminders/upcoming` ข้อความใช้เทมเพลตใหม่ `customer.lapsed` ซึ่งผ่านความยินยอมด้านการตลาด ไม่มี endpoint ใหม่และไม่มี migration สำหรับส่วนนี้ ทั้งสี่เส้นใหม่ใช้พารามิเตอร์ `branch` เหมือนเส้นอ่านอื่น รายละเอียดอยู่ใน [คาดการณ์จากข้อมูลของคลินิก](features/forecasts.md)
+
+§ 34 เพิ่ม scope `ai:use` เป็น scope ที่สองที่ไม่อยู่ในรายการของ contract เส้นที่เรียกโมเดลทุกเส้นต้องมี `ai:use` คู่กับ scope ของข้อมูลที่อ่าน ร่างคำแนะนำหลังรักษาต้องมี `consult:read` และร่างคำตอบต้องมี `message:read` เพิ่ม (ตรวจใน use case) ไม่มีเส้นใดบันทึกหรือส่งอะไรเอง รหัส error ใหม่สองตัว คือ `503 ai_unavailable` (ระบบไม่ได้ตั้งโมเดล หรือโมเดลตอบไม่ได้) และ `429 ai_quota_exceeded` (โควตาของเดือนหมด `details` มี `month`, `limit`, `used`) ร่างบันทึกของเคสที่ปิดแล้วได้ `409 state_conflict` `GET /staff/ai/daily-brief` ตอบ `200` เสมอ พร้อม `status` เป็น `ready`, `failed`, `pending` หรือ `disabled` ไม่มีเส้นเดิมของ contract ถูกแก้ API key ถือ `ai:use` ไม่ได้ audit ใหม่ `ai.pet_summary`, `ai.soap_draft`, `ai.owner_message_draft`, `ai.ask` migration `StaffAiAssistant` รายละเอียดอยู่ใน [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md)
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -610,7 +624,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-80 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28 และ § 31) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
+90 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28 และ § 31) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
 
 ## โค้ด
 

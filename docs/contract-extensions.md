@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 80 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 และ 21 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 90 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 และ 34 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -41,8 +41,10 @@
 | 30 | จอเรียกคิวในห้องรอต้องเข้าสู่ระบบด้วยบัญชีพนักงาน ใครจับคีย์บอร์ดของทีวีได้ก็ได้ console ของบัญชีนั้น | `POST`, `GET` และ `DELETE /staff/queue/displays`, `POST /queue/displays/claim`, `GET /queue/display-board` และ token ของจอบน `GET /queue/stream` | **ทำแล้ว** |
 | 31 | บัตรคิวเก็บเหตุผลและเวลาไว้แต่ API ไม่ส่ง ประวัติคิวกรองสถานะเองทั้งวัน และการจ่ายหมอไม่ตรวจว่าเป็นหมอของสาขา | ช่อง `priority_reason`, `entered_room_at`, `served_at`, `left_at`, `left_reason` ในบัตรคิวฝั่งพนักงาน ตัวกรอง `status` บน `GET /staff/queue` และการตรวจ `staff_id` | **ทำแล้ว** |
 | 32 | รูปพนักงานบนหน้าทีมต้องคัดลอกไฟล์เข้าโฟลเดอร์ของหน้าเว็บเองแล้ว deploy ใหม่ | `POST /staff/members/{id}/public-profile/photo` และค่า `storage:` ใน `photo_path` เดิม | **ทำแล้ว** |
+| 33 | ระบบเตือนได้แค่ตามเกณฑ์ตายตัว ไม่ได้คาดการณ์จากข้อมูลที่มี เช่น ยาจะหมดเมื่อไร ช่วงไหนคนไข้จะล้น นัดไหนเสี่ยงไม่มา และลูกค้าคนไหนหายไปนานกว่ารอบปกติของตัวเอง | `GET /staff/inventory/forecast`, `GET /staff/stats/demand-forecast`, `GET /staff/appointments/attendance-risk`, `GET /staff/customers/due-back` และตัวกระตุ้น `customer_lapsed` ในกฎเตือนอัตโนมัติ | **ทำแล้ว** |
+| 34 | ไม่มีผู้ช่วย AI สำหรับพนักงาน ทั้งที่มีผู้ช่วยบนหน้าเว็บแล้ว หมอต้องอ่านประวัติยาวเองก่อนตรวจ และพิมพ์บันทึกกับข้อความถึงเจ้าของเองทั้งหมด | `POST /staff/ai/pets/{id}/summary`, `POST /staff/ai/consultations/{id}/soap-draft`, `POST /staff/ai/drafts/owner-message`, `POST /staff/ai/ask`, `GET /staff/ai/daily-brief`, `GET /staff/ai/usage` และ scope `ai:use` | **ทำแล้ว** |
 
-endpoint ใหม่ 80 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 90 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -1802,6 +1804,213 @@ PUT /v1/staff/members/stf_.../public-profile                  staff:manage
 
 **หน้าจอ** ฟอร์ม "โปรไฟล์บนเว็บ" ใน **ตั้งค่า > พนักงานและสิทธิ์** มีกล่องรูป แสดงรูปปัจจุบัน ปุ่ม "เลือกรูป" ที่อัปโหลดทันทีแล้วแสดงตัวอย่างจากไฟล์ในเครื่อง และปุ่ม "เอารูปออก" ทั้งสองอย่างมีผลบนเว็บเมื่อกดบันทึก ช่อง path แบบเดิมยังอยู่ใต้ "ขั้นสูง" สำหรับไฟล์ที่วางไว้ในเว็บแล้ว หน้า `/team` และการ์ดสัตวแพทย์บนหน้าแรกใช้ `MemberPhoto` ซึ่งแสดง `photo_url` ก่อน รายละเอียดอยู่ใน [ทีมของเรา](features/team.md)
 
+## 33. ระบบเตือนได้แค่ตามเกณฑ์ตายตัว ไม่ได้คาดการณ์จากข้อมูลที่มี
+
+**ช่องโหว่** ทุกการเตือนในระบบใช้เกณฑ์ตายตัว ยาเหลือต่ำกว่าจุดสั่งซื้อจึงเตือน (§ 25) กลุ่มลูกค้าที่ไม่มาเกินกี่วันใช้ `inactive_days` ตัวเดียวกับทุกคน และปฏิทินนัดไม่บอกว่านัดไหนน่าจะไม่มา ข้อมูลที่ตอบคำถามเหล่านี้อยู่ในฐานข้อมูลแล้ว คือบันทึกสต๊อก บัตรคิว ตารางเวร ประวัติการมา และประวัติไม่มาตามนัด แต่ไม่มีอะไรนำมาคาดการณ์ข้างหน้า เจ้าของงานขอให้คาดการณ์ด้วยสถิติธรรมดาบนเซิร์ฟเวอร์ของเราเอง ไม่ใช้โมเดลภาษา ไม่ใช้บริการภายนอก ไม่มี scope ใหม่ และไม่มี migration อนุมัติแล้ว (2026-10-10)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**ทำไมสำคัญ** ยาหมดกลางสัปดาห์ หมอคนเดียวรับคนไข้ทั้งชั่วโมงที่ยุ่งที่สุด ช่องนัดที่ว่างเพราะลูกค้าที่ไม่เคยมาตามนัด และลูกค้าประจำที่หายไปโดยไม่มีใครสังเกต ทั้งสี่เรื่องเห็นล่วงหน้าได้จากข้อมูลที่มีอยู่ ถ้ามีคนนำมาคิดให้
+
+**คำตอบ** เส้นอ่านใหม่สี่เส้น แต่ละเส้นอยู่ใต้ path และ scope ของหมวดที่มันเป็นของ และค่าใหม่หนึ่งค่าของ trigger ในกติกาเตือนอัตโนมัติ ไม่มีอะไรถูกเก็บ คำนวณใหม่ทุกครั้งที่อ่าน
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/inventory/forecast?branch=&cover_days=` | `inventory:read` | รายการยาของสาขาหนึ่ง พร้อมการใช้เฉลี่ยต่อวัน 30 และ 90 วัน อีกกี่วันจะหมด จำนวนที่ควรสั่ง และความมั่นใจ |
+| GET | `/staff/stats/demand-forecast?branch=&from=&to=` | `stats:read` | รายวันรายชั่วโมงของวันข้างหน้า นัดที่จองแล้ว walk-in ที่คาดไว้ หมอที่ลงเวร และป้ายเมื่อคนไข้ต่อหมอสูงกว่าปกติ |
+| GET | `/staff/appointments/attendance-risk?branch=&date=` | `appointment:read` | นัดที่ยังเปิดของวันหนึ่ง พร้อมระดับความเสี่ยงที่จะไม่มา (`low`, `medium`, `high`) และเหตุผลเป็นภาษาไทย |
+| GET | `/staff/customers/due-back?reason=&branch=&cursor=` | `crm:read` | รายชื่อลูกค้าที่ควรโทรหา แบ่งหน้าด้วย cursor ตามเหตุผล `vaccine_overdue` หรือ `lapsed` |
+
+trigger ใหม่ `customer_lapsed` ใช้กับ `POST`, `PATCH /staff/automations` และ `POST /staff/automations/{id}/simulate` เดิม ไม่มีเส้นใหม่
+
+```http
+GET /v1/staff/inventory/forecast?branch=brn_...&cover_days=30                 inventory:read
+
+200 { "branch_id": "brn_...", "as_of": "2026-10-10", "cover_days": 30, "lead_time_days": 7,
+      "data": [ { "item_id": "itm_...", "name": "Amoxicillin 250mg", "unit": "เม็ด", "available": 95, "on_order": 0,
+                  "used_30d": 60, "used_90d": 90, "avg_daily_30d": 2.0, "avg_daily_90d": 1.0, "daily_rate": 2.0,
+                  "days_until_out": 47, "runs_out_on": "2026-11-26", "suggested_order_qty": 0,
+                  "history_days": 100, "confidence": "high", ... } ] }
+
+GET /v1/staff/customers/due-back?reason=lapsed&branch=brn_...                  crm:read
+
+200 { "data": [ { "customer_id": "cus_...", "customer_name": "คุณสมชาย", "reason": "lapsed",
+                  "pets": [ { "pet_id": "pet_...", "name": "มิโล", "species": "แมว", "overdue_vaccines": [] } ],
+                  "last_visit_on": "2026-08-01", "visit_count": 5, "usual_interval_days": 30, "allowed_days": 60,
+                  "due_on": "2026-09-30", "days_overdue": 10 } ], "page": { "next_cursor": "..." } }
+```
+
+รูปคำตอบเต็มของทั้งสี่เส้นอยู่ใน [คาดการณ์จากข้อมูลของคลินิก](features/forecasts.md)
+
+**กติกาที่ใช้** ทุกตัวเลขอธิบายได้ด้วยกติกาข้างล่าง กติกาอยู่ในคลาส static ที่ไม่แตะฐานข้อมูล แต่ละข้อมีเทสต์ของตัวเอง
+
+| เส้น | กติกา |
+|---|---|
+| สต๊อก | การใช้คือ `issue` และ `dispense` ไม่นับการโอนและการปรับยอดหลังนับ ค่าเฉลี่ยของ 30 และ 90 วันเต็มล่าสุด หารด้วยจำนวนวันที่รายการมีบันทึกจริงถ้าสั้นกว่า อัตราคือค่าที่สูงกว่า อีกกี่วันหมดคือของที่ใช้ได้หารอัตราปัดลง จำนวนที่ควรสั่งคืออัตราคูณ (7 วันรอของ บวก `cover_days`) ปัดขึ้น หักของที่ใช้ได้และของที่สั่งไว้แล้ว ความมั่นใจ `low` เมื่อมีบันทึกไม่ถึง 14 วัน `medium` ไม่ถึง 90 วัน |
+| ความหนาแน่น | walk-in ที่คาดคือค่าเฉลี่ยของบัตรคิว walk-in วันเดียวกันในสัปดาห์และชั่วโมงเดียวกัน ย้อนหลัง 8 สัปดาห์ หมอที่ลงเวรคือหมอที่มีเวรทับส่วนใดส่วนหนึ่งของชั่วโมง ป้ายหนาแน่นเมื่อคนไข้ต่อหมอสูงกว่าเปอร์เซ็นไทล์ที่ 80 ของสาขาเองใน 8 สัปดาห์ที่ผ่านมา (ต้องมีประวัติอย่างน้อย 10 ชั่วโมง) หรือมีคนไข้แต่ไม่มีหมอ |
+| เสี่ยงไม่มา | ไม่มาตามนัดครั้งละ 2 แต้ม ยกเลิกกระชั้นครั้งละ 1 แต้ม นับแบบเดียวกับ `POST /staff/appointments/{id}/no-show` ในช่วง `window_days` ของนโยบายยกเลิก จองล่วงหน้าตั้งแต่ 30 วัน 1 แต้ม ยังไม่ยืนยัน 1 แต้ม `high` ตั้งแต่ 4 แต้มหรือไม่มาตั้งแต่ 2 ครั้ง `medium` ตั้งแต่ 2 แต้ม |
+| ควรกลับมาแล้ว | `vaccine_overdue` คือเข็มล่าสุดของวัคซีนชนิดหนึ่งเลยวันครบกำหนด สัตว์ยังมีชีวิตและไม่มีนัดล่วงหน้า `lapsed` คือลูกค้าที่มาอย่างน้อย 3 วัน หายไปนานเกินค่าที่มากกว่าระหว่าง 1.5 เท่าของค่ากลางระยะห่างระหว่างการมา กับค่ากลางบวก 30 วัน ยังมีสัตว์ที่มีชีวิต และไม่มีนัดล่วงหน้า |
+
+**สาขาและสิทธิ์** ทุกเส้นใช้กติกาของการอ่านฝั่งพนักงานเดิม (`BranchGuard`) ระบุสาขาที่ไม่ได้ทำงานอยู่ตอบ `403` สต๊อกและความหนาแน่นต้องเป็นสาขาเดียว เพราะ "ยานี้อยู่ได้กี่วัน" และ "หมอกี่คนตอน 10 โมง" ไม่มีความหมายเมื่อรวมหลายสาขา ไม่ระบุคือสาขาเดียวของบัญชีหรือของคลินิก ถ้าเลือกไม่ได้ตอบ `422` ส่วนเสี่ยงไม่มาและควรกลับมาแล้วไม่ระบุคือทุกสาขาที่บัญชีเห็น ชื่อพารามิเตอร์คือ `branch` เหมือนทุกเส้นอ่านในระบบ ไม่ใช่ `branch_id`
+
+**ตรวจค่าที่ส่งมา** ทุกข้อตอบ `422 validation_failed` พร้อมชื่อช่อง
+
+| เส้น | ค่าที่ไม่รับ |
+|---|---|
+| สต๊อก | `cover_days` นอก 1 ถึง 180 สาขาที่ไม่เปิดอยู่ |
+| ความหนาแน่น | `from` ก่อนวันนี้ `to` ก่อน `from` ช่วงเกิน 14 วัน |
+| เสี่ยงไม่มา | `date` ก่อนวันนี้ นัดที่ผ่านไปแล้วรู้ผลแล้ว |
+| ควรกลับมาแล้ว | ไม่ส่ง `reason` หรือค่าอื่นนอกจากสองค่า cursor ที่อ่านไม่ได้ |
+
+**trigger `customer_lapsed` ใช้ความยินยอมด้านการตลาด** ข้อความ "คิดถึงน้อง" ไม่ได้เกี่ยวกับการรักษาที่ลูกค้ากำลังรออยู่และลูกค้าไม่ได้ขอ จึงเป็นการตลาด เทมเพลตใหม่ `customer.lapsed` ถูกจัดไว้ที่ `marketing` ใน `ConsentGate` อย่างชัดเจน (ไม่ได้พึ่งค่าตั้งต้นของเทมเพลตที่ไม่รู้จัก) ลูกค้าที่ไม่เคยบันทึกความยินยอม หรือยินยอมเฉพาะข้อความเรื่องการรักษา จึงถูกข้ามและบันทึก `no_consent` มีเทสต์ทั้งระดับ unit และการส่งจริงผ่านตัวตั้งเวลา `offset_days` ใส่ได้ -1 ถึง -90 คือหลังวันที่ควรกลับมา นับเป็นชั่วโมงหรือใส่เงื่อนไขบริการไม่ได้ เรื่องที่เตือนคือลูกค้า (`subject_kind` ค่าใหม่ `Customer`) วันครบกำหนดคือ `due_on` จึงส่งครั้งเดียวต่อการหายไปหนึ่งรอบ และใช้ SQL ชุดเดียวกับ `GET /staff/customers/due-back?reason=lapsed`
+
+**ไม่มี migration** `trigger` และ `subject_kind` เก็บเป็นข้อความยาวได้ 30 ตัวอักษร ไม่มี check constraint ค่าใหม่ `CustomerLapsed` และ `Customer` จึงใส่ได้เลย model snapshot ไม่เปลี่ยน
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ใช้โมเดลภาษาหรือบริการพยากรณ์ภายนอก | เจ้าของงานกำหนดไว้ว่าไม่ใช้ และกติกาที่เขียนเป็นตัวเลขอธิบายให้พนักงานฟังได้ทุกข้อ |
+| เก็บผลคาดการณ์ไว้ในตาราง แล้วคำนวณรอบละครั้ง | ต้องมี migration และตัวเลขจะเก่ากว่าบันทึกสต๊อกหรือปฏิทินตรงหน้า ข้อมูลของคลินิกขนาดนี้คำนวณสดได้เร็วพอ |
+| ใช้ค่าเฉลี่ย 30 วันอย่างเดียว | ยาที่ใช้น้อยลงชั่วคราวจะดูเหมือนพอใช้ไปอีกนาน ค่าที่สูงกว่าระหว่าง 30 กับ 90 วันระวังยาหมดมากกว่า |
+| ป้ายหนาแน่นด้วยตัวเลขเดียวทุกคลินิก เช่น 4 คนต่อหมอ | คลินิกที่ทำหัตถการยาวกับคลินิกที่ตรวจเร็วมีปกติไม่เท่ากัน เปอร์เซ็นไทล์ของสาขาเองเทียบกับตัวเอง |
+| เก็บตัวนับไม่มาตามนัดไว้ที่ลูกค้า | เป็นสำเนาที่สองของปฏิทิน ใช้การนับจากตารางนัดตัวเดียวกับการบันทึกไม่มาตามนัดและนโยบายยกเลิก (เพิ่มเมธอดนับหลายลูกค้าในการอ่านครั้งเดียว) |
+| ใส่ trigger ใหม่ไว้ในกลุ่มข้อความเรื่องการรักษา | ข้อความชวนกลับมาจะไปถึงลูกค้าที่ไม่เคยยินยอมรับข่าวสาร ซึ่งคือสิ่งที่ประตูความยินยอมมีไว้กัน |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่มี scope ใหม่ ไม่มีตารางใหม่ ไม่มี migration และไม่มีการเขียนใด ๆ ทั้งสี่เส้นเป็นการอ่าน
+- ไม่สั่งซื้อ ไม่เปลี่ยนนัด และไม่ส่งข้อความให้เอง ยกเว้นกติกา `customer_lapsed` ที่คลินิกสร้างและเปิดเอง
+- เวลารอของคงที่ 7 วันทุกผู้ขาย ยังไม่มีที่เก็บเวลารอของรายผู้ขาย ถ้าต้องการต้องมี migration
+- ไม่ดูฤดูกาล วันหยุดยาว หรือแนวโน้มระยะยาว
+- ไม่ใส่การ์ดบนหน้าภาพรวม (`/dashboard`) หน้าจออยู่ในหมวดของแต่ละเรื่อง
+- ไม่เพิ่ม index ตัวที่ควรเพิ่มเมื่อข้อมูลโตเขียนไว้ใน [คาดการณ์จากข้อมูลของคลินิก](features/forecasts.md)
+
+**หน้าจอ** สต๊อกยามีแท็บ "คาดการณ์" (`/inventory/forecast`) ตารางเวรมีปุ่ม "คาดการณ์ความหนาแน่น" (`/schedules/forecast`) ปฏิทินนัดมีเครื่องหมายเสี่ยงไม่มาบนนัด เหตุผลเมื่อวางเมาส์หรือเปิดนัด และแถบรายการนัดเสี่ยงของวัน แพ็กเกจและโปรโมชันมีแท็บ "ควรกลับมาแล้ว" (`/crm/due-back`) และฟอร์มกติกาเตือนมีตัวเลือก "ลูกค้าหายไปนานกว่าปกติ (คิดถึงน้อง)" พร้อมคำอธิบายว่าใช้ความยินยอมรับข่าวสาร ทุกหน้าซ่อนเมื่อบัญชีไม่มีสิทธิ์ และใช้ได้บนจอกว้าง 390px โดยไม่ต้องเลื่อนหน้าไปด้านข้าง รายละเอียดอยู่ใน [คาดการณ์จากข้อมูลของคลินิก](features/forecasts.md)
+
+## 34. ไม่มีผู้ช่วย AI สำหรับพนักงาน
+
+**ช่องโหว่** ผู้ช่วย AI ของ § 16 อยู่บนหน้าเว็บสาธารณะและเห็นได้แค่ข้อมูลสาธารณะ ในหน้าจอพนักงานไม่มีอะไรช่วยงานเขียนและงานอ่านที่กินเวลาทุกวัน หมออ่านไทม์ไลน์ยาว ๆ ก่อนเข้าห้องตรวจ พิมพ์บันทึก SOAP จากที่จดย่อไว้ เคาน์เตอร์เขียนคำแนะนำหลังรักษาและตอบแชทลูกค้าเองทุกข้อความ และผู้จัดการต้องเปิดรายงานหลายหน้าเพื่อตอบคำถามง่าย ๆ เจ้าของงานขอผู้ช่วย AI สำหรับพนักงาน โดยผู้ให้บริการระบบเป็นคนจ่ายค่าโมเดลและคุมด้วยโควตารายเดือนที่คลินิกแก้ไม่ได้ อนุมัติแล้ว (2026-10-10)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**ทำไมสำคัญ** เวลาของหมอหน้าห้องตรวจและเวลาของเคาน์เตอร์คือสิ่งที่คลินิกเล็กขาดที่สุด แต่ข้อมูลในเวชระเบียนและข้อความของลูกค้าเป็นข้อมูลอ่อนไหวที่สุดในระบบ ผู้ช่วยจึงต้องเห็นไม่เกินคนที่ใช้ ส่งข้อมูลของคนออกไปให้น้อยที่สุด ไม่บันทึกหรือส่งอะไรเอง และมีเพดานค่าใช้จ่ายที่แน่นอน
+
+**คำตอบ** หกเส้นใหม่ใต้ `/staff/ai` scope ใหม่ `ai:use` และ migration หนึ่งตัว คือ `StaffAiAssistant`
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| POST | `/staff/ai/pets/{id}/summary` | `record:read` + `ai:use` | สรุปประวัติสัตว์ย่อหน้าเดียวก่อนตรวจ ทุกข้อมีเลขอ้างอิงเรกคอร์ด ข้อมูลไม่เปลี่ยนได้ฉบับเดิมโดยไม่นับโควตา |
+| POST | `/staff/ai/consultations/{id}/soap-draft` | `consult:write` + `ai:use` | จัดบันทึกย่อของหมอลงช่องของเคส พร้อมรายการคำที่ไม่พบในบันทึกย่อ ไม่บันทึก |
+| POST | `/staff/ai/drafts/owner-message` | `message:write` + `ai:use` | ร่างคำแนะนำหลังรักษาจากเคส หรือร่างคำตอบจากบทสนทนา ไม่ส่ง |
+| POST | `/staff/ai/ask` | `ai:use` | ถามตัวเลขของคลินิก ตอบจากรายงานที่ผู้ถามมีสิทธิ์ รูปเดียวกับ `POST /assistant/chat` |
+| GET | `/staff/ai/daily-brief?branch_id=` | `dashboard:read` | สรุปเช้าของสาขาที่เขียนไว้ตอน 07:00 ไม่เรียกโมเดล ไม่นับโควตา |
+| GET | `/staff/ai/usage` | `ai:use` | เปิดอยู่ไหม เดือน เพดาน ที่ใช้ไป และแยกตามฟีเจอร์ |
+
+```http
+POST /v1/staff/ai/pets/pet_.../summary                              record:read + ai:use
+
+200 { "pet_id": "pet_...", "text": "แพ้ Penicillin รุนแรง [R1] มาครั้งล่าสุดด้วยอาเจียน 2 วัน [R2] ...",
+      "citations": [ { "ref": "R1", "kind": "allergy", "id": "alg_...", "date": "2025-01-02" },
+                     { "ref": "R2", "kind": "visit", "id": "con_...", "date": "2026-10-05" } ],
+      "cached": false, "generated_at": "2026-10-10T09:12:00+07:00" }
+
+POST /v1/staff/ai/consultations/con_.../soap-draft                  consult:write + ai:use
+{ "notes": "อาเจียน 2 วัน T 39.5 ท้องอืด ให้ Metronidazole 250mg" }
+
+200 { "consultation_id": "con_...",
+      "draft": { "chief_complaint": "อาเจียน 2 วัน", "subjective": "...", "objective": "T 39.5 ท้องอืด",
+                 "assessment": "", "plan": "Metronidazole 250 mg",
+                 "examination": [ { "body_system": "ระบบทางเดินอาหาร", "is_normal": false, "note": "ท้องอืด" } ] },
+      "warnings": [ { "field": "plan", "text": "Cerenia", "reason": "term_not_in_notes" } ] }
+
+POST /v1/staff/ai/drafts/owner-message                              message:write + ai:use
+{ "kind": "aftercare", "consultation_id": "con_..." }
+{ "kind": "thread_reply", "thread_id": "thr_..." }
+
+200 { "text": "เรียนคุณ..." }
+
+GET /v1/staff/ai/usage                                              ai:use
+
+200 { "enabled": true, "month": "2026-10", "limit": 1500, "used": 312,
+      "by_feature": { "pet_summary": 120, "soap_draft": 98, "owner_message": 61, "ask": 21, "daily_brief": 12 } }
+```
+
+**ไม่เห็นมากกว่าคนที่ใช้** ทุกเส้นที่เรียกโมเดลต้องมี `ai:use` คู่กับ scope ของข้อมูลที่อ่าน และใช้กติกาสาขาเดิม
+
+- สรุปประวัติมีเอื้อมเท่ากับ `GET /staff/pets/{id}/history` ซึ่งไม่ผูกสาขา
+- ร่างบันทึกผ่าน `ConsultationAccess` เหมือนการเขียนเคสทุกเส้น เคสสาขาอื่นได้ `403` เคสที่ปิดแล้วได้ `409 state_conflict`
+- ร่างคำแนะนำหลังรักษาต้องมี `consult:read` เพิ่ม และร่างคำตอบต้องมี `message:read` เพิ่ม ตรวจใน use case เพราะร่างทั้งสองแบบมีข้อมูลที่ `message:write` อย่างเดียวอ่านไม่ได้ บทสนทนาอ่านผ่าน `ListThreadsHandler` ตัวเดียวกับหน้าข้อความ จึงตรวจสาขาเหมือนกัน
+- เครื่องมือของ `/staff/ai/ask` คือ use case รายงานเดิมเก้าตัว (การ์ดวันนี้ สถิตินัด คิว ภาระงาน รายรับ บริการทำเงิน ลูกค้ากลับมา ผลงานรายบุคคล แจ้งเตือนสต๊อก) เสนอให้โมเดลเฉพาะตัวที่ผู้ถามถือ scope ของ endpoint นั้น และทำงานใน request ของผู้ถาม ตัวที่ไม่ได้เสนอถ้าโมเดลเรียกเองได้คำตอบว่าไม่มีเครื่องมือนั้นและไม่ทำงาน
+- สรุปเช้าใช้แค่ `dashboard:read` แต่ประโยคไม่มีตัวเลขเงิน และ `numbers.yesterday_revenue` ส่งเฉพาะผู้ที่มี `analytics:read` หรือ `invoice:write` ตามกติกาของการ์ดวันนี้
+
+**scope ใหม่ `ai:use`** เป็น scope ที่สองนอกรายการของ contract ต่อจาก `content:manage` (§ 26) เพราะการใช้ AI กินโควตาที่ผู้ให้บริการจ่าย จึงต้องเป็นสิทธิ์ที่ถอดออกจาก role ได้แยกจากสิทธิ์อ่านข้อมูล
+
+- migration `StaffAiAssistant` เติม `ai:use` ให้ role ตั้งต้น `veterinarian` และ `receptionist` ที่มีอยู่ (เฉพาะ `is_system` และยังไม่มี) `clinic_owner` ถือ `*` อยู่แล้ว Down เอาออกจากทุก role
+- role ตั้งต้นของคลินิกใหม่มี `ai:use` ใน `veterinarian` และ `receptionist` เอง (`DefaultRoles`) `clinic_admin` ไม่ได้ เพราะเจ้าของงานอนุมัติให้หมอ เคาน์เตอร์ และเจ้าของคลินิกเท่านั้น
+- API key ถือ `ai:use` ไม่ได้ (`ApiKeyScopeRules`) โควตาเป็นของคนในคลินิก สคริปต์ที่ถือ key ใช้หมดได้ในบ่ายเดียว
+- ไม่ใช่ scope อ่อนไหว ไม่ต้องผ่าน 2FA แต่ scope ข้อมูลที่ต้องใช้คู่กัน เช่น `record:read` ยังต้องผ่าน 2FA ตามเดิม
+
+**ค่าตั้งและการปิด** ส่วน `StaffAi:*` ของตัวเอง (`Provider`, `Model`, `ApiKey`, `BaseUrl`, `MonthlyCalls` ค่าเริ่มต้น 1500, `TimeoutSeconds`, `MaxOutputTokens`, `MaxToolRounds`, `DailyBriefHour`) ถ้า `Provider` ว่าง ยืม `Provider`, `Model`, `ApiKey`, `BaseUrl` ของ `Assistant:*` ทั้งสี่ค่า key เดียวจึงใช้ได้ทั้งสองผู้ช่วย ค่า `off` ปิดผู้ช่วยพนักงานอย่างเดียว ไม่มีผู้ให้บริการคือปิด ทุกเส้นที่เรียกโมเดลได้ `503 ai_unavailable` ซึ่งไม่มีรายละเอียดจากผู้ให้บริการ และ `GET /staff/ai/usage` ตอบ `enabled: false` key มาจากค่าตั้งของ deployment เท่านั้น ไม่มีในโค้ด
+
+**โควตาในฐานข้อมูล** ตาราง `staff_ai_usage` นับต่อเดือน (ตามเวลาคลินิก) ต่อฟีเจอร์ และแถวรวมของเดือน การจองทำก่อนเรียกโมเดลด้วยคำสั่ง SQL เดียว (`INSERT ... ON CONFLICT DO UPDATE ... WHERE used < limit RETURNING`) คำขอพร้อมกันจึงเกินเพดานไม่ได้ เกินแล้วได้ `429 ai_quota_exceeded` พร้อมข้อความไทยและ `details` (`month`, `limit`, `used`)
+
+- นับหนึ่งต่อการใช้หนึ่งครั้ง คำถามที่เรียกเครื่องมือหลายรอบนับหนึ่ง สรุปเช้าหนึ่งสาขาต่อวันนับหนึ่ง
+- ไม่นับ สรุปจากที่เก็บ การอ่านสรุปเช้า การอ่านการใช้งาน และคำขอที่ถูกปฏิเสธก่อนถึงโมเดล
+- โมเดลเรียกไม่ได้หรือตอบเป็น error ระบบคืนการใช้ให้เดือนที่จองไว้ เพราะไม่มีคำตอบเกิดขึ้น ถ้าโมเดลตอบแล้วแต่ใช้ไม่ได้ ไม่คืน เพราะคำตอบนั้นถูกคิดเงินแล้ว
+
+**ส่งข้อมูลของคนออกให้น้อยที่สุด** ก่อนส่งอะไรให้โมเดล `Pseudonymizer` แทนชื่อ เบอร์ อีเมลของเจ้าของและผู้ดูแลร่วม และชื่อพนักงาน ด้วยตัวแทน เช่น `[OWNER_1]` และแทนเบอร์โทรไทย อีเมล และเลขบัตรประชาชน 13 หลักในข้อความอิสระตามรูปแบบ ระบบใส่ค่าจริงกลับในคำตอบเอง เช่น ชื่อในคำทักทาย สิ่งที่ส่งคือชื่อ ชนิด สายพันธุ์ อายุของสัตว์ และข้อมูลทางคลินิก ไม่ส่ง HN ไมโครชิป หรือ id ของคน ข้อจำกัดของการแทนอยู่ใน [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md#ความเป็นส่วนตัว)
+
+**คำสั่ง** อยู่ในคลาสของตัวเองใต้ `StaffAi/Prompts/` ทุกตัวมีกติกาชุดเดียวกัน ตอบภาษาไทย ไม่วินิจฉัย ไม่แนะนำยาหรือขนาดยาเอง ข้อมูลไหนไม่มีให้บอกว่าไม่มีแทนการเดา และข้อความในเวชระเบียนหรือข้อความของลูกค้าเป็นข้อมูล ไม่ใช่คำสั่ง ข้อมูลอยู่ในรั้ว `=== DATA START ===` ถึง `=== DATA END ===` ที่ข้อมูลปิดเองไม่ได้ ร่างบันทึกห้ามเพิ่มการวินิจฉัย ยา ขนาดยา หรือผลตรวจที่ไม่อยู่ในบันทึกย่อ และมีด่านที่สองในโค้ด (`UnverifiedTerms`) เตือนขนาดยา ตัวเลข และคำภาษาอังกฤษที่ไม่พบในบันทึกย่อ ด่านนี้ไม่เห็นชื่อยาภาษาไทยและเตือนคำแปลที่ถูก จึงเป็นตัวช่วยให้ดูซ้ำ ไม่ใช่การรับประกัน
+
+**เลขอ้างอิงของสรุปประวัติ** โมเดลได้แต่ละเรกคอร์ดพร้อมเลขสั้น ๆ (`R1`, `R2`) และต้องใส่ `[R3]` หลังข้อมูลที่มาจากเรกคอร์ดนั้น ระบบตัดเลขที่ไม่มีอยู่จริงออกจากข้อความ และส่ง `citations` ที่บอกชนิด id และวันที่ของเลขที่เหลือ สรุปถูกเก็บต่อสัตว์หนึ่งตัวพร้อม SHA-256 ของข้อมูลที่ส่งไปกับรุ่นของคำสั่ง ข้อมูลเดิมได้ฉบับเดิมพร้อม `cached: true`
+
+**สรุปเช้า** งานเบื้องหลัง `DailyBriefJob` (`Jobs:DailyBriefs` ทุก 5 นาที) เขียนให้ทุกสาขาวันละครั้งเมื่อเวลาคลินิกเลย 07:00 ตัวเลขคำนวณจาก use case เดิม (สถิตินัดและคิวของวันนี้ แจ้งเตือนสต๊อก รายรับเมื่อวาน) โมเดลเขียนแค่ประโยครอบตัวเลข เก็บทั้งตัวเลขและประโยคในตาราง `staff_ai_daily_briefs` ที่มี key (สาขา, วันที่) การจองงานเป็นคำสั่งเดียว (`INSERT ... ON CONFLICT DO UPDATE ... WHERE`) หลายเครื่องจึงเขียนสาขาเดียวกันซ้ำไม่ได้ โมเดลล้มเก็บตัวเลขไว้และลองใหม่รอบถัดไป ไม่เกินสามครั้ง โควตาหมดเก็บตัวเลขไว้และไม่ลองใหม่วันนั้น
+
+`GET /staff/ai/daily-brief` ตอบ `200` เสมอ แทน `404` เพื่อให้หน้าเว็บแยกได้ว่าทำไมไม่มีประโยค
+
+| `status` | ความหมาย |
+|---|---|
+| `ready` | มี `text` และ `numbers` |
+| `failed` | มี `numbers` ไม่มี `text` และ `reason` เป็น `quota_exceeded`, `model_unavailable` หรือ `numbers_failed` |
+| `pending` | ยังไม่ถึงเวลา หรือกำลังเขียน `generates_at` บอกเวลา |
+| `disabled` | ระบบไม่ได้เปิด AI และวันนี้ยังไม่มีสรุป หน้าเว็บไม่แสดงการ์ด |
+
+ไม่มี `branch_id` ได้ `422` สาขาที่ไม่ได้ประจำได้ `403` สาขาที่ไม่มีได้ `404`
+
+**ไม่เก็บและไม่บันทึกเนื้อหา** การถามตัวเลขไม่เก็บบทสนทนา ร่างไม่ถูกเก็บ log มีแค่ชื่อฟีเจอร์ จำนวนรอบ เครื่องมือ และจำนวน token audit ใหม่สี่ action ไม่มีคำสั่งหรือคำตอบใน details
+
+| action | resource | details |
+|---|---|---|
+| `ai.pet_summary` | สัตว์ อยู่ในบันทึกการเปิดดูเวชระเบียนด้วย | `cached`, จำนวนเรกคอร์ดที่ส่งไป, จำนวนที่อ้างถึง |
+| `ai.soap_draft` | เคส | จำนวนคำเตือน, จำนวนผลตรวจรายระบบในร่าง |
+| `ai.owner_message_draft` | เคส หรือบทสนทนา (`message_thread`) | `kind` และจำนวนข้อความที่อ่าน |
+| `ai.ask` | `ai_assistant` | ชื่อเครื่องมือที่ทำงาน, จำนวนรอบ |
+
+**รหัส error ใหม่** `ai_unavailable` (503) และ `ai_quota_exceeded` (429) อยู่ใน `ErrorCodes`
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ให้คลินิกใส่ key เอง | เจ้าของงานกำหนดว่าคลินิกไม่ต้องจ่ายหรือหา key เอง ผู้ให้บริการระบบคุมทั้งต้นทุนและผู้ให้บริการโมเดล |
+| ใช้ตัวนับในหน่วยความจำแบบ § 16 | เริ่มนับใหม่ทุกครั้งที่ API restart และนับแยกกันเมื่อมีหลายเครื่อง ใช้คุมบิลรายเดือนไม่ได้ |
+| ให้ AI บันทึกลงเคสหรือส่งข้อความเอง | ร่างที่ผิดจะกลายเป็นเวชระเบียนหรือข้อความถึงลูกค้าโดยไม่มีคนอ่าน ร่างทุกชิ้นจึงต้องผ่านฟอร์มเดิมที่คนกด |
+| ส่งข้อมูลจริงทั้งหมดให้โมเดล | ไม่จำเป็นต่องานเลย ชื่อ เบอร์ และอีเมลไม่ช่วยให้สรุปหรือร่างดีขึ้น |
+| เครื่องมือ `/ask` อ่านฐานข้อมูลตรงด้วย SQL ที่โมเดลเขียน | เปิดทางให้อ่านเกินสิทธิ์ ใช้ use case เดิมทำให้สิทธิ์และสาขาตรงกับหน้าจอทุกครั้ง |
+| `404` เมื่อยังไม่มีสรุปเช้า | หน้าเว็บแยกไม่ได้ว่ายังไม่ถึงเวลา AI ล้ม โควตาหมด หรือปิดอยู่ |
+| ให้ `ai:use` อย่างเดียวพอสำหรับทุกเส้น | คนที่มีแค่ `ai:use` จะอ่านเวชระเบียนผ่าน AI ได้ ทั้งที่อ่านตรง ๆ ไม่ได้ |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่วินิจฉัย ไม่แนะนำยาหรือขนาดยา ไม่ตัดสินแทนหมอ
+- ไม่บันทึกลงเคส ไม่ส่งข้อความถึงลูกค้า ไม่เก็บบทสนทนา
+- ไม่มีหน้าตั้งค่าของคลินิกสำหรับผู้ให้บริการ key หรือโควตา
+- ไม่มีเพดานต่อคนหรือต่อนาที โควตาเป็นของทั้งคลินิก
+- ไม่เพิ่ม SDK ใหม่ ใช้ adapter ของ § 16
+
+**หน้าจอ** การ์ด "สรุปด้วย AI" ในหน้าสัตว์ การ์ด "ร่างบันทึกด้วย AI" และ "ร่างคำแนะนำหลังรักษา" ในหน้าเคส ปุ่ม "ร่างคำตอบ" ในหน้าข้อความลูกค้า หน้าใหม่ "ผู้ช่วย AI" (`/ai`) สำหรับถามตัวเลขพร้อมการใช้งานเดือนนี้ และการ์ด "สรุปเช้านี้" บนหน้าภาพรวม ทุกอย่างที่ AI เขียนมีป้าย "ร่างจาก AI" ทุกปุ่มซ่อนเมื่อบัญชีไม่มี `ai:use` หรือระบบไม่ได้เปิด AI รายละเอียดอยู่ใน [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -1826,6 +2035,7 @@ PUT /v1/staff/members/stf_.../public-profile                  staff:manage
 | การจองโดยไม่สมัครก่อน (§ 27) ควรเป็นส่วนหนึ่งของ contract ไหม และเพดานต่อ IP ควรเป็นเท่าไรเมื่อ API อ่าน IP จริงของผู้ใช้ได้แล้ว | ทำงานอยู่ ตอนนี้เพดานเป็นถังเดียวของทุกคนที่จองผ่านเว็บ |
 | จอห้องรอ (§ 30) ควรเป็นส่วนหนึ่งของ contract ไหม และควรมีการออกรหัสตั้งจอใหม่ให้จอเดิมหรือไม่ | ทำงานอยู่ ตอนนี้จอที่หลุดต้องยกเลิกแล้วสร้างใหม่ token ไม่มีวันหมดอายุถ้าไม่ได้ตั้ง |
 | เพศ วันเกิด และการทำหมัน (§ 28) ควรเป็นส่วนหนึ่งของ contract ไหม และการยกเลิกการบันทึกเสียชีวิต (§ 29) ควรมีกรอบเวลาไหม | ทำงานอยู่ ตอนนี้ยกเลิกได้ทุกเมื่อ ต้องมีเหตุผล และบันทึกลง audit log |
+| ผู้ช่วย AI สำหรับพนักงาน (§ 34) ควรเป็นส่วนหนึ่งของ contract ไหม และ `ai:use` ควรเข้ารายการ scope ไหม | ทำงานอยู่ โควตา 1,500 ครั้งต่อเดือนเป็นค่าตั้งต้นที่ยังไม่ได้เทียบกับแพ็กเกจขายจริง และหน้า `/privacy` ยังต้องเพิ่มผู้ให้บริการโมเดลของฟีเจอร์พนักงาน |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -1864,3 +2074,5 @@ PUT /v1/staff/members/stf_.../public-profile                  staff:manage
 | จอห้องรอและ token ของจอ | `backend/src/HappyPaws.Domain/Queueing/QueueDisplay.cs`, `backend/src/HappyPaws.Application/Queueing/Displays/`, `backend/src/HappyPaws.Api/Authorization/DisplayTokenAuthenticationHandler.cs`, `AcceptsDisplayTokenAttribute.cs`, `InteractiveCallerRequirement.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/QueueDisplaysController.cs`, `Controllers/Display/`, `Realtime/QueueStreamController.cs`, `Extensions/RateLimitingExtensions.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/QueueDisplayRepository.cs`, migration `QueueDisplays`, `frontend/src/app/(screen)/`, `frontend/src/app/(staff)/queue/displays/page.tsx`, `frontend/src/features/queue/components/displays/`, `components/display/display-setup-form.tsx`, `lib/load-screen-view.ts`, `frontend/src/lib/display/`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/QueueDisplayTests.cs`, `DisplayClaimLimitTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Queueing/QueueDisplayTests.cs` |
 | เหตุผลและเวลาของบัตรคิว ตัวกรองสถานะ และการตรวจหมอ | `backend/src/HappyPaws.Application/Queueing/Dtos/QueueTicketDto.cs`, `GetQueueBoard/GetQueueBoardHandler.cs`, `TicketVetGuard.cs`, `AssignTicket/AssignTicketHandler.cs`, `IssueWalkInTicket/IssueWalkInTicketHandler.cs`, `backend/src/HappyPaws.Application/Appointments/CheckInAppointment/CheckInAppointmentHandler.cs`, `backend/src/HappyPaws.Domain/Staff/StaffMembership.cs` (`IsVeterinarian`, `WorksAt`), `frontend/src/features/queue/components/history-row.tsx`, `history-reasons.tsx`, `ticket-card.tsx`, `lib/history-filters.ts`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/QueueTicketDetailTests.cs` |
 | รูปพนักงานที่อัปโหลด | `backend/src/HappyPaws.Domain/Staff/StaffPhoto.cs`, `backend/src/HappyPaws.Application/Staff/Photos/`, `ReplacePublicProfile/ReplacePublicProfileHandler.cs`, `ListTeam/ListTeamHandler.cs`, `backend/src/HappyPaws.Application/Common/Abstractions/IFileStorage.cs` (`ExistsAsync`), `backend/src/HappyPaws.Api/Controllers/Staff/StaffMembersController.cs`, `frontend/src/features/staff/components/settings/profile-photo-field.tsx`, `frontend/src/features/team/components/member-photo.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Staff/StaffPhotoTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Staff/StaffPhotoTests.cs` |
+| คาดการณ์ด้วยสถิติ และ trigger คิดถึงน้อง | `backend/src/HappyPaws.Application/Forecasting/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Forecasting/ForecastQueries.cs`, `DueBackSql.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Appointments/AppointmentRepository.cs` (`AttendanceForAsync`), `Automation/AutomationSubjectReader.cs`, `backend/src/HappyPaws.Domain/Automation/AutomationTrigger.cs` (`CustomerLapsed`), `AutomationRule.cs`, `backend/src/HappyPaws.Application/Customers/ConsentGate.cs` (`customer.lapsed`), `backend/src/HappyPaws.Api/Controllers/Staff/ForecastsController.cs`, `frontend/src/app/(staff)/inventory/forecast/`, `schedules/forecast/`, `crm/due-back/`, `frontend/src/features/inventory/components/forecast/`, `features/schedules/components/forecast/`, `features/appointments/components/calendar/attendance-risk-list.tsx`, `risk-badge.tsx`, `features/crm/components/due-back/`, `features/automation/components/lapsed-consent-note.tsx`, `backend/tests/HappyPaws.UnitTests/Application/Forecasting/`, `backend/tests/HappyPaws.IntegrationTests/Api/Forecasting/` |
+| ผู้ช่วย AI สำหรับพนักงาน | `backend/src/HappyPaws.Application/StaffAi/`, `backend/src/HappyPaws.Infrastructure/Assistant/StaffAiOptions.cs`, `StaffAiRegistration.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/StaffAi/`, `backend/src/HappyPaws.Infrastructure/Jobs/DailyBriefJob.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/StaffAiController.cs`, `backend/src/HappyPaws.Domain/Access/Scopes.cs` (`Ai`), `DefaultRoles.cs`, `SecondFactorScopes.cs` (`ApiKeyScopeRules`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`ai.*`), migration `StaffAiAssistant`, `frontend/src/features/staff-ai/`, `frontend/src/app/(staff)/ai/page.tsx`, `frontend/src/features/consultations/hooks/use-form-draft.tsx`, `backend/tests/HappyPaws.UnitTests/Application/StaffAi/`, `backend/tests/HappyPaws.IntegrationTests/Api/StaffAi/` |

@@ -39,6 +39,13 @@ public static class DefaultRoles
     /// expanded here against the catalogue as it stands at seeding time. Unlike <c>invoice:*</c>, it
     /// does not pick up scopes added in a later release on its own.
     /// </para>
+    /// <para>
+    /// <c>ai:use</c> on the veterinarian and the receptionist is not from the contract's table: it
+    /// was approved with the staff AI assistant (<c>docs/contract-extensions.md § 34</c>), and the
+    /// migration <c>StaffAiAssistant</c> grants the same to clinics seeded before it. The owner
+    /// approved it for vets, the counter and the owner only, so <c>clinic_admin</c> leaves it out
+    /// too; an admin who wants it can add it to a role.
+    /// </para>
     /// </summary>
     public static IReadOnlyList<KeyValuePair<string, IReadOnlyList<string>>> StarterScopes { get; } =
     [
@@ -46,11 +53,11 @@ public static class DefaultRoles
         new(ClinicAdmin,
         [
             .. ScopeCatalogue.All.Where(scope =>
-                scope is not (Scopes.Payment.Payout or Scopes.Settings.Danger)),
+                scope is not (Scopes.Payment.Payout or Scopes.Settings.Danger or Scopes.Ai.Use)),
         ]),
         new(Veterinarian,
-            ["consult:*", Scopes.Record.Write, "lab:*", Scopes.Prescription.Write, Scopes.Queue.Call]),
-        new(Receptionist, ["appointment:*", "queue:*", "customer:*", Scopes.Invoice.Collect]),
+            ["consult:*", Scopes.Record.Write, "lab:*", Scopes.Prescription.Write, Scopes.Queue.Call, Scopes.Ai.Use]),
+        new(Receptionist, ["appointment:*", "queue:*", "customer:*", Scopes.Invoice.Collect, Scopes.Ai.Use]),
         new(VetAssistant, [Scopes.Queue.Read, Scopes.Patient.Read, Scopes.Vitals.Write]),
         new(Cashier, ["invoice:*", "payment:*", Scopes.Receipt.Issue]),
         new(Customer, [Scopes.Portal]),

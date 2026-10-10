@@ -5,6 +5,7 @@ import { buttonClass } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
+import { AttendanceRiskList } from '@/features/appointments/components/calendar/attendance-risk-list';
 import { CalendarBoard } from '@/features/appointments/components/calendar/calendar-board';
 import { DayConflictCheck } from '@/features/appointments/components/calendar/day-conflict-check';
 import { DayNav } from '@/features/appointments/components/calendar/day-nav';
@@ -78,6 +79,8 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
       {view.closedDay && <Alert tone="info">{text.closedDay}</Alert>}
 
       {view.items.length > 0 && <DayConflictCheck day={day} branchId={branch.id} labels={conflictLabels(view.items)} />}
+
+      <AttendanceRiskList rows={view.risks} />
 
       <CalendarBoard
         view={view}

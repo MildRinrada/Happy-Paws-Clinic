@@ -27,6 +27,7 @@ public class AutomationMessagesTests
     [InlineData(AutomationTrigger.VaccineDue, NotificationTemplates.VaccineDue)]
     [InlineData(AutomationTrigger.AppointmentUpcoming, NotificationTemplates.AppointmentReminder)]
     [InlineData(AutomationTrigger.TreatmentPlanSession, NotificationTemplates.TreatmentPlanSession)]
+    [InlineData(AutomationTrigger.CustomerLapsed, NotificationTemplates.CustomerLapsed)]
     public void Each_trigger_sends_its_own_template_and_it_has_wording(AutomationTrigger trigger, string template)
     {
         Assert.Equal(template, AutomationMessages.TemplateFor(trigger));

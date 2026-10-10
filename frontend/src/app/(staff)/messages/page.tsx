@@ -11,6 +11,7 @@ import { ThreadStatusFilter } from '@/features/messaging/components/thread-statu
 import { ThreadView } from '@/features/messaging/components/thread-view';
 import { messagesPage } from '@/features/messaging/content/messages-page';
 import { readMessagesQuery } from '@/features/messaging/lib/messages-query';
+import { loadAiUsage } from '@/features/staff-ai/lib/load-ai-usage';
 import { authed } from '@/lib/auth/session';
 import { Scope } from '@/lib/auth/scopes';
 
@@ -37,6 +38,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
     query.thread ? authed(() => getThread(query.thread!)) : Promise.resolve(null),
   ]);
 
+  // "ร่างคำตอบ" (docs/contract-extensions.md § 34): for someone who may answer, with the assistant on.
+  const aiDraft = context.can(Scope.MessageWrite) && (await loadAiUsage()) !== null;
+
   return (
     <div className="space-y-5">
       <PageHeader title={messagesPage.title} subtitle={messagesPage.subtitle} />
@@ -51,7 +55,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
         <div className="space-y-3">
           {thread ? (
-            <ThreadView thread={thread} canReply={context.can(Scope.MessageWrite)} />
+            <ThreadView thread={thread} canReply={context.can(Scope.MessageWrite)} aiDraft={aiDraft} />
           ) : query.thread ? (
             <Alert tone="info">{messagesPage.thread.notFound}</Alert>
           ) : (

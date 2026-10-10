@@ -16,11 +16,18 @@ import { TreatmentList } from '@/features/consultations/components/treatments/tr
 import { VitalsForm } from '@/features/consultations/components/vitals/vitals-form';
 import { VitalsList } from '@/features/consultations/components/vitals/vitals-list';
 import { consultationPage } from '@/features/consultations/content/consultation-page';
+import { FormDraftProvider } from '@/features/consultations/hooks/use-form-draft';
 import { CLOSED_PARAMS } from '@/features/consultations/lib/closed-params';
 import { loadConsultationView, type ConsultationView } from '@/features/consultations/lib/load-consultation-view';
 import { CaseLabRequests } from '@/features/laboratory/components/case-lab-requests';
 import { LabOrderForm } from '@/features/laboratory/components/order/lab-order-form';
 import { listServices } from '@/features/service-catalog/api/listServices';
+import { AftercareDraftPanel } from '@/features/staff-ai/components/aftercare/aftercare-draft-panel';
+import { AiDraftBadge } from '@/features/staff-ai/components/common/ai-draft-badge';
+import { SoapDraftPanel } from '@/features/staff-ai/components/soap/soap-draft-panel';
+import { ownerMessageText } from '@/features/staff-ai/content/owner-message';
+import { soapDraftText } from '@/features/staff-ai/content/soap-draft';
+import { loadAiUsage } from '@/features/staff-ai/lib/load-ai-usage';
 import { ApiError } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
 import { authed } from '@/lib/auth/session';
@@ -63,6 +70,10 @@ export default async function ConsultationPage({
   const services = open ? ((await listServices(consultation.branch_id).catch(() => [])) ?? []) : [];
   const invoiceId = query[CLOSED_PARAMS.invoiceId];
   const invoiceNumber = query[CLOSED_PARAMS.invoiceNumber];
+  // The AI drafts (docs/contract-extensions.md § 34): only when the assistant is on for this session.
+  const ai = (await loadAiUsage()) !== null;
+  const canDraftNotes = ai && canWrite;
+  const canDraftAftercare = ai && context.can(Scope.MessageWrite);
 
   return (
     <div className="space-y-6">
@@ -76,73 +87,87 @@ export default async function ConsultationPage({
         />
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_26rem]">
-        <div className="min-w-0 space-y-6">
-          <PartCard id="notes" title={text.notes.title}>
-            <NotesForm
-              consultationId={consultation.id}
-              editable={canWrite}
-              initial={{
-                chief_complaint: consultation.chief_complaint ?? '',
-                subjective: consultation.subjective ?? '',
-                objective: consultation.objective ?? '',
-                assessment: consultation.assessment ?? '',
-                plan: consultation.plan ?? '',
-              }}
-            />
-          </PartCard>
-
-          <PartCard id="examination" title={text.exam.title}>
-            <ExaminationForm consultationId={consultation.id} findings={consultation.examination} editable={canWrite} />
-          </PartCard>
-
-          <PartCard id="diagnoses" title={text.diagnoses.title}>
-            <DiagnosisList diagnoses={consultation.diagnoses} />
-            {canWrite && (
-              <DiagnosisForm consultationId={consultation.id} hasPrimary={consultation.diagnoses.some((diagnosis) => diagnosis.is_primary)} />
+      <FormDraftProvider>
+        <div className="grid gap-6 xl:grid-cols-[1fr_26rem]">
+          <div className="min-w-0 space-y-6">
+            {canDraftNotes && (
+              <PartCard id="ai-notes" title={soapDraftText.title} aside={<AiDraftBadge />}>
+                <SoapDraftPanel consultationId={consultation.id} />
+              </PartCard>
             )}
-          </PartCard>
 
-          {/* Lab requests are their own records: results come back after the case is signed, so the list stays when it closes. */}
-          {(canOrderLab || view.labRequests !== null) && (
-            <PartCard id="lab" title={text.lab.title}>
-              <CaseLabRequests requests={view.labRequests} canRecord={context.can(Scope.LabWrite)} />
-              {canOrderLab && <LabOrderForm petId={consultation.pet_id} consultationId={consultation.id} />}
+            <PartCard id="notes" title={text.notes.title}>
+              <NotesForm
+                consultationId={consultation.id}
+                editable={canWrite}
+                initial={{
+                  chief_complaint: consultation.chief_complaint ?? '',
+                  subjective: consultation.subjective ?? '',
+                  objective: consultation.objective ?? '',
+                  assessment: consultation.assessment ?? '',
+                  plan: consultation.plan ?? '',
+                }}
+              />
             </PartCard>
-          )}
-        </div>
 
-        <div className="space-y-6">
-          <PartCard id="vitals" title={text.vitals.title}>
-            <VitalsList vitals={consultation.vitals} />
-            {open && context.can(Scope.VitalsWrite) && <VitalsForm consultationId={consultation.id} />}
-          </PartCard>
+            <PartCard id="examination" title={text.exam.title}>
+              <ExaminationForm consultationId={consultation.id} findings={consultation.examination} editable={canWrite} />
+            </PartCard>
 
-          <PartCard id="treatments" title={text.treatments.title}>
-            <TreatmentList treatments={consultation.treatments} totalSatang={consultation.treatment_charges_satang} />
-            {canWrite && <TreatmentForm consultationId={consultation.id} />}
-          </PartCard>
-
-          <PartCard id="prescriptions" title={text.prescriptions.title}>
-            <PrescriptionList prescriptions={consultation.prescriptions} />
-            {open && context.can(Scope.PrescriptionWrite) && <PrescriptionForm consultationId={consultation.id} branchId={consultation.branch_id} />}
-          </PartCard>
-
-          {open && (
-            <PartCard id="close" title={text.close.title}>
-              {context.can(Scope.RecordSign) ? (
-                <ClosePanel
-                  consultationId={consultation.id}
-                  services={services}
-                  fromAppointment={Boolean(consultation.appointment_id)}
-                />
-              ) : (
-                <p className="text-sm text-ink-600">{text.close.noScope}</p>
+            <PartCard id="diagnoses" title={text.diagnoses.title}>
+              <DiagnosisList diagnoses={consultation.diagnoses} />
+              {canWrite && (
+                <DiagnosisForm consultationId={consultation.id} hasPrimary={consultation.diagnoses.some((diagnosis) => diagnosis.is_primary)} />
               )}
             </PartCard>
-          )}
+
+            {/* Lab requests are their own records: results come back after the case is signed, so the list stays when it closes. */}
+            {(canOrderLab || view.labRequests !== null) && (
+              <PartCard id="lab" title={text.lab.title}>
+                <CaseLabRequests requests={view.labRequests} canRecord={context.can(Scope.LabWrite)} />
+                {canOrderLab && <LabOrderForm petId={consultation.pet_id} consultationId={consultation.id} />}
+              </PartCard>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <PartCard id="vitals" title={text.vitals.title}>
+              <VitalsList vitals={consultation.vitals} />
+              {open && context.can(Scope.VitalsWrite) && <VitalsForm consultationId={consultation.id} />}
+            </PartCard>
+
+            <PartCard id="treatments" title={text.treatments.title}>
+              <TreatmentList treatments={consultation.treatments} totalSatang={consultation.treatment_charges_satang} />
+              {canWrite && <TreatmentForm consultationId={consultation.id} />}
+            </PartCard>
+
+            <PartCard id="prescriptions" title={text.prescriptions.title}>
+              <PrescriptionList prescriptions={consultation.prescriptions} />
+              {open && context.can(Scope.PrescriptionWrite) && <PrescriptionForm consultationId={consultation.id} branchId={consultation.branch_id} />}
+            </PartCard>
+
+            {canDraftAftercare && (
+              <PartCard id="ai-aftercare" title={ownerMessageText.aftercare.title} aside={<AiDraftBadge />}>
+                <AftercareDraftPanel consultationId={consultation.id} />
+              </PartCard>
+            )}
+
+            {open && (
+              <PartCard id="close" title={text.close.title}>
+                {context.can(Scope.RecordSign) ? (
+                  <ClosePanel
+                    consultationId={consultation.id}
+                    services={services}
+                    fromAppointment={Boolean(consultation.appointment_id)}
+                  />
+                ) : (
+                  <p className="text-sm text-ink-600">{text.close.noScope}</p>
+                )}
+              </PartCard>
+            )}
+          </div>
         </div>
-      </div>
+      </FormDraftProvider>
     </div>
   );
 }

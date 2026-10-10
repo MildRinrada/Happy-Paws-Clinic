@@ -9,7 +9,6 @@ import { PackageStatusFilter } from '@/features/crm/components/packages/package-
 import { PackageList } from '@/features/crm/components/shared/package-list';
 import { crmArea } from '@/features/crm/content/crm-tabs';
 import { packageLookupText } from '@/features/crm/content/package-lookup';
-import { crmPaths } from '@/features/crm/lib/crm-paths';
 import { readPackageQuery } from '@/features/crm/lib/read-list-query';
 import { getCustomer } from '@/features/customers/api/getCustomer';
 import { ApiError, optional } from '@/lib/api/api-error';
@@ -46,7 +45,7 @@ export default async function CrmCustomerPackagesPage({
   return (
     <div className="space-y-6">
       <PageHeader title={text.title} subtitle={text.subtitle} />
-      <CustomerLookup canSearch={canReadCustomer} pathFor={crmPaths.customerPackages} />
+      <CustomerLookup canSearch={canReadCustomer} target="customerPackages" />
 
       {found === null && <Alert>{text.notFound}</Alert>}
       {found && (

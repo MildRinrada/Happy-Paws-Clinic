@@ -164,20 +164,40 @@ internal sealed class AppointmentRepository(HappyPawsDbContext db, IClock clock)
         DateTimeOffset since,
         CancellationToken cancellationToken = default)
     {
-        // One grouped read rather than four counts. Measured against the visit's own time, so a
-        // strike falls out of the window a year after the visit, not a year after it was recorded.
+        return (await AttendanceForAsync([customerId], since, cancellationToken))[customerId];
+    }
+
+    public async Task<IReadOnlyDictionary<string, AttendanceCounts>> AttendanceForAsync(
+        IReadOnlyCollection<string> customerIds,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default)
+    {
+        // One grouped read rather than four counts per customer. Measured against the visit's own
+        // time, so a strike falls out of the window a year after the visit, not a year after it was
+        // recorded. The attendance-risk forecast (docs/contract-extensions.md § 33) reads a whole
+        // day's customers through here, so it counts exactly what a no-show answer counts.
+        var ids = customerIds.Distinct(StringComparer.Ordinal).ToList();
+
         var rows = await db.Set<Appointment>()
             .AsNoTracking()
-            .Where(a => a.CustomerId == customerId
+            .Where(a => ids.Contains(a.CustomerId)
                 && (a.Status == AppointmentStatus.NoShow || (a.Status == AppointmentStatus.Cancelled && a.IsLateCancellation)))
-            .GroupBy(a => new { NoShow = a.Status == AppointmentStatus.NoShow, Recent = a.StartsAt >= since })
-            .Select(group => new { group.Key.NoShow, group.Key.Recent, Count = group.Count() })
+            .GroupBy(a => new { a.CustomerId, NoShow = a.Status == AppointmentStatus.NoShow, Recent = a.StartsAt >= since })
+            .Select(group => new { group.Key.CustomerId, group.Key.NoShow, group.Key.Recent, Count = group.Count() })
             .ToListAsync(cancellationToken);
 
-        int Sum(bool noShow, bool recentOnly) =>
-            rows.Where(row => row.NoShow == noShow && (!recentOnly || row.Recent)).Sum(row => row.Count);
+        return ids.ToDictionary(
+            id => id,
+            id =>
+            {
+                var mine = rows.Where(row => row.CustomerId == id).ToList();
 
-        return new AttendanceCounts(Sum(true, false), Sum(false, false), Sum(true, true), Sum(false, true));
+                int Sum(bool noShow, bool recentOnly) =>
+                    mine.Where(row => row.NoShow == noShow && (!recentOnly || row.Recent)).Sum(row => row.Count);
+
+                return new AttendanceCounts(Sum(true, false), Sum(false, false), Sum(true, true), Sum(false, true));
+            },
+            StringComparer.Ordinal);
     }
 
     public async Task<IReadOnlyList<Appointment>> OccupyingForPetAsync(

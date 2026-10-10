@@ -2,7 +2,10 @@ using System.Data.Common;
 using HappyPaws.Application.Automation;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Domain.Automation;
+using HappyPaws.Infrastructure.Common;
 using HappyPaws.Infrastructure.Persistence.Repositories.Analytics;
+using HappyPaws.Infrastructure.Persistence.Repositories.Forecasting;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -26,6 +29,12 @@ namespace HappyPaws.Infrastructure.Persistence.Repositories.Automation;
 /// seen is left out.
 /// </para>
 /// <para>
+/// <b>Lapsed customers</b>: <c>DueBackSql.LapsedSubjects</c>, the statement behind
+/// <c>GET /staff/customers/due-back?reason=lapsed</c> (<c>docs/contract-extensions.md § 33</c>), for
+/// customers whose due-back day falls in the span. A rule with a branch counts visits at that
+/// branch only.
+/// </para>
+/// <para>
 /// Every query drops deceased patients and merged customer records, and applies the rule's
 /// condition (branch, species, vaccine, service) in SQL. Statuses compare as the text EF writes.
 /// </para>
@@ -34,7 +43,7 @@ namespace HappyPaws.Infrastructure.Persistence.Repositories.Automation;
 /// so a reminder that fell due while a death was recorded by mistake is not sent once it is undone.
 /// </para>
 /// </summary>
-internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock clock)
+internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock clock, IOptions<ClinicOptions> clinic)
     : IAutomationSubjectReader
 {
     /// <summary>The branch a pet was last booked at: where its owner is likely to be reminded from.</summary>
@@ -125,6 +134,20 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
             AutomationTrigger.AppointmentUpcoming => await AnalyticsSql.QueryAsync(
                 db, AppointmentsSql, Parameters(query), reader => Appointment(reader, zone), cancellationToken),
 
+            AutomationTrigger.CustomerLapsed => await AnalyticsSql.QueryAsync(
+                db,
+                DueBackSql.LapsedSubjects,
+                DueBackSql.Parameters(
+                    clinic.Value.TimeZone,
+                    DateOnly.FromDateTime(clock.NowInClinicTime().DateTime),
+                    clock.UtcNow,
+                    query.BranchId is { } branchId ? [branchId] : null,
+                    dueFrom: query.FirstDay,
+                    dueTo: query.LastDay,
+                    species: query.Species),
+                reader => Lapsed(reader, query.BranchId),
+                cancellationToken),
+
             _ => await AnalyticsSql.QueryAsync(
                 db, SessionsSql, Parameters(query), reader => Session(reader, zone), cancellationToken),
         };
@@ -142,6 +165,22 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
         reader.NullableString(6),
         Label: reader.GetString(7),
         QuietUntil: NullableInstant(reader, 8));
+
+    /// <summary>
+    /// A lapsed customer: the subject is the customer, due on the day they would usually have been
+    /// back by, so the "already sent" key allows one message per absence; a visit moves the day.
+    /// The message names their living pets; the branch is the rule's, or of their latest visit.
+    /// </summary>
+    private static AutomationSubject Lapsed(DbDataReader reader, string? ruleBranchId) => new(
+        AutomationSubjectKind.Customer,
+        reader.GetString(0),
+        StartsAt: null,
+        reader.GetFieldValue<DateOnly>(2),
+        reader.GetString(0),
+        reader.GetString(1),
+        reader.GetString(3),
+        reader.GetString(4),
+        ruleBranchId ?? reader.NullableString(5));
 
     private static AutomationSubject Appointment(DbDataReader reader, TimeZoneInfo zone)
     {

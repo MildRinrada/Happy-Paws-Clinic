@@ -185,6 +185,8 @@ Inventory เพิ่มสองรหัส คือ `inventory_item_exists`
 
 บทความ (ส่วนขยาย § 26 ใน [contract-extensions.md](./contract-extensions.md)) เพิ่ม `article_slug_taken` (409 slug ซ้ำกับบทความอื่น รวมบทความที่ลบแล้ว พร้อม `details.article_id` และ `details.deleted`) รหัสของ domain `invalid_article` ยังมีอยู่ แต่เส้นของพนักงานตรวจก่อนด้วย validator จึงตอบ `422` ที่ช่องนั้นแทน
 
+ผู้ช่วย AI สำหรับพนักงาน (ส่วนขยาย § 34 ใน [contract-extensions.md](./contract-extensions.md)) เพิ่ม `ai_unavailable` (503 ระบบไม่ได้เปิด AI หรือโมเดลตอบไม่ได้ ไม่มีรายละเอียดจากผู้ให้บริการ) และ `ai_quota_exceeded` (429 โควตาของเดือนหมด พร้อม `details.month`, `details.limit`, `details.used`) ผู้ช่วยบนหน้าเว็บ (§ 16) ใช้ `assistant_unavailable` ของตัวเองมาก่อน จึงไม่ได้รวมเป็นรหัสเดียวกัน
+
 Billing เพิ่มอีกห้ารหัส ทั้งหมดเป็น `409` และทั้งหมดเกิดจาก aggregate ใบแจ้งหนี้ปฏิเสธคำขอที่รูปแบบถูกต้องแต่ไม่เข้ากับสถานะตอนนั้น (ดู § 24) คือ `invalid_payment`, `invalid_refund`, `invalid_discount`, `invalid_receipt`, `invalid_void` ตามแบบที่ `invalid_treatment` และ `invalid_examination` วางไว้แล้ว คือรหัสของ domain ตั้งชื่อตามสิ่งที่ผิด ไม่ใช่ตาม endpoint ที่ทำให้เกิด
 
 **ต้องรับรอง** รหัสเหล่านี้เป็นส่วนเพิ่มของ contract ที่ client เห็น จึงควรอยู่ใน reference ไม่มีรหัสใดแทนหรือนิยามรหัสที่มีในเอกสารใหม่

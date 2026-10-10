@@ -6,8 +6,9 @@ namespace HappyPaws.Domain.Access;
 /// This is the authoritative list served by <c>GET /staff/permissions</c> and validated against by
 /// <c>PUT /staff/roles/{id}/permissions</c> ("ตรวจ scope ที่ไม่มีจริง" — reject unknown scopes).
 /// Every scope here is taken verbatim from <c>API Reference.dc.html</c>; do not invent new ones
-/// without a corresponding change to the contract. The one exception, <see cref="Content"/>, was
-/// approved by the contract owner (<c>docs/contract-extensions.md § 26</c>).
+/// without a corresponding change to the contract. The exceptions were each approved by the
+/// contract owner: <see cref="Content"/> (<c>docs/contract-extensions.md § 26</c>) and
+/// <see cref="Ai"/> (<c>docs/contract-extensions.md § 34</c>).
 /// </para>
 /// </summary>
 public static class Scopes
@@ -211,6 +212,19 @@ public static class Scopes
     public static class Content
     {
         public const string Manage = "content:manage";
+    }
+
+    /// <summary>
+    /// <b>Not in the API reference.</b> Using the staff AI assistant (<c>docs/contract-extensions.md § 34</c>):
+    /// pet summaries, SOAP drafts, owner message drafts and asking the clinic's numbers. Each call
+    /// spends the deployment's monthly AI allowance, which is the vendor's cost, so it is a scope of
+    /// its own that an admin can take away from a role. It never widens what the caller can read:
+    /// every AI route also needs the scope of the data it reads, and the tools behind
+    /// <c>/staff/ai/ask</c> run as the caller. Withheld from API keys (<see cref="ApiKeyScopeRules"/>).
+    /// </summary>
+    public static class Ai
+    {
+        public const string Use = "ai:use";
     }
 
     /// <summary>

@@ -119,6 +119,7 @@ export const config = {
     '/messages/:path*',
     '/crm/:path*',
     '/prescriptions/:path*',
+    '/ai/:path*',
     '/portal/:path*',
     '/api/queue/:path*',
   ],

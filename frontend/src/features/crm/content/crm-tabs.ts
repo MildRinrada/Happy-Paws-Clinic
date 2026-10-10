@@ -17,6 +17,7 @@ export const crmTabs: CrmTab[] = [
   { href: '/crm/coupons', label: 'คูปอง', scope: Scope.CrmRead },
   { href: '/crm/segments', label: 'กลุ่มลูกค้า', scope: Scope.CrmRead },
   { href: '/crm/loyalty', label: 'แต้มและสมาชิก', scope: Scope.CrmRead },
+  { href: '/crm/due-back', label: 'ควรกลับมาแล้ว', scope: Scope.CrmRead },
 ];
 
 /** Words every CRM page shares. */

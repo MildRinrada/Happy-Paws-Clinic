@@ -83,6 +83,16 @@ public interface IAppointmentRepository
         DateTimeOffset since,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// <see cref="AttendanceAsync"/> for several customers in one read, every id in the answer (at
+    /// zero when they have no strikes). Used by the attendance-risk forecast,
+    /// <c>docs/contract-extensions.md § 33</c>.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, AttendanceCounts>> AttendanceForAsync(
+        IReadOnlyCollection<string> customerIds,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default);
+
     /// <summary>A patient's appointments still holding time in a window, at any branch.</summary>
     Task<IReadOnlyList<Appointment>> OccupyingForPetAsync(
         string petId,

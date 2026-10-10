@@ -11,16 +11,18 @@ import { crmPaths } from '../../lib/crm-paths';
 
 /**
  * Finds the customer whose points to show, then opens `?customer_id=`. Searches the register
- * under `customer:read`; without it the customer id is typed instead. `pathFor` sends the choice to
- * another page, such as the package lookup.
+ * under `customer:read`; without it the customer id is typed instead. `target` sends the choice to
+ * another page, such as the package lookup. It is a name, not a path function, because a server
+ * page renders this and functions cannot cross into a client component.
  */
 export function CustomerLookup({
   canSearch,
-  pathFor = crmPaths.loyalty,
+  target = 'loyalty',
 }: {
   canSearch: boolean;
-  pathFor?: (customerId: string) => string;
+  target?: 'loyalty' | 'customerPackages';
 }) {
+  const pathFor = crmPaths[target];
   const text = loyaltyPage.lookup;
   const router = useRouter();
   const [query, setQuery] = useState('');

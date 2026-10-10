@@ -1,4 +1,5 @@
 import type { Appointment } from './appointment.types';
+import type { AttendanceRiskRow } from './attendance-risk.types';
 
 /** One appointment with the names a person reads. Any name the session may not read is absent. */
 export interface CalendarItem {
@@ -11,6 +12,8 @@ export interface CalendarItem {
   customerPhone?: string;
   serviceName?: string;
   vetName?: string;
+  /** Its attendance risk (docs/contract-extensions.md § 33); absent on a past day or once it is no longer open. */
+  risk?: AttendanceRiskRow;
 }
 
 /** A column on the day grid: one vet, or the appointments no vet has been given yet. */
@@ -31,6 +34,8 @@ export interface CalendarView {
   closedDay: boolean;
   /** The vets at this branch, for moving an appointment to another one. */
   vets: VetOption[];
+  /** The day's open bookings with their attendance risk, most at risk first. Empty for a past day. */
+  risks: AttendanceRiskRow[];
 }
 
 /** A vet the counter can pick when booking or moving an appointment. */

@@ -28,6 +28,13 @@ public static class RateLimitingExtensions
     public const string AssistantPolicy = "assistant";
 
     /// <summary>
+    /// The staff AI assistant (<c>docs/contract-extensions.md § 34</c>): every call can cost a model
+    /// call from an allowance the clinic shares, so one person is held to
+    /// <c>StaffAi:CallsPerMinutePerUser</c> (10) and cannot spend the month in an afternoon.
+    /// </summary>
+    public const string StaffAiPolicy = "staff-ai";
+
+    /// <summary>
     /// <c>POST /booking/guest/start</c> (<c>docs/contract-extensions.md § 27</c>): every call holds a
     /// vet's time for ten minutes and texts a code, for anyone, so it is capped per address
     /// (<c>RateLimits:GuestHoldsPerIpPerHour</c>, 30). Always keyed on the address, even for a caller
@@ -69,6 +76,7 @@ public static class RateLimitingExtensions
             var guestVerifies = configuration.GetValue("RateLimits:GuestVerifiesPerIpPerHour", 60);
             var perDisplay = configuration.GetValue("RateLimits:PerDisplayPerMinute", 120);
             var displayClaims = configuration.GetValue("RateLimits:DisplayClaimsPerIpPerHour", 30);
+            var staffAi = configuration.GetValue("StaffAi:CallsPerMinutePerUser", 10);
 
             // An API key gets its own window, apart from the person who made it: a sync job
             // running hot must not lock its creator out of the counter screen, nor the reverse.
@@ -88,6 +96,9 @@ public static class RateLimitingExtensions
 
             options.AddPolicy(AssistantPolicy, context =>
                 Partition(context, assistant, suffix: ":assistant"));
+
+            options.AddPolicy(StaffAiPolicy, context =>
+                Partition(context, staffAi, suffix: ":staff-ai"));
 
             options.AddPolicy(GuestHoldPolicy, context =>
                 PerAddressPerHour(context, guestHolds, ":guest-hold"));

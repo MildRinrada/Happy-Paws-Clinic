@@ -54,6 +54,7 @@ export const templateLabels: Record<string, string> = {
   'treatment_plan.session': 'เตือนรอบแผนการรักษา',
   'clinic.message': 'ข้อความถึงเจ้าของ',
   'clinic.announcement': 'ประกาศ',
+  'customer.lapsed': 'คิดถึงน้อง (ลูกค้าที่หายไป)',
   'queue.called': 'เรียกคิว',
   'receipt.issued': 'ใบเสร็จ',
   'consultation.summary': 'สรุปการตรวจ',

@@ -36,6 +36,15 @@ public sealed class AutomationRule : Entity
     /// <summary>A week, the longest "T-minus hours" anyone writes.</summary>
     public const int MaxOffsetHours = 168;
 
+    /// <summary>
+    /// A lapsed customer is written to at least a day after the day they would usually have been back
+    /// (<c>offset_days</c> -1), and at most three months after (-90). Before that day they are not
+    /// late, so a positive offset has nothing to say.
+    /// </summary>
+    public const int MinLapsedOffsetDays = -90;
+
+    public const int MaxLapsedOffsetDays = -1;
+
     private AutomationRule()
     {
     }
@@ -102,8 +111,31 @@ public sealed class AutomationRule : Entity
     {
         AutomationTrigger.VaccineDue => AutomationSubjectKind.Vaccination,
         AutomationTrigger.AppointmentUpcoming => AutomationSubjectKind.Appointment,
+        AutomationTrigger.CustomerLapsed => AutomationSubjectKind.Customer,
         _ => AutomationSubjectKind.TreatmentPlanSession,
     };
+
+    /// <summary>
+    /// The <c>offset_days</c> a trigger accepts. Vaccines may follow up after the due day; visits and
+    /// sessions are reminded before; a lapsed customer only after (<c>docs/contract-extensions.md § 33</c>).
+    /// </summary>
+    public static (int Min, int Max) OffsetDaysRange(AutomationTrigger trigger) => trigger switch
+    {
+        AutomationTrigger.VaccineDue => (MinVaccineOffsetDays, MaxOffsetDays),
+        AutomationTrigger.CustomerLapsed => (MinLapsedOffsetDays, MaxLapsedOffsetDays),
+        _ => (0, MaxVisitOffsetDays),
+    };
+
+    /// <summary>
+    /// False for the triggers whose subject is a day with no time in it (a due date, the day a
+    /// customer was due back), where "24 hours before" has no meaning.
+    /// </summary>
+    public static bool AllowsHours(AutomationTrigger trigger) =>
+        trigger is not (AutomationTrigger.VaccineDue or AutomationTrigger.CustomerLapsed);
+
+    /// <summary>True for the triggers whose subjects belong to a service (a visit, a plan).</summary>
+    public static bool AllowsService(AutomationTrigger trigger) =>
+        trigger is AutomationTrigger.AppointmentUpcoming or AutomationTrigger.TreatmentPlanSession;
 
     public static AutomationRule Create(
         string name,
@@ -235,7 +267,7 @@ public sealed class AutomationRule : Entity
             throw Invalid("เงื่อนไขชื่อวัคซีนใช้ได้กับการเตือนวัคซีนเท่านั้น");
         }
 
-        if (Trimmed(serviceId) is not null && trigger == AutomationTrigger.VaccineDue)
+        if (Trimmed(serviceId) is not null && !AllowsService(trigger))
         {
             throw Invalid("เงื่อนไขบริการใช้ได้กับนัดและแผนการรักษาเท่านั้น");
         }
@@ -255,10 +287,12 @@ public sealed class AutomationRule : Entity
 
         if (offsetHours is { } hours)
         {
-            if (trigger == AutomationTrigger.VaccineDue)
+            if (!AllowsHours(trigger))
             {
                 // A due date has no time of day, so "24 hours before" it has no meaning.
-                throw Invalid("การเตือนวัคซีนนับเป็นวัน ใช้ offset_days");
+                throw Invalid(trigger == AutomationTrigger.VaccineDue
+                    ? "การเตือนวัคซีนนับเป็นวัน ใช้ offset_days"
+                    : "การชวนลูกค้าที่หายไปนับเป็นวัน ใช้ offset_days");
             }
 
             if (hours is < 1 or > MaxOffsetHours)
@@ -275,9 +309,7 @@ public sealed class AutomationRule : Entity
         }
 
         var days = offsetDays!.Value;
-        var (min, max) = trigger == AutomationTrigger.VaccineDue
-            ? (MinVaccineOffsetDays, MaxOffsetDays)
-            : (0, MaxVisitOffsetDays);
+        var (min, max) = OffsetDaysRange(trigger);
 
         if (days < min || days > max)
         {
