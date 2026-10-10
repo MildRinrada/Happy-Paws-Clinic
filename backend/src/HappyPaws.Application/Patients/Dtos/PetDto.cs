@@ -1,10 +1,14 @@
+using HappyPaws.Application.Common;
 using HappyPaws.Domain.Patients;
 
 namespace HappyPaws.Application.Patients.Dtos;
 
 /// <summary>
-/// A patient as the registry lists them. The last four fields are what the owner keeps up to date
-/// from the portal; the behaviour note is what the nurse wants before opening the carrier.
+/// A patient as the registry lists them. Nickname, photo, diet and behaviour are what the owner
+/// keeps up to date from the portal; the behaviour note is what the nurse wants before opening the
+/// carrier. The last four fields are staff's and not in the API reference: <c>sex</c> is
+/// <c>male</c>, <c>female</c> or <c>unknown</c>, <c>neutered</c> is null when nobody knows. See
+/// <c>docs/contract-extensions.md § 28</c>.
 /// </summary>
 public sealed record PetSummaryDto(
     string Id,
@@ -20,7 +24,11 @@ public sealed record PetSummaryDto(
     string? Nickname = null,
     string? PhotoDocumentId = null,
     string? Diet = null,
-    string? Behaviour = null)
+    string? Behaviour = null,
+    string Sex = "unknown",
+    DateOnly? BirthDate = null,
+    bool BirthDateEstimated = false,
+    bool? Neutered = null)
 {
     public static PetSummaryDto From(Pet pet) =>
         new(
@@ -37,7 +45,11 @@ public sealed record PetSummaryDto(
             pet.Nickname,
             pet.PhotoDocumentId,
             pet.Diet,
-            pet.Behaviour);
+            pet.Behaviour,
+            WireEnum.Of(pet.Sex),
+            pet.BirthDate,
+            pet.BirthDateEstimated,
+            pet.Neutered);
 }
 
 /// <summary>

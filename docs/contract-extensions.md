@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 36 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 และ 21 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 72 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 และ 21 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -35,8 +35,9 @@
 | 24 | ลูกค้าเขียนถึงคลินิกได้ทาง LINE ทางเดียว และอ่านบทสนทนาของตัวเองใน portal ไม่ได้ | `GET /portal/thread` และ `POST /portal/thread/messages` | **ทำแล้ว** |
 | 25 | คูปอง กลุ่มลูกค้า แพ็กเกจ แต้ม รายการในคลัง และใบสั่งซื้อ สร้างได้แต่ดูกลับ แก้ ปิด หรือยกเลิกไม่ได้ และกติกาแต้มเขียนตายตัวในโค้ด | รายการและการปิดคูปอง รายการและการอ่านกลุ่ม รายการแพ็กเกจ การปรับแต้ม `GET` และ `PUT /clinic/settings/loyalty` `PATCH` รายการในคลัง รายการและการยกเลิกใบสั่งซื้อ | **ทำแล้ว** |
 | 26 | บทความเขียนได้แค่ผ่านคำสั่ง seed หรือแก้ฐานข้อมูลตรง พนักงานเขียน เผยแพร่ หรือนำลงเองไม่ได้ | `GET`, `POST`, `PATCH`, `DELETE` บน `/staff/articles` การเผยแพร่ การนำลง และรูปปก พร้อม scope ใหม่ `content:manage` | **ทำแล้ว** |
+| 27 | คนที่ยังไม่มีบัญชีต้องสมัครและเข้าสู่ระบบก่อน ถึงจะเห็นเวลาว่างและจองได้ | `POST /booking/guest/start`, `POST /booking/guest/verify` และช่อง `new_pet` บน `POST /portal/appointments` | **ทำแล้ว** |
 
-endpoint ใหม่ 36 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 137 เส้น มีสามข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ และ § 21 เป็นค่าใหม่ของช่องเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 72 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสามข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ และ § 21 เป็นค่าใหม่ของช่องเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -1131,6 +1132,124 @@ SVG ไม่รับ เพราะ SVG คือเอกสารที่�
 
 **หน้าจอ** หน้าตั้งค่ามีแท็บ "บทความ" (`/settings/articles`) สำหรับผู้ถือ `content:manage` มีรายการบทความพร้อมป้ายสถานะ ตัวกรองสถานะ ช่องค้น และปุ่ม "เขียนบทความใหม่" หน้าเขียนบทความบันทึกเป็นร่างแล้วพาไปหน้าแก้ หน้าแก้มีช่องชื่อเรื่อง slug (ปิดเมื่อเคยเผยแพร่แล้ว) คำโปรย ผู้เขียน เวลาอ่าน และเนื้อหาที่สลับดูตัวอย่างได้ ตัวอย่างใช้ `ArticleBody` ตัวเดียวกับหน้าเว็บ ด้านข้างมีกล่องการเผยแพร่ (เผยแพร่ หรือนำลงพร้อมถามยืนยัน) กล่องรูปปก (เลือกรูป เอารูปออก) และกล่องลบที่ถามยืนยันอีกครั้ง รายละเอียดอยู่ใน [บทความ](features/articles.md)
 
+## 27. คนที่ยังไม่มีบัญชีต้องสมัครก่อนถึงจะเห็นหน้าจอง
+
+**ช่องโหว่** contract ให้จองผ่าน `POST /booking/holds` และ `POST /portal/appointments` ซึ่งต้องมี scope `portal` ทั้งคู่ ปุ่ม "จองนัดหมาย" บนหน้าเว็บจึงพาคนที่ยังไม่มีบัญชีไปหน้าเข้าสู่ระบบ ก่อนจะได้เห็นแม้แต่เวลาว่าง คนส่วนใหญ่เลิกตรงนั้น เจ้าของงานขอให้คนที่เข้ามาครั้งแรกเลือกบริการ สาขา วัน และเวลาได้ก่อน แล้วค่อยยืนยันด้วยเบอร์โทรและรหัส OTP ในขั้นสุดท้าย ระบบหาหรือสร้างบัญชีลูกค้าและสัตว์ จองให้ และพาเข้าสู่ระบบ อนุมัติแล้ว (2026-10-10)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**ทำไมสำคัญ** ขั้นที่คนเลิกมากที่สุดคือขั้นที่ต้องทำอะไรก่อนจะได้สิ่งที่มาหา คนที่อยากรู้ว่าพรุ่งนี้บ่ายมีหมอว่างไหมไม่ควรต้องตั้งรหัสผ่านก่อน และเบอร์โทรที่ยืนยันด้วยรหัสก็พิสูจน์ตัวตนได้เท่ากับการสมัคร
+
+**คำตอบ** สองเส้นใหม่ที่ไม่ต้องเข้าสู่ระบบ และช่องใหม่ที่ไม่บังคับหนึ่งช่องบนเส้นเดิมของ contract ไม่มี migration
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| POST | `/booking/guest/start` | สาธารณะ | กันเวลา 10 นาที และส่งรหัส 6 หลักไปที่เบอร์ คำตอบเหมือนกันทุกเบอร์ |
+| POST | `/booking/guest/verify` | สาธารณะ | ตรวจรหัส หาหรือสร้างลูกค้า ยกเวลาที่กันไว้ให้ลูกค้าคนนั้น และเข้าสู่ระบบ |
+| POST | `/portal/appointments` ช่องใหม่ `new_pet` | `portal` | จองให้สัตว์ที่คลินิกยังไม่รู้จัก ลงทะเบียนสัตว์ใน transaction เดียวกับนัด |
+
+```http
+POST /v1/booking/guest/start                                   ไม่ต้องเข้าสู่ระบบ
+{ "phone": "081-234-5678", "service_id": "svc_...", "branch_id": "brn_...",
+  "starts_at": "2026-10-12T03:00:00Z", "staff_id": "ไม่ส่งก็ได้" }
+
+201 { "hold": { "id": "hold_...", "branch_id": "brn_...", "service_id": "svc_...", "staff_id": "stf_...",
+                "starts_at": "...", "ends_at": "...", "expires_at": "..." },
+      "code_expires_at": "..." }
+
+POST /v1/booking/guest/verify                                  ไม่ต้องเข้าสู่ระบบ
+{ "hold_id": "hold_...", "phone": "0812345678", "code": "482913", "display_name": "คุณสมใจ",
+  "accept_privacy_notice": true, "policy_version": "2026-10", "marketing_consent": false }
+
+200 { "access_token": "...", "token_type": "Bearer", "expires_at": "...", "two_factor_satisfied": false,
+      "capabilities": { "customer_id": "cus_...", "scopes": ["portal"], ... },
+      "account_created": true,
+      "pets": [ { "id": "pet_...", "name": "ลูน่า", "species": "สุนัข" } ],
+      "hold": { "id": "hold_...", ... } }
+Set-Cookie: hp_refresh=...; HttpOnly; Path=/auth
+
+POST /v1/portal/appointments                                   portal, Idempotency-Key
+{ "new_pet": { "name": "ถั่วเหลือง", "species": "แมว" }, "service_id": "svc_...", "branch_id": "brn_...",
+  "staff_id": "stf_...", "starts_at": "...", "hold_id": "hold_..." }
+```
+
+**ทำไมเป็นสองเส้นกับการจองเส้นเดิม ไม่ใช่ `confirm` เส้นเดียว** ลูกค้าเดิมต้องได้เลือกสัตว์ของตัวเองหลังพิสูจน์เบอร์ ก่อนพิสูจน์ระบบบอกรายชื่อสัตว์ไม่ได้ เพราะนั่นคือการบอกว่าเบอร์นี้เป็นลูกค้า ถ้าตรวจรหัสและจองในเส้นเดียว รหัสถูกใช้ไปแล้วตอนที่ระบบเพิ่งรู้ว่าต้องถามว่าตัวไหน ทางที่เลือกคือให้การพิสูจน์เบอร์ทำให้คนนั้นเป็นลูกค้าที่เข้าสู่ระบบแล้วทันที แล้วขั้นจองคือ `POST /portal/appointments` เส้นเดิม ผลคือ
+
+- มีทางจองทางเดียว กติกาเวลา ประเภทนัด การตรวจ hold และ `Idempotency-Key` ชุดเดียวกับ portal กดยืนยันซ้ำได้นัดเดียว
+- คำตอบที่ middleware idempotency เก็บลง `idempotency_records` ไม่มี token เพราะ token ออกที่ `verify` ซึ่งไม่ได้ติด `[Idempotent]`
+- การส่ง `verify` ซ้ำไม่เปิดบัญชีหรือ session ที่สอง รหัสใช้ได้ครั้งเดียว และ hold ถูกยกให้ลูกค้าไปแล้ว ครั้งที่สองจึงได้ `409 hold_not_yours`
+
+**ตัวตนคือเบอร์โทร** ระบบดูว่าเบอร์เป็นของใครหลังรหัสถูกแล้วเท่านั้น
+
+| เบอร์นี้ | ผล |
+|---|---|
+| มีบัญชีลูกค้า | เข้าสู่ระบบบัญชีนั้น จองในชื่อลูกค้าเดิม เห็นสัตว์ของตัวเอง ชื่อและความยินยอมที่ส่งมาไม่ถูกใช้ `account_created: false` |
+| มีเรกคอร์ดที่เคาน์เตอร์ แต่ยังไม่มีบัญชี | เปิดบัญชีแล้วผูกกับเรกคอร์ดนั้น ด้วย `CustomerRecordLinker` ตัวเดียวกับ `POST /auth/register` เห็นสัตว์ บิล และประวัติเดิม คำเชิญที่ค้างอยู่ถูกทำเครื่องหมายว่ารับแล้ว `account_created: true` |
+| ไม่เคยมี | เปิดบัญชีและเรกคอร์ดลูกค้าใหม่ ไม่มีรหัสผ่าน `account_created: true` |
+| เป็นบัญชีพนักงาน | `409 contact_taken` ข้อความขอให้โทรหาคลินิกหรือใช้เบอร์อื่น ไม่ออก session |
+| บัญชีถูกระงับ หรือเปิด 2FA ไว้ | `409 contact_taken` ข้อความขอให้เข้าสู่ระบบก่อน หรือติดต่อคลินิก |
+
+เบอร์พนักงานถูกปฏิเสธเพราะ session จากรหัส SMS อย่างเดียวคือ session ที่ไม่ผ่านรหัสผ่านและ 2FA และนัดที่จองในชื่อบัญชีพนักงานไม่มีลูกค้าให้ผูก บัญชีที่เปิด 2FA ไว้ปฏิเสธด้วยเหตุผลเดียวกัน
+
+**ไม่บอกว่าเบอร์มีอยู่ก่อนพิสูจน์**
+
+- `start` ส่งรหัสไปทุกเบอร์ รวมเบอร์พนักงานและเบอร์ที่ไม่เคยมี (จุดประสงค์ใหม่ `booking` ส่งแบบเดียวกับ `register`) คำตอบมีแค่เวลาที่กันไว้และเวลาหมดอายุของรหัส รูปเดียวกันทุกเบอร์
+- `verify` ขอชื่อและการยอมรับประกาศจากทุกคน รหัสผิดหรือหมดอายุตอบ `422` ที่ช่อง `code` ข้อความเดียวกันทุกเบอร์
+- รหัส `booking` ใช้กับ `/auth/register` หรือ `/auth/login` ไม่ได้ และ `POST /auth/otp/request` ไม่รับ `purpose: "booking"` (ตอบ `422`) รหัสจุดประสงค์นี้จึงออกได้ทางเดียวคือคู่กับการกันเวลา
+
+**การกันเวลาของคนที่ยังไม่มีบัญชี** ใช้ตาราง `slot_holds` เดิม ไม่มีคอลัมน์ใหม่ ช่อง `held_by_customer_id` เก็บ `gst_` ตามด้วย hash ของเบอร์แทนรหัสลูกค้า เบอร์ไม่ถูกเก็บในตารางนี้ตรง ๆ
+
+- เวลานั้นหายจาก availability ของคนอื่นทันที อายุ 10 นาทีเหมือน hold ของ portal รหัสอายุ 5 นาที
+- ลูกค้าคนไหนก็ใช้ hold นี้จองตรงไม่ได้ เพราะรหัสลูกค้าขึ้นต้นด้วย `cus_` ไม่มีทางตรงกับ `gst_...`
+- `verify` ตรวจ hold ก่อนตรวจรหัส hold ของเบอร์อื่นได้ `409 hold_not_yours` hold ที่หมดอายุได้ `409 hold_expired` ทั้งสองกรณีรหัสยังไม่ถูกนับเป็นการเดา
+- ผ่านแล้ว hold ถูกยกให้ลูกค้าคนนั้น เวลาหมดอายุเท่าเดิม การพิสูจน์เบอร์ไม่ได้ซื้อเวลาเพิ่ม จากนั้นใช้กับ `POST /portal/appointments` เหมือน hold ปกติ
+- เบอร์หนึ่งกันได้ทีละเวลา `start` ครั้งใหม่ปล่อย hold เดิมของเบอร์นั้นก่อนตรวจเวลา การกลับไปเลือกเวลาใหม่ การกดส่งรหัสอีกครั้ง และการเลือกเวลาเดิมซ้ำ จึงไม่ทิ้งเวลาค้างไว้และไม่ชนกับ hold ของตัวเอง
+
+**กันการใช้ในทางที่ผิด**
+
+| ด่าน | ค่า |
+|---|---|
+| รหัสต่อเบอร์ | 3 รหัสใน 10 นาที นับรวมทุกจุดประสงค์ (`RateLimits:OtpPerPhonePer10Minutes`) ตรวจก่อนกันเวลา คำขอที่ถูกปฏิเสธจึงไม่กันเวลาของใคร |
+| เดารหัส | 5 ครั้งต่อรหัส ครั้งที่ 6 แม้ถูกก็ไม่ผ่าน |
+| กันเวลาต่อที่อยู่ IP | policy `guest-hold` 30 ครั้งต่อชั่วโมง (`RateLimits:GuestHoldsPerIpPerHour`) เกินตอบ `429 rate_limited` |
+| ตรวจรหัสต่อที่อยู่ IP | policy `guest-verify` 60 ครั้งต่อชั่วโมง (`RateLimits:GuestVerifiesPerIpPerHour`) |
+| อายุของ hold | 10 นาที แล้วว่างเอง ไม่ต้องมีงานเบื้องหลัง |
+| จองซ้ำ | `Idempotency-Key` บน `POST /portal/appointments` |
+
+**ข้อควรรู้เรื่องที่อยู่ IP** API ยังไม่อ่าน `X-Forwarded-For` (ข้อจำกัดข้อ 6 ใน [ภาพรวมความปลอดภัย](security/README.md)) คำขอจากหน้าเว็บทุกคำขอจึงมาจาก IP ของเซิร์ฟเวอร์ Next.js เพดานสองตัวนี้เป็นถังเดียวของทุกคนที่จองผ่านเว็บ ไม่ใช่ต่อคน ค่าเริ่มต้นจึงตั้งให้พอสำหรับชั่วโมงที่ยุ่งของทั้งคลินิก ถ้ามีคนตั้งใจยิงจนเต็ม คนอื่นจะจองแบบไม่สมัครก่อนไม่ได้จนครบชั่วโมง ลูกค้าที่เข้าสู่ระบบแล้วยังจองที่ `/portal/book` ได้ตามปกติ เมื่อทำรายการ `UseForwardedHeaders` ในหน้าเดียวกันแล้ว เพดานจะเป็นต่อคนเองโดยไม่ต้องแก้ policy เพดานต่อเบอร์ไม่ขึ้นกับเรื่องนี้
+
+**ความยินยอม** เมื่อ `verify` เปิดบัญชี (สองแถวกลางของตารางตัวตน) ระบบบันทึกลงสมุดความยินยอมของ § 4 ด้วย `RecordConsentHandler` ตัวเดียวกับ `PUT /portal/consents` ที่มา `portal` และ `policy_version` เป็นเลขฉบับบนหน้า `/privacy` ที่หน้าเว็บส่งมา
+
+- ต้องติ๊กยอมรับนโยบายความเป็นส่วนตัว (`accept_privacy_notice: true`) ไม่อย่างนั้นตอบ `422` ที่ช่องนั้นก่อนแตะรหัส
+- `service_messages` ยินยอม เพราะข้อความที่ติ๊กบอกว่าคลินิกจะติดต่อเรื่องนัดและการดูแลสัตว์
+- `marketing` บันทึกเฉพาะเมื่อติ๊ก (`marketing_consent: true`) ไม่ติ๊กไม่บันทึกอะไร จึงไม่ไปถอนความยินยอมจากแบบฟอร์มกระดาษที่เคาน์เตอร์เคยบันทึกให้เรกคอร์ดเดิม
+- บัญชีลูกค้าที่มีอยู่แล้วไม่ถูกบันทึกอะไรเพิ่ม เปลี่ยนเองได้ที่ `/portal/account`
+- audit `auth.registered` พร้อม `via: "guest_booking"` เมื่อเปิดบัญชี
+- `POST /auth/register` ยังไม่บันทึกความยินยอมเหมือนเดิม ทางนี้จึงเป็นทางสมัครทางแรกที่เก็บหลักฐานการยอมรับประกาศไว้
+
+**`new_pet` บน `POST /portal/appointments`** ส่ง `pet_id` หรือ `new_pet` อย่างใดอย่างหนึ่ง ไม่ส่งเลยหรือส่งทั้งคู่ตอบ `422` สัตว์ใหม่ลงทะเบียนด้วย `CreatePetHandler` ตัวเดียวกับ `POST /staff/pets` (ออก HN ผูกเจ้าของหลัก ส่ง webhook และ audit `pet.created`) หลังตรวจว่าเวลานั้นว่างแล้ว ใน transaction เดียวกับนัด การจองที่ถูกปฏิเสธจึงไม่ทิ้งสัตว์ไว้ และการส่งซ้ำด้วย key เดิมได้นัดเดิมกับสัตว์ตัวเดียว ช่องนี้เป็นช่องใหม่ที่ไม่บังคับ คำขอที่มี `pet_id` ทำงานเหมือนเดิมทุกอย่าง ลูกค้าที่เข้าสู่ระบบอยู่แล้วใช้ได้เหมือนกัน แต่หน้า `/portal/book` ยังไม่มีปุ่มเพิ่มสัตว์
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| `POST /booking/guest/confirm` เส้นเดียวที่ตรวจรหัสและจองพร้อมกัน | ลูกค้าเดิมเลือกสัตว์ของตัวเองไม่ได้ ก่อนรหัสถูกบอกรายชื่อสัตว์ไม่ได้ หลังรหัสถูกรหัสก็ใช้ไปแล้ว ต้องเดาสัตว์จากชื่อที่พิมพ์ หรือขอรหัสใหม่ และคำตอบที่มี token จะถูกเก็บลง `idempotency_records` |
+| ใช้ `POST /auth/otp/request` กับ `/auth/register` หรือ `/auth/login` | หน้าเว็บต้องเลือกว่าจะสมัครหรือเข้าสู่ระบบ ซึ่งคือต้องรู้ก่อนว่าเบอร์มีบัญชีไหม และรหัส `login` ไม่ถูกส่งถึงเบอร์ที่ไม่มีบัญชี |
+| เปิด `POST /booking/holds` ให้คนที่ไม่เข้าสู่ระบบ | ต้องเปลี่ยนเส้นของ contract และ hold ที่ไม่มีเจ้าของคือ hold ที่ใครก็ใช้ได้ |
+| เพิ่ม `POST /portal/pets` ให้ลูกค้าเพิ่มสัตว์ก่อนจอง | สองคำขอที่ล้มคนละครั้งได้ จองไม่ได้แต่มีสัตว์ค้างอยู่ `new_pet` ทำในครั้งเดียว |
+| คอลัมน์ใหม่ใน `slot_holds` สำหรับเบอร์ของคนที่ยังไม่มีบัญชี | ต้องมี migration ช่องเดิมยาวพอ ไม่มี foreign key และ hash ของเบอร์พอสำหรับการเทียบ |
+| ให้ `verify` ขอรหัสผ่านไปด้วย | เพิ่มสิ่งที่ต้องกรอกในขั้นที่คนเลิกง่ายที่สุด ตั้งทีหลังได้จาก "ลืมรหัสผ่าน" |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่มีการเลือกประเภทนัดบนหน้า `/book` ทุกนัดเป็น `regular` เพราะรายการประเภทที่จองออนไลน์ได้อ่านได้เฉพาะลูกค้าที่เข้าสู่ระบบ (`GET /portal/appointment-types`)
+- ไม่ขออีเมลหรือรหัสผ่าน บัญชีที่เปิดที่นี่ไม่มีรหัสผ่าน หน้า `/login` ยังรับแค่รหัสผ่าน คนกลุ่มนี้จึงกลับเข้ามาได้ด้วยการจองที่ `/book` อีกครั้ง หรือ "ลืมรหัสผ่าน" ซึ่งส่งลิงก์ทาง SMS แล้วตั้งรหัสผ่านได้ ระหว่างนั้น session จาก `verify` อยู่ได้ 30 วันเหมือนการเข้าสู่ระบบปกติ
+- ไม่รวมเรกคอร์ดซ้ำ ถ้าเบอร์ตรงกับเรกคอร์ดที่ผูกกับบัญชีอื่นอยู่แล้ว (บัญชีนั้นใช้เบอร์อื่น) ระบบเปิดเรกคอร์ดใหม่ เหมือน `POST /auth/register`
+- ไม่ส่งข้อความยืนยันนัด ระบบยังไม่มีการแจ้งเตือนจากการจอง
+- ไม่มี endpoint ปล่อย hold ก่อนเวลา hold ที่ถูกทิ้งว่างเองใน 10 นาที
+
+**หน้าจอ** หน้าสาธารณะ `/book` ไม่ต้องเข้าสู่ระบบ มีห้าขั้น คือ รายละเอียด (สาขาและบริการ ไม่มีสัตว์และประเภทนัด) วันและเวลา เบอร์โทร ยืนยันรหัส และน้องที่จะมา สองขั้นแรกใช้ `DetailsStep` และ `TimeStep` ตัวเดียวกับ `/portal/book` `?service=` และ `?branch=` เลือกให้ล่วงหน้า ลูกค้าที่เข้าสู่ระบบอยู่แล้วถูกพาไป `/portal/book` พร้อมค่าเดียวกัน ปุ่ม "จองนัดหมาย" บนหน้าแรก ท้ายเว็บ หน้าเกี่ยวกับคลินิก และหน้าติดต่อ ชี้มาที่ `/book` แล้ว แต่ละขั้นเป็นสถานะของตัวเองและอยู่ใน `data-booking-step` ของกรอบฟอร์ม วัดได้ทีหลังว่าคนหลุดที่ขั้นไหนโดยไม่ต้องใส่ตัวติดตามของบริษัทอื่น รายละเอียดอยู่ใน [portal ลูกค้า](features/portal.md#จองโดยไม่ต้องสมัครก่อน)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -1152,6 +1271,7 @@ SVG ไม่รับ เพราะ SVG คือเอกสารที่�
 | การถอนคิวรอคือการลบแถวพร้อม audit `waiting_list.removed` (§ 23) ได้รับรองไหม หรือควรมีสถานะ "ถอนแล้ว" | ทำงานอยู่ ถ้าต้องการสถานะต้องมี migration |
 | แชทใน portal (§ 24) ควรมีสถานะอ่านแล้วของกล่องเอง และให้พนักงานเห็นว่าลูกค้าอ่านแล้วไหม | ตอนนี้ใช้สถานะอ่านแล้วของสำเนาในกล่องแจ้งเตือน ถ้าต้องการของกล่องเองต้องมี migration |
 | แต้มสะสม (§ 25) ควรหมดอายุเป็นก้อนตามวันที่ได้ อย่างที่ทำ หรือหมดพร้อมกันทั้งหมดตามรอบปี | ตอนนี้แต่ละแถวที่เพิ่มแต้มมีวันหมดอายุของตัวเอง ค่าตั้งต้นคือไม่หมดอายุ |
+| การจองโดยไม่สมัครก่อน (§ 27) ควรเป็นส่วนหนึ่งของ contract ไหม และเพดานต่อ IP ควรเป็นเท่าไรเมื่อ API อ่าน IP จริงของผู้ใช้ได้แล้ว | ทำงานอยู่ ตอนนี้เพดานเป็นถังเดียวของทุกคนที่จองผ่านเว็บ |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -1184,3 +1304,4 @@ SVG ไม่รับ เพราะ SVG คือเอกสารที่�
 | แชทกับคลินิกใน portal | `backend/src/HappyPaws.Domain/Messaging/MessageChannel.cs`, `backend/src/HappyPaws.Application/Messaging/Portal/`, `ReceiveMessage/ReceiveCustomerMessageHandler.cs`, `ReplyToThread/ReplyToThreadHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Portal/PortalThreadController.cs`, `frontend/src/app/(portal)/portal/messages/page.tsx`, `frontend/src/features/portal/components/chat/`, `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/PortalThreadTests.cs` |
 | จัดการคูปอง กลุ่ม แพ็กเกจ แต้ม รายการในคลัง และใบสั่งซื้อ | `backend/src/HappyPaws.Application/Crm/ListCoupons/`, `DeactivateCoupon/`, `ListSegments/`, `GetSegment/`, `ListPackages/`, `AdjustPoints/`, `ManageLoyaltySettings/`, `InvoiceRewards.cs`, `backend/src/HappyPaws.Domain/Crm/LoyaltySettings.cs`, `LoyaltyBalance.cs`, `backend/src/HappyPaws.Application/Inventory/UpdateItem/`, `ListPurchaseOrders/`, `CancelPurchaseOrder/`, `backend/src/HappyPaws.Api/Controllers/Staff/CouponsController.cs`, `SegmentsController.cs`, `PackagesController.cs`, `LoyaltyController.cs`, `LoyaltySettingsController.cs`, `InventoryManagementController.cs`, migration `ManageCrmAndInventory`, `frontend/src/features/crm/components/coupons/`, `components/segments/`, `components/settings/`, `components/loyalty/points-adjust-form.tsx`, `frontend/src/features/inventory/components/item-manage-cell.tsx`, `purchase-order-list.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Crm/CouponManagementTests.cs`, `SegmentReadTests.cs`, `PackageListTests.cs`, `PointsAdjustmentTests.cs`, `LoyaltySettingsTests.cs`, `Api/Inventory/ItemEditTests.cs`, `PurchaseOrderManagementTests.cs` |
 | เขียนและเผยแพร่บทความ | `backend/src/HappyPaws.Domain/Articles/Article.cs`, `ArticleSlug.cs`, `ArticleText.cs`, `backend/src/HappyPaws.Application/Articles/Manage/`, `ArticleCovers.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/StaffArticlesController.cs`, migration `StaffArticles`, `frontend/src/features/articles/components/staff/`, `frontend/src/app/(staff)/settings/articles/`, `backend/tests/HappyPaws.IntegrationTests/Api/Articles/StaffArticlesTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Articles/` |
+| จองโดยไม่ต้องสมัครก่อน | `backend/src/HappyPaws.Api/Controllers/Public/GuestBookingController.cs`, `backend/src/HappyPaws.Application/Appointments/GuestBooking/`, `BookAppointment/BookAppointmentHandler.cs` (`new_pet`), `backend/src/HappyPaws.Application/Identity/Register/CustomerRecordLinker.cs`, `RequestOtp/RequestOtpHandler.cs`, `backend/src/HappyPaws.Domain/Appointments/SlotHold.cs`, `backend/src/HappyPaws.Api/Extensions/RateLimitingExtensions.cs`, `frontend/src/app/(public)/book/page.tsx`, `frontend/src/features/booking/components/guest/`, `actions/guest-booking-actions.ts`, `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/GuestBookingTests.cs`, `GuestBookingLimitTests.cs` |

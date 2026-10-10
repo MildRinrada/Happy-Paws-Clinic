@@ -463,7 +463,7 @@ scope ที่เลือกและเหตุผลอยู่ใน [ass
 
 ## ส่วนขยาย contract
 
-endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ และสองเส้นของผู้ช่วย AI เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 72 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20 และ 22 ถึง 25) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) และสองเส้นของการจองโดยยังไม่สมัคร (§ 27) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -537,6 +537,8 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | POST | `/staff/articles/{id}/unpublish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UnpublishArticleHandler` | § 26 | ✅ |
 | DELETE | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/DeleteArticleHandler` | § 26 | ✅ |
 | POST | `/staff/articles/{id}/cover` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/RequestArticleCoverHandler` | § 26 | ✅ |
+| POST | `/booking/guest/start` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`StartGuestBookingHandler`) | § 27 | ✅ |
+| POST | `/booking/guest/verify` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`VerifyGuestBookingHandler`) | § 27 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -553,6 +555,8 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 § 25 เพิ่มช่องในเส้นเดิมโดยไม่เปลี่ยนของเดิม คือ คูปองในคำตอบของ `POST /staff/coupons` มี `status`, `remaining` และช่องการปิด กลุ่มลูกค้ามี `counted_at` บัญชีแต้ม (`GET /staff/loyalty/{customer_id}`) มี `expired_points`, `next_expiry`, `rules.points_expire_after_months` และแถวประวัติมี `expires_at` กับชนิด `adjust` รายการในคลัง (`GET /staff/inventory/items`) รับตัวกรอง `active` และมี `active` กับ `retired_at` ใบสั่งซื้อมีสถานะ `cancelled` และ `received_cost_satang` การใช้คูปองที่ปิดแล้วตอบ `409 coupon_deactivated` และการรับเข้า สั่งซื้อ หรือสั่งยาด้วยรายการที่เลิกใช้ตอบ `409 inventory_item_retired`
 
 § 26 เพิ่มช่อง `cover_image_url` (ลิงก์รูปปกที่ลงชื่อแล้ว อายุหนึ่งชั่วโมง มีเฉพาะบทความที่เผยแพร่อยู่) ในคำตอบของ `GET /articles` และ `GET /articles/{slug}` ซึ่งเป็นส่วนขยาย § 9 อยู่แล้ว และเพิ่ม scope `content:manage` เป็น scope แรกที่ไม่อยู่ในรายการของ contract ตอบ `409 article_slug_taken` เมื่อ slug ซ้ำกับบทความอื่น รวมบทความที่ลบไปแล้ว
+
+§ 27 เพิ่มช่อง `new_pet` (`name`, `species`) ที่ไม่บังคับใน `POST /portal/appointments` ใช้แทน `pet_id` เพื่อลงทะเบียนสัตว์ใหม่ใน transaction เดียวกับนัด คำขอที่มี `pet_id` ทำงานเหมือนเดิม ส่งทั้งสองช่องหรือไม่ส่งเลยได้ `422` และเพิ่มจุดประสงค์ `booking` ของรหัส OTP ซึ่ง `POST /auth/otp/request` ไม่รับ สองเส้นใหม่ไม่ต้องเข้าสู่ระบบ มี rate limit ต่อ IP ของตัวเอง (`guest-hold` และ `guest-verify`) และ `verify` เขียนคุกกี้ refresh แบบเดียวกับ `POST /auth/login`
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
@@ -576,8 +580,8 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 | endpoint ใน reference | **164** |
 | มีที่อยู่ในตารางข้างบน | **160** |
 | ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
-| ทำแล้วและมีเทสต์ (✅) | **141** |
-| เพิ่มนอก contract | **36** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
+| ทำแล้วและมีเทสต์ (✅) | **160** |
+| เพิ่มนอก contract | **72** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
 
 ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
 
@@ -585,7 +589,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-36 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19 และ § 20) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
+72 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25 และ § 27) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
 
 ## โค้ด
 

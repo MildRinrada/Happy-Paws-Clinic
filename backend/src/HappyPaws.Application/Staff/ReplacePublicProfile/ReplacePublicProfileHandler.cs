@@ -5,6 +5,7 @@ using HappyPaws.Application.Common.Concurrency;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Staff.Dtos;
 using HappyPaws.Domain.Auditing;
+using HappyPaws.Domain.Common;
 using HappyPaws.Domain.Staff;
 
 namespace HappyPaws.Application.Staff.ReplacePublicProfile;
@@ -28,6 +29,12 @@ public sealed record ReplacePublicProfileCommand(
 /// branch-bound manager edits people at their branches, and nobody edits someone who holds more
 /// than they do. Putting a person's name and face on the website is a change to that person.
 /// </para>
+/// <para>
+/// An uploaded photo (§ 32) is named by the value <c>POST .../public-profile/photo</c> answered,
+/// and is taken only once its file has arrived, so the website never points at a file that was
+/// never sent. Sending the value already stored keeps the photo; leaving it out removes it, as
+/// with every other field.
+/// </para>
 /// </summary>
 public sealed class ReplacePublicProfileHandler(
     StaffMemberAccess access,
@@ -35,6 +42,7 @@ public sealed class ReplacePublicProfileHandler(
     IRoleRepository roles,
     IAuditTrail audit,
     IUnitOfWork unitOfWork,
+    IFileStorage storage,
     IClock clock)
 {
     public async Task<StaffMemberDto> HandleAsync(
@@ -50,6 +58,13 @@ public sealed class ReplacePublicProfileHandler(
             var before = membership.PublicProfile;
 
             membership.ReplacePublicProfile(command.Profile, clock.NowInClinicTime().Year);
+
+            if (membership.PhotoPath != before.PhotoPath
+                && StaffPhoto.StorageKeyOf(membership.PhotoPath) is { } key
+                && !await storage.ExistsAsync(key, token))
+            {
+                throw new DomainException("invalid_public_profile", "ยังไม่ได้รับไฟล์รูป ลองเลือกรูปแล้วอัปโหลดใหม่อีกครั้ง");
+            }
 
             audit.Record(new AuditEvent(
                 AuditActions.StaffPublicProfileUpdated,
@@ -67,7 +82,7 @@ public sealed class ReplacePublicProfileHandler(
 
         var roleNames = (await roles.ListAsync(cancellationToken)).ToDictionary(role => role.Id, role => role.Name);
 
-        return StaffMemberDto.From(row, roleNames);
+        return StaffMemberDto.From(row, roleNames, storage);
     }
 
     private static Dictionary<string, object?> Describe(StaffPublicProfile profile) => new()

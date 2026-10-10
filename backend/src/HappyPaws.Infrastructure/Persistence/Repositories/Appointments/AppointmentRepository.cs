@@ -70,6 +70,21 @@ internal sealed class AppointmentRepository(HappyPawsDbContext db, IClock clock)
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Appointment>> CancelledForPetAsync(
+        string petId,
+        string reason,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default) =>
+        await db.Set<Appointment>()
+            .AsNoTracking()
+            .Where(a => a.PetId == petId
+                && a.Status == AppointmentStatus.Cancelled
+                && a.CancellationReason == reason
+                && a.CancelledAt >= since)
+            .OrderBy(a => a.StartsAt)
+            .ThenBy(a => a.Id)
+            .ToListAsync(cancellationToken);
+
     public async Task<CursorPage<Appointment>> ListForStaffAsync(
         AppointmentListFilter filter,
         CursorPageRequest page,

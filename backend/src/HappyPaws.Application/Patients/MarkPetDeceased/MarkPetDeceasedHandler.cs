@@ -50,6 +50,12 @@ public sealed class MarkPetDeceasedHandler(
     IClock clock,
     ILogger<MarkPetDeceasedHandler> logger)
 {
+    /// <summary>
+    /// The reason written on every visit a death cancels. Undoing the death finds those visits by it
+    /// (<c>docs/contract-extensions.md § 29</c>), so it is named once, here.
+    /// </summary>
+    public const string CancellationReason = "สัตว์เลี้ยงเสียชีวิต";
+
     public async Task<PetDeceasedResult> HandleAsync(
         MarkPetDeceasedCommand command,
         CancellationToken cancellationToken = default)
@@ -77,7 +83,7 @@ public sealed class MarkPetDeceasedHandler(
 
             foreach (var appointment in upcoming)
             {
-                appointment.Cancel(now, userId, "สัตว์เลี้ยงเสียชีวิต");
+                appointment.Cancel(now, userId, CancellationReason);
                 cancelled.Add(appointment.Id);
                 webhooks.Enqueue(WebhookEventTypes.AppointmentCancelled, WebhookPayloads.Appointment(appointment));
 

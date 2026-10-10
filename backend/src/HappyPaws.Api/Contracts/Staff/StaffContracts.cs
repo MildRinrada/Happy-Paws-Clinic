@@ -45,6 +45,12 @@ public sealed record ReplacePublicProfileRequest(
     int? CareerStartYear = null,
     bool ShowOnWebsite = false);
 
+/// <summary>
+/// <c>POST /staff/members/{id}/public-profile/photo</c> — the photo about to be sent. Extension, § 32.
+/// <code>{ "content_type": "image/jpeg", "size_bytes": 482113 }</code>
+/// </summary>
+public sealed record StaffPhotoRequest(string? ContentType = null, long SizeBytes = 0);
+
 /// <summary><c>POST /staff/roles</c> — "สร้าง role พร้อมชุด scope".</summary>
 public sealed record CreateRoleRequest(string Name, IReadOnlyList<string> Scopes);
 

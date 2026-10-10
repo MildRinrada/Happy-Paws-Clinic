@@ -20,16 +20,27 @@ public sealed record CreatePetCommand(
     string Species,
     string PrimaryCustomerId,
     string? Breed = null,
-    string? MicrochipNumber = null);
+    string? MicrochipNumber = null,
+    string? Sex = null,
+    DateOnly? BirthDate = null,
+    bool BirthDateEstimated = false,
+    bool? Neutered = null);
 
 public sealed class CreatePetValidator : AbstractValidator<CreatePetCommand>
 {
-    public CreatePetValidator()
+    public CreatePetValidator(IClock clock)
     {
         RuleFor(command => command.Name).NotEmpty().MaximumLength(120);
         RuleFor(command => command.Species).NotEmpty().MaximumLength(60);
         RuleFor(command => command.PrimaryCustomerId).NotEmpty();
         RuleFor(command => command.MicrochipNumber).MaximumLength(40);
+
+        // contract-extensions § 28: optional, and the same rules as staff's edit.
+        RuleFor(command => command.Sex).MustBeASex();
+        RuleFor(command => command.BirthDate).MustBeABirthDate(clock);
+        RuleFor(command => command.BirthDateEstimated)
+            .Must((command, estimated) => !estimated || command.BirthDate is not null)
+            .WithMessage("ระบุว่าเป็นวันเกิดโดยประมาณได้เมื่อมีวันเกิดเท่านั้น");
     }
 }
 
@@ -44,11 +55,11 @@ public sealed class CreatePetValidator : AbstractValidator<CreatePetCommand>
 /// rehomed, and a co-owner can be given access without ever becoming the billing contact.
 /// </para>
 /// <para>
-/// <b>The record carries only what the contract names.</b> <c>GET /staff/pets/{id}</c> asks for
-/// "สายพันธุ์ น้ำหนักล่าสุด แพ้ยา ไมโครชิป", so that is the shape of this. Date of birth, sex and
-/// neuter status are all things a real veterinary record wants and none of them is in the reference
-/// — adding them would be inventing schema. Flagged in <c>docs/assumptions.md § 25</c> rather than
-/// guessed at.
+/// <b>Sex, birth date and neuter status are this project's, not the contract's.</b>
+/// <c>GET /staff/pets/{id}</c> asks for "สายพันธุ์ น้ำหนักล่าสุด แพ้ยา ไมโครชิป" and nothing more;
+/// the three were held back under <c>docs/assumptions.md § 25</c> until the owner of the work
+/// approved them. All optional here, and editable afterwards with <c>PATCH /staff/pets/{id}</c>.
+/// See <c>docs/contract-extensions.md § 28</c>.
 /// </para>
 /// </summary>
 public sealed class CreatePetHandler(
@@ -84,6 +95,14 @@ public sealed class CreatePetHandler(
                 owner.Id,
                 command.Breed,
                 command.MicrochipNumber);
+
+            created.Revise(
+                new PetRevision(
+                    Sex: PetProfileRules.SexOf(command.Sex),
+                    BirthDate: command.BirthDate,
+                    BirthDateEstimated: command.BirthDate is null ? null : command.BirthDateEstimated,
+                    Neutered: command.Neutered),
+                PetProfileRules.Today(clock));
 
             pets.Add(created);
             webhooks.Enqueue(WebhookEventTypes.PetCreated, WebhookPayloads.Pet(created, clock.UtcNow));

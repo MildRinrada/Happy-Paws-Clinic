@@ -81,6 +81,6 @@ export const aboutLicence = {
 export const aboutCta = {
   heading: 'อยากรู้จักทีมที่จะดูแลน้อง?',
   lead: 'ดูประวัติสัตวแพทย์และทีมงาน หรือจองนัดเลือกหมอและเวลาที่สะดวกได้เลย',
-  primaryAction: { label: 'จองนัดหมาย', href: '/portal/book' } satisfies HeroAction,
+  primaryAction: { label: 'จองนัดหมาย', href: '/book' } satisfies HeroAction,
   secondaryAction: { label: 'ทีมของเรา', href: '/team' } satisfies HeroAction,
 };

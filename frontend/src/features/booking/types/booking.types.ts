@@ -57,3 +57,36 @@ export interface BookingOptions {
   /** Staff id to name, for the vets on the public team page. */
   vets: Record<string, string>;
 }
+
+/** A time picked on the guest booking page (`/book`), before anything is held. */
+export interface PickedTime {
+  startsAt: string;
+  /** Left out for "any vet": the backend then picks one who is free. */
+  staffId?: string;
+}
+
+/** `POST /booking/guest/start` (docs/contract-extensions.md § 27): the time kept, and when the code lapses. */
+export interface GuestBookingStarted {
+  hold: SlotHold;
+  code_expires_at: string;
+}
+
+/** A living pet the visitor already has at the clinic, shown once their number is proved. */
+export interface GuestPet {
+  id: string;
+  name: string;
+  species: string;
+}
+
+/** What `POST /booking/guest/verify` answers besides the tokens, which stay on the server. */
+export interface GuestVerified {
+  account_created: boolean;
+  pets: GuestPet[];
+  hold: SlotHold;
+}
+
+/** A pet booked for the first time, as `new_pet` on `POST /portal/appointments`. */
+export interface NewPet {
+  name: string;
+  species: string;
+}

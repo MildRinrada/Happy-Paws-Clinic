@@ -44,6 +44,8 @@ contract มี endpoint อ่าน audit แต่ไม่ได้บอก
 | เปลี่ยนว่าใครทำอะไรได้ | `auth.signed_in`, `auth.sign_in_failed`, `auth.password_changed`, `auth.session_revoked`, `auth.registered` (ลูกค้าเปิดบัญชีเอง), `auth.password_reset` (ตั้งรหัสใหม่จากลิงก์), `auth.credentials_reset`, `pet.access_granted`, `pet.access_revoked`, `customer.invited`, `clinic.bootstrapped`, `staff.invited`, `staff.invitation_accepted`, `staff.updated`, `staff.deactivated`, `staff.public_profile_updated`, `staff.seeded`, `user.status_changed`, `account.profile_updated`, `auth.two_factor_enrolled`, `auth.recovery_code_used`, `schedule.shifts_created`, `schedule.time_off_recorded`, `schedule.assignment_rules_replaced`, `role.created`, `role.permissions_replaced`, `settings.medical_record_changed` |
 | งานที่มีผลเรื่องเงินหรือการดูแล | `appointment.cancelled`, `appointment.no_show`, `settings.cancellation_policy_changed`, `waiting_list.removed`, `queue.priority_changed`, `invoice.issued`, `invoice.voided`, `invoice.discounted`, `payment.collected`, `payment.refunded`, `receipt.issued`, `service.pricing_changed` |
 
+นอกเกณฑ์สองข้อมีหมวดเดียวที่ตั้งใจบันทึก คือ **บทความบนหน้าเว็บ** `article.created`, `article.updated`, `article.published`, `article.unpublished`, `article.deleted` บทความไม่ใช่ข้อมูลส่วนบุคคล แต่เป็นคลินิกพูดต่อสาธารณะในนามสัตวแพทย์ เมื่อหน้าเว็บพูดสิ่งที่ไม่ควรพูดต้องตอบได้ว่าใครเอาขึ้นและเมื่อไร เนื้อหาบทความไม่ถูกคัดลอกลง log มีแค่ความยาว ดู [contract-extensions.md § 26](../contract-extensions.md)
+
 รายการนี้เป็น **ข้อกำหนด** ไม่ใช่สิ่งที่มีอยู่ตอนนี้ สิ่งที่ยังไม่ตรง
 
 | action | สถานะ |

@@ -22,6 +22,15 @@ import {
 
 const SIGN_IN_PATH = '/login';
 
+/**
+ * Pages anyone may open that still want a live session when there is one: the sign-in page, and
+ * the public booking page (`/book`), which sends a signed-in customer to the portal's own booking
+ * page. Nobody is sent to sign in from these.
+ */
+function sessionIsOptional(pathname: string) {
+  return pathname === SIGN_IN_PATH || pathname === '/book';
+}
+
 function isApiRoute(pathname: string) {
   return pathname.startsWith('/api/');
 }
@@ -47,7 +56,7 @@ function unauthenticated(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  const onSignInPage = request.nextUrl.pathname === SIGN_IN_PATH;
+  const sessionOptional = sessionIsOptional(request.nextUrl.pathname);
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
 
@@ -60,13 +69,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!refreshToken) {
-    return onSignInPage ? NextResponse.next() : unauthenticated(request);
+    return sessionOptional ? NextResponse.next() : unauthenticated(request);
   }
 
   const tokens = await refreshSession(refreshToken).catch(() => null);
 
   if (!tokens) {
-    return onSignInPage ? withCookies(NextResponse.next(), clearedCookieWrites()) : unauthenticated(request);
+    return sessionOptional ? withCookies(NextResponse.next(), clearedCookieWrites()) : unauthenticated(request);
   }
 
   const writes = sessionCookieWrites(tokens);
@@ -88,10 +97,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // The staff console, its stream, the customer portal, and the sign-in page. The public site is
+  // The staff console, its stream, the customer portal, the sign-in page, and the public booking
+  // page (which only reads the session, see `sessionIsOptional`). The rest of the public site is
   // not matched: it has no session to keep and must not pay for a refresh it does not need.
   matcher: [
     '/login',
+    '/book',
     '/queue/:path*',
     '/appointments/:path*',
     '/customers/:path*',

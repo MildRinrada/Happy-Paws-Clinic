@@ -2,7 +2,7 @@
 
 นัดหมาย (`appointments`) คือการกันเวลาของหมอหนึ่งคนที่สาขาหนึ่ง ให้สัตว์เลี้ยงหนึ่งตัว สำหรับบริการหนึ่งอย่าง ลูกค้าจองเองผ่าน portal ส่วนพนักงานจองแทนที่เคาน์เตอร์ เมื่อสัตว์มาถึงและเช็กอิน ระบบออกบัตรคิวให้ทันที ต่อจากนั้นเป็นเรื่องของ [คิว](queue.md) และ [การตรวจ](consultations-and-records.md)
 
-ตอนนี้มีแค่ API ยังไม่มีหน้าจองหรือหน้าตารางนัดบนเว็บ ทุก path อยู่ใต้ `/v1`
+หน้าจองของลูกค้าที่ล็อกอินแล้วอยู่ที่ `/portal/book` หน้าจองสาธารณะที่ไม่ต้องสมัครก่อนอยู่ที่ `/book` ทั้งสองหน้าอยู่ใน [portal ลูกค้า](portal.md) ส่วนปฏิทินนัดและการจองแทนลูกค้าของพนักงานอยู่ที่ `/appointments` ดูหัวข้อ [ปฏิทินนัดบนเว็บ](#ปฏิทินนัดบนเว็บ) ทุก path ของ API อยู่ใต้ `/v1`
 
 ## Endpoint
 
@@ -10,7 +10,9 @@
 |---|---|---|---|
 | `GET /booking/availability?service=&date=&vet=&branch=` | ทุกคน ไม่ต้องเข้าสู่ระบบ | public | ช่วงว่างของบริการในวันหนึ่ง |
 | `POST /booking/holds` | ลูกค้า | `portal` | กันช่วงเวลาไว้ 10 นาทีระหว่างกรอกฟอร์ม |
-| `POST /portal/appointments` | ลูกค้า | `portal` | ยืนยันการจอง ต้องมี `Idempotency-Key` |
+| `POST /portal/appointments` | ลูกค้า | `portal` | ยืนยันการจอง ต้องมี `Idempotency-Key` ส่ง `pet_id` หรือ `new_pet` (ส่วนขยาย § 27) |
+| `POST /booking/guest/start` | ทุกคน ไม่ต้องเข้าสู่ระบบ | public | กันเวลา 10 นาทีและส่งรหัส OTP ไปที่เบอร์ (ส่วนขยาย § 27) |
+| `POST /booking/guest/verify` | ทุกคน ไม่ต้องเข้าสู่ระบบ | public | ตรวจรหัส หาหรือสร้างลูกค้า ยกเวลาที่กันไว้ให้ และเข้าสู่ระบบ (ส่วนขยาย § 27) |
 | `GET /portal/appointments?upcoming=` | ลูกค้า | `portal` | นัดที่จะถึง หรือประวัติย้อนหลัง |
 | `POST /staff/appointments` | พนักงาน | `appointment:write` | จองแทนลูกค้า รับ walk-in ต้องมี `Idempotency-Key` |
 | `GET /staff/appointments?date=&status=&vet_id=&branch=&q=` | พนักงาน | `appointment:read` | ตารางนัดของวัน แบ่งหน้าแบบ cursor |
@@ -134,6 +136,7 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 - ไม่มี endpoint ปล่อย hold คืนก่อนเวลา ฟอร์มที่ถูกทิ้งกันเวลาหมอไว้จนครบ 10 นาที
 - จองโดยไม่มี hold ได้ เพราะช่องทางอื่น เช่นเคาน์เตอร์ ไม่ผ่านฟอร์มบนเว็บ
 - hold ไม่มี constraint ระดับฐานข้อมูลแบบนัด ถ้า hold สองอันชนกันจริง ตัวกันชั้นสุดท้ายคือ exclusion constraint ตอนจอง
+- **hold ของคนที่ยังไม่มีบัญชี** (`POST /booking/guest/start` ส่วนขยาย § 27) อยู่ในตารางเดียวกัน ช่องผู้กันเป็น `gst_` ตามด้วย hash ของเบอร์ ไม่ใช่รหัสลูกค้า จึงไม่มีใครจองด้วย hold นี้ได้จนกว่าเบอร์นั้นพิสูจน์ด้วยรหัสที่ `POST /booking/guest/verify` แล้ว hold ถูกยกให้ลูกค้าคนนั้น เวลาหมดอายุเท่าเดิม เบอร์หนึ่งกันได้ทีละเวลา การ `start` ใหม่ปล่อย hold เดิมของเบอร์นั้น
 
 ## การจอง
 
@@ -153,6 +156,8 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 - ไม่ระบุหมอ ระบบเลือกหมอที่ให้บริการนี้ได้และว่างคนแรก เรียงตามรหัส การขอซ้ำจึงได้หมอคนเดิม
 - เวลาที่ส่งมาไม่จำเป็นต้องตรงกับช่องในตาราง (เช่น walk-in ตอน 14:07) ดู [จุดที่ contract กำกวม](../assumptions.md)
 - พนักงานติด `walk_in` ได้ และระบบบันทึก `booked_by_staff_id`
+
+**สัตว์ที่คลินิกยังไม่รู้จัก** `POST /portal/appointments` รับ `new_pet: { name, species }` แทน `pet_id` (ส่วนขยาย § 27) ระบบลงทะเบียนสัตว์ด้วย `CreatePetHandler` ตัวเดียวกับ `POST /staff/pets` หลังตรวจว่าเวลาว่าง ใน transaction เดียวกับนัด การจองที่ถูกปฏิเสธจึงไม่ทิ้งสัตว์ไว้ ส่งทั้งสองช่องหรือไม่ส่งเลยได้ `422`
 
 ช่วงเวลาที่ใช้ไม่ได้ได้ `422 slot_unavailable` พร้อม `details.suggested` เป็นเวลาว่างถัดไปไม่เกิน 3 ช่องของวันเดียวกัน รูปแบบ `HH:mm` ตามเวลาคลินิก สาเหตุที่เป็นไปได้คือ มีนัดอยู่แล้ว อยู่นอกเวร อยู่นอกช่วงที่จองได้ ตรงกับวันหยุด หรืออยู่นอกช่วงจองออนไลน์ของบริการ
 
@@ -189,7 +194,7 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 
 ## ปฏิทินนัดบนเว็บ
 
-`/appointments` เมนู **ปฏิทินนัด** ในหน้าจอพนักงาน เห็นเฉพาะบัญชีที่ถือ `appointment:read` ส่วนลูกค้าจองเองที่ `/portal/book` ดู [portal ลูกค้า](portal.md)
+`/appointments` เมนู **ปฏิทินนัด** ในหน้าจอพนักงาน เห็นเฉพาะบัญชีที่ถือ `appointment:read` ส่วนลูกค้าจองเองที่ `/portal/book` หรือจองโดยไม่ต้องสมัครก่อนที่ `/book` ดู [portal ลูกค้า](portal.md)
 
 - **ดูทีละวัน** ของสาขาที่เลือกอยู่ วันอยู่ในที่อยู่ของหน้า (`/appointments?date=YYYY-MM-DD`) มีปุ่มวันก่อนหน้า วันนี้ วันถัดไป และช่องเลือกวัน หัวหน้าบอกจำนวนนัดทั้งหมดและนัดที่ยังไม่มาถึง
 - **จอกว้างเป็นตาราง** เวลาเรียงลงมา หนึ่งคอลัมน์ต่อหมอ 1 ชั่วโมงสูง 72 px ทุกหมอที่ทำงานสาขานี้มีคอลัมน์ แม้วันนั้นจะว่าง นัดที่ยังไม่ระบุหมอไปอยู่คอลัมน์ "ยังไม่ระบุหมอ" นัดที่เวลาซ้อนกันในคอลัมน์เดียวแบ่งความกว้างกัน ช่วงเวลาของตารางมาจากเวลาทำการของวันนั้น (`GET /clinic/hours`) และขยายเองถ้ามีนัดนอกเวลา
@@ -237,6 +242,7 @@ role ตั้งต้นที่ได้ `appointment:*` คือ `receptio
 | use case | `backend/src/HappyPaws.Application/Appointments/` (หนึ่งโฟลเดอร์ต่อหนึ่ง use case) |
 | สิทธิ์ทั้งสองฝั่ง | `backend/src/HappyPaws.Application/Appointments/AppointmentAccess.cs` |
 | cutoff | `backend/src/HappyPaws.Application/Appointments/CutoffPassedException.cs` |
+| จองโดยไม่ต้องสมัครก่อน | `backend/src/HappyPaws.Application/Appointments/GuestBooking/`, `backend/src/HappyPaws.Api/Controllers/Public/GuestBookingController.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Appointments/GuestBookingTests.cs`, `GuestBookingLimitTests.cs` |
 | controller | `backend/src/HappyPaws.Api/Controllers/Public/BookingAvailabilityController.cs`, `Portal/BookingHoldsController.cs`, `Portal/PortalAppointmentsController.cs`, `Staff/AppointmentsController.cs`, `Account/AppointmentsController.cs`, `Account/AppointmentActionsController.cs` |
 | constraint กันจองซ้อน | `backend/src/HappyPaws.Infrastructure/Persistence/Migrations/20260823081447_AppointmentSlotExclusion.cs`, `Persistence/PostgresErrorTranslator.cs` |
 | ค่าตั้งการจอง | `backend/src/HappyPaws.Domain/Clinics/BookingSettings.cs` |

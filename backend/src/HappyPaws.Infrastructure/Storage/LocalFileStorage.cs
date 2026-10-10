@@ -152,6 +152,9 @@ internal sealed partial class LocalFileStorage : IFileStorage
         return new StoredFile(File.OpenRead(path), contentType) { FileName = fileName };
     }
 
+    public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default) =>
+        Task.FromResult(File.Exists(PathOf(SafeKey(key))));
+
     public async Task<long> SaveAsync(
         string key,
         string contentType,

@@ -43,6 +43,7 @@ public sealed class DeactivateStaffMemberHandler(
     IAuditTrail audit,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
+    IFileStorage storage,
     IClock clock)
 {
     public async Task<StaffMemberDto> HandleAsync(
@@ -86,7 +87,7 @@ public sealed class DeactivateStaffMemberHandler(
 
         var roleNames = (await roles.ListAsync(cancellationToken)).ToDictionary(role => role.Id, role => role.Name);
 
-        return StaffMemberDto.From(row, roleNames);
+        return StaffMemberDto.From(row, roleNames, storage);
     }
 }
 

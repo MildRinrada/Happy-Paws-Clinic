@@ -1,10 +1,13 @@
 import { bookingPage } from '../content/booking-page';
 
-/** "1 รายละเอียด, 2 วันและเวลา, 3 ยืนยัน" with the current step filled in. */
-export function BookingSteps({ current }: { current: number }) {
+/**
+ * "1 รายละเอียด, 2 วันและเวลา, 3 ยืนยัน" with the current step filled in. The public booking page
+ * passes its own five labels.
+ */
+export function BookingSteps({ current, labels = bookingPage.steps }: { current: number; labels?: string[] }) {
   return (
-    <ol className="flex items-center gap-2 text-sm">
-      {bookingPage.steps.map((label, index) => {
+    <ol className="flex flex-wrap items-center gap-2 text-sm">
+      {labels.map((label, index) => {
         const state = index < current ? 'done' : index === current ? 'current' : 'next';
 
         return (
@@ -19,7 +22,7 @@ export function BookingSteps({ current }: { current: number }) {
             <span className={state === 'current' ? 'font-semibold text-ink-900' : 'hidden text-ink-500 sm:inline'}>
               {label}
             </span>
-            {index < bookingPage.steps.length - 1 && <span aria-hidden="true" className="mx-1 h-px w-6 bg-ink-200" />}
+            {index < labels.length - 1 && <span aria-hidden="true" className="mx-1 h-px w-6 bg-ink-200" />}
           </li>
         );
       })}

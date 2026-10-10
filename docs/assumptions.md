@@ -183,6 +183,8 @@ CRM เพิ่ม `coupon_code_taken` (409 โค้ดคูปองซ้�
 
 Inventory เพิ่มสองรหัส คือ `inventory_item_exists` (409 ชื่อรายการซ้ำ พร้อม `details.item_id`) และ `insufficient_stock` (409 จ่ายออกหรือโอนเกินของที่ใช้ได้ พร้อม `details.available`) และรหัสของ domain `invalid_inventory_item`, `invalid_movement`, `over_receipt`, `invalid_adjustment`, `invalid_purchase_order` (ดู § 42) ส่วนขยาย § 25 เพิ่ม `inventory_item_retired` (409 รับเข้า สั่งซื้อ หรือสั่งยาด้วยรายการที่เลิกใช้)
 
+บทความ (ส่วนขยาย § 26 ใน [contract-extensions.md](./contract-extensions.md)) เพิ่ม `article_slug_taken` (409 slug ซ้ำกับบทความอื่น รวมบทความที่ลบแล้ว พร้อม `details.article_id` และ `details.deleted`) รหัสของ domain `invalid_article` ยังมีอยู่ แต่เส้นของพนักงานตรวจก่อนด้วย validator จึงตอบ `422` ที่ช่องนั้นแทน
+
 Billing เพิ่มอีกห้ารหัส ทั้งหมดเป็น `409` และทั้งหมดเกิดจาก aggregate ใบแจ้งหนี้ปฏิเสธคำขอที่รูปแบบถูกต้องแต่ไม่เข้ากับสถานะตอนนั้น (ดู § 24) คือ `invalid_payment`, `invalid_refund`, `invalid_discount`, `invalid_receipt`, `invalid_void` ตามแบบที่ `invalid_treatment` และ `invalid_examination` วางไว้แล้ว คือรหัสของ domain ตั้งชื่อตามสิ่งที่ผิด ไม่ใช่ตาม endpoint ที่ทำให้เกิด
 
 **ต้องรับรอง** รหัสเหล่านี้เป็นส่วนเพิ่มของ contract ที่ client เห็น จึงควรอยู่ใน reference ไม่มีรหัสใดแทนหรือนิยามรหัสที่มีในเอกสารใหม่

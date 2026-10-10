@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  24 migration และ model snapshot
+  Migrations/                  25 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -133,6 +133,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | หนึ่งล็อตต่อเลขล็อตและวันหมดอายุในสาขา | unique `(item_id, branch_id, lot_number, expires_on)` แบบ nulls not distinct | `InventoryConfiguration.cs` |
 | รับของไม่เกินที่สั่ง | `ck_purchase_order_lines_received_within_ordered` และล็อกแถวใบสั่งซื้อ (`FOR UPDATE`) ตอนรับ | `InventoryConfiguration.cs`, `PurchaseOrderRepository.cs` |
 | ค่ายาของเคสอยู่ในบิลเสมอ แม้จ่ายยาพร้อมปิดเคส | advisory lock ต่อเคส (`case-billing:`) ที่ทั้งการปิดเคสและการจ่ายยาถือ แล้วอ่านสถานะเคสและใบสั่งยาใหม่หลังได้ lock | `Repositories/Billing/InvoiceRepository.cs` |
+| slug ของบทความไม่ซ้ำ รวมบทความที่ลบแล้ว และบทความที่ลบแล้วไม่เป็นสาธารณะ | unique index `ix_articles_slug` ครอบทุกแถว `PostgresErrorTranslator` แปลงการชนเป็น `409 article_slug_taken` และ `ck_articles_deleted_not_public` (`deleted_at IS NULL OR published_at IS NULL`) | `ArticleConfiguration.cs` |
 | คูปองใช้ได้ครั้งเดียวไม่ถูกใช้สองครั้ง แต้มไม่ถูกแลกซ้ำ สิทธิ์แพ็กเกจไม่ถูกใช้เกิน | advisory lock ต่อคูปอง (`crm-coupon:`) และต่อลูกค้า (`crm-customer:`) แล้วอ่านจำนวนใหม่หลังได้ lock ฐานข้อมูลกันอีกชั้นด้วย check `ck_coupons_redeemed` และ `ck_customer_packages_uses` | `Repositories/Crm/CrmRepositories.cs` |
 | เลขใบสั่งซื้อไม่ซ้ำ | advisory lock ต่อชุดเลข `PO-YYYYMM-` แบบเดียวกับเลขบิล และ unique index บน `number` | `PurchaseOrderRepository.cs` |
 | พิกัดสาขาครบคู่ | `ck_branches_coordinates_paired` มีทั้ง latitude และ longitude หรือไม่มีเลย | `BranchConfiguration.cs` |
@@ -198,6 +199,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 22 | `LoyaltyPackagesAndPromotions` | ช่องใหม่ใน `customer_packages` (ราคา สาขา บิลที่ขาย ผู้ขาย เวลาที่จ่ายครบ เวลาและเหตุผลที่ยกเลิก) และใส่ `activated_at` ให้แถวเดิมเพื่อให้ยังใช้ได้ ตาราง `package_uses` (การตัดสิทธิ์ต่อรายการบิล) `coupons` (unique `code` check ว่าเป็นเปอร์เซ็นต์หรือจำนวนเงินอย่างใดอย่างหนึ่ง และจำนวนที่ใช้ไม่เกินจำนวนรวม) `coupon_redemptions` (unique `(coupon_id, invoice_id)` เฉพาะแถวที่ยังไม่คืน) `loyalty_entries` (สมุดแต้ม unique `invoice_id` เฉพาะชนิด `Earn`) และ `customer_segments` ดู [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) |
 | 23 | `WebhooksAndIntegrations` | ตาราง `webhook_subscriptions` (URL รายการ event `text[]` และ secret ที่เข้ารหัสแล้ว) `webhook_events` (outbox ข้อความ body เป็น `text` เพื่อให้ไบต์ที่ลงนามคงเดิม index เฉพาะแถวที่ยังไม่แตก) `webhook_deliveries` (unique `(event_id, subscription_id)` index คิวเฉพาะแถว `Pending` ลบตาม event และ webhook) `api_keys` (unique `prefix` และ `secret_hash` ไม่มีคอลัมน์ที่เก็บ key) `payment_provider_settings` และ `lab_provider_settings` (แถวเดียว ความลับเป็น ciphertext) และ `calendar_feeds` (หนึ่งแถวต่อพนักงาน unique `token_hash`) ดู [การเชื่อมต่อระบบ](features/integrations.md) |
 | 24 | `ManageCrmAndInventory` | บน `coupons` เพิ่ม `deactivated_at`, `deactivated_by_staff_id`, `deactivation_reason` (check ว่าเวลากับผู้ปิดมาคู่กัน) บน `loyalty_entries` เพิ่ม `expires_at` (วันหมดอายุของแต้มที่แถวนั้นเพิ่ม) และ `satang_per_point` (อัตราตอนได้แต้ม ใช้ตอนคืนเงิน) ตาราง `loyalty_settings` (แถวเดียว กติกาแต้มสะสม) บน `inventory_items` เพิ่ม `retired_at` บน `purchase_orders` เพิ่ม `cancelled_at`, `cancelled_by_staff_id`, `cancel_reason` และ index `(created_at, id)` ของคูปองกับ `(ordered_at, id)` ของใบสั่งซื้อสำหรับรายการแบบแบ่งหน้า ทุกคอลัมน์ใหม่เป็นค่าว่างได้ ไม่เติมข้อมูลเดิม ดู [contract-extensions.md § 25](./contract-extensions.md) |
+| 25 | `StaffArticles` | บน `articles` ให้ `published_at` เป็นค่าว่างได้ (ร่าง) เพิ่ม `first_published_at` (แถวเดิมเติมด้วย `published_at`) `deleted_at`, `deleted_by_staff_id`, `cover_image_key`, `pending_cover_key` check `ck_articles_deleted_not_public` และ index `(created_at, id)` สำหรับรายการของพนักงาน บน `roles` เติม `content:manage` ให้ `clinic_admin` ที่เป็น role ตั้งต้น ย้อนกลับได้โดยร่างไม่ขึ้นเว็บ ดู [contract-extensions.md § 26](./contract-extensions.md) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

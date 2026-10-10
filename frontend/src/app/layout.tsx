@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans_Thai, Inter, Prompt } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { siteEnv } from '@/config/env';
 import './globals.css';
 
 // Self-hosted at build time by next/font, so the console makes no request to a font CDN from
@@ -29,6 +30,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Canonical links and Open Graph pictures are written as paths and resolved against this.
+  metadataBase: new URL(siteEnv.url()),
   title: 'Happy Paws Clinic',
   description: 'ระบบจัดการคลินิกสัตวแพทย์',
 };

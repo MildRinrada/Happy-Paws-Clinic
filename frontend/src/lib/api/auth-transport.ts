@@ -137,6 +137,34 @@ export async function postRegister(body: RegisterBody): Promise<SignedIn> {
   return signedInFrom(response);
 }
 
+/** What `POST /booking/guest/verify` takes, on the wire (docs/contract-extensions.md § 27). */
+export interface GuestVerifyBody {
+  hold_id: string;
+  phone: string;
+  code: string;
+  display_name: string;
+  accept_privacy_notice: boolean;
+  policy_version: string;
+  marketing_consent: boolean;
+}
+
+/**
+ * `POST /booking/guest/verify` — proves the number with its code and signs the visitor in as a
+ * customer, refresh token in `Set-Cookie` as at sign-in, which is why it lives here. The rest of
+ * the answer (their pets, the hold, whether the account is new) goes back to the caller as it came.
+ */
+export async function postGuestBookingVerify<T>(body: GuestVerifyBody): Promise<{ signedIn: SignedIn; payload: T }> {
+  const response = await post('/booking/guest/verify', body);
+
+  if (!response.ok) {
+    throw await failure(response);
+  }
+
+  const payload = (await response.clone().json()) as T;
+
+  return { signedIn: await signedInFrom(response), payload };
+}
+
 /** `POST /auth/2fa/verify` — "คืน access token จริง". */
 export async function postVerifyTwoFactor(challenge: string, code: string): Promise<SignedIn> {
   const response = await post('/auth/2fa/verify', { challenge, code });

@@ -9,8 +9,8 @@ export const hero = {
   lead: 'คลินิกสัตว์เล็กย่านสุขุมวิท ดูแลสุนัขและแมวโดยทีมสัตวแพทย์ประจำ 4 ท่าน มีห้องแล็บในคลินิก จองคิวออนไลน์ได้ 24 ชั่วโมง',
 
   // Signed out, the booking page sends the visitor to sign in first.
-  primaryAction: { label: 'จองนัดหมาย', href: '/portal/book' } satisfies HeroAction,
-  secondaryAction: { label: 'ดูบริการราคา', href: '#services' } satisfies HeroAction,
+  primaryAction: { label: 'จองนัดหมาย', href: '/book' } satisfies HeroAction,
+  secondaryAction: { label: 'ดูบริการและราคา', href: '/services' } satisfies HeroAction,
 
   socialProof: {
     badge: '9k+',

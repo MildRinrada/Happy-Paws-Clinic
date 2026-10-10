@@ -1,6 +1,7 @@
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Staff.Dtos;
+using HappyPaws.Application.Staff.Photos;
 using HappyPaws.Domain.Staff;
 
 namespace HappyPaws.Application.Staff.ListTeam;
@@ -21,8 +22,13 @@ public sealed record ListTeamQuery(string? Department = null);
 /// listed is left out rather than shown empty. Inside a department the most experienced come
 /// first, then by name; people with no start year come last.
 /// </para>
+/// <para>
+/// An uploaded photo (§ 32) is answered as a signed link minted for this read, and only ever for
+/// someone this list shows: the storage value itself never leaves, and a hidden member gets no
+/// link at all.
+/// </para>
 /// </summary>
-public sealed class ListTeamHandler(IStaffRepository staff, IClock clock)
+public sealed class ListTeamHandler(IStaffRepository staff, IFileStorage storage, IClock clock)
 {
     public async Task<IReadOnlyList<TeamDepartmentDto>> HandleAsync(
         ListTeamQuery query,
@@ -62,8 +68,9 @@ public sealed class ListTeamHandler(IStaffRepository staff, IClock clock)
                                 row.Membership.JobTitle,
                                 row.Membership.Specialty,
                                 row.Membership.Bio,
-                                row.Membership.PhotoPath,
-                                row.Membership.YearsOfExperience(year))),
+                                StaffPhoto.SitePathOf(row.Membership.PhotoPath),
+                                row.Membership.YearsOfExperience(year),
+                                StaffPhotoLinks.LinkOf(row.Membership.PhotoPath, storage, StaffPhotoLinks.PublicLinkLifetime))),
                     ])),
         ];
     }

@@ -35,6 +35,8 @@
 
 **กุญแจลงชื่อ URL ของไฟล์** อยู่ที่ `Storage:SigningKey` ถ้าไม่ตั้ง คำนวณจากกุญแจ JWT ด้วย HMAC จึงไม่ใช่กุญแจเดียวกัน ใครได้ URL ไปก็โหลดไฟล์ได้จนกว่าจะหมดอายุ 10 นาที เหมือน pre-signed URL ของ S3
 
+**รูปปกบทความเป็นไฟล์เดียวที่คนไม่เข้าสู่ระบบเปิดได้** ([contract-extensions.md § 26](../contract-extensions.md)) ไม่มี URL ถาวรหรือ bucket สาธารณะ `GET /articles` และ `GET /articles/{slug}` สร้างลิงก์ที่ลงชื่อแล้วอายุหนึ่งชั่วโมงทุกครั้งที่อ่าน และสร้างเฉพาะตอนที่บทความเผยแพร่อยู่ รูปของร่างจึงไม่มีลิงก์ที่คนนอกเห็น และรูปของบทความที่นำลงแล้วเปิดได้ต่อไม่เกินหนึ่งชั่วโมงสำหรับคนที่ได้ลิงก์ไปก่อน หน้าแก้บทความได้ลิงก์อายุ 30 นาที รูปปกไม่ใช่ข้อมูลส่วนบุคคล
+
 ลิงก์คำเชิญวาง token ไว้หลัง `#` (`AcceptUrlTemplate` เป็น `.../invitations/{id}#token={token}`) เบราว์เซอร์ไม่ส่งส่วนนี้ไปเซิร์ฟเวอร์ token จึงไม่อยู่ใน access log และ header `Referer`
 
 ## ความลับที่เข้ารหัสด้วย Data Protection
@@ -103,6 +105,7 @@
 | `Auth:TwoFactorRequiredForMedicalScopes` (true) | ไม่อ่าน | กฎ 2FA เปิดตลอด |
 | `RateLimits:PerTokenPerMinute`, `RateLimits:MessagingPerMinute` | อ่าน | `RateLimitingExtensions` |
 | `RateLimits:OtpPerPhonePer10Minutes` (3) | อ่าน | `OtpSettings` ใช้ใน `RequestOtpHandler` |
+| `RateLimits:GuestHoldsPerIpPerHour` (30), `RateLimits:GuestVerifiesPerIpPerHour` (60) | อ่าน | `RateLimitingExtensions` policy `guest-hold` และ `guest-verify` (ส่วนขยาย § 27) |
 | `Cors:AllowedOrigins` | อ่าน | `Program.cs` |
 | `Staff:Invitations:LogUndeliveredLinks`, `AcceptUrlTemplate` | อ่าน | `StaffInvitationOptions` |
 | `Clinic:TimeZone`, `Clinic:DefaultCulture` | อ่าน | `ClinicOptions` |

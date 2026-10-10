@@ -1,4 +1,6 @@
-import { featuredServices, moreServices, servicesHeading } from '../../content/services';
+import Link from 'next/link';
+import { VaccineScheduleTeaser } from '@/features/vaccine-schedule/components/vaccine-schedule-teaser';
+import { featuredServices, moreServices, servicesHeading, servicesMoreLink } from '../../content/services';
 import { SectionContainer } from '../shared/section-container';
 import { SectionHeading } from '../shared/section-heading';
 import { FeaturedServiceCard } from './featured-service-card';
@@ -24,6 +26,14 @@ export function ServicesSection() {
             <MoreServiceCard key={service.id} service={service} />
           ))}
         </ul>
+
+        <VaccineScheduleTeaser />
+
+        <p className="mt-6 text-right">
+          <Link href={servicesMoreLink.href} className="text-[15px] font-bold text-site-teal hover:underline">
+            {servicesMoreLink.label} →
+          </Link>
+        </p>
       </SectionContainer>
     </section>
   );

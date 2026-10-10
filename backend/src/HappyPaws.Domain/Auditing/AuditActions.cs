@@ -76,6 +76,18 @@ public static class AuditActions
     public const string PetMarkedDeceased = "pet.marked_deceased";
     public const string PetCreated = "pet.created";
 
+    /// <summary>
+    /// Staff corrected a patient's identity card. Carries each changed field before and after.
+    /// Not in the API reference; see <c>docs/contract-extensions.md § 28</c>.
+    /// </summary>
+    public const string PetUpdated = "pet.updated";
+
+    /// <summary>
+    /// A death recorded by mistake was taken back, with the reason. Not in the API reference; see
+    /// <c>docs/contract-extensions.md § 29</c>.
+    /// </summary>
+    public const string PetDeceasedUndone = "pet.deceased_undone";
+
     /// <summary>A dose was given. Carries the lot, which is what a recall searches by.</summary>
     public const string VaccinationRecorded = "pet.vaccination_recorded";
 
@@ -440,6 +452,7 @@ public static class AuditActions
         PrescriptionAdded, AllergyOverridden,
         RecordSigned, RecordAmended,
         AllergyRecorded, PetMarkedDeceased, PetCreated, VaccinationRecorded, TreatmentPlanCreated, DocumentAdded,
+        PetUpdated, PetDeceasedUndone,
         LabRequested, LabResultsRecorded, LabResultsReviewed, PrescriptionDispensed,
         CustomerCreated, CustomerMerged, CustomerLineLinked, CustomerLineUnlinked,
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,

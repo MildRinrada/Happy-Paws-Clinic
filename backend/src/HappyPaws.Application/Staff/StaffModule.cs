@@ -5,6 +5,7 @@ using HappyPaws.Application.Staff.ListDepartments;
 using HappyPaws.Application.Staff.ListStaffMembers;
 using HappyPaws.Application.Staff.ListStaffTypes;
 using HappyPaws.Application.Staff.ListTeam;
+using HappyPaws.Application.Staff.Photos;
 using HappyPaws.Application.Staff.ReplacePublicProfile;
 using HappyPaws.Application.Staff.SeedStaff;
 using HappyPaws.Application.Staff.UpdateStaffMember;
@@ -32,6 +33,9 @@ public static class StaffModule
         services.AddScoped<ReplacePublicProfileHandler>();
         services.AddScoped<ListTeamHandler>();
         services.AddScoped<SeedStaffHandler>();
+
+        // Uploading a member's photo for the team page (extension, § 32).
+        services.AddScoped<RequestStaffPhotoHandler>();
 
         return services;
     }

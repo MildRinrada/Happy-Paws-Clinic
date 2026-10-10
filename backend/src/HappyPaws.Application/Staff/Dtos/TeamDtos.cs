@@ -17,8 +17,12 @@ public sealed record TeamDepartmentDto(string Department, string Name, IReadOnly
 /// <param name="JobTitle">Title as the public reads it, or null.</param>
 /// <param name="Specialty">Field of work, or null.</param>
 /// <param name="Bio">A few sentences, or null.</param>
-/// <param name="PhotoPath">Site-relative photo, or null.</param>
+/// <param name="PhotoPath">Site-relative photo, or null. Never the storage value of an uploaded photo.</param>
 /// <param name="YearsOfExperience">Whole years since they started, or null when unknown.</param>
+/// <param name="PhotoUrl">
+/// A signed link to an uploaded photo, good for an hour, minted for this read (§ 32). Null when the
+/// photo is a site path or there is none. A page shows this first.
+/// </param>
 public sealed record TeamMemberDto(
     string Id,
     string DisplayName,
@@ -26,4 +30,5 @@ public sealed record TeamMemberDto(
     string? Specialty,
     string? Bio,
     string? PhotoPath,
-    int? YearsOfExperience);
+    int? YearsOfExperience,
+    string? PhotoUrl = null);

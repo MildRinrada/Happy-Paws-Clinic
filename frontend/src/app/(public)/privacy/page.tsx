@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { SiteContainer } from '@/components/layout/site-container';
 import { ControllerSection } from '@/features/privacy/components/controller-section';
 import { PolicyBlock } from '@/features/privacy/components/policy-block';
@@ -8,8 +7,11 @@ import { PrivacyHero } from '@/features/privacy/components/privacy-hero';
 import { ReviewNotice } from '@/features/privacy/components/review-notice';
 import { controllerSection, privacyMeta, privacySections } from '@/features/privacy/content/privacy-policy';
 import { loadController } from '@/features/privacy/lib/load-controller';
+import { BreadcrumbJsonLd } from '@/features/seo/components/breadcrumb-json-ld';
+import { sitePages } from '@/features/seo/content/seo';
+import { pageMetadata } from '@/features/seo/lib/page-metadata';
 
-export const metadata: Metadata = { title: privacyMeta.title, description: privacyMeta.description };
+export const metadata = pageMetadata({ ...privacyMeta, path: sitePages.privacy.path });
 
 /**
  * The privacy policy. Words are in `features/privacy/content/privacy-policy.ts`; who the clinic is
@@ -43,6 +45,8 @@ export default async function PrivacyPage() {
           ))}
         </article>
       </SiteContainer>
+
+      <BreadcrumbJsonLd trail={[sitePages.privacy]} />
     </main>
   );
 }

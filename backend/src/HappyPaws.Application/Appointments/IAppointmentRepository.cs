@@ -47,6 +47,20 @@ public interface IAppointmentRepository
         DateTimeOffset from,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// A patient's appointments cancelled with <paramref name="reason"/> at or after
+    /// <paramref name="since"/>, read-only, earliest start first.
+    /// <para>
+    /// Used when a recorded death is undone: these are the visits the death cancelled, listed so
+    /// the counter can rebook them by hand. See <c>docs/contract-extensions.md § 29</c>.
+    /// </para>
+    /// </summary>
+    Task<IReadOnlyList<Appointment>> CancelledForPetAsync(
+        string petId,
+        string reason,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default);
+
     /// <summary><c>GET /staff/appointments?date=&amp;status=</c> — today's board for the clinic or one vet.</summary>
     Task<CursorPage<Appointment>> ListForStaffAsync(
         AppointmentListFilter filter,

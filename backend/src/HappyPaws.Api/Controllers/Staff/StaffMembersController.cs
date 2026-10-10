@@ -8,6 +8,7 @@ using HappyPaws.Application.Staff.Dtos;
 using HappyPaws.Application.Staff.ListDepartments;
 using HappyPaws.Application.Staff.ListStaffMembers;
 using HappyPaws.Application.Staff.ListStaffTypes;
+using HappyPaws.Application.Staff.Photos;
 using HappyPaws.Application.Staff.ReplacePublicProfile;
 using HappyPaws.Application.Staff.UpdateStaffMember;
 using HappyPaws.Domain.Access;
@@ -138,6 +139,37 @@ public sealed class StaffMembersController : ControllerBase
         Response.Headers.ETag = IfMatch.ToETag(member.Version);
 
         return Ok(member);
+    }
+
+    /// <summary>
+    /// <c>POST /staff/members/{id}/public-profile/photo</c> — a signed URL to <c>PUT</c> a new photo
+    /// to (JPEG, PNG or WebP, at most 5 MB), and the <c>photo_path</c> value that names it. The
+    /// profile does not change until a <c>PUT</c> of it sends that value, after the file is in.
+    /// Same rules as editing the profile. Audited as <c>staff.public_profile_updated</c>.
+    /// <b>Contract extension</b>, see <c>docs/contract-extensions.md § 32</c>.
+    /// </summary>
+    /// <param name="id">Staff id.</param>
+    /// <param name="request">The file's type and size.</param>
+    /// <param name="handler">Resolved per request.</param>
+    /// <param name="cancellationToken">Aborts with the request.</param>
+    [HttpPost("{id}/public-profile/photo")]
+    [RequireScope(Scopes.Staff.Manage)]
+    [ProducesResponseType<StaffPhotoUploadDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<StaffPhotoUploadDto>> RequestPhoto(
+        string id,
+        [FromBody] StaffPhotoRequest request,
+        [FromServices] RequestStaffPhotoHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var started = await handler.HandleAsync(
+            new RequestStaffPhotoCommand(id, request.ContentType, request.SizeBytes),
+            cancellationToken);
+
+        Response.Headers.CacheControl = "no-store";
+
+        return Ok(started);
     }
 
     /// <summary>

@@ -67,11 +67,12 @@ export const footerLegal = {
 
 /** The row of links under the divider. */
 export const footerLinks: SiteLink[] = [
-  { label: 'บริการและราคา', href: '/#services' },
+  { label: 'บริการและราคา', href: '/services' },
   { label: 'เกี่ยวกับคลินิก', href: '/about' },
   { label: 'ทีมของเรา', href: '/team' },
   { label: 'บทความสุขภาพสัตว์', href: '/articles' },
-  { label: 'จองนัดหมาย', href: '/portal/book' },
+  { label: 'ตารางวัคซีนน้อง', href: '/vaccine-schedule' },
+  { label: 'จองนัดหมาย', href: '/book' },
   { label: 'ร่วมงานกับเรา', href: '#' },
 ];
 

@@ -48,7 +48,8 @@ public sealed class PortalAppointmentsController : ControllerBase
                 request.BranchId,
                 request.HoldId,
                 request.Reason,
-                request.Type),
+                request.Type,
+                request.NewPet is null ? null : new NewPetInput(request.NewPet.Name, request.NewPet.Species)),
             cancellationToken);
 
         Response.Headers.ETag = IfMatch.ToETag(appointment.Version);

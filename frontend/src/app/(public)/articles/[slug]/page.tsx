@@ -5,6 +5,8 @@ import { getArticle } from '@/features/articles/api/getArticle';
 import { ArticleBody } from '@/features/articles/components/article-body';
 import { ArticleCover } from '@/features/articles/components/article-cover';
 import { ArticleHeader } from '@/features/articles/components/article-header';
+import { ArticleJsonLd } from '@/features/seo/components/article-json-ld';
+import { articleMetadata } from '@/features/seo/lib/article-metadata';
 import { optional } from '@/lib/api/api-error';
 
 interface Props {
@@ -14,7 +16,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await optional(getArticle((await params).slug));
 
-  return article ? { title: `${article.title} | Happy Paws Clinic`, description: article.summary } : {};
+  return article ? articleMetadata(article) : {};
 }
 
 /**
@@ -47,6 +49,8 @@ export default async function ArticlePage({ params }: Props) {
           </div>
         </article>
       </SiteContainer>
+
+      <ArticleJsonLd article={article} />
     </main>
   );
 }

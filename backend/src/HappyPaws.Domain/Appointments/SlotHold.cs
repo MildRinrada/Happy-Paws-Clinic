@@ -66,6 +66,55 @@ public sealed class SlotHold : Entity
             ExpiresAt = now.Add(Lifetime),
         };
 
+    /// <summary>
+    /// A hold for a visitor who has not signed in yet — <c>POST /booking/guest/start</c>
+    /// (<c>docs/contract-extensions.md § 27</c>, not in the API reference).
+    /// <para>
+    /// There is no customer to hold it for, so the holder is a marker derived from the phone the
+    /// visitor gave (<see cref="GuestHolderFor"/>). Only that number, once proved by its code, can
+    /// claim the hold; no customer id ever equals the marker, so nobody can redeem it directly.
+    /// </para>
+    /// </summary>
+    public static SlotHold CreateForGuest(
+        string branchId,
+        string serviceId,
+        string staffId,
+        string phoneDigits,
+        DateTimeOffset startsAt,
+        DateTimeOffset endsAt,
+        DateTimeOffset now) =>
+        Create(branchId, serviceId, staffId, GuestHolderFor(phoneDigits), startsAt, endsAt, now);
+
+    /// <summary>
+    /// The holder written on a guest hold: <c>gst_</c> and a hash of the number, so the column never
+    /// holds a phone number in the clear and still fits its 40 characters.
+    /// </summary>
+    public static string GuestHolderFor(string phoneDigits) =>
+        GuestHolderPrefix + Convert.ToHexStringLower(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"guest-hold:{phoneDigits}")))[..32];
+
+    /// <summary>Starts every guest holder. Customer ids start <c>cus_</c>, so the two never meet.</summary>
+    public const string GuestHolderPrefix = "gst_";
+
+    /// <summary>
+    /// Hands a guest hold to the customer the visitor turned out to be, once their number is proved.
+    /// The hold keeps its expiry: proving a number does not buy more time on the vet's calendar.
+    /// </summary>
+    public void ClaimForCustomer(string phoneDigits, string customerId, DateTimeOffset now)
+    {
+        if (HeldByCustomerId != GuestHolderFor(phoneDigits))
+        {
+            throw new DomainException("hold_not_yours", "การจองค้างนี้เป็นของผู้ใช้อื่น");
+        }
+
+        if (!IsHoldingAt(now))
+        {
+            throw new DomainException("hold_expired", "การจองค้างหมดอายุแล้ว กรุณาเลือกเวลาใหม่");
+        }
+
+        HeldByCustomerId = customerId;
+    }
+
     /// <summary>True while this hold still blocks the slot for everyone else.</summary>
     public bool IsHoldingAt(DateTimeOffset now) =>
         ConsumedAt is null && ReleasedAt is null && now < ExpiresAt;

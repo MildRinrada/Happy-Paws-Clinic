@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { SiteContainer } from '@/components/layout/site-container';
 import { CtaLink } from '@/components/ui/cta-link';
 import { loadSiteInfo } from '@/features/clinic/lib/load-site-info';
@@ -8,8 +7,12 @@ import { ContactHours } from '@/features/contact/components/contact-hours';
 import { EmergencyCard } from '@/features/contact/components/emergency-card';
 import { contactPage } from '@/features/contact/content/contact-page';
 import { groupContacts } from '@/features/contact/lib/group-contacts';
+import { BreadcrumbJsonLd } from '@/features/seo/components/breadcrumb-json-ld';
+import { ClinicJsonLd } from '@/features/seo/components/clinic-json-ld';
+import { sitePages } from '@/features/seo/content/seo';
+import { pageMetadata } from '@/features/seo/lib/page-metadata';
 
-export const metadata: Metadata = { title: contactPage.meta.title, description: contactPage.meta.description };
+export const metadata = pageMetadata({ ...contactPage.meta, path: sitePages.contact.path });
 
 /**
  * How to reach the clinic. Every number, account and map here is one of the clinic's contact
@@ -57,6 +60,9 @@ export default async function ContactPage() {
           </CtaLink>
         </SiteContainer>
       </section>
+
+      <ClinicJsonLd />
+      <BreadcrumbJsonLd trail={[sitePages.contact]} />
     </main>
   );
 }

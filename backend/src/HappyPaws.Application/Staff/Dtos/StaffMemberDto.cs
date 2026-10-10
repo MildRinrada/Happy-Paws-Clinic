@@ -1,3 +1,5 @@
+using HappyPaws.Application.Common.Abstractions;
+using HappyPaws.Application.Staff.Photos;
 using HappyPaws.Domain.Staff;
 
 namespace HappyPaws.Application.Staff.Dtos;
@@ -39,7 +41,10 @@ public sealed record StaffMemberDto(
     public const string Deactivated = "deactivated";
     public const string Invited = "invited";
 
-    public static StaffMemberDto From(StaffMemberRow row, IReadOnlyDictionary<string, string> roleNames) =>
+    /// <param name="row">The member and their account.</param>
+    /// <param name="roleNames">Role names by id.</param>
+    /// <param name="storage">Mints the preview link of an uploaded photo (§ 32); without it there is no <c>photo_url</c>.</param>
+    public static StaffMemberDto From(StaffMemberRow row, IReadOnlyDictionary<string, string> roleNames, IFileStorage? storage = null) =>
         new(
             row.Membership.Id,
             row.Membership.Version,
@@ -54,7 +59,7 @@ public sealed record StaffMemberDto(
             row.Account.TwoFactorEnabled,
             row.Membership.CreatedAt,
             Department: row.Membership.Department,
-            PublicProfile: StaffPublicProfileDto.From(row.Membership.PublicProfile));
+            PublicProfile: StaffPublicProfileDto.From(row.Membership.PublicProfile, storage));
 
     public static StaffMemberDto From(StaffInvitation invitation, IReadOnlyDictionary<string, string> roleNames) =>
         new(
@@ -84,25 +89,31 @@ public sealed record StaffMemberDto(
 /// <param name="JobTitle">Title the public reads.</param>
 /// <param name="Specialty">Field of work.</param>
 /// <param name="Bio">A few sentences.</param>
-/// <param name="PhotoPath">Site-relative photo, or null.</param>
+/// <param name="PhotoPath">
+/// Site-relative photo, or an uploaded one as <c>storage:staff-photos/...</c> (§ 32), or null. Sent
+/// back as it is on the next <c>PUT</c> to keep the photo.
+/// </param>
 /// <param name="CareerStartYear">Year (AD) they started in the profession.</param>
 /// <param name="ShowOnWebsite">Whether <c>GET /team</c> lists them.</param>
+/// <param name="PhotoUrl">A signed link to an uploaded photo, good for half an hour, for the preview. Null for a site path.</param>
 public sealed record StaffPublicProfileDto(
     string? JobTitle,
     string? Specialty,
     string? Bio,
     string? PhotoPath,
     int? CareerStartYear,
-    bool ShowOnWebsite)
+    bool ShowOnWebsite,
+    string? PhotoUrl = null)
 {
-    public static StaffPublicProfileDto From(StaffPublicProfile profile) =>
+    public static StaffPublicProfileDto From(StaffPublicProfile profile, IFileStorage? storage = null) =>
         new(
             profile.JobTitle,
             profile.Specialty,
             profile.Bio,
             profile.PhotoPath,
             profile.CareerStartYear,
-            profile.ShowOnWebsite);
+            profile.ShowOnWebsite,
+            storage is null ? null : StaffPhotoLinks.LinkOf(profile.PhotoPath, storage, StaffPhotoLinks.StaffLinkLifetime));
 }
 
 /// <summary>

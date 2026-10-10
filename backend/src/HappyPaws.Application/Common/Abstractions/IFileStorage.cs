@@ -53,6 +53,13 @@ public interface IFileStorage
     Task<StoredFile?> OpenAsync(string token, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// True when a file has arrived at this key. A cloud adapter answers it with a HEAD on the
+    /// object. Used where a use case must not point at a file that was never sent, such as a staff
+    /// member's uploaded photo (<c>docs/contract-extensions.md § 32</c>).
+    /// </summary>
+    Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stores a file the server produced itself, such as a report export, at a key a use case made.
     /// Returns its size. The one write that does not come through an upload URL, because there is
     /// no client to send it: the bytes are already here.

@@ -1,4 +1,5 @@
 using HappyPaws.Application.Access;
+using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Pagination;
@@ -47,6 +48,7 @@ public sealed class ListStaffMembersHandler(
     IStaffRepository staff,
     IStaffInvitationRepository invitations,
     IRoleRepository roles,
+    IFileStorage storage,
     BranchGuard branchGuard)
 {
     public async Task<CursorPage<StaffMemberDto>> HandleAsync(
@@ -112,7 +114,7 @@ public sealed class ListStaffMembersHandler(
         var members = await staff.ListAsync(filter, page, cancellationToken);
 
         return new CursorPage<StaffMemberDto>(
-            [.. members.Data.Select(row => StaffMemberDto.From(row, roleNames))],
+            [.. members.Data.Select(row => StaffMemberDto.From(row, roleNames, storage))],
             members.NextCursor);
     }
 

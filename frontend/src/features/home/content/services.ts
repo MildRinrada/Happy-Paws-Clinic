@@ -2,6 +2,9 @@ import type { FeaturedService, MoreService } from '../types/home.types';
 
 export const servicesHeading = 'ครบตั้งแต่ป้องกัน ตรวจไปจนถึงรักษา';
 
+/** Under the cards: the full menu with today's prices, read from the API. */
+export const servicesMoreLink = { label: 'ดูบริการและราคาทั้งหมด', href: '/services' };
+
 // Each card's picture: put the file in public/images/home/ and set `src: '/images/home/<file>'`.
 // Without `src` the card shows an empty slot where the picture goes.
 

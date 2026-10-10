@@ -12,6 +12,15 @@ public interface ISlotHoldRepository
     void Add(SlotHold hold);
 
     /// <summary>
+    /// The live holds one holder has, tracked. Used to let go of a visitor's earlier guest hold
+    /// when they pick another time (<c>docs/contract-extensions.md § 27</c>).
+    /// </summary>
+    Task<IReadOnlyList<SlotHold>> ActiveHeldByAsync(
+        string holderId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Holds that still block time inside a window. <paramref name="now"/> is a parameter rather
     /// than read inside the repository so that expiry is evaluated against the same instant as the
     /// rest of the booking decision — a hold must not be live for the collision check and dead for

@@ -21,3 +21,14 @@ export const serverEnv = {
 export const publicEnv = {
   apiBaseUrl: () => required('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL),
 } as const;
+
+/**
+ * The public website's own address, such as `https://www.happypaws.example`, with no trailing
+ * slash. Canonical links, Open Graph, the sitemap and structured data are built on it.
+ *
+ * Optional on purpose: a missing value must not take the site down, so it falls back to the local
+ * dev server. Next inlines `NEXT_PUBLIC_*` at build time, so set it before `next build`.
+ */
+export const siteEnv = {
+  url: () => (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, ''),
+} as const;

@@ -37,13 +37,17 @@ export async function holdSlotAction(input: z.infer<typeof holdInput>) {
   return runAction(() => holdSlot(holdInput.parse(input)));
 }
 
-const bookInput = z.object({
-  petId: id,
-  hold: z.object({ id, service_id: id, branch_id: id, staff_id: id, starts_at: z.iso.datetime({ offset: true }) }),
-  type: z.string().regex(/^[a-z][a-z0-9_]{1,29}$/),
-  reason: z.string().trim().max(1000).optional(),
-  idempotencyKey: z.uuid(),
-});
+const bookInput = z
+  .object({
+    petId: id.optional(),
+    // A pet booked for the first time, from the guest booking page (docs/contract-extensions.md § 27).
+    newPet: z.object({ name: z.string().trim().min(1).max(120), species: z.string().trim().min(1).max(60) }).optional(),
+    hold: z.object({ id, service_id: id, branch_id: id, staff_id: id, starts_at: z.iso.datetime({ offset: true }) }),
+    type: z.string().regex(/^[a-z][a-z0-9_]{1,29}$/),
+    reason: z.string().trim().max(1000).optional(),
+    idempotencyKey: z.uuid(),
+  })
+  .refine((input) => Boolean(input.petId) !== Boolean(input.newPet));
 
 export async function bookAction(input: z.infer<typeof bookInput>) {
   const result = await runAction(() => bookAppointment(bookInput.parse(input)));

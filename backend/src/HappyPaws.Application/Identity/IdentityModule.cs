@@ -45,6 +45,7 @@ public static class IdentityModule
         // Customer sign-up and sign-in, and the reset link both audiences share.
         services.AddScoped<OtpVerifier>();
         services.AddScoped<RequestOtpHandler>();
+        services.AddScoped<CustomerRecordLinker>();
         services.AddScoped<RegisterCustomerHandler>();
         services.AddScoped<LoginHandler>();
         services.AddScoped<ResetPasswordHandler>();

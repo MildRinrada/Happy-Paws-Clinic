@@ -17,12 +17,24 @@
 
 ## Scope
 
-สิทธิ์เขียนเป็น `resource:action` เช่น `queue:call` รายการทั้งหมดอยู่ที่ `Domain/Access/Scopes.cs` คัดลอกจาก contract ตรงตัว มี 29 กลุ่ม ตั้งแต่ `user`, `settings`, `staff`, `role`, `customer`, `patient`, `record` ไปจนถึง `invoice`, `payment`, `inventory`, `audit`
+สิทธิ์เขียนเป็น `resource:action` เช่น `queue:call` รายการทั้งหมดอยู่ที่ `Domain/Access/Scopes.cs` มี 30 กลุ่ม 29 กลุ่มคัดลอกจาก contract ตรงตัว ตั้งแต่ `user`, `settings`, `staff`, `role`, `customer`, `patient`, `record` ไปจนถึง `invoice`, `payment`, `inventory`, `audit` อีกหนึ่งกลุ่มคือ `content` ดูหัวข้อถัดไป
 
 - `ScopeCatalogue` อ่านรายการด้วย reflection จากค่าคงที่ใน `Scopes` scope ที่ endpoint ต้องใช้จึงเป็น scope ที่ role ได้รับได้เสมอ ไม่มีรายการที่สองให้ลืมแก้
 - `GET /staff/permissions` คืนรายการนี้ แยก resource กับ action
 - `portal` ไม่อยู่ในแคตตาล็อก เป็นเครื่องหมายของฝั่งลูกค้า ได้มาจากการมี membership ลูกค้า ไม่ใช่จาก role ที่คลินิกแก้ได้
 - scope หนึ่งตัวมีชื่อไม่ตรงกลุ่ม คือ `Scopes.Payment.Payout` มีค่าเป็น `billing:payout` ตาม contract
+
+### scope ที่ไม่อยู่ใน contract
+
+รายการ scope ของ contract ปิดตาย ส่วนขยายทุกข้อจึงยืม scope ที่มีอยู่ ยกเว้นตัวเดียวที่เจ้าของ contract อนุมัติเพิ่ม
+
+| Scope | ใช้กับ | ใครได้ตั้งแต่แรก | เหตุผล |
+|---|---|---|---|
+| `content:manage` | ทุกเส้นใต้ `/staff/articles` ทั้งอ่านร่างและเขียน ([contract-extensions.md § 26](./contract-extensions.md)) | `clinic_owner` ผ่าน `*` และ `clinic_admin` | การพูดในนามคลินิกบนหน้าเว็บไม่ตรงกับ scope ใดเดิม ถ้ายืม `settings:write` คนเขียนบทความจะแก้กติกาของคลินิกได้ด้วย |
+
+- ไม่ใช่ scope อ่อนไหว ไม่ต้องผ่าน 2FA
+- `clinic_admin` ของคลินิกที่ตั้งระบบก่อนรุ่นนี้ได้ `content:manage` จาก migration `StaffArticles` เพราะ role นี้ขยายจากแคตตาล็อกครั้งเดียวตอน `bootstrap` (ดูหัวข้อ Role) role อื่นไม่ได้อะไรเพิ่ม เจ้าของคลินิกให้เองได้ที่หน้าพนักงานและสิทธิ์ ตามกติกาเมื่อให้สิทธิ์ปกติ
+- หน้าเว็บมีค่าคงที่ `Scope.ContentManage` และป้าย "บทความบนเว็บไซต์" ในหน้าแก้ role
 
 ### Wildcard
 
@@ -118,14 +130,14 @@ role คือชุด scope ที่เก็บเป็นข้อมู�
 | Role | Scope ตั้งต้น |
 |---|---|
 | `clinic_owner` | `*` |
-| `clinic_admin` | ทุก scope ในแคตตาล็อก ยกเว้น `billing:payout` และ `settings:danger` |
+| `clinic_admin` | ทุก scope ในแคตตาล็อก ยกเว้น `billing:payout` และ `settings:danger` รวม `content:manage` |
 | `veterinarian` | `consult:*`, `record:write`, `lab:*`, `rx:write`, `queue:call` |
 | `receptionist` | `appointment:*`, `queue:*`, `customer:*`, `invoice:collect` |
 | `vet_assistant` | `queue:read`, `patient:read`, `vitals:write` |
 | `cashier` | `invoice:*`, `payment:*`, `receipt:issue` |
 | `customer` | `portal` |
 
-- `clinic_admin` ขยายจากแคตตาล็อกตอน seed จึง **ไม่** ได้ scope ที่เพิ่มในรุ่นหลังเอง ต่างจาก role ที่ใช้ wildcard
+- `clinic_admin` ขยายจากแคตตาล็อกตอน seed จึง **ไม่** ได้ scope ที่เพิ่มในรุ่นหลังเอง ต่างจาก role ที่ใช้ wildcard scope ที่เพิ่มภายหลังต้องให้ผ่าน migration อย่างที่ `StaffArticles` ทำกับ `content:manage`
 - role ตั้งต้นทั้ง 7 มีธง `IsSystem` แก้ scope ได้ ตอนนี้ยังไม่มี endpoint ลบ role ใดเลย
 - role `customer` อธิบายฝั่งลูกค้า ไม่ใช่ตำแหน่งงาน ให้พนักงานไม่ได้ และแก้ scope ไม่ได้
 - ตาราง seed ตามที่ contract เขียน ทำให้ `veterinarian` ไม่มี `record:sign` จึงปิดเคสไม่ได้ และ `receptionist` มี `invoice:collect` แต่ endpoint รับเงินต้องการ `payment:collect` รายละเอียดอยู่ใน [ข้อตีความ](assumptions.md)

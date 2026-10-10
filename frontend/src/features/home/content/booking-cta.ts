@@ -6,6 +6,6 @@ export const bookingCta = {
   lead: 'จองคิวออนไลน์ใน 1 นาที เลือกหมอและเวลาที่สะดวกได้เอง',
 
   // Signed out, the booking page sends the visitor to sign in first.
-  primaryAction: { label: 'จองนัดหมาย', href: '/portal/book' } satisfies HeroAction,
+  primaryAction: { label: 'จองนัดหมาย', href: '/book' } satisfies HeroAction,
   secondaryAction: { label: 'เข้าสู่ระบบ', href: '/login' } satisfies HeroAction,
 };

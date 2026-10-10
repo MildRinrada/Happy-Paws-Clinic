@@ -76,6 +76,7 @@ public sealed class UpdateStaffMemberHandler(
     IRoleRepository roles,
     IAuditTrail audit,
     IUnitOfWork unitOfWork,
+    IFileStorage storage,
     RequestValidator validator)
 {
     public async Task<StaffMemberDto> HandleAsync(
@@ -162,6 +163,6 @@ public sealed class UpdateStaffMemberHandler(
 
         var roleNames = (await roles.ListAsync(cancellationToken)).ToDictionary(role => role.Id, role => role.Name);
 
-        return StaffMemberDto.From(row, roleNames);
+        return StaffMemberDto.From(row, roleNames, storage);
     }
 }

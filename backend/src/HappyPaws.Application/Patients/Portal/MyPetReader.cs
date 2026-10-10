@@ -1,3 +1,4 @@
+using HappyPaws.Application.Common;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Authorization;
 using HappyPaws.Application.Patients.Documents;
@@ -42,6 +43,10 @@ public sealed class MyPetReader(
             pet.IsDeceased,
             weight,
             [.. known.Select(allergy => new MyPetAllergyDto(allergy.Substance, allergy.Severity.ToString().ToLowerInvariant()))],
-            mayViewHistory);
+            mayViewHistory,
+            WireEnum.Of(pet.Sex),
+            pet.BirthDate,
+            pet.BirthDateEstimated,
+            pet.Neutered);
     }
 }

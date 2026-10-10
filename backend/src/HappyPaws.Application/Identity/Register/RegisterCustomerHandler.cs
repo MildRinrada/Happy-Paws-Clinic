@@ -3,15 +3,11 @@ using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Common.Errors;
 using HappyPaws.Application.Common.Validation;
-using HappyPaws.Application.Customers;
 using HappyPaws.Application.Identity.Dtos;
 using HappyPaws.Application.Identity.RequestOtp;
 using HappyPaws.Application.Identity.Sessions;
-using HappyPaws.Application.Integrations.Webhooks;
 using HappyPaws.Domain.Auditing;
-using HappyPaws.Domain.Customers;
 using HappyPaws.Domain.Identity;
-using HappyPaws.Domain.Integrations;
 
 namespace HappyPaws.Application.Identity.Register;
 
@@ -58,16 +54,13 @@ public sealed class RegisterCustomerValidator : AbstractValidator<RegisterCustom
 /// </summary>
 public sealed class RegisterCustomerHandler(
     IIdentityRepository identity,
-    ICustomerRepository customers,
-    ICustomerInvitationRepository invitations,
+    CustomerRecordLinker linker,
     OtpVerifier otp,
     IPasswordHasher passwordHasher,
     SessionIssuer sessionIssuer,
     IAuditTrail audit,
-    IWebhookOutbox webhooks,
     IUnitOfWork unitOfWork,
-    RequestValidator validator,
-    IClock clock)
+    RequestValidator validator)
 {
     public async Task<AuthTokens> HandleAsync(RegisterCustomerCommand command, CancellationToken cancellationToken = default)
     {
@@ -106,7 +99,7 @@ public sealed class RegisterCustomerHandler(
 
             identity.AddAccount(account);
 
-            var (customer, linkedExisting) = await LinkCustomerAsync(account, phone, token);
+            var (customer, linkedExisting) = await linker.LinkAsync(account, phone, token);
 
             audit.Record(new AuditEvent(
                 AuditActions.AccountRegistered,
@@ -126,31 +119,5 @@ public sealed class RegisterCustomerHandler(
         }, cancellationToken);
 
         return tokens!;
-    }
-
-    private async Task<(Customer Customer, bool LinkedExisting)> LinkCustomerAsync(
-        UserAccount account,
-        string phone,
-        CancellationToken token)
-    {
-        var existing = (await customers.UnlinkedWithPhoneDigitsAsync(phone, token)).FirstOrDefault();
-
-        if (existing is not null)
-        {
-            existing.LinkAccount(account.Id);
-
-            if (await invitations.LatestForCustomerAsync(existing.Id, token) is { } invitation)
-            {
-                invitation.Accept(clock.UtcNow);
-            }
-
-            return (existing, true);
-        }
-
-        var created = Customer.Create(account.DisplayName, phone, account.Email, account.Id);
-        customers.Add(created);
-        webhooks.Enqueue(WebhookEventTypes.CustomerCreated, WebhookPayloads.Customer(created, clock.UtcNow));
-
-        return (created, false);
     }
 }

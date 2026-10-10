@@ -4,15 +4,21 @@ import { loadPortalHome } from '@/features/portal/lib/load-portal-home';
 import { listServices } from '@/features/service-catalog/api/listServices';
 import { listOnlineAppointmentTypes } from '../api/listOnlineAppointmentTypes';
 import type { BookingDetails, BookingOptions } from '../types/booking.types';
+import { preselect } from './preselect-booking';
 
 /**
  * Everything the booking form chooses from, read once on the server: the owner's living pets, the
  * open branches, each branch's online services, the types the clinic lets customers book, and the
  * vets' names.
  *
- * `petId` preselects a pet when the page is opened from that pet's card (`?pet=`).
+ * `petId` preselects a pet when the page is opened from that pet's card (`?pet=`), and `service`
+ * and `branch` a service when it comes from the public booking page or the services page.
  */
-export async function loadBookingOptions(petId?: string): Promise<{ options: BookingOptions; initial: BookingDetails }> {
+export async function loadBookingOptions(
+  petId?: string,
+  service?: string,
+  branch?: string,
+): Promise<{ options: BookingOptions; initial: BookingDetails }> {
   const [home, branches, vets, types] = await Promise.all([loadPortalHome(), listBranches(), vetNames(), listOnlineAppointmentTypes()]);
 
   const services = await Promise.all(branches.map((branch) => listServices(branch.id)));
@@ -37,8 +43,7 @@ export async function loadBookingOptions(petId?: string): Promise<{ options: Boo
     options,
     initial: {
       petId: firstPet?.id ?? '',
-      branchId: branches[0]?.id ?? '',
-      serviceId: '',
+      ...preselect(options, service, branch),
       // `regular` when the clinic offers it online, as every booking that names no type is.
       type: types.some((type) => type.code === 'regular') ? 'regular' : (types[0]?.code ?? 'regular'),
       reason: '',

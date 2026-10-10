@@ -10,6 +10,7 @@ using HappyPaws.Application.Appointments.DetectConflicts;
 using HappyPaws.Application.Appointments.GetAppointment;
 using HappyPaws.Application.Appointments.GetAppointmentRules;
 using HappyPaws.Application.Appointments.GetAvailability;
+using HappyPaws.Application.Appointments.GuestBooking;
 using HappyPaws.Application.Appointments.HoldSlot;
 using HappyPaws.Application.Appointments.ListAppointments;
 using HappyPaws.Application.Appointments.ListMyAppointments;
@@ -64,6 +65,10 @@ public static class AppointmentsModule
         services.AddScoped<ListOnlineAppointmentTypesHandler>();
         services.AddScoped<ListWaitingListHandler>();
         services.AddScoped<RemoveFromWaitingListHandler>();
+
+        // docs/contract-extensions.md § 27: booking without signing up first.
+        services.AddScoped<StartGuestBookingHandler>();
+        services.AddScoped<VerifyGuestBookingHandler>();
 
         return services;
     }

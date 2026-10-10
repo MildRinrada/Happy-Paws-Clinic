@@ -10,7 +10,7 @@ export interface SiteLink {
 }
 
 export const mainNavLinks: SiteLink[] = [
-  { label: 'บริการ', href: '/#services' },
+  { label: 'บริการ', href: '/services' },
   { label: 'ทีมของเรา', href: '/team' },
   { label: 'เกี่ยวกับคลินิก', href: '/about' },
   { label: 'บทความ', href: '/articles' },

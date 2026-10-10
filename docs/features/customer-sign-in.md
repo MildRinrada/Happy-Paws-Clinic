@@ -14,6 +14,7 @@
 | POST | `/auth/register` | ไม่ต้องเข้าสู่ระบบ | สมัครด้วยเบอร์และรหัส แล้วเข้าสู่ระบบทันที |
 | POST | `/auth/login` | ไม่ต้องเข้าสู่ระบบ | เข้าสู่ระบบด้วยรหัส OTP หรือรหัสผ่าน |
 | POST | `/auth/password/reset` | ไม่ต้องเข้าสู่ระบบ | ขอลิงก์ แล้วตั้งรหัสใหม่ |
+| POST | `/booking/guest/start` และ `/booking/guest/verify` | ไม่ต้องเข้าสู่ระบบ | จองโดยไม่ต้องสมัครก่อน เบอร์ที่พิสูจน์แล้วได้บัญชีและเข้าสู่ระบบ (ส่วนขยาย § 27) ดูหัวข้อ [เข้าสู่ระบบจากการจอง](#เข้าสู่ระบบจากการจอง) |
 
 ## ขอรหัส OTP
 
@@ -28,10 +29,10 @@ POST /v1/auth/otp/request
 
 | กติกา | ค่า |
 |---|---|
-| `purpose` | `register` หรือ `login` รหัสของจุดประสงค์หนึ่งใช้กับอีกจุดประสงค์ไม่ได้ |
+| `purpose` | `register` หรือ `login` รหัสของจุดประสงค์หนึ่งใช้กับอีกจุดประสงค์ไม่ได้ จุดประสงค์ที่สาม `booking` ออกได้จาก `POST /booking/guest/start` เท่านั้น ส่ง `booking` มาที่นี่ได้ `422` |
 | รหัส | ตัวเลข 6 หลัก อายุ 5 นาที ใช้ได้ครั้งเดียว |
 | เดาผิด | ได้ 5 ครั้งต่อรหัส ครั้งที่ 6 แม้ใส่ถูกก็ไม่ผ่าน ต้องขอรหัสใหม่ |
-| ขอได้กี่ครั้ง | 3 ครั้งต่อเบอร์ใน 10 นาที เกินตอบ `429 rate_limited` |
+| ขอได้กี่ครั้ง | 3 ครั้งต่อเบอร์ใน 10 นาที นับรวมรหัสทุกจุดประสงค์ รวมรหัสจากการจอง เกินตอบ `429 rate_limited` |
 | เบอร์ | อ่านเฉพาะตัวเลข `081-234-5678` กับ `0812345678` คือเบอร์เดียวกัน |
 
 **คำตอบเหมือนกันเสมอ** ไม่ว่าเบอร์จะมีบัญชีหรือไม่ เพื่อไม่ให้ใช้ endpoint นี้ตรวจว่าใครเป็นลูกค้า รหัส `login` ส่งจริงเฉพาะเบอร์ที่มีบัญชี รหัส `register` ส่งทุกครั้ง
@@ -151,6 +152,18 @@ POST /v1/auth/password/reset
 - สำเร็จแล้วมีปุ่มไป `/login` หน้านี้ไม่สร้าง session
 - หน้านี้ตั้ง `noindex` เพราะเปิดจากลิงก์ส่วนตัวเท่านั้น
 
+## เข้าสู่ระบบจากการจอง
+
+หน้า `/book` ให้คนที่ยังไม่มีบัญชีจองได้เลย (ส่วนขยาย § 27) ขั้นสุดท้ายของการจองคือการพิสูจน์เบอร์ ซึ่งเป็นทางที่สามที่ได้ session นอกจากการสมัครและการเข้าสู่ระบบ
+
+1. `POST /booking/guest/start` กันเวลาและส่งรหัสจุดประสงค์ `booking` ไปทุกเบอร์ แบบเดียวกับรหัส `register` คำตอบเหมือนกันทุกเบอร์
+2. `POST /booking/guest/verify` ตรวจรหัส แล้วจึงดูว่าเบอร์เป็นของใคร เบอร์ที่มีบัญชีลูกค้าเข้าสู่ระบบบัญชีนั้น เบอร์ที่เคาน์เตอร์รู้จักได้บัญชีที่ผูกกับเรกคอร์ดเดิม (`CustomerRecordLinker` ตัวเดียวกับการสมัคร) เบอร์ใหม่ได้บัญชีและเรกคอร์ดใหม่ ได้ access token ในคำตอบและคุกกี้ refresh เหมือนการเข้าสู่ระบบ
+
+- เบอร์ของบัญชีพนักงาน บัญชีที่ถูกระงับ และบัญชีที่เปิด 2FA ได้ `409 contact_taken` หลังรหัสถูกแล้ว ไม่มี session ออก เพราะทางนี้มีแค่รหัส SMS
+- บัญชีที่เปิดจากทางนี้ไม่มีรหัสผ่าน หน้า `/login` ยังรับแค่รหัสผ่าน คนกลุ่มนี้กลับเข้ามาได้ด้วยการจองที่ `/book` อีกครั้ง หรือ "ลืมรหัสผ่าน" ซึ่งส่งลิงก์ทาง SMS เมื่อบัญชีไม่มีอีเมล
+- บัญชีที่เปิดจากทางนี้มีหลักฐานการยอมรับนโยบายความเป็นส่วนตัวในสมุดความยินยอม (`service_messages` และ `marketing` ถ้าติ๊ก พร้อมเลขฉบับ) ต่างจาก `/register`
+- audit `auth.registered` พร้อม `via: "guest_booking"`
+
 ## ลองบนเครื่องตัวเอง
 
 1. เปิด API ตาม [เริ่มต้นใช้งาน](../getting-started.md)
@@ -162,7 +175,7 @@ POST /v1/auth/password/reset
 
 - ตัวส่ง SMS ผ่าน ThaiBulkSMS ทดสอบกับเซิร์ฟเวอร์จำลองเท่านั้น ต้องลองส่งจริงด้วยบัญชีของคลินิกก่อนเปิดใช้
 - ยังไม่มีหน้าเข้าสู่ระบบด้วยรหัส OTP หน้าสมัครจึงบังคับตั้งรหัสผ่าน
-- หน้าสมัครไม่ได้บันทึกความยินยอม หรือเวอร์ชันของนโยบายความเป็นส่วนตัวที่แสดงตอนสมัคร มีแค่ลิงก์ให้อ่าน
+- หน้าสมัครไม่ได้บันทึกความยินยอม หรือเวอร์ชันของนโยบายความเป็นส่วนตัวที่แสดงตอนสมัคร มีแค่ลิงก์ให้อ่าน (การเปิดบัญชีจากหน้า `/book` บันทึกแล้ว)
 - รหัส OTP เก็บเป็น hash แต่มีแค่ล้านแบบ ถ้าฐานข้อมูลหลุดไปพร้อมรหัสที่ยังไม่หมดอายุ hash ไม่ได้กันการเดา สิ่งที่กันจริงคืออายุ 5 นาที
 - แถวของรหัสที่หมดอายุไม่ถูกลบ จนกว่าจะมีงานเบื้องหลัง
 - ไม่มีการล็อกบัญชีเมื่อใส่รหัสผ่านผิดซ้ำ ด่านเดียวคือ rate limit รวม
@@ -172,7 +185,8 @@ POST /v1/auth/password/reset
 | ส่วน | ไฟล์ |
 |---|---|
 | domain | `backend/src/HappyPaws.Domain/Identity/PhoneVerification.cs`, `PasswordResetRequest.cs`, `UserAccount.cs` (`CreateCustomer`) |
-| use case | `backend/src/HappyPaws.Application/Identity/` (`RequestOtp`, `Register`, `Login`, `ResetPassword`, `CustomerSignIn.cs`) |
+| use case | `backend/src/HappyPaws.Application/Identity/` (`RequestOtp`, `Register` รวม `CustomerRecordLinker.cs`, `Login`, `ResetPassword`, `CustomerSignIn.cs`) |
+| เข้าสู่ระบบจากการจอง | `backend/src/HappyPaws.Application/Appointments/GuestBooking/`, `backend/src/HappyPaws.Api/Controllers/Public/GuestBookingController.cs`, `frontend/src/lib/api/auth-transport.ts` (`postGuestBookingVerify`), `frontend/src/features/booking/actions/guest-booking-actions.ts` |
 | ออก token พร้อม customer id | `backend/src/HappyPaws.Application/Identity/Sessions/SessionIssuer.cs` |
 | ตัวส่งชั่วคราว | `backend/src/HappyPaws.Infrastructure/Identity/LoggingCustomerSignInSenders.cs` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Auth/AuthController.cs`, `OtpController.cs`, `PasswordController.cs` |

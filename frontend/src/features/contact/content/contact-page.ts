@@ -43,6 +43,6 @@ export const contactPage = {
   cta: {
     heading: 'อยากนัดล่วงหน้า?',
     lead: 'จองคิวออนไลน์ เลือกหมอและเวลาที่สะดวกได้เอง ไม่ต้องรอสาย',
-    book: { label: 'จองนัดหมาย', href: '/portal/book' },
+    book: { label: 'จองนัดหมาย', href: '/book' },
   },
 };

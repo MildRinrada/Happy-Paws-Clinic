@@ -133,6 +133,7 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 |---|---|---|
 | `API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่เซิร์ฟเวอร์ Next.js เรียก ไม่มีแล้วทุกคำขอที่เรียก API ล้ม |
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:5080/v1` | ที่อยู่ API ที่คนนอกเข้าถึงได้ หน้าลิงก์ปฏิทินใช้ประกอบ URL ที่แอปปฏิทินดึง ต้องเป็นที่อยู่สาธารณะตอนติดตั้งจริง |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | ที่อยู่ของเว็บสาธารณะ ไม่มี `/` ท้าย ใช้สร้างลิงก์ canonical รูปตัวอย่างเวลาแชร์ลิงก์ sitemap และข้อมูลโครงสร้าง ถ้าไม่ตั้งจะใช้ `http://localhost:3000` ค่านี้ถูกฝังตอน build ต้องตั้งก่อน `next build` (Docker ส่งเป็น build arg จาก `.env`) ดู [SEO](seo.md) |
 
 ## ตั้งค่าอีเมลและ SMS
 

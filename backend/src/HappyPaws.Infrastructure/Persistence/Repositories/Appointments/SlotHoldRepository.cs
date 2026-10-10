@@ -20,6 +20,17 @@ internal sealed class SlotHoldRepository(HappyPawsDbContext db) : ISlotHoldRepos
 
     public void Add(SlotHold hold) => db.Set<SlotHold>().Add(hold);
 
+    public async Task<IReadOnlyList<SlotHold>> ActiveHeldByAsync(
+        string holderId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default) =>
+        await db.Set<SlotHold>()
+            .Where(hold => hold.HeldByCustomerId == holderId
+                && hold.ConsumedAt == null
+                && hold.ReleasedAt == null
+                && hold.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<SlotHold>> ActiveInWindowAsync(
         string branchId,
         IReadOnlyCollection<string> staffIds,

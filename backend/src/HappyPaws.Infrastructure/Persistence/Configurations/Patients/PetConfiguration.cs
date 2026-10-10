@@ -24,6 +24,12 @@ internal sealed class PetConfiguration : EntityConfiguration<Pet>
         builder.Property(pet => pet.Diet).HasMaxLength(500);
         builder.Property(pet => pet.Behaviour).HasMaxLength(1_000);
 
+        // Staff's half of the identity card — PATCH /staff/pets/{id}, contract-extensions § 28.
+        // Existing rows become 'Unknown' through the column default the migration sets.
+        builder.Property(pet => pet.Sex).HasConversion<string>().HasMaxLength(10).IsRequired();
+        builder.Property(pet => pet.BirthDate).HasColumnType("date");
+        builder.Property(pet => pet.BirthDateEstimated).IsRequired();
+
         builder.HasIndex(pet => pet.HospitalNumber).IsUnique();
         builder.HasIndex(pet => pet.PrimaryCustomerId);
 

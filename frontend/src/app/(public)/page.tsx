@@ -7,6 +7,12 @@ import { LocationSection } from '@/features/home/components/location/location-se
 import { ServicesSection } from '@/features/home/components/services/services-section';
 import { StatsSection } from '@/features/home/components/stats/stats-section';
 import { VetsSection } from '@/features/home/components/vets/vets-section';
+import { ClinicJsonLd } from '@/features/seo/components/clinic-json-ld';
+import { WebsiteJsonLd } from '@/features/seo/components/website-json-ld';
+import { homeMeta } from '@/features/seo/content/seo';
+import { pageMetadata } from '@/features/seo/lib/page-metadata';
+
+export const metadata = pageMetadata({ ...homeMeta, path: '/' });
 
 /**
  * The clinic's home page: one section after another, top to bottom.
@@ -27,6 +33,9 @@ export default function HomePage() {
       <LocationSection />
       <LineSection />
       <BookingCtaSection />
+
+      <ClinicJsonLd />
+      <WebsiteJsonLd />
     </main>
   );
 }

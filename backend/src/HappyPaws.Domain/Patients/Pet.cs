@@ -47,6 +47,28 @@ public sealed class Pet : Entity
 
     public bool IsDeceased => DeceasedAt is not null;
 
+    /// <summary>
+    /// When a recorded death was last undone as a mistake — <c>POST /staff/pets/{id}/deceased/undo</c>.
+    /// Reminders about vaccines and planned sessions whose send time fell before this are not sent
+    /// late. See <c>docs/contract-extensions.md § 29</c>.
+    /// </summary>
+    public DateTimeOffset? DeceasedUndoneAt { get; private set; }
+
+    /// <summary>Recorded by staff. Not in the API reference; see <c>docs/contract-extensions.md § 28</c>.</summary>
+    public PetSex Sex { get; private set; }
+
+    /// <summary>The day it was born, or the clinic's best guess when <see cref="BirthDateEstimated"/>.</summary>
+    public DateOnly? BirthDate { get; private set; }
+
+    /// <summary>True when <see cref="BirthDate"/> is a guess, e.g. from the teeth of an adopted adult.</summary>
+    public bool BirthDateEstimated { get; private set; }
+
+    /// <summary>Neutered or spayed. Null means nobody knows yet, which is not the same as "no".</summary>
+    public bool? Neutered { get; private set; }
+
+    /// <summary>The earliest birth date taken, as a guard against a mistyped year.</summary>
+    public static readonly DateOnly EarliestBirthDate = new(1900, 1, 1);
+
     /// <summary>What the family calls it — "น้องลูลู่". The owner's, not the clinic's.</summary>
     public string? Nickname { get; private set; }
 
@@ -114,4 +136,87 @@ public sealed class Pet : Entity
     }
 
     public void MarkDeceased(DateTimeOffset at) => DeceasedAt ??= at;
+
+    /// <summary>
+    /// Takes back a death recorded by mistake — <c>POST /staff/pets/{id}/deceased/undo</c>. The
+    /// record is open again from <paramref name="at"/>; what the death cancelled stays cancelled.
+    /// Returns the date of death that was undone. See <c>docs/contract-extensions.md § 29</c>.
+    /// </summary>
+    public DateTimeOffset UndoDeceased(DateTimeOffset at)
+    {
+        var was = DeceasedAt ?? throw new StateConflictException(nameof(Pet), "alive", "undo_deceased");
+
+        DeceasedAt = null;
+        DeceasedUndoneAt = at;
+
+        return was;
+    }
+
+    /// <summary>
+    /// Staff's correction of who this patient is — <c>PATCH /staff/pets/{id}</c>. Not in the API
+    /// reference; see <c>docs/contract-extensions.md § 28</c>.
+    /// <para>
+    /// A closed record can still have its name, species, breed, chip, sex and birth date put right,
+    /// because the history it carries is read and printed under those. Its neuter status cannot
+    /// change: after death no procedure happens, and a clinical fact on a closed record is
+    /// corrected by an amendment to the signed medical record, not here. The owner's four fields
+    /// are not reachable from this method at all.
+    /// </para>
+    /// </summary>
+    /// <param name="revision">What to change; null fields are left alone.</param>
+    /// <param name="today">The clinic's today, against which a birth date may not be in the future.</param>
+    public void Revise(PetRevision revision, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(revision);
+
+        if (revision.BirthDate is not null && revision.ClearBirthDate)
+        {
+            throw new DomainException("invalid_pet", "ส่งวันเกิดพร้อมกับลบวันเกิดในคำขอเดียวกันไม่ได้");
+        }
+
+        if (revision.Neutered is not null && revision.ClearNeutered)
+        {
+            throw new DomainException("invalid_pet", "ส่งสถานะทำหมันพร้อมกับลบสถานะทำหมันในคำขอเดียวกันไม่ได้");
+        }
+
+        var neutered = revision.ClearNeutered ? null : revision.Neutered ?? Neutered;
+
+        if (IsDeceased && neutered != Neutered)
+        {
+            throw new StateConflictException(nameof(Pet), "deceased", "change_neutered");
+        }
+
+        if (revision.BirthDate is { } born && (born > today || born < EarliestBirthDate))
+        {
+            throw new DomainException(
+                "invalid_pet",
+                born > today ? "วันเกิดต้องไม่อยู่ในอนาคต" : "วันเกิดต้องไม่ก่อนปี 1900");
+        }
+
+        var birthDate = revision.ClearBirthDate ? null : revision.BirthDate ?? BirthDate;
+        var estimated = birthDate is null ? false : revision.BirthDateEstimated ?? (revision.BirthDate is null && BirthDateEstimated);
+
+        if (birthDate is null && revision.BirthDateEstimated is true)
+        {
+            throw new DomainException("invalid_pet", "ระบุว่าเป็นวันเกิดโดยประมาณได้เมื่อมีวันเกิดเท่านั้น");
+        }
+
+        // Every value is worked out before any is assigned, so a refusal changes nothing.
+        var name = revision.Name is null ? Name : Required(revision.Name, 120, "ชื่อสัตว์เลี้ยง");
+        var species = revision.Species is null ? Species : Required(revision.Species, 60, "ชนิดสัตว์");
+        var breed = revision.Breed is null ? Breed : Bounded(revision.Breed, 120, "สายพันธุ์");
+        var microchip = revision.MicrochipNumber is null ? MicrochipNumber : Bounded(revision.MicrochipNumber, 40, "เลขไมโครชิป");
+
+        Name = name;
+        Species = species;
+        Breed = breed;
+        MicrochipNumber = microchip;
+        Sex = revision.Sex ?? Sex;
+        BirthDate = birthDate;
+        BirthDateEstimated = estimated;
+        Neutered = neutered;
+    }
+
+    private static string Required(string value, int max, string label) =>
+        Bounded(value, max, label) ?? throw new DomainException("invalid_pet", $"ต้องระบุ{label}");
 }

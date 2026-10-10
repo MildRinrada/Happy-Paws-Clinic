@@ -4970,6 +4970,14 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("behaviour");
 
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
+                    b.Property<bool>("BirthDateEstimated")
+                        .HasColumnType("boolean")
+                        .HasColumnName("birth_date_estimated");
+
                     b.Property<string>("Breed")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
@@ -4982,6 +4990,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DeceasedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("deceased_at");
+
+                    b.Property<DateTimeOffset?>("DeceasedUndoneAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deceased_undone_at");
 
                     b.Property<string>("Diet")
                         .HasMaxLength(500)
@@ -5005,6 +5017,10 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
+                    b.Property<bool?>("Neutered")
+                        .HasColumnType("boolean")
+                        .HasColumnName("neutered");
+
                     b.Property<string>("Nickname")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)")
@@ -5020,6 +5036,12 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("primary_customer_id");
+
+                    b.Property<string>("Sex")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("sex");
 
                     b.Property<string>("Species")
                         .IsRequired()

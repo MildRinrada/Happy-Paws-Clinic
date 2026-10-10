@@ -10,6 +10,10 @@ namespace HappyPaws.Application.Patients.Portal;
 /// <c>PATCH /portal/pets/{id}</c>. <c>may_view_history</c> says whether the records page will open
 /// for this caller, so a client can hide a link that would only answer <c>404</c>.
 /// </para>
+/// <para>
+/// Sex, birth date and neuter status are staff's, read-only here like the identity. Not in the API
+/// reference; see <c>docs/contract-extensions.md § 28</c>.
+/// </para>
 /// </summary>
 public sealed record MyPetDto(
     string Id,
@@ -26,7 +30,11 @@ public sealed record MyPetDto(
     bool IsDeceased,
     WeightDto? LatestWeight,
     IReadOnlyList<MyPetAllergyDto> Allergies,
-    bool MayViewHistory);
+    bool MayViewHistory,
+    string Sex = "unknown",
+    DateOnly? BirthDate = null,
+    bool BirthDateEstimated = false,
+    bool? Neutered = null);
 
 /// <summary>An allergy, as the owner needs to know it: what, and how bad.</summary>
 public sealed record MyPetAllergyDto(string Substance, string Severity);

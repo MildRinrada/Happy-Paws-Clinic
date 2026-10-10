@@ -7,6 +7,14 @@ public enum OtpPurpose
 {
     Register,
     Login,
+
+    /// <summary>
+    /// Booking without signing up first (<c>POST /booking/guest/start</c>). Sent to every number,
+    /// like <see cref="Register"/>, because the visitor may or may not have an account and must not
+    /// be told which before the code proves the number. Not accepted by <c>POST /auth/otp/request</c>.
+    /// See <c>docs/contract-extensions.md § 27</c>.
+    /// </summary>
+    Booking,
 }
 
 /// <summary>
