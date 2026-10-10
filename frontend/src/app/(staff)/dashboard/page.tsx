@@ -10,6 +10,7 @@ import { ReportTabs } from '@/features/analytics/components/report-tabs';
 import { TodayOverview } from '@/features/analytics/components/today-overview';
 import { dashboardPage } from '@/features/analytics/content/dashboard-page';
 import { loadBusinessReports, loadOperationsReports } from '@/features/analytics/lib/load-reports';
+import { PrivacyPolicyMissingNotice } from '@/features/privacy/components/staff/privacy-policy-missing-notice';
 import { readReportRange, type ReportSearchParams, type ReportTab } from '@/features/analytics/lib/report-range';
 import { ReportExportControl } from '@/features/reporting/components/report-export-control';
 import { exportableReports } from '@/features/reporting/lib/exportable-reports';
@@ -74,6 +75,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <div className="max-w-6xl space-y-6">
       <PageHeader title={dashboardPage.title} subtitle={dashboardPage.subtitle(branch.name)} />
+
+      {/* Owner only, while no privacy notice is published (docs/contract-extensions.md § 35). */}
+      <PrivacyPolicyMissingNotice />
 
       {brief && brief.status !== 'disabled' && <DailyBriefCard brief={brief} />}
 

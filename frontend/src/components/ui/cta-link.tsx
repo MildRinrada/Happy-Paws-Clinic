@@ -24,14 +24,17 @@ interface Props {
   size?: Size;
   /** For the one-off adjustment, such as a wider button. */
   className?: string;
+  /** What a screen reader says when the visible words need the text around them. */
+  ariaLabel?: string;
   children: ReactNode;
 }
 
 /** The public site's call-to-action: a link drawn as a button. */
-export function CtaLink({ href, variant = 'solid', size = 'md', className = '', children }: Props) {
+export function CtaLink({ href, variant = 'solid', size = 'md', className = '', ariaLabel, children }: Props) {
   return (
     <Link
       href={href}
+      aria-label={ariaLabel}
       className={`inline-flex items-center justify-center whitespace-nowrap transition ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {children}

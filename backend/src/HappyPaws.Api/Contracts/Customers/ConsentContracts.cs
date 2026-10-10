@@ -7,6 +7,10 @@ namespace HappyPaws.Api.Contracts.Customers;
 /// <c>medical_record_sharing</c>, <c>extended_data_processing</c>. Sending a subset is fine;
 /// anything omitted is left where it is.
 /// </para>
+/// <para>
+/// <c>policy_version</c> is accepted for older clients and ignored: the server stamps the label of
+/// the privacy notice current when the row is written (<c>docs/contract-extensions.md § 35</c>).
+/// </para>
 /// </summary>
 public sealed record UpdateConsentsRequest(
     IReadOnlyDictionary<string, bool> Consents,
@@ -14,7 +18,8 @@ public sealed record UpdateConsentsRequest(
 
 /// <summary>
 /// <c>POST /staff/customers/{id}/consents</c> — the counter records a decision taken on paper or
-/// in person. <c>note</c> is where the paper form's reference goes.
+/// in person. <c>note</c> is where the paper form's reference goes. <c>policy_version</c> is
+/// accepted and ignored, as on <see cref="UpdateConsentsRequest"/>.
 /// </summary>
 public sealed record RecordConsentRequest(
     IReadOnlyDictionary<string, bool> Consents,

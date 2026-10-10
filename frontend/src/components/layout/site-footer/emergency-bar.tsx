@@ -1,9 +1,13 @@
+import Link from 'next/link';
 import { emergency } from '@/config/site-footer';
 import { contactHref } from '@/features/clinic/lib/contact-links';
 import type { ClinicContact } from '@/features/clinic/types/contact.types';
 import { SiteContainer } from '../site-container';
 
-/** The red bar above the footer: the number to ring when it cannot wait for an appointment. */
+/**
+ * The red bar above the footer: the number to ring when it cannot wait for an appointment, and a
+ * link to the emergency page.
+ */
 export function EmergencyBar({ contact }: { contact: ClinicContact }) {
   return (
     <aside aria-label={emergency.label} className="bg-site-alert py-4 text-white lg:py-0">
@@ -16,7 +20,12 @@ export function EmergencyBar({ contact }: { contact: ClinicContact }) {
           {contact.value}
         </a>
 
-        <p className="w-full text-[13px] lg:ml-auto lg:w-auto lg:text-right">{emergency.note}</p>
+        <p className="w-full text-[13px] lg:ml-auto lg:w-auto lg:text-right">
+          {emergency.note}{' '}
+          <Link href={emergency.more.href} className="whitespace-nowrap font-bold underline">
+            {emergency.more.label}
+          </Link>
+        </p>
       </SiteContainer>
     </aside>
   );

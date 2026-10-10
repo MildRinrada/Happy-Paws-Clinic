@@ -10,6 +10,9 @@ export const guestBookingPage = {
   signInPrompt: 'เป็นลูกค้าที่มีบัญชีอยู่แล้ว?',
   signInLink: 'เข้าสู่ระบบก่อนจอง',
 
+  /** When a link asked for a time (`?date=&time=`) that has been taken since. */
+  timeTaken: (time: string) => `เวลา ${time} ไม่ว่างแล้ว เลือกเวลาอื่นในวันเดียวกัน หรือเปลี่ยนวันได้เลย`,
+
   steps: ['รายละเอียด', 'วันและเวลา', 'เบอร์โทร', 'ยืนยันรหัส', 'น้องที่จะมา'],
 
   summary: {

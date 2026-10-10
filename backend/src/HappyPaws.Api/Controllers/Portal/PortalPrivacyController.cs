@@ -39,7 +39,11 @@ public sealed class PortalPrivacyController : ControllerBase
         CancellationToken cancellationToken) =>
         handler.HandleAsync(new GetConsentsQuery(currentUser.RequireCustomerId()), cancellationToken);
 
-    /// <summary><c>PUT /portal/consents</c> — the customer changes their own mind.</summary>
+    /// <summary>
+    /// <c>PUT /portal/consents</c>: the customer changes their own mind. Each new row carries the
+    /// label of the privacy notice current now; <c>policy_version</c> in the body is accepted for
+    /// older clients and ignored (<c>docs/contract-extensions.md § 35</c>).
+    /// </summary>
     /// <param name="request">Purpose to position. Omitted purposes are left alone.</param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="currentUser">The signed-in customer.</param>
@@ -56,8 +60,7 @@ public sealed class PortalPrivacyController : ControllerBase
             new RecordConsentCommand(
                 currentUser.RequireCustomerId(),
                 request.Consents,
-                ConsentSource.Portal,
-                request.PolicyVersion),
+                ConsentSource.Portal),
             cancellationToken);
 
     /// <summary>

@@ -24,6 +24,7 @@ using HappyPaws.Application.MedicalRecords;
 using HappyPaws.Application.Messaging;
 using HappyPaws.Application.Patients;
 using HappyPaws.Application.Prescriptions;
+using HappyPaws.Application.PrivacyPolicies;
 using HappyPaws.Application.Queueing;
 using HappyPaws.Application.Reporting;
 using HappyPaws.Application.Scheduling;
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services.AddMessagingModule();
         services.AddForecastingModule();
         services.AddStaffAiModule();
+        services.AddPrivacyPoliciesModule();
 
         return services;
     }

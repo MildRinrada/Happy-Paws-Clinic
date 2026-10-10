@@ -20,6 +20,11 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Forwarded to Next's fetch cache; defaults to no caching for authenticated reads. */
   cache?: RequestCache;
+  /**
+   * Seconds Next may reuse a public read before asking again, in place of `cache`. Only for
+   * anonymous reads (`publicApi()`): a cached answer is shared by every visitor.
+   */
+  revalidate?: number;
 }
 
 export interface HttpClientConfig {
@@ -70,7 +75,9 @@ export function createHttpClient({ baseUrl, authHeaders }: HttpClientConfig) {
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: options.signal,
-      cache: options.cache ?? 'no-store',
+      ...(options.revalidate === undefined
+        ? { cache: options.cache ?? 'no-store' }
+        : { next: { revalidate: options.revalidate } }),
     });
 
     // A refusal is the usual JSON error envelope whatever was asked for.

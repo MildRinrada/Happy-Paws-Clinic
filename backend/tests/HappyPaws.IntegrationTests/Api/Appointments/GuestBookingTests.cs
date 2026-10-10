@@ -168,8 +168,10 @@ public class GuestBookingTests(ApiFixture fixture)
         }
 
         var granted = await RowsFor(first);
-        Assert.Contains(granted, row => row.Purpose == ConsentPurpose.ServiceMessages && row.Granted && row.PolicyVersion == "2026-10" && row.Source == ConsentSource.Portal);
-        Assert.Contains(granted, row => row.Purpose == ConsentPurpose.Marketing && row.Granted && row.PolicyVersion == "2026-10");
+        // policy_version "2026-10" was sent and is ignored: the server stamps the notice current now
+        // (docs/contract-extensions.md § 35), and nothing is published in this collection.
+        Assert.Contains(granted, row => row.Purpose == ConsentPurpose.ServiceMessages && row.Granted && row.PolicyVersion == null && row.Source == ConsentSource.Portal);
+        Assert.Contains(granted, row => row.Purpose == ConsentPurpose.Marketing && row.Granted && row.PolicyVersion == null);
 
         var serviceOnly = await RowsFor(second);
         Assert.Single(serviceOnly);

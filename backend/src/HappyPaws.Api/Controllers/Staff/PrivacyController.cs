@@ -42,6 +42,10 @@ public sealed class PrivacyController : ControllerBase
     /// The recording staff account is stored on the row. A consent recorded on someone's behalf
     /// with no record of who recorded it is not evidence of anything.
     /// </para>
+    /// <para>
+    /// The row carries the label of the privacy notice current now; <c>policy_version</c> in the
+    /// body is accepted and ignored (<c>docs/contract-extensions.md § 35</c>).
+    /// </para>
     /// </summary>
     /// <param name="id">Customer id.</param>
     /// <param name="request">Purpose to position, with the paper form's reference in <c>note</c>.</param>
@@ -57,7 +61,7 @@ public sealed class PrivacyController : ControllerBase
         CancellationToken cancellationToken) =>
         handler.HandleAsync(
             new RecordConsentCommand(
-                id, request.Consents, ConsentSource.Counter, request.PolicyVersion, request.Note),
+                id, request.Consents, ConsentSource.Counter, Note: request.Note),
             cancellationToken);
 
     /// <summary>

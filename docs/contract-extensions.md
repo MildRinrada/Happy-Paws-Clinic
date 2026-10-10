@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 90 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 และ 34 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 96 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 34 และ 35 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -43,8 +43,9 @@
 | 32 | รูปพนักงานบนหน้าทีมต้องคัดลอกไฟล์เข้าโฟลเดอร์ของหน้าเว็บเองแล้ว deploy ใหม่ | `POST /staff/members/{id}/public-profile/photo` และค่า `storage:` ใน `photo_path` เดิม | **ทำแล้ว** |
 | 33 | ระบบเตือนได้แค่ตามเกณฑ์ตายตัว ไม่ได้คาดการณ์จากข้อมูลที่มี เช่น ยาจะหมดเมื่อไร ช่วงไหนคนไข้จะล้น นัดไหนเสี่ยงไม่มา และลูกค้าคนไหนหายไปนานกว่ารอบปกติของตัวเอง | `GET /staff/inventory/forecast`, `GET /staff/stats/demand-forecast`, `GET /staff/appointments/attendance-risk`, `GET /staff/customers/due-back` และตัวกระตุ้น `customer_lapsed` ในกฎเตือนอัตโนมัติ | **ทำแล้ว** |
 | 34 | ไม่มีผู้ช่วย AI สำหรับพนักงาน ทั้งที่มีผู้ช่วยบนหน้าเว็บแล้ว หมอต้องอ่านประวัติยาวเองก่อนตรวจ และพิมพ์บันทึกกับข้อความถึงเจ้าของเองทั้งหมด | `POST /staff/ai/pets/{id}/summary`, `POST /staff/ai/consultations/{id}/soap-draft`, `POST /staff/ai/drafts/owner-message`, `POST /staff/ai/ask`, `GET /staff/ai/daily-brief`, `GET /staff/ai/usage` และ scope `ai:use` | **ทำแล้ว** |
+| 35 | ประกาศความเป็นส่วนตัวเขียนตายตัวในโค้ดหน้าเว็บ คลินิกแก้เองไม่ได้ ระบบไม่เก็บถ้อยคำของแต่ละฉบับ และเลขฉบับของความยินยอมมาจาก client | `GET /privacy-policy`, `GET /privacy-policy/versions/{version}`, `GET` และ `POST /staff/privacy-policy/versions`, `PATCH /staff/privacy-policy/versions/{id}`, `POST /staff/privacy-policy/versions/{id}/publish` และระบบใส่เลขฉบับให้ความยินยอมเอง | **ทำแล้ว** |
 
-endpoint ใหม่ 90 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 96 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -2011,6 +2012,113 @@ GET /v1/staff/ai/usage                                              ai:use
 
 **หน้าจอ** การ์ด "สรุปด้วย AI" ในหน้าสัตว์ การ์ด "ร่างบันทึกด้วย AI" และ "ร่างคำแนะนำหลังรักษา" ในหน้าเคส ปุ่ม "ร่างคำตอบ" ในหน้าข้อความลูกค้า หน้าใหม่ "ผู้ช่วย AI" (`/ai`) สำหรับถามตัวเลขพร้อมการใช้งานเดือนนี้ และการ์ด "สรุปเช้านี้" บนหน้าภาพรวม ทุกอย่างที่ AI เขียนมีป้าย "ร่างจาก AI" ทุกปุ่มซ่อนเมื่อบัญชีไม่มี `ai:use` หรือระบบไม่ได้เปิด AI รายละเอียดอยู่ใน [ผู้ช่วย AI สำหรับพนักงาน](features/staff-ai.md)
 
+## 35. ประกาศความเป็นส่วนตัวเขียนตายตัวในโค้ดหน้าเว็บ คลินิกแก้เองไม่ได้
+
+**ช่องโหว่** ถ้อยคำของหน้า `/privacy` และเลขฉบับ `2026-10` เขียนตายตัวในไฟล์ `frontend/src/features/privacy/content/privacy-policy.ts` คลินิกเป็นผู้ควบคุมข้อมูลตาม PDPA และต้องเป็นผู้เขียนประกาศของตัวเอง แต่การแก้ถ้อยคำต้องแก้โค้ดแล้ว deploy ใหม่ หน้าเว็บส่งเลขฉบับจากค่าคงที่ในโค้ดไปกับความยินยอม และระบบไม่ได้เก็บถ้อยคำของแต่ละฉบับไว้เลย คลินิกจึงพิสูจน์ไม่ได้ว่าลูกค้ายินยอมตอนที่ประกาศเขียนว่าอะไร และหน้าเดิมยังไม่ได้พูดถึงผู้ช่วย AI ของพนักงาน (§ 34) อนุมัติแล้ว (2026-10-10)
+
+**ทำไมสำคัญ** ความยินยอมคือการตกลงกับข้อความที่ลูกค้าเห็น ถ้าข้อความนั้นเปลี่ยนได้โดยไม่มีร่องรอย หรือเลขฉบับมาจากสิ่งที่ client ส่งมาเอง แถวความยินยอมก็บอกแค่ว่ามีคนตกลงกับอะไรบางอย่าง และคนที่ต้องรับผิดชอบถ้อยคำต่อลูกค้าและต่อ สคส. คือคลินิก ไม่ใช่ผู้พัฒนาระบบ
+
+**คำตอบ** หกเส้นใหม่ ไม่มี scope ใหม่ ใช้ `settings:read`, `settings:write` และ `settings:danger` ของ contract และ migration หนึ่งตัว คือ `ClinicPrivacyPolicy`
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/privacy-policy` | สาธารณะ | ฉบับปัจจุบัน ตอบ `200` เสมอ ยังไม่มีฉบับที่เผยแพร่ได้ `published: false` |
+| GET | `/privacy-policy/versions/{version}` | สาธารณะ | ฉบับที่เผยแพร่แล้วตามเลขฉบับ ปัจจุบันหรือเก่า ร่างได้ `404` |
+| GET | `/staff/privacy-policy/versions` | `settings:read` | ทุกฉบับรวมร่าง พร้อมเนื้อหา ฉบับปัจจุบัน และข้อมูล template ที่มากับระบบ |
+| POST | `/staff/privacy-policy/versions` | `settings:write` | สร้างร่างจาก template จากฉบับปัจจุบัน หรือจากฉบับใดก็ได้ ตอบ `201` |
+| PATCH | `/staff/privacy-policy/versions/{id}` | `settings:write` | แทนหัวข้อทั้งหมดของร่าง ต้องส่ง `If-Match` ฉบับที่เผยแพร่แล้วได้ `409 state_conflict` |
+| POST | `/staff/privacy-policy/versions/{id}/publish` | `settings:danger` | เผยแพร่ร่างพร้อมเลขฉบับ วันที่มีผล และการตรวจของนักกฎหมาย ต้องส่ง `If-Match` |
+
+```http
+GET /v1/privacy-policy                                              สาธารณะ
+
+200 { "published": true, "label": "2026-11", "effective_date": "2026-11-01",
+      "published_at": "...", "legal_review_done": false, "is_current": true,
+      "sections": [ { "anchor": "cookies", "heading": "คุกกี้", "body": "ย่อหน้า\n\n- รายการ" } ],
+      "history": [ { "label": "2026-11", "effective_date": "2026-11-01", "published_at": "..." } ] }
+200 { "published": false, "history": [] }
+
+POST /v1/staff/privacy-policy/versions                              settings:write
+{ "source": "template" }   { "source": "current" }   { "source": "version", "version_id": "ppv_..." }
+
+201 { "id": "ppv_...", "status": "draft", "is_current": false, "created_from": "template",
+      "template_version": "2026-10-template-1", "legal_review_done": false, "version": 8123,
+      "sections": [ ... ] }
+
+PATCH /v1/staff/privacy-policy/versions/ppv_...                     settings:write   If-Match: "8123"
+{ "sections": [ { "anchor": "cookies", "heading": "คุกกี้", "body": "..." } ] }
+
+POST /v1/staff/privacy-policy/versions/ppv_.../publish              settings:danger  If-Match: "8130"
+{ "label": "2026-11", "effective_date": "2026-11-01", "legal_review_done": true }
+
+GET /v1/staff/privacy-policy/versions                               settings:read
+
+200 { "data": [ { ...ฉบับ... } ], "current_version_id": "ppv_...",
+      "template": { "version": "2026-10-template-1", "newer_available": false } }
+```
+
+**ร่างและฉบับที่เผยแพร่** ร่างแก้ได้ ฉบับที่เผยแพร่แล้วมีเลขฉบับ วันที่มีผล เวลาเผยแพร่ ผู้เผยแพร่ และ `legal_review_done` และแก้หรือเผยแพร่ซ้ำไม่ได้ ถ้าจะเปลี่ยนถ้อยคำต้องสร้างร่างใหม่แล้วเผยแพร่เป็นฉบับใหม่ ฉบับปัจจุบันคือฉบับที่เผยแพร่ล่าสุด ไม่มีอะไรถูกลบ
+
+**เผยแพร่ได้เฉพาะเจ้าของคลินิก** `settings:danger` ไม่อยู่ใน `clinic_admin` ตาม role ตั้งต้น อยู่ในรายการ scope ที่ต้องผ่าน 2FA และ API key ถือไม่ได้ ผู้ถือ `settings:write` สร้างและแก้ร่างได้อย่างเดียว
+
+**กติกาการเผยแพร่**
+
+- เลขฉบับใช้ตัวอักษรภาษาอังกฤษ ตัวเลข จุด ขีดล่าง และขีดกลาง ขึ้นต้นด้วยตัวอักษรหรือตัวเลข ยาวไม่เกิน 32 ตัว เพราะอยู่ในที่อยู่ของหน้า ซ้ำกับฉบับที่เผยแพร่แล้วได้ `409 privacy_policy_label_taken` (unique index `ix_privacy_policy_versions_label` จับกรณีกดพร้อมกันด้วย) ใช้ `2026-10` ไม่ได้ (`422`) เพราะเป็นเลขของฉบับเดิมในโค้ดหน้าเว็บ
+- วันที่มีผลต้องเป็นวันนี้ตามเวลาคลินิกหรือหลังจากนี้ ก่อนวันนี้ได้ `422`
+- **ฉบับที่เผยแพร่เป็นฉบับปัจจุบันทันทีที่กด** วันที่มีผลคือวันที่พิมพ์บนหน้า ไม่ใช่การตั้งเวลา เลือกทางที่ง่ายที่สุด ไม่มีช่วงที่ระบบต้องตัดสินว่าฉบับไหนมีผล
+- `legal_review_done` คือคำยืนยันของเจ้าของคลินิกตอนเผยแพร่ว่านักกฎหมายตรวจแล้ว ถ้าเป็น `false` หน้า `/privacy` แสดงกล่องเตือนว่าประกาศยังไม่ผ่านการตรวจของนักกฎหมาย ค่านี้แก้ทีหลังไม่ได้ ต้องเผยแพร่ฉบับใหม่ที่ติ๊กไว้
+
+**รูปแบบเนื้อหา** แต่ละหัวข้อมี `anchor`, `heading`, `body` เนื้อหาเป็นข้อความล้วนแบบเดียวกับบทความ (§ 26) มีกติกาสามข้อ คือบรรทัดว่างขึ้นย่อหน้าใหม่ บรรทัดที่ขึ้นต้นด้วย `- ` เป็นรายการ และ `[ข้อความ](/path)` เป็นลิงก์ไปหน้าในเว็บของคลินิก ไม่มี HTML และไม่มีลิงก์ออกนอกเว็บ ตรวจตอนบันทึก 1 ถึง 30 หัวข้อ ชื่อจุดเชื่อมเป็นตัวพิมพ์เล็ก ตัวเลข และขีดกลาง ไม่เกิน 40 ตัว ไม่ซ้ำกัน และห้ามใช้ `controller` ชื่อหัวข้อไม่เกิน 150 ตัวอักษร เนื้อหาไม่เกิน 10,000 ตัวอักษรต่อหัวข้อ อะไรที่หน้าตาเป็นแท็ก HTML และลิงก์ที่ไม่ขึ้นต้นด้วย `/` ตัวเดียวถูกปฏิเสธ ผิดได้ `422` ที่ช่องเช่น `sections[2].body` ตัวอ่านของหน้าเว็บทำตามกติกาเดียวกัน และแสดงลิงก์ที่ไม่ผ่านเป็นตัวอักษร รายละเอียดอยู่ใน [ประกาศความเป็นส่วนตัวของคลินิก](features/privacy-policy.md#รูปแบบของเนื้อหา)
+
+**template ที่มากับระบบ ใส่เป็นร่างเท่านั้น** `PrivacyPolicyTemplate` ในโค้ด (รุ่น `2026-10-template-1`) คือถ้อยคำเดิมของหน้าเว็บในรูปแบบใหม่ บวกหัวข้อ "ผู้ช่วย AI" ที่บอกว่าฟีเจอร์ของพนักงานส่งข้อมูลทางการรักษาให้ผู้ให้บริการโมเดลที่ผู้ให้บริการระบบตั้งค่า เช่น Google Gemini ซึ่งอาจอยู่นอกประเทศ หรือโมเดลที่รันเอง หลังแทนชื่อ เบอร์โทร อีเมล และเลขบัตรประชาชนแล้ว และเมื่อใช้บริการแบบเสียเงิน ข้อมูลไม่ถูกนำไปฝึกโมเดล migration ใส่ template เป็นร่างหนึ่งแถว (`ppv_seed_template`) **และไม่เผยแพร่** เจ้าของงานตัดสินแล้วว่าระบบต้องไม่พูดแทนคลินิก ร่างที่สร้างจาก template มีกล่องเตือนในหน้าแก้ว่าเป็นถ้อยคำของผู้พัฒนาระบบที่ต้องให้นักกฎหมายตรวจ เลือกใส่ใน migration ตามแบบกติกาเตือนเริ่มต้นของ migration `AutomationAndReportExports` แทนคำสั่ง seed เพราะคลินิกเดิมและคลินิกใหม่ได้ร่างเหมือนกันโดยไม่ต้องรันอะไรเพิ่ม migration ใส่ template ตามที่อยู่ในโค้ดตอนที่รัน
+
+**template รุ่นใหม่** เมื่อระบบรุ่นใหม่แก้ `PrivacyPolicyTemplate` และเลขรุ่น `GET /staff/privacy-policy/versions` ตอบ `template.newer_available: true` เมื่อยังไม่มีฉบับใดที่มาจาก template รุ่นนั้น (`template_version` คัดลอกต่อกันเมื่อสร้างร่างจากฉบับอื่น) หน้าตั้งค่าแสดง "มี template ฉบับใหม่" และให้สร้างร่างจากมัน ระบบไม่เปลี่ยนประกาศของคลินิกเอง
+
+**ระบบใส่เลขฉบับให้ความยินยอมเอง** นี่คือการเปลี่ยนพฤติกรรมของเส้นใน § 4 และ § 27 ที่อนุมัติแล้ว `RecordConsentHandler` อ่านเลขฉบับปัจจุบันใน transaction เดียวกับการบันทึก แล้วเก็บใน `policy_version` ของทุกแถวใหม่ ใช้กับ `PUT /portal/consents`, `POST /staff/customers/{id}/consents` และ `POST /booking/guest/verify`
+
+- ช่อง `policy_version` ในคำขอของทั้งสามเส้นยังรับอยู่ client เดิมจึงไม่พัง แต่ค่านั้นไม่ถูกใช้และไม่ถูกเก็บ เพราะค่าที่ client ส่งไม่ได้พิสูจน์ว่าลูกค้าเห็นอะไร `POST /booking/guest/verify` ยังตรวจว่าไม่เกิน 32 ตัวอักษรเหมือนเดิม หน้าเว็บเลิกส่งแล้ว
+- **ยังไม่มีฉบับที่เผยแพร่ ความยินยอมยังถูกบันทึก** โดย `policy_version` ว่าง การดูแลและข้อความเรื่องการรักษาต้องไม่หยุดเพราะเอกสารยังไม่เสร็จ และค่าว่างบอกตามจริงว่าตอนนั้นไม่มีประกาศที่เผยแพร่
+- audit `consent.recorded` และ `consent.withdrawn` มี `policy_version` ใน details
+
+**ความยินยอมเก่าที่มี `2026-10`** หมายถึงถ้อยคำที่เคยเขียนตายตัวในหน้าเว็บ ระบบไม่สร้างแถวของฉบับนั้นย้อนหลัง เพราะจะเป็นการสร้างหลักฐานขึ้นเอง ถ้อยคำอยู่ใน git ที่ `frontend/src/features/privacy/content/privacy-policy.ts` ซึ่งเพิ่มใน commit `27cf747` และไม่ถูกแก้อีกจนถึง `f8ce844` (`git show 27cf747:frontend/src/features/privacy/content/privacy-policy.ts`) คลินิกใช้แสดงได้ถ้าลูกค้าหรือ สคส. ถาม
+
+**ยังไม่มีฉบับที่เผยแพร่** `GET /privacy-policy` ตอบ `200` พร้อม `published: false` แทน `404` แบบเดียวกับ `GET /staff/ai/daily-brief` (§ 34) หน้าเว็บจึงแยกได้ว่าคลินิกยังไม่เผยแพร่ หรือเรียก API ไม่ได้ หน้า `/privacy` แสดงข้อมูลคลินิกจาก `GET /clinic` และ `GET /clinic/contacts` พร้อมข้อความว่าคลินิกยังไม่ได้เผยแพร่ประกาศและช่องทางติดต่อ ไม่แสดง template หน้าตั้งค่าแสดงกล่องเตือนสีแดง และหน้าภาพรวมแสดงแถบเล็กหนึ่งบรรทัดให้ผู้ถือ `settings:danger`
+
+**แคช** สองเส้นสาธารณะตอบ `Cache-Control: public, max-age=60` หน้าเว็บเก็บผลไว้ 60 วินาทีเช่นกัน และการเผยแพร่จากหน้าตั้งค่าสั่งให้หน้าที่เกี่ยวข้องโหลดใหม่ทันที
+
+**audit ใหม่สามตัว** resource คือ `privacy_policy` ไม่มีถ้อยคำใน details เพราะถ้อยคำของแต่ละฉบับอยู่ในตารางเองแล้ว
+
+| action | details |
+|---|---|
+| `privacy_policy.draft_created` | ที่มา ฉบับที่คัดลอก รุ่น template จำนวนหัวข้อ |
+| `privacy_policy.draft_updated` | จำนวนหัวข้อและความยาวก่อนและหลัง รายชื่อจุดเชื่อม |
+| `privacy_policy.published` | เลขฉบับ วันที่มีผล `legal_review_done` ฉบับปัจจุบันก่อนหน้า |
+
+**รหัส error ใหม่** `privacy_policy_label_taken` (409) อยู่ใน `ErrorCodes`
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| migration เผยแพร่ template ให้เลย | เจ้าของงานตัดสินว่าไม่ ถ้อยคำของผู้พัฒนาระบบจะกลายเป็นคำพูดของคลินิกโดยที่คลินิกไม่ได้อ่าน |
+| แสดง template บน `/privacy` จนกว่าคลินิกจะเผยแพร่ | เหตุผลเดียวกัน หน้าจะบอกลูกค้าสิ่งที่คลินิกไม่เคยตกลง |
+| เชื่อ `policy_version` ที่ client ส่ง | client เก่าหรือหน้าเว็บที่ cache ไว้ส่งเลขผิดได้ และค่าที่ส่งเองไม่ใช่หลักฐาน |
+| ปฏิเสธความยินยอมเมื่อยังไม่มีฉบับที่เผยแพร่ หรือเมื่อเลขที่ส่งมาไม่ตรง | การเปิดบัญชีจากหน้าจองและการบันทึกที่เคาน์เตอร์จะหยุดทำงานเพราะเอกสาร |
+| สร้างแถวฉบับ `2026-10` ย้อนหลัง | เป็นการสร้างหลักฐานขึ้นเอง ถ้อยคำจริงอยู่ใน git อยู่แล้ว |
+| เนื้อหาเป็น Markdown หรือ HTML | ต้องมี sanitiser ให้ตามทัน และเปิดทางให้ลิงก์ออกนอกเว็บ เหตุผลเดียวกับบทความ (§ 26) |
+| ตั้งเวลาให้ฉบับมีผลในอนาคต | ต้องตัดสินฉบับปัจจุบันตามวันที่ในทุกการอ่านและทุกความยินยอม ซับซ้อนเกินความจำเป็นของคลินิกเล็ก |
+| คำสั่ง operator สำหรับใส่ template | คลินิกที่อัปเกรดแล้วลืมรันจะไม่มีร่าง migration ทำครั้งเดียวกับทุกคลินิก |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่เผยแพร่อะไรเอง ไม่เปลี่ยนประกาศของคลินิกเมื่อมี template ใหม่
+- ไม่ลบหรือแก้ฉบับที่เผยแพร่แล้ว ไม่มีการลบร่าง
+- ไม่ขอความยินยอมใหม่อัตโนมัติเมื่อเผยแพร่ฉบับใหม่
+- ไม่มีการเทียบความต่างระหว่างฉบับ
+- ไม่มี trigger ในฐานข้อมูลกันการแก้แถวที่เผยแพร่แล้ว การกันอยู่ใน entity และ use case
+
+**หน้าจอ** แท็บใหม่ "ประกาศความเป็นส่วนตัว" ในหน้าตั้งค่า (`/settings/privacy-policy`) มีรายการทุกฉบับ ปุ่มสร้างร่างจากฉบับปัจจุบันหรือจาก template กล่องเตือนเมื่อยังไม่เผยแพร่ และกล่องบอกเมื่อมี template ใหม่ หน้าแก้ร่าง (`/settings/privacy-policy/{id}`) เพิ่ม ลบ เลื่อน และแก้หัวข้อ พร้อมตัวอย่างที่ใช้ตัวแสดงผลเดียวกับหน้าสาธารณะ และฟอร์มเผยแพร่สำหรับผู้ถือ `settings:danger` หน้า `/privacy` อ่านจาก API และหน้าใหม่ `/privacy/versions/{เลขฉบับ}` แสดงฉบับเก่า รายละเอียดอยู่ใน [ประกาศความเป็นส่วนตัวของคลินิก](features/privacy-policy.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -2035,7 +2143,8 @@ GET /v1/staff/ai/usage                                              ai:use
 | การจองโดยไม่สมัครก่อน (§ 27) ควรเป็นส่วนหนึ่งของ contract ไหม และเพดานต่อ IP ควรเป็นเท่าไรเมื่อ API อ่าน IP จริงของผู้ใช้ได้แล้ว | ทำงานอยู่ ตอนนี้เพดานเป็นถังเดียวของทุกคนที่จองผ่านเว็บ |
 | จอห้องรอ (§ 30) ควรเป็นส่วนหนึ่งของ contract ไหม และควรมีการออกรหัสตั้งจอใหม่ให้จอเดิมหรือไม่ | ทำงานอยู่ ตอนนี้จอที่หลุดต้องยกเลิกแล้วสร้างใหม่ token ไม่มีวันหมดอายุถ้าไม่ได้ตั้ง |
 | เพศ วันเกิด และการทำหมัน (§ 28) ควรเป็นส่วนหนึ่งของ contract ไหม และการยกเลิกการบันทึกเสียชีวิต (§ 29) ควรมีกรอบเวลาไหม | ทำงานอยู่ ตอนนี้ยกเลิกได้ทุกเมื่อ ต้องมีเหตุผล และบันทึกลง audit log |
-| ผู้ช่วย AI สำหรับพนักงาน (§ 34) ควรเป็นส่วนหนึ่งของ contract ไหม และ `ai:use` ควรเข้ารายการ scope ไหม | ทำงานอยู่ โควตา 1,500 ครั้งต่อเดือนเป็นค่าตั้งต้นที่ยังไม่ได้เทียบกับแพ็กเกจขายจริง และหน้า `/privacy` ยังต้องเพิ่มผู้ให้บริการโมเดลของฟีเจอร์พนักงาน |
+| ผู้ช่วย AI สำหรับพนักงาน (§ 34) ควรเป็นส่วนหนึ่งของ contract ไหม และ `ai:use` ควรเข้ารายการ scope ไหม | ทำงานอยู่ โควตา 1,500 ครั้งต่อเดือนเป็นค่าตั้งต้นที่ยังไม่ได้เทียบกับแพ็กเกจขายจริง ผู้ให้บริการโมเดลของฟีเจอร์พนักงานอยู่ใน template ของ § 35 แล้ว และขึ้นหน้า `/privacy` เมื่อคลินิกเผยแพร่ |
+| ประกาศความเป็นส่วนตัวของคลินิก (§ 35) ควรเป็นส่วนหนึ่งของ contract ไหม ควรตั้งเวลาให้ฉบับมีผลในอนาคตได้ไหม และควรมี trigger ในฐานข้อมูลกันการแก้ฉบับที่เผยแพร่แล้วไหม | ทำงานอยู่ ฉบับที่เผยแพร่เป็นฉบับปัจจุบันทันที และการกันการแก้อยู่ในโค้ด |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -2076,3 +2185,4 @@ GET /v1/staff/ai/usage                                              ai:use
 | รูปพนักงานที่อัปโหลด | `backend/src/HappyPaws.Domain/Staff/StaffPhoto.cs`, `backend/src/HappyPaws.Application/Staff/Photos/`, `ReplacePublicProfile/ReplacePublicProfileHandler.cs`, `ListTeam/ListTeamHandler.cs`, `backend/src/HappyPaws.Application/Common/Abstractions/IFileStorage.cs` (`ExistsAsync`), `backend/src/HappyPaws.Api/Controllers/Staff/StaffMembersController.cs`, `frontend/src/features/staff/components/settings/profile-photo-field.tsx`, `frontend/src/features/team/components/member-photo.tsx`, `backend/tests/HappyPaws.IntegrationTests/Api/Staff/StaffPhotoTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Staff/StaffPhotoTests.cs` |
 | คาดการณ์ด้วยสถิติ และ trigger คิดถึงน้อง | `backend/src/HappyPaws.Application/Forecasting/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Forecasting/ForecastQueries.cs`, `DueBackSql.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Appointments/AppointmentRepository.cs` (`AttendanceForAsync`), `Automation/AutomationSubjectReader.cs`, `backend/src/HappyPaws.Domain/Automation/AutomationTrigger.cs` (`CustomerLapsed`), `AutomationRule.cs`, `backend/src/HappyPaws.Application/Customers/ConsentGate.cs` (`customer.lapsed`), `backend/src/HappyPaws.Api/Controllers/Staff/ForecastsController.cs`, `frontend/src/app/(staff)/inventory/forecast/`, `schedules/forecast/`, `crm/due-back/`, `frontend/src/features/inventory/components/forecast/`, `features/schedules/components/forecast/`, `features/appointments/components/calendar/attendance-risk-list.tsx`, `risk-badge.tsx`, `features/crm/components/due-back/`, `features/automation/components/lapsed-consent-note.tsx`, `backend/tests/HappyPaws.UnitTests/Application/Forecasting/`, `backend/tests/HappyPaws.IntegrationTests/Api/Forecasting/` |
 | ผู้ช่วย AI สำหรับพนักงาน | `backend/src/HappyPaws.Application/StaffAi/`, `backend/src/HappyPaws.Infrastructure/Assistant/StaffAiOptions.cs`, `StaffAiRegistration.cs`, `backend/src/HappyPaws.Infrastructure/Persistence/StaffAi/`, `backend/src/HappyPaws.Infrastructure/Jobs/DailyBriefJob.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/StaffAiController.cs`, `backend/src/HappyPaws.Domain/Access/Scopes.cs` (`Ai`), `DefaultRoles.cs`, `SecondFactorScopes.cs` (`ApiKeyScopeRules`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`ai.*`), migration `StaffAiAssistant`, `frontend/src/features/staff-ai/`, `frontend/src/app/(staff)/ai/page.tsx`, `frontend/src/features/consultations/hooks/use-form-draft.tsx`, `backend/tests/HappyPaws.UnitTests/Application/StaffAi/`, `backend/tests/HappyPaws.IntegrationTests/Api/StaffAi/` |
+| ประกาศความเป็นส่วนตัวของคลินิก | `backend/src/HappyPaws.Domain/PrivacyPolicies/` (`PrivacyPolicyVersion.cs`, `PrivacyPolicyText.cs`, `PrivacyPolicyRules.cs`, `PrivacyPolicyTemplate.cs`), `backend/src/HappyPaws.Application/PrivacyPolicies/`, `backend/src/HappyPaws.Application/Customers/RecordConsent/RecordConsentHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Public/PrivacyPolicyController.cs`, `Staff/StaffPrivacyPolicyController.cs`, `backend/src/HappyPaws.Api/Contracts/PrivacyPolicies/`, `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/PrivacyPolicies/`, `Repositories/PrivacyPolicies/`, `PostgresErrorTranslator.cs`, `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`privacy_policy.*`), migration `ClinicPrivacyPolicy`, `frontend/src/features/privacy/`, `frontend/src/app/(public)/privacy/`, `frontend/src/app/(staff)/settings/privacy-policy/`, `backend/tests/HappyPaws.UnitTests/Domain/PrivacyPolicies/`, `backend/tests/HappyPaws.IntegrationTests/Api/PrivacyPolicies/` |

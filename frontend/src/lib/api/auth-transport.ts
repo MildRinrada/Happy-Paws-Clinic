@@ -144,7 +144,8 @@ export interface GuestVerifyBody {
   code: string;
   display_name: string;
   accept_privacy_notice: boolean;
-  policy_version: string;
+  /** Still accepted and ignored by the backend, which stamps its published notice (§ 35). Not sent. */
+  policy_version?: string;
   marketing_consent: boolean;
 }
 

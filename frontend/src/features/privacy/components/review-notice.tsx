@@ -1,8 +1,8 @@
 import { reviewNotice } from '../content/privacy-policy';
 
 /**
- * The visible reminder that this policy is a draft written from the system, not from a lawyer.
- * Remove it from the page once the clinic's legal adviser has signed the text off.
+ * Shown while the published version is not marked as reviewed by a lawyer. The owner says whether
+ * it was when publishing (`legal_review_done`); a later version can say so without editing this one.
  */
 export function ReviewNotice() {
   return (

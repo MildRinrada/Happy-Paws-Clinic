@@ -44,6 +44,7 @@ using HappyPaws.Infrastructure.Persistence.Repositories.Analytics;
 using HappyPaws.Infrastructure.Persistence.Repositories.Inventory;
 using HappyPaws.Infrastructure.Persistence.Repositories.Appointments;
 using HappyPaws.Infrastructure.Persistence.Repositories.Articles;
+using HappyPaws.Infrastructure.Persistence.Repositories.PrivacyPolicies;
 using HappyPaws.Infrastructure.Persistence.Repositories.Scheduling;
 using HappyPaws.Infrastructure.Persistence.Repositories.Auditing;
 using HappyPaws.Infrastructure.Persistence.Repositories.Automation;
@@ -234,6 +235,9 @@ public static class DependencyInjection
         // ---- Articles (contract extension) ----
         services.AddScoped<IArticleRepository, ArticleRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
+
+        // ---- The clinic's own privacy notice (docs/contract-extensions.md § 35) ----
+        services.AddScoped<HappyPaws.Application.PrivacyPolicies.IPrivacyPolicyRepository, PrivacyPolicyRepository>();
 
         // ---- Operational statistics and business dashboard ----
         // Read models over hand-written SQL; they never load an aggregate.

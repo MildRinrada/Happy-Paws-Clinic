@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  28 migration และ model snapshot
+  Migrations/                  29 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -203,6 +203,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 26 | `PetIdentityAndUndoDeath` | บน `pets` เพิ่ม `sex` (ข้อความ ค่าตั้งต้นของแถวเดิมคือ `Unknown`) `birth_date` (`date` ค่าว่างได้) `birth_date_estimated` (ค่าตั้งต้น `false`) `neutered` (ค่าว่างคือไม่ทราบ) และ `deceased_undone_at` (เวลาที่ยกเลิกการบันทึกเสียชีวิตครั้งล่าสุด การแจ้งเตือนวัคซีนและแผนการรักษาที่เวลาส่งไม่หลังเวลานี้ไม่ถูกส่ง) ไม่เติมข้อมูลเดิม ดู [contract-extensions.md § 28 และ § 29](./contract-extensions.md) |
 | 27 | `QueueDisplays` | ตาราง `queue_displays` จอห้องรอหนึ่งแถวต่อจอ ผูกกับสาขา (foreign key แบบ restrict) เก็บชื่อ SHA-256 ของรหัสตั้งจอและของ token (ไม่มีคอลัมน์ที่เก็บค่าจริง unique เมื่อมีค่าทั้งคู่) เวลาหมดอายุของรหัส เวลาที่ตั้งบนทีวี วันหมดอายุที่ไม่บังคับ เวลาที่เห็นล่าสุด เวลายกเลิก และผู้สร้าง index `(branch_id, created_at)` สำหรับรายการ ตารางใหม่ ไม่แตะข้อมูลเดิม ดู [contract-extensions.md § 30](./contract-extensions.md) |
 | 28 | `StaffAiAssistant` | ตาราง `staff_ai_usage` (ตัวนับโควตาของผู้ช่วย AI พนักงาน หนึ่งแถวต่อเดือนต่อฟีเจอร์ และแถวรวมของเดือนที่ `feature = '*'` key `(month, feature)` check ว่าไม่ติดลบ) `staff_ai_pet_summaries` (สรุปประวัติล่าสุดหนึ่งแถวต่อสัตว์ พร้อม SHA-256 ของข้อมูลที่ใช้สรุป และ citations เป็น `jsonb` ลบตามสัตว์) และ `staff_ai_daily_briefs` (สรุปเช้า key `(branch_id, brief_date)` คือสิ่งที่ทำให้เขียนได้ครั้งเดียวต่อสาขาต่อวัน เก็บสถานะ จำนวนครั้งที่ลอง ตัวเลขเป็น `jsonb` และประโยค foreign key ไปสาขาแบบ restrict) บน `roles` เติม `ai:use` ให้ role ตั้งต้น `veterinarian` และ `receptionist` ตารางใหม่ ไม่แตะข้อมูลเดิมอื่น ดู [contract-extensions.md § 34](./contract-extensions.md) |
+| 29 | `ClinicPrivacyPolicy` | ตาราง `privacy_policy_versions` (ประกาศความเป็นส่วนตัวของคลินิก หนึ่งแถวต่อฉบับ หัวข้อเป็น `jsonb` เลขฉบับ วันที่มีผล เวลาและผู้เผยแพร่ `legal_review_done` ที่มาของร่างและรุ่น template unique `label` check ว่าเผยแพร่แล้วต้องมีเลขฉบับ วันที่มีผล และเวลาเผยแพร่ครบ ร่างต้องไม่มีทั้งสาม index `published_at`) ใส่ template ที่มากับระบบเป็นร่างหนึ่งแถว (`ppv_seed_template`) ไม่เผยแพร่ ไม่แตะข้อมูลเดิม ความยินยอมเก่าที่มี `policy_version` เป็น `2026-10` ไม่ถูกเปลี่ยน ดู [contract-extensions.md § 35](./contract-extensions.md) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

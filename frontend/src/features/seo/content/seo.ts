@@ -40,5 +40,6 @@ export const sitePages = {
   team: { name: 'ทีมของเรา', path: '/team' },
   articles: { name: 'บทความ', path: '/articles' },
   contact: { name: 'ติดต่อเรา', path: '/contact' },
+  emergency: { name: 'กรณีฉุกเฉิน', path: '/emergency' },
   privacy: { name: 'นโยบายความเป็นส่วนตัว', path: '/privacy' },
 };

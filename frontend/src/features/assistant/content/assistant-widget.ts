@@ -6,6 +6,8 @@ export const assistantWidget = {
   subtitle: 'ตอบเรื่องเวลาทำการ บริการ ราคา และคิวว่าง',
   greeting: 'สวัสดีค่ะ มีอะไรให้ช่วยเกี่ยวกับคลินิกไหมคะ ถามเรื่องเวลาทำการ บริการ ราคา หรือหาเวลาว่างสำหรับนัดได้เลย',
   disclaimer: 'ผู้ช่วย AI ตอบจากข้อมูลของคลินิก ไม่ใช่คำแนะนำทางการแพทย์ ถ้าน้องป่วยฉุกเฉินโทรหาคลินิกทันที',
+  /** After the disclaimer: the emergency page, with the numbers and the signs that cannot wait. */
+  emergencyLink: { label: 'ดูเบอร์ฉุกเฉินและอาการที่ต้องรีบมา', href: '/emergency' },
   placeholder: 'พิมพ์คำถาม…',
   send: 'ส่ง',
   restart: 'เริ่มใหม่',

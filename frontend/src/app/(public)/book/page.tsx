@@ -6,6 +6,7 @@ import { GuestBookingWizard } from '@/features/booking/components/guest/guest-bo
 import { SignInInstead } from '@/features/booking/components/guest/sign-in-instead';
 import { guestBookingPage } from '@/features/booking/content/guest-booking-page';
 import { loadGuestBookingOptions } from '@/features/booking/lib/load-guest-booking-options';
+import { preselectTime } from '@/features/booking/lib/preselect-time';
 
 export const metadata: Metadata = {
   title: `${guestBookingPage.metaTitle} | Happy Paws Clinic`,
@@ -19,12 +20,18 @@ export const dynamic = 'force-dynamic';
  * Booking without signing up first (docs/contract-extensions.md § 27). Anyone can pick a service,
  * a branch, a day and a time; the phone and its code come last, and sign the visitor in.
  *
- * `?service=` and `?branch=` preselect the form (the services page links here that way). Someone
- * already signed in as a customer gets the portal's own booking page with the same choice, and a
- * member of staff goes to the console, as from `/login`.
+ * `?service=` and `?branch=` preselect the form (the services page links here that way), and
+ * `?date=` with `?time=` a time on top of them (the home page's "ว่างเร็วสุด" button), checked
+ * against the day's free times before the form draws. Someone already signed in as a customer gets
+ * the portal's own booking page with the same service and branch, and a member of staff goes to the
+ * console, as from `/login`.
  */
-export default async function BookPage({ searchParams }: { searchParams: Promise<{ service?: string; branch?: string }> }) {
-  const { service, branch } = await searchParams;
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string; branch?: string; date?: string; time?: string }>;
+}) {
+  const { service, branch, date, time } = await searchParams;
   const query = new URLSearchParams();
   if (service) query.set('service', service);
   if (branch) query.set('branch', branch);
@@ -38,6 +45,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   }
 
   const { options, initial } = await loadGuestBookingOptions(service, branch);
+  const start = await preselectTime(initial, date, time);
 
   return (
     <main className="bg-site-soft py-10">
@@ -50,7 +58,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           </div>
 
           <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
-            <GuestBookingWizard options={options} initial={initial} />
+            <GuestBookingWizard options={options} initial={initial} start={start} />
           </div>
         </div>
       </SiteContainer>

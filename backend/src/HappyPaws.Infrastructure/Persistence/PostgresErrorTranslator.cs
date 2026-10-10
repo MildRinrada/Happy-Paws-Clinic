@@ -5,6 +5,8 @@ using HappyPaws.Application.Customers.LineAddress;
 using HappyPaws.Infrastructure.Persistence.Configurations.Crm;
 using HappyPaws.Infrastructure.Persistence.Configurations.Customers;
 using HappyPaws.Application.Inventory;
+using HappyPaws.Application.PrivacyPolicies;
+using HappyPaws.Infrastructure.Persistence.Configurations.PrivacyPolicies;
 using HappyPaws.Infrastructure.Persistence.Configurations.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -70,6 +72,10 @@ internal static class PostgresErrorTranslator
             // the loser hears what it would have a second later, without the holder it cannot see.
             PostgresException { SqlState: UniqueViolation, ConstraintName: ArticleConfiguration.SlugIndex } =>
                 ArticleSlugs.Taken(slug: null, holder: null),
+
+            // Two publishes taking the same label at the same moment (docs/contract-extensions.md § 35).
+            PostgresException { SqlState: UniqueViolation, ConstraintName: PrivacyPolicyVersionConfiguration.LabelIndex } =>
+                PublishPrivacyPolicyHandler.LabelTaken(label: null),
 
             _ => null,
         };

@@ -30,6 +30,8 @@ export interface SocialLink {
 export const emergency = {
   label: 'สายด่วนฉุกเฉิน 24 ชม',
   note: 'กรณีสัตว์ได้รับอุบัติเหตุ ชัก หายใจลำบาก หรือถูกสัตว์อื่นกัด โทรก่อนเข้ามาได้ทันทีไม่ต้องนัด',
+  /** After the note: the page of signs that need a vet now and what to do on the way. */
+  more: { label: 'อาการแบบไหนต้องรีบมา', href: '/emergency' } satisfies SiteLink,
 };
 
 /** First column: where the clinic is. The address and link are the clinic's "map" contact entry. */
@@ -73,6 +75,7 @@ export const footerLinks: SiteLink[] = [
   { label: 'บทความสุขภาพสัตว์', href: '/articles' },
   { label: 'ตารางวัคซีนน้อง', href: '/vaccine-schedule' },
   { label: 'จองนัดหมาย', href: '/book' },
+  { label: 'กรณีฉุกเฉิน', href: '/emergency' },
   { label: 'ร่วมงานกับเรา', href: '#' },
 ];
 

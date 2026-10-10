@@ -49,6 +49,8 @@ export const Scope = {
   InvoiceWrite: 'invoice:write',
   SettingsRead: 'settings:read',
   SettingsWrite: 'settings:write',
+  /** Withheld from clinic_admin: the owner's own scope, e.g. publishing the privacy notice. */
+  SettingsDanger: 'settings:danger',
   ServiceManage: 'service:manage',
   ScheduleRead: 'schedule:read',
   ScheduleWrite: 'schedule:write',

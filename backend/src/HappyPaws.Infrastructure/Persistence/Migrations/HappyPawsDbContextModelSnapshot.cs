@@ -5616,6 +5616,91 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("prescriptions", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.PrivacyPolicies.PrivacyPolicyVersion", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BasedOnVersionId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("based_on_version_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("created_by_staff_id");
+
+                    b.Property<string>("CreatedFrom")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("created_from");
+
+                    b.Property<DateOnly?>("EffectiveDate")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_date");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("label");
+
+                    b.Property<bool>("LegalReviewDone")
+                        .HasColumnType("boolean")
+                        .HasColumnName("legal_review_done");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("published_at");
+
+                    b.Property<string>("PublishedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("published_by_staff_id");
+
+                    b.Property<string>("Sections")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("sections");
+
+                    b.Property<string>("TemplateVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("template_version");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_privacy_policy_versions");
+
+                    b.HasIndex("Label")
+                        .IsUnique()
+                        .HasDatabaseName("ix_privacy_policy_versions_label");
+
+                    b.HasIndex("PublishedAt")
+                        .HasDatabaseName("ix_privacy_policy_versions_published_at");
+
+                    b.ToTable("privacy_policy_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_privacy_policy_versions_published_complete", "(published_at IS NULL AND label IS NULL AND effective_date IS NULL) OR (published_at IS NOT NULL AND label IS NOT NULL AND effective_date IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Queueing.QueueDisplay", b =>
                 {
                     b.Property<string>("Id")

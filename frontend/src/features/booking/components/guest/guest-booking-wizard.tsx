@@ -9,7 +9,14 @@ import { startGuestBookingAction, verifyGuestBookingAction } from '../../actions
 import { bookingPage } from '../../content/booking-page';
 import { guestBookingPage } from '../../content/guest-booking-page';
 import { suggestedTimes } from '../../lib/slot-times';
-import type { BookingDetails, BookingOptions, GuestBookingStarted, GuestVerified, PickedTime } from '../../types/booking.types';
+import type {
+  BookingDetails,
+  BookingOptions,
+  GuestBookingStarted,
+  GuestVerified,
+  PickedTime,
+  TimePreselect,
+} from '../../types/booking.types';
 import { BookingSteps } from '../booking-steps';
 import { DetailsStep } from '../details-step';
 import { TimeStep, type PickRefusal } from '../time-step';
@@ -42,15 +49,27 @@ const GUEST_TYPE = 'regular';
  * decides); the last step books through the same `POST /portal/appointments` as the portal, with an
  * idempotency key per proved hold, so a double tap books once.
  */
-export function GuestBookingWizard({ options, initial }: { options: BookingOptions; initial: BookingDetails }) {
+export function GuestBookingWizard({
+  options,
+  initial,
+  start,
+}: {
+  options: BookingOptions;
+  initial: BookingDetails;
+  /**
+   * A time the address asked for (`?date=&time=`), already checked on the server. A free one opens
+   * the form on the phone step with it picked; one taken since opens that day's times with a note.
+   */
+  start?: TimePreselect;
+}) {
   const router = useRouter();
   const cooldown = useCooldown(60);
-  const [step, setStep] = useState<GuestStep>('details');
+  const [step, setStep] = useState<GuestStep>(start?.startsAt ? 'phone' : start ? 'time' : 'details');
   const [details, setDetails] = useState(initial);
 
-  const [day, setDay] = useState<string>();
-  const [refusal, setRefusal] = useState<PickRefusal>();
-  const [picked, setPicked] = useState<PickedTime>();
+  const [day, setDay] = useState<string | undefined>(start?.day);
+  const [refusal, setRefusal] = useState<PickRefusal | undefined>(start?.notice ? { message: start.notice, suggested: [] } : undefined);
+  const [picked, setPicked] = useState<PickedTime | undefined>(start?.startsAt ? { startsAt: start.startsAt } : undefined);
 
   const [phone, setPhone] = useState('');
   const [started, setStarted] = useState<GuestBookingStarted>();

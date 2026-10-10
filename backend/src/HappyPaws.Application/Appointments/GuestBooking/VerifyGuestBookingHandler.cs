@@ -27,6 +27,10 @@ namespace HappyPaws.Application.Appointments.GuestBooking;
 /// nobody may be told whether the number already has an account. For a number that has one they
 /// are not used.
 /// </para>
+/// <para>
+/// <c>PolicyVersion</c> is still accepted (at most 32 characters) and ignored: the consents are
+/// stamped with the privacy notice current on the server (<c>docs/contract-extensions.md § 35</c>).
+/// </para>
 /// </summary>
 public sealed record VerifyGuestBookingCommand(
     string HoldId,
@@ -245,7 +249,7 @@ public sealed class VerifyGuestBookingHandler(
         }
 
         return consents.HandleAsync(
-            new RecordConsentCommand(customerId, decisions, ConsentSource.Portal, command.PolicyVersion?.Trim() is { Length: > 0 } version ? version : null),
+            new RecordConsentCommand(customerId, decisions, ConsentSource.Portal),
             cancellationToken);
     }
 }

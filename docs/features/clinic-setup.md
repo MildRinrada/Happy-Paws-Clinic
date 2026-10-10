@@ -21,6 +21,7 @@
 | กติกาการจอง คิว และเวชระเบียน | `/settings/rules` | `settings:write` |
 | บริการและราคา | `/settings/services` | `service:manage` ดู [บริการ](services.md) |
 | ข้อมูลติดต่อ | `/settings/contacts` | `settings:write` ดู [ข้อมูลติดต่อ](contact.md) |
+| ประกาศความเป็นส่วนตัว | `/settings/privacy-policy` | `settings:read` ดู แก้ร่างต้องมี `settings:write` เผยแพร่ต้องมี `settings:danger` ดู [ประกาศความเป็นส่วนตัวของคลินิก](privacy-policy.md) |
 | บทความ | `/settings/articles` | `content:manage` ดู [บทความ](articles.md) |
 
 ทุกฟอร์มบันทึกแยกกัน กดบันทึกแล้วขึ้นคำว่า **บันทึกแล้ว** ข้างปุ่ม ถ้าข้อมูลผิด ข้อความภาษาไทยจาก API ขึ้นใต้ช่องที่ผิด ถ้ามีคนอื่นบันทึกไปก่อน (`409`) หน้าจอบอกให้โหลดหน้าใหม่ก่อนแก้อีกครั้ง

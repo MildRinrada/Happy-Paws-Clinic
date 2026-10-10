@@ -65,6 +65,17 @@ export interface PickedTime {
   staffId?: string;
 }
 
+/**
+ * Where the guest booking form opens when the address names a time (`?date=&time=`). `startsAt` is
+ * set when that time was still free on the server; `notice` when it was not.
+ */
+export interface TimePreselect {
+  /** The clinic day to show times for (`YYYY-MM-DD`). */
+  day: string;
+  startsAt?: string;
+  notice?: string;
+}
+
 /** `POST /booking/guest/start` (docs/contract-extensions.md § 27): the time kept, and when the code lapses. */
 export interface GuestBookingStarted {
   hold: SlotHold;

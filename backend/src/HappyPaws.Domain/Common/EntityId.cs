@@ -154,6 +154,9 @@ public static class EntityId
     /// <summary>A waiting-room screen and its token (<c>docs/contract-extensions.md § 30</c>).</summary>
     public const string QueueDisplay = "dsp";
 
+    /// <summary>One version of the clinic's privacy notice (<c>docs/contract-extensions.md § 35</c>).</summary>
+    public const string PrivacyPolicyVersion = "ppv";
+
     public static string New(string prefix)
     {
         Span<byte> buffer = stackalloc byte[16];

@@ -1,11 +1,17 @@
+import { Suspense } from 'react';
 import { hero } from '../../content/hero';
+import { NextFreeTime } from '../next-free/next-free-time';
 import { SectionContainer } from '../shared/section-container';
 import { HeroActions } from './hero-actions';
 import { HeroHeading } from './hero-heading';
 import { HeroImage } from './hero-image';
 import { SocialProof } from './social-proof';
 
-/** The opening of the page: what the clinic is, the two things to do next, and the banner. */
+/**
+ * The opening of the page: what the clinic is, the two things to do next, the earliest free time
+ * to book, and the banner. The free time streams in on its own, so a slow read never holds up the
+ * rest of the page, and leaves no gap when there is nothing to show.
+ */
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-site-teal text-white">
@@ -21,6 +27,10 @@ export function HeroSection() {
           <div className="mt-8 xl:mt-9">
             <HeroActions />
           </div>
+
+          <Suspense fallback={null}>
+            <NextFreeTime />
+          </Suspense>
 
           <div className="mt-8">
             <SocialProof />

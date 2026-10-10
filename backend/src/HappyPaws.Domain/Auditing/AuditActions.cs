@@ -414,6 +414,20 @@ public static class AuditActions
     /// <summary>An article was deleted. The row stays so its address is never reused.</summary>
     public const string ArticleDeleted = "article.deleted";
 
+    // ---- The clinic's privacy notice (docs/contract-extensions.md § 35) -------------------------
+
+    // The notice is what every consent points at. "Who wrote this wording, who made it the clinic's
+    // notice, and when" is the question a regulator asks first.
+
+    /// <summary>A draft of the privacy notice was made, from the template or from another version.</summary>
+    public const string PrivacyPolicyDraftCreated = "privacy_policy.draft_created";
+
+    /// <summary>A draft of the privacy notice was rewritten. Counts and anchors, never the text.</summary>
+    public const string PrivacyPolicyDraftUpdated = "privacy_policy.draft_updated";
+
+    /// <summary>A version of the privacy notice was published and became the current one. It is fixed from now on.</summary>
+    public const string PrivacyPolicyPublished = "privacy_policy.published";
+
     // ---- The staff AI assistant (docs/contract-extensions.md § 34) ------------------------------
 
     // One row per use, naming what was read. Never the prompt or the answer: those hold the
@@ -510,6 +524,7 @@ public static class AuditActions
         InventoryItemUpdated, PurchaseOrderCancelled, CouponDeactivated, LoyaltyAdjusted, LoyaltySettingsChanged,
         ArticleCreated, ArticleUpdated, ArticlePublished, ArticleUnpublished, ArticleDeleted,
         AiPetSummary, AiSoapDraft, AiOwnerMessageDraft, AiAsk,
+        PrivacyPolicyDraftCreated, PrivacyPolicyDraftUpdated, PrivacyPolicyPublished,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -556,6 +571,9 @@ public static class AuditResources
     public const string Segment = "segment";
     public const string Article = "article";
     public const string MessageThread = "message_thread";
+
+    /// <summary>A version of the clinic's privacy notice (<c>docs/contract-extensions.md § 35</c>).</summary>
+    public const string PrivacyPolicy = "privacy_policy";
 
     /// <summary>The staff AI assistant itself, for <c>ai.ask</c>, which reads reports rather than one record.</summary>
     public const string AiAssistant = "ai_assistant";

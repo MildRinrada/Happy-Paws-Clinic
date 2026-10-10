@@ -70,7 +70,11 @@ public class ConsentTests(ApiFixture fixture)
         Assert.True(marketing.GetProperty("granted").GetBoolean());
         Assert.False(marketing.GetProperty("is_default").GetBoolean());
         Assert.Equal("portal", marketing.GetProperty("source").GetString());
-        Assert.Equal("2026-01", marketing.GetProperty("policy_version").GetString());
+
+        // The version the client sends is not evidence of what was shown, so the server stamps the
+        // notice current now (docs/contract-extensions.md § 35). Nothing is published in this
+        // collection, so the row honestly carries none.
+        Assert.False(marketing.TryGetProperty("policy_version", out _));
 
         var withdrawn = await owner.PutAsJsonAsync(
             "/portal/consents", new { consents = new { marketing = false } }, Token);

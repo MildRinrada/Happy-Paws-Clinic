@@ -6,7 +6,6 @@ export interface VerifyGuestBookingInput {
   phone: string;
   code: string;
   displayName: string;
-  policyVersion: string;
   marketingConsent: boolean;
 }
 
@@ -25,7 +24,6 @@ export function verifyGuestBooking(input: VerifyGuestBookingInput): Promise<{ si
     code: input.code,
     display_name: input.displayName,
     accept_privacy_notice: true,
-    policy_version: input.policyVersion,
     marketing_consent: input.marketingConsent,
   });
 }

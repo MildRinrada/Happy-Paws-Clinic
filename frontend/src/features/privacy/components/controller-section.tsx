@@ -15,16 +15,16 @@ export function ControllerSection({ info }: { info: ControllerInfo | null }) {
 
   return (
     <PolicySection id={text.id} heading={text.heading}>
-      <PolicyParagraph text={text.lead} />
+      <PolicyParagraph>{text.lead}</PolicyParagraph>
 
       {info ? (
         <>
           <ControllerDetails info={info} />
-          <PolicyParagraph text={text.contactLead} />
+          <PolicyParagraph>{text.contactLead}</PolicyParagraph>
           {info.contacts.length > 0 && <ControllerContacts contacts={info.contacts} />}
         </>
       ) : (
-        <PolicyParagraph text={text.unavailable} />
+        <PolicyParagraph>{text.unavailable}</PolicyParagraph>
       )}
 
       <Link href={text.contactPage.href} className="inline-block text-[15px] font-semibold text-site-teal hover:underline">

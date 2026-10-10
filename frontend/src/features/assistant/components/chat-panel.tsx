@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import { sendChatAction } from '../actions/assistant-actions';
 import { assistantWidget } from '../content/assistant-widget';
@@ -138,7 +139,12 @@ export function ChatPanel({ entries, onEntries, onClose }: ChatPanelProps) {
         </button>
       </form>
 
-      <p className="px-4 pb-3 text-[11px] leading-snug text-site-muted">{text.disclaimer}</p>
+      <p className="px-4 pb-3 text-[11px] leading-snug text-site-muted">
+        {text.disclaimer}{' '}
+        <Link href={text.emergencyLink.href} onClick={onClose} className="font-semibold text-site-alert underline">
+          {text.emergencyLink.label}
+        </Link>
+      </p>
     </div>
   );
 }

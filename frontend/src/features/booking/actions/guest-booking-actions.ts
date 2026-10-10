@@ -2,7 +2,6 @@
 
 import { z } from 'zod';
 import { isValidPhone, phoneDigits } from '@/features/authentication/lib/phone-number';
-import { policyVersion } from '@/features/privacy/content/privacy-policy';
 import { runAction, type ActionError, type ActionResult } from '@/lib/actions/action-result';
 import { oneTimeCodeDigits } from '@/lib/auth/one-time-code';
 import { writeSession } from '@/lib/auth/session';
@@ -60,7 +59,9 @@ export type VerifyGuestInput = z.input<typeof verifyInput>;
 
 /**
  * Proves the number and signs the visitor in. Answers their pets and the hold, now theirs, for the
- * last step; the booking itself is then `bookAction`, as on the portal's booking page.
+ * last step; the booking itself is then `bookAction`, as on the portal's booking page. No notice
+ * version is sent: the backend stamps the consents with the notice it has published
+ * (docs/contract-extensions.md § 35).
  */
 export async function verifyGuestBookingAction(input: VerifyGuestInput): Promise<ActionResult<GuestVerified>> {
   const parsed = verifyInput.safeParse(input);
@@ -85,7 +86,6 @@ export async function verifyGuestBookingAction(input: VerifyGuestInput): Promise
       phone: phoneDigits(phone),
       code,
       displayName,
-      policyVersion: policyVersion.version,
       marketingConsent,
     }),
   );

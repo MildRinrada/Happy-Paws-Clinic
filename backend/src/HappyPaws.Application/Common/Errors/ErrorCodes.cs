@@ -115,4 +115,10 @@ public static class ErrorCodes
     /// the limit and what is used (<c>docs/contract-extensions.md § 34</c>).
     /// </summary>
     public const string AiQuotaExceeded = "ai_quota_exceeded";
+
+    /// <summary>
+    /// 409: another published version of the privacy notice already has this label; <c>field</c> is
+    /// <c>label</c> (<c>docs/contract-extensions.md § 35</c>).
+    /// </summary>
+    public const string PrivacyPolicyLabelTaken = "privacy_policy_label_taken";
 }

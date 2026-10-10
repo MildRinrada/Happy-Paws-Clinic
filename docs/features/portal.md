@@ -151,6 +151,7 @@ POST /v1/portal/documents
 - **middleware** `/book` อยู่ใน matcher เพื่อต่ออายุ session ที่มีอยู่ (หน้าจึงรู้ว่าใครล็อกอิน) แต่ไม่บังคับให้ล็อกอิน เหมือน `/login` หน้านี้ไม่พาคนออกในระหว่างที่ server action ของหน้าเองกำลังทำงาน เพราะการยืนยันรหัสเขียนคุกกี้และทำให้หน้าถูก render ใหม่ ถ้าพาออกตรงนั้นฟอร์มจะหายก่อนถึงขั้นสุดท้าย
 - **วัดผลได้ทีหลัง** แต่ละขั้นเป็นสถานะของตัวเอง กรอบฟอร์มมี `data-booking-flow="guest"` และ `data-booking-step` เป็น `details`, `time`, `phone`, `code` หรือ `pet` ไม่มีตัวติดตามของบริษัทอื่นบนหน้า
 - `?service=` และ `?branch=` เลือกบริการและสาขาให้ล่วงหน้าเมื่อตรงกับที่เปิดอยู่ บริการที่ไม่ระบุสาขาเลือกสาขาแรกที่มีบริการนั้น ค่าที่ไม่ตรงถูกข้ามไป (`preselect-booking.ts` ใช้ร่วมกับ `/portal/book`)
+- `?date=` และ `?time=` (เช่น `?service=svc_checkup&branch=br_x&date=2026-10-11&time=09:00` จากปุ่ม "ว่างเร็วสุด" บนหน้าแรก) เลือกเวลาให้ด้วย ดู [ลิงก์ที่เลือกเวลาให้ล่วงหน้า](booking-and-appointments.md#ลิงก์ที่เลือกเวลาให้ล่วงหน้า)
 
 ### เลื่อนนัดและยกเลิกนัด
 
@@ -282,7 +283,7 @@ POST /v1/portal/documents
 | บิลของลูกค้า | `backend/src/HappyPaws.Application/Billing/ListMyInvoices/`, หน้าเว็บ `frontend/src/features/portal/components/invoices/` |
 | แชทกับคลินิก | `backend/src/HappyPaws.Application/Messaging/Portal/`, หน้าเว็บ `frontend/src/app/(portal)/portal/messages/page.tsx`, `frontend/src/features/portal/components/chat/`, `actions/chat-actions.ts`, เทสต์ `backend/tests/HappyPaws.IntegrationTests/Api/Messaging/PortalThreadTests.cs` |
 | endpoint | `backend/src/HappyPaws.Api/Controllers/Portal/` |
-| จองโดยไม่ต้องสมัครก่อน | `frontend/src/app/(public)/book/page.tsx`, `frontend/src/features/booking/components/guest/`, `actions/guest-booking-actions.ts`, `api/startGuestBooking.ts`, `api/verifyGuestBooking.ts`, `lib/load-guest-booking-options.ts`, `lib/preselect-booking.ts`, `content/guest-booking-page.ts`, `backend/src/HappyPaws.Api/Controllers/Public/GuestBookingController.cs` |
+| จองโดยไม่ต้องสมัครก่อน | `frontend/src/app/(public)/book/page.tsx`, `frontend/src/features/booking/components/guest/`, `actions/guest-booking-actions.ts`, `api/startGuestBooking.ts`, `api/verifyGuestBooking.ts`, `lib/load-guest-booking-options.ts`, `lib/preselect-booking.ts`, `lib/preselect-time.ts`, `content/guest-booking-page.ts`, `backend/src/HappyPaws.Api/Controllers/Public/GuestBookingController.cs` |
 | หน้าเว็บของลูกค้า | `frontend/src/app/(portal)/portal/`, `frontend/src/features/portal/` (ข้อความทั้งหมดอยู่ใน `content/`) |
 | หัวเว็บและแถบล่างจอ | `frontend/src/components/layout/portal-header/`, `frontend/src/components/layout/portal-shell.tsx` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Portal/PortalTests.cs`, `Api/Patients/DocumentUploadTests.cs` |
