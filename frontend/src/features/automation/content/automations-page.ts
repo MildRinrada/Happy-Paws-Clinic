@@ -27,6 +27,7 @@ export const automationsPage = {
     sameDay: (time: string) => `วันนั้น เวลา ${time} น.`,
     daysAfter: (days: number, time: string) => `${days} วันหลังครบกำหนด เวลา ${time} น.`,
     daysAfterDueBack: (days: number, time: string) => `${days} วันหลังวันที่ควรกลับมา เวลา ${time} น.`,
+    daysAfterVisit: (days: number, time: string) => `${days} วันหลังวันที่มาใช้บริการ เวลา ${time} น.`,
   },
   conditions: {
     species: (value: string) => `เฉพาะ${value}`,
@@ -83,6 +84,9 @@ export const automationsPage = {
     offsetDaysLapsed: 'กี่วันก่อน (ใส่ค่าติดลบ)',
     offsetDaysLapsedHint: 'ใส่ -1 ถึง -90 เช่น -7 คือส่ง 7 วันหลังวันที่ลูกค้าควรกลับมาตามรอบของตัวเอง',
     lapsedDefaultDays: '-7',
+    offsetDaysReview: 'กี่วันก่อน (ใส่ค่าติดลบ)',
+    offsetDaysReviewHint: 'ใส่ -1 ถึง -30 เช่น -2 คือส่ง 2 วันหลังวันที่มาใช้บริการ',
+    reviewDefaultDays: '-2',
     offsetHours: 'กี่ชั่วโมงก่อน',
     sendTime: 'ส่งเวลา',
     species: 'เฉพาะชนิดสัตว์',
@@ -97,6 +101,15 @@ export const automationsPage = {
     submit: 'สร้างกติกา',
     submitting: 'กำลังสร้าง…',
     created: 'สร้างแล้ว',
+  },
+
+  /** The review invitation trigger (docs/contract-extensions.md § 36). */
+  review: {
+    consentTitle: 'ใช้ความยินยอมรับข่าวสาร ไม่ใช่ความยินยอมเรื่องการรักษา',
+    consentBody:
+      'การขอรีวิวเป็นข้อความการตลาด ลูกค้าที่ยังไม่ได้ยินยอมรับข่าวสาร (ค่าตั้งต้นคือไม่ยินยอม) จะถูกข้ามและบันทึกว่าไม่มีความยินยอม แม้จะรับข้อความเตือนวัคซีนหรือนัดได้ตามปกติ',
+    ruleBody:
+      'ส่งถึงลูกค้าที่มาใช้บริการแล้ว คือมีการตรวจที่ปิดเคสแล้ว หรือมีบิลที่ไม่ได้ยกเลิกของสัตว์เลี้ยง หนึ่งครั้งต่อการมาหนึ่งครั้ง และไม่ส่งถ้ารีวิวไปแล้ว ลูกค้าที่มีบัญชีออนไลน์ได้ลิงก์หน้ารีวิวในระบบ คนอื่นได้ลิงก์ที่ใช้ได้ครั้งเดียวภายใน 30 วัน',
   },
 
   /** The "คิดถึงน้อง" trigger (docs/contract-extensions.md § 33). */

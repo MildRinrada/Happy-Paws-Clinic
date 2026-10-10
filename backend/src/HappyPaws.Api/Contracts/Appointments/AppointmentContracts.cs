@@ -136,7 +136,8 @@ public sealed record StartGuestBookingRequest(
 /// <summary>
 /// <c>POST /booking/guest/verify</c> (<c>docs/contract-extensions.md § 27</c>). <c>display_name</c>
 /// and <c>accept_privacy_notice</c> are required of everyone; they are used only when the number has
-/// no customer login yet.
+/// no customer login yet. <c>referral_code</c> is optional: the code from a friend's link
+/// (<c>docs/contract-extensions.md § 39</c>).
 /// </summary>
 public sealed record VerifyGuestBookingRequest(
     string HoldId,
@@ -145,7 +146,8 @@ public sealed record VerifyGuestBookingRequest(
     string DisplayName,
     bool AcceptPrivacyNotice = false,
     string? PolicyVersion = null,
-    bool MarketingConsent = false);
+    bool MarketingConsent = false,
+    string? ReferralCode = null);
 
 /// <summary>
 /// The answer to <c>POST /booking/guest/verify</c>: the same token fields as sign-in (the refresh

@@ -16,6 +16,7 @@ import type { AutomationChannel, AutomationTriggerType } from '../types/automati
 import { ChannelField } from './channel-field';
 import { ConditionFields } from './condition-fields';
 import { LapsedConsentNote } from './lapsed-consent-note';
+import { ReviewConsentNote } from './review-consent-note';
 import { RuleNameField } from './rule-name-field';
 import { TimingFields } from './timing-fields';
 
@@ -30,13 +31,18 @@ export function CreateAutomationForm({ branch }: { branch?: { id: string; name: 
   const [enabled, setEnabled] = useState(false);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit({ conflict: formMessages.conflict, unreachable: formMessages.unreachable });
 
-  /** A lapsed customer is only written to after their day, so the form's "14 days before" becomes "7 days after". */
+  /**
+   * A lapsed customer and a review invitation are only sent after their day, so the form's "14 days
+   * before" becomes "7 days after" or "2 days after" (the approved default for reviews).
+   */
   function chooseTrigger(next: AutomationTriggerType) {
     setType(next);
 
     if (next === 'customer_lapsed') {
       setTiming((current) => ({ ...current, mode: 'days', days: automationsPage.create.lapsedDefaultDays }));
-    } else if (type === 'customer_lapsed') {
+    } else if (next === 'visit_completed') {
+      setTiming((current) => ({ ...current, mode: 'days', days: automationsPage.create.reviewDefaultDays }));
+    } else if (type === 'customer_lapsed' || type === 'visit_completed') {
       setTiming((current) => ({ ...current, days: initialTiming.days }));
     }
   }
@@ -68,6 +74,7 @@ export function CreateAutomationForm({ branch }: { branch?: { id: string; name: 
           </div>
 
           {type === 'customer_lapsed' && <LapsedConsentNote />}
+          {type === 'visit_completed' && <ReviewConsentNote />}
           <TimingFields trigger={type} value={timing} errors={errors} onChange={setTiming} />
           <ConditionFields trigger={type} value={condition} errors={errors} onChange={setCondition} />
 

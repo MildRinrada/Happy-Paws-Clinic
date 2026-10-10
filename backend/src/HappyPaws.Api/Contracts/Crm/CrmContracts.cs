@@ -109,10 +109,15 @@ public sealed record AdjustPointsRequest(int? Points = null, string? Reason = nu
 /// <c>PUT /clinic/settings/loyalty</c> (§ 25):
 /// <code>{ "satang_per_point": 10000, "point_value_satang": 100, "silver_min_points": 200,
 ///   "gold_min_points": 1000, "points_expire_after_months": 12 }</code>
+/// The <c>referral_*</c> values (§ 39) are optional; one not sent keeps its current value.
 /// </summary>
 public sealed record ReplaceLoyaltySettingsRequest(
     long? SatangPerPoint = null,
     long? PointValueSatang = null,
     int? SilverMinPoints = null,
     int? GoldMinPoints = null,
-    int? PointsExpireAfterMonths = null);
+    int? PointsExpireAfterMonths = null,
+    bool? ReferralEnabled = null,
+    int? ReferralReferrerPoints = null,
+    int? ReferralFriendPoints = null,
+    int? ReferralMonthlyCap = null);

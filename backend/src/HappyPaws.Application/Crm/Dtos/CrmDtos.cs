@@ -186,7 +186,8 @@ public sealed record NextExpiryDto(int Points, DateTimeOffset ExpiresAt);
 
 /// <summary>
 /// <c>GET</c> and <c>PUT /clinic/settings/loyalty</c> (§ 25). <c>version</c> goes back as
-/// <c>If-Match</c>; a clinic that never saved its own reads the defaults at version 0.
+/// <c>If-Match</c>; a clinic that never saved its own reads the defaults at version 0. The four
+/// <c>referral_*</c> values are refer a friend (<c>docs/contract-extensions.md § 39</c>).
 /// </summary>
 public sealed record LoyaltySettingsDto(
     long SatangPerPoint,
@@ -194,6 +195,10 @@ public sealed record LoyaltySettingsDto(
     int SilverMinPoints,
     int GoldMinPoints,
     int? PointsExpireAfterMonths,
+    bool ReferralEnabled,
+    int ReferralReferrerPoints,
+    int ReferralFriendPoints,
+    int ReferralMonthlyCap,
     uint Version,
     DateTimeOffset? UpdatedAt)
 {
@@ -204,6 +209,10 @@ public sealed record LoyaltySettingsDto(
             settings.SilverMinPoints,
             settings.GoldMinPoints,
             settings.PointsExpireAfterMonths,
+            settings.ReferralEnabled,
+            settings.ReferralReferrerPoints,
+            settings.ReferralFriendPoints,
+            settings.ReferralMonthlyCap,
             settings.Version,
             settings.UpdatedAt);
 }

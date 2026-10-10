@@ -53,6 +53,11 @@ const programme = z.object({
     silver_min_points: whole.min(1),
     gold_min_points: whole.min(2),
     points_expire_after_months: whole.min(1).max(120).nullable(),
+    // Refer a friend (docs/contract-extensions.md § 39). Optional: one not sent keeps its value.
+    referral_enabled: z.boolean().optional(),
+    referral_referrer_points: whole.min(0).max(10_000).optional(),
+    referral_friend_points: whole.min(0).max(10_000).optional(),
+    referral_monthly_cap: whole.min(1).max(100).optional(),
   }),
 });
 

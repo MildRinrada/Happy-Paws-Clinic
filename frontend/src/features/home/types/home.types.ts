@@ -48,15 +48,6 @@ export interface CarePromise {
   detail: string;
 }
 
-export interface Testimonial {
-  id: string;
-  /** One entry per line as it should break on a wide screen. The quote marks are added for you. */
-  quote: string[];
-  author: string;
-  /** Whose owner they are, e.g. "เจ้าของไมโล". */
-  relation: string;
-}
-
 export interface ContactRow {
   label: string;
   value: string;

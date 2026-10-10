@@ -14,7 +14,7 @@ export const mainNavLinks: SiteLink[] = [
   { label: 'ทีมของเรา', href: '/team' },
   { label: 'เกี่ยวกับคลินิก', href: '/about' },
   { label: 'บทความ', href: '/articles' },
-  { label: 'รีวิว', href: '/#reviews' },
+  { label: 'รีวิว', href: '/reviews' },
   { label: 'ติดต่อ', href: '/contact' },
 ];
 
@@ -28,3 +28,14 @@ export const signUpLink: SiteLink = { label: 'สมัครใช้งาน�
  * link serves both.
  */
 export const accountLink: SiteLink = { label: 'บัญชีของฉัน', href: '/login' };
+
+/**
+ * The emergency page, at the header's right edge beside sign-in rather than in the menu row, which
+ * is full at desktop width. A phone icon with the word from a small tablet up, the icon alone on a
+ * phone; `ariaLabel` is what a screen reader says for both.
+ */
+export const emergencyLink: SiteLink & { ariaLabel: string } = {
+  label: 'ฉุกเฉิน',
+  href: '/emergency',
+  ariaLabel: 'ฉุกเฉิน สัตว์เลี้ยงป่วยด่วน',
+};

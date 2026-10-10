@@ -8,6 +8,7 @@ export const triggerLabels: Record<AutomationTriggerType, string> = {
   appointment_upcoming: 'ก่อนถึงนัด',
   treatment_plan_session: 'ก่อนถึงรอบแผนการรักษา',
   customer_lapsed: 'ลูกค้าหายไปนานกว่าปกติ (คิดถึงน้อง)',
+  visit_completed: 'หลังมาใช้บริการ (ชวนรีวิว)',
 };
 
 export const triggerChoices: { value: AutomationTriggerType; label: string }[] = [
@@ -15,6 +16,7 @@ export const triggerChoices: { value: AutomationTriggerType; label: string }[] =
   { value: 'appointment_upcoming', label: triggerLabels.appointment_upcoming },
   { value: 'treatment_plan_session', label: triggerLabels.treatment_plan_session },
   { value: 'customer_lapsed', label: triggerLabels.customer_lapsed },
+  { value: 'visit_completed', label: triggerLabels.visit_completed },
 ];
 
 export const automationChannelLabels: Record<AutomationChannel, string> = {
@@ -41,4 +43,5 @@ export const subjectLabels: Record<string, string> = {
   appointment: 'นัดหมาย',
   treatment_plan_session: 'รอบแผนการรักษา',
   customer: 'ลูกค้าที่หายไป',
+  visit: 'การมาใช้บริการ',
 };

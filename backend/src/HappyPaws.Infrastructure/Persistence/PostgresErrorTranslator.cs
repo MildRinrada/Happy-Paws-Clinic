@@ -77,6 +77,12 @@ internal static class PostgresErrorTranslator
             PostgresException { SqlState: UniqueViolation, ConstraintName: PrivacyPolicyVersionConfiguration.LabelIndex } =>
                 PublishPrivacyPolicyHandler.LabelTaken(label: null),
 
+            // Two reviews of one visit at the same moment, from the portal and an invitation link
+            // or from two tabs (docs/contract-extensions.md § 36): the loser hears what it would
+            // have a second later.
+            PostgresException { SqlState: UniqueViolation, ConstraintName: Configurations.Reviews.CustomerReviewConfiguration.VisitIndex } =>
+                HappyPaws.Application.Reviews.ReviewRules.AlreadyReviewed(),
+
             _ => null,
         };
 }

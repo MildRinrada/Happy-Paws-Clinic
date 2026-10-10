@@ -152,6 +152,9 @@ public static class DependencyInjection
         services.AddScoped<IQueueNumberGenerator, QueueNumberGenerator>();
         services.AddScoped<IQueueDisplayRepository, QueueDisplayRepository>();
 
+        // The public walk-in wait estimate's counts (docs/contract-extensions.md § 37).
+        services.AddScoped<HappyPaws.Application.Queueing.WaitEstimate.IWaitEstimateQueries, WaitEstimateQueries>();
+
         // Singleton: the broker *is* the subscriber list, so a scoped one would hand every request
         // its own empty set of listeners and nothing would ever be delivered.
         services.AddSingleton<QueueEventBroker>();
@@ -238,6 +241,18 @@ public static class DependencyInjection
 
         // ---- The clinic's own privacy notice (docs/contract-extensions.md § 35) ----
         services.AddScoped<HappyPaws.Application.PrivacyPolicies.IPrivacyPolicyRepository, PrivacyPolicyRepository>();
+
+        // ---- Customer reviews (docs/contract-extensions.md § 36) ----
+        services.AddScoped<HappyPaws.Application.Reviews.IReviewRepository, Persistence.Repositories.Reviews.ReviewRepository>();
+        services.AddScoped<HappyPaws.Application.Reviews.IReviewInvitationRepository, Persistence.Repositories.Reviews.ReviewInvitationRepository>();
+        services.AddScoped<HappyPaws.Application.Reviews.IReviewVisitReader, Persistence.Repositories.Reviews.ReviewVisitReader>();
+        services.AddOptions<Reviews.ReviewLinkOptions>().Bind(configuration.GetSection(Reviews.ReviewLinkOptions.SectionName));
+        services.AddSingleton<HappyPaws.Application.Reviews.IReviewLinks, Reviews.ReviewLinks>();
+
+        // ---- Refer a friend (docs/contract-extensions.md § 39) ----
+        services.AddScoped<HappyPaws.Application.Referrals.IReferralRepository, Persistence.Repositories.Referrals.ReferralRepository>();
+        services.AddOptions<Referrals.ReferralLinkOptions>().Bind(configuration.GetSection(Referrals.ReferralLinkOptions.SectionName));
+        services.AddSingleton<HappyPaws.Application.Referrals.IReferralLinks, Referrals.ReferralLinks>();
 
         // ---- Operational statistics and business dashboard ----
         // Read models over hand-written SQL; they never load an aggregate.

@@ -137,6 +137,16 @@ internal sealed class ClinicApiFactory(
                 // The same for trading a waiting-room screen's setup code (§ 30), tested in the
                 // limits fixture below.
                 ["RateLimits:DisplayClaimsPerIpPerHour"] = "1000",
+
+                // And for the public walk-in wait estimate (§ 37), tested in its own fixture.
+                ["RateLimits:WaitEstimatePerIpPerMinute"] = "1000",
+
+                // And for reviews written through an invitation link (§ 36), tested in the limits
+                // fixture.
+                ["RateLimits:ReviewSubmitsPerIpPerHour"] = "1000",
+
+                // And for the public referral code check (§ 39), tested in its own fixture.
+                ["RateLimits:ReferralChecksPerIpPerMinute"] = "1000",
             }));
 
         if (settings is not null)

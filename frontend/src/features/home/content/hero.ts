@@ -13,8 +13,12 @@ export const hero = {
   secondaryAction: { label: 'ดูบริการและราคา', href: '/services' } satisfies HeroAction,
 
   socialProof: {
+    // The clinic's own claim: replace both with the clinic's real figure before launch.
     badge: '9k+',
-    lines: ['น้องหมาน้องแมวกว่า 9,400 ตัว ได้รับการดูแลจากเรา', 'คะแนนรีวิว 4.9 จาก 1,240 ครอบครัว'],
+    petsLine: 'น้องหมาน้องแมวกว่า 9,400 ตัว ได้รับการดูแลจากเรา',
+    // Filled from the published reviews (`GET /reviews`), never typed in; left out while there are none.
+    reviewsLine: (average: number, count: number) =>
+      `คะแนนรีวิว ${average.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} จาก ${count.toLocaleString('th-TH')} รีวิว`,
   },
 };
 

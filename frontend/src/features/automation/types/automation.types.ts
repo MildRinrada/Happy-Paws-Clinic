@@ -1,7 +1,15 @@
 /** Shapes from `/staff/automations` and `/staff/reminders/upcoming`. Field names are the API's snake_case ones. */
 
-/** `customer_lapsed` is docs/contract-extensions.md § 33: a customer later back than their own usual gap. */
-export type AutomationTriggerType = 'vaccine_due' | 'appointment_upcoming' | 'treatment_plan_session' | 'customer_lapsed';
+/**
+ * `customer_lapsed` is docs/contract-extensions.md § 33: a customer later back than their own usual gap.
+ * `visit_completed` is § 36: a finished visit, for the review invitation.
+ */
+export type AutomationTriggerType =
+  | 'vaccine_due'
+  | 'appointment_upcoming'
+  | 'treatment_plan_session'
+  | 'customer_lapsed'
+  | 'visit_completed';
 
 export type AutomationChannel = 'auto' | 'line' | 'sms' | 'email';
 

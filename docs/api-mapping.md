@@ -465,7 +465,7 @@ scope ที่เลือกและเหตุผลอยู่ใน [ass
 
 ## ส่วนขยาย contract
 
-endpoint 96 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) สองเส้นของการจองโดยยังไม่สมัคร (§ 27) สี่เส้นของการคาดการณ์ด้วยสถิติ (§ 33) หกเส้นของผู้ช่วย AI สำหรับพนักงาน (§ 34) และหกเส้นของประกาศความเป็นส่วนตัวที่คลินิกเขียนเอง (§ 35) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint 109 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) สองเส้นของการจองโดยยังไม่สมัคร (§ 27) สี่เส้นของการคาดการณ์ด้วยสถิติ (§ 33) หกเส้นของผู้ช่วย AI สำหรับพนักงาน (§ 34) หกเส้นของประกาศความเป็นส่วนตัวที่คลินิกเขียนเอง (§ 35) เก้าเส้นของรีวิว (§ 36) หนึ่งเส้นของเวลารอ walk-in (§ 37) และสามเส้นของการชวนเพื่อน (§ 39) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
 
 | Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
 |---|---|---|---|---|---|---|
@@ -565,6 +565,19 @@ endpoint 96 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | POST | `/staff/privacy-policy/versions` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/CreatePrivacyPolicyDraftHandler` | § 35 | ✅ |
 | PATCH | `/staff/privacy-policy/versions/{id}` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/UpdatePrivacyPolicyDraftHandler` | § 35 | ✅ |
 | POST | `/staff/privacy-policy/versions/{id}/publish` | `settings:danger` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/PublishPrivacyPolicyHandler` | § 35 | ✅ |
+| GET | `/portal/reviews/pending` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/ListPendingReviewsHandler` | § 36 | ✅ |
+| POST | `/portal/reviews` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/SubmitPortalReviewHandler` | § 36 | ✅ |
+| GET | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว | `Public/ReviewInvitationsController` | `Reviews/Invitations/GetReviewInvitationHandler` | § 36 | ✅ |
+| POST | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว จำกัดต่อ IP | `Public/ReviewInvitationsController` | `Reviews/Invitations/SubmitInvitationReviewHandler` | § 36 | ✅ |
+| GET | `/staff/reviews?status=&cursor=` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ListStaffReviewsHandler` | § 36 | ✅ |
+| POST | `/staff/reviews/{id}/publish` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/PublishReviewHandler` | § 36 | ✅ |
+| POST | `/staff/reviews/{id}/reject` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/RejectReviewHandler` | § 36 | ✅ |
+| POST | `/staff/reviews/{id}/reply` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ReplyToReviewHandler` | § 36 | ✅ |
+| GET | `/reviews?cursor=&limit=` | สาธารณะ | `Public/ReviewsController` | `Reviews/Public/ListPublicReviewsHandler` | § 36 | ✅ |
+| GET | `/queue/wait-estimate?branch=` | สาธารณะ จำกัดต่อ IP | `Public/WaitEstimateController` | `Queueing/WaitEstimate/GetWaitEstimateHandler` | § 37 | ✅ |
+| GET | `/portal/referral` | `portal` | `Portal/PortalReferralController` | `Referrals/Portal/GetMyReferralHandler` | § 39 | ✅ |
+| GET | `/referrals/{code}` | สาธารณะ จำกัดต่อ IP | `Public/ReferralsController` | `Referrals/Public/CheckReferralCodeHandler` | § 39 | ✅ |
+| GET | `/staff/referrals?customer=&cursor=` | `crm:read` | `Staff/StaffReferralsController` | `Referrals/Staff/ListReferralsHandler` | § 39 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -601,6 +614,10 @@ endpoint 96 เส้นที่ **ไม่อยู่** ใน `API Referenc
 
 § 35 ไม่เพิ่ม scope ใช้ `settings:read`, `settings:write` และ `settings:danger` ของ contract การเผยแพร่เป็นของเจ้าของคลินิกคนเดียว เพราะ `clinic_admin` ไม่มี `settings:danger` และต้องผ่าน 2FA เส้นเดิมของ contract ไม่ถูกแก้ แต่พฤติกรรมของเส้นความยินยอมเปลี่ยน คือ `PUT /portal/consents`, `POST /staff/customers/{id}/consents` และ `POST /booking/guest/verify` ยังรับช่อง `policy_version` แต่ไม่ใช้ค่านั้น ระบบใส่เลขฉบับของประกาศที่เผยแพร่อยู่ตอนบันทึกเอง และใส่ว่างเมื่อยังไม่มีฉบับที่เผยแพร่ `GET /privacy-policy` ตอบ `200` เสมอ ถ้ายังไม่มีฉบับที่เผยแพร่ได้ `published: false` สองเส้นสาธารณะให้แคชได้ 60 วินาที รหัส error ใหม่หนึ่งตัวคือ `409 privacy_policy_label_taken` audit ใหม่ `privacy_policy.draft_created`, `privacy_policy.draft_updated`, `privacy_policy.published` migration `ClinicPrivacyPolicy` รายละเอียดอยู่ใน [ประกาศความเป็นส่วนตัวของคลินิก](features/privacy-policy.md)
 
+§ 36 ไม่เพิ่ม scope ฝั่งพนักงานใช้ `content:manage` ของบทความ เพิ่มค่า `visit_completed` ให้ `trigger.type` ของ `POST` และ `PATCH /staff/automations` (`offset_days` -1 ถึง -30 เท่านั้น นับเป็นชั่วโมงหรือใส่เงื่อนไขบริการไม่ได้) และค่า `visit` ให้ `subject.type` ของ `POST /staff/automations/{id}/simulate` และ `GET /staff/reminders/upcoming` ข้อความใช้เทมเพลตใหม่ `review.invitation` ซึ่งผ่านความยินยอมด้านการตลาด และมีลิงก์รีวิวในช่อง `review_url` ที่สร้างตอนส่งจริงเท่านั้น บันทึกส่งแล้วที่ไม่ได้ส่งเพราะการมานั้นได้คำเชิญแล้วมีรหัส `already_invited` รายการกติกามีกติกาเริ่มต้นเพิ่มหนึ่งข้อ (`atm_starter_review_2d`) แบบปิด รหัส error ใหม่สองตัวคือ `409 review_already_submitted` และ `409 review_invitation_expired` การไม่เผยแพร่ที่ไม่มีเหตุผลจากรายการได้ `422` ที่ช่อง `reason` และสถานะที่เปลี่ยนไม่ได้ได้ `409 state_conflict` `POST /reviews/invitations/{token}` มี rate limit ต่อ IP ของตัวเอง (`review-submit`) `GET /reviews` ให้แคชได้ 60 วินาที audit ใหม่ `review.published`, `review.rejected`, `review.replied` migration `CustomerReviews` รายละเอียดอยู่ใน [รีวิวจากลูกค้า](features/reviews.md)
+
+§ 39 ไม่เพิ่ม scope เพิ่มช่องที่ไม่บังคับ `referral_code` ในคำขอ `POST /booking/guest/verify` และ `POST /auth/register` ซึ่งเป็นเส้นของ contract รหัสที่ใช้ไม่ได้ถูกข้ามโดยไม่มี error และคำตอบของทั้งสองเส้นไม่เปลี่ยน `GET` และ `PUT /clinic/settings/loyalty` มีสี่ช่องใหม่ `referral_enabled`, `referral_referrer_points`, `referral_friend_points`, `referral_monthly_cap` ใน `PUT` ไม่บังคับ ช่องที่ไม่ส่งคงค่าเดิม แถวประวัติของ `GET /staff/loyalty/{customer_id}` มีชนิดใหม่ `referral` `GET /referrals/{code}` ตอบ `200` พร้อม `valid` เท่านั้นเสมอ มี rate limit ต่อ IP ของตัวเอง (`referral-check`) audit ใหม่ `referral.rewarded` migration `ReferAFriend` รายละเอียดอยู่ใน [ชวนเพื่อน](features/referrals.md)
+
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
 ส่วนขยายด้านบิลทั้งสามใช้ `invoice:write` เพราะรายการ scope ของ contract ปิดตาย `PUT /staff/roles/{id}/permissions` ถูกกำหนดให้ปฏิเสธ scope ที่ไม่รู้จัก ถ้าคิด `invoice:read` หรือ `invoice:void` ขึ้นมาเอง endpoint นั้นจะไม่มี role ใดใน reference เรียกได้เลย นี่คือทางที่ประดิษฐ์น้อยที่สุด ไม่ใช่ทางที่ดีที่สุด
@@ -632,7 +649,7 @@ API reference มี **164 endpoint** ยืนยันโดยนับป้
 
 **ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
 
-96 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28 และ § 31) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
+109 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28, § 31 และ § 39) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
 
 ## โค้ด
 

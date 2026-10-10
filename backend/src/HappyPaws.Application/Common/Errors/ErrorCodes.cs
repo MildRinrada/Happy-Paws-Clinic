@@ -121,4 +121,13 @@ public static class ErrorCodes
     /// <c>label</c> (<c>docs/contract-extensions.md § 35</c>).
     /// </summary>
     public const string PrivacyPolicyLabelTaken = "privacy_policy_label_taken";
+
+    /// <summary>
+    /// 409: the visit already has a review, written in the portal or through its invitation link,
+    /// which is also what a used link answers. One review per visit (<c>docs/contract-extensions.md § 36</c>).
+    /// </summary>
+    public const string ReviewAlreadySubmitted = "review_already_submitted";
+
+    /// <summary>409: the review invitation link is past its 30 days (<c>docs/contract-extensions.md § 36</c>).</summary>
+    public const string ReviewInvitationExpired = "review_invitation_expired";
 }

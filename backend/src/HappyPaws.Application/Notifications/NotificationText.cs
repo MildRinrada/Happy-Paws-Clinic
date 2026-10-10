@@ -54,6 +54,13 @@ public static class NotificationText
                 $"{Value("service_name")} สำหรับ {Value("pet_name")} ว่างวันที่ {Value("date")} เวลา {Value("time")} จองได้เลย ใครจองก่อนได้ก่อน",
                 Value("waiting_list_id")),
 
+            // The inbox copy never carries the review link: for a customer without a portal account
+            // it holds a one-time token, and the inbox is a stored table (docs/contract-extensions.md § 36).
+            NotificationTemplates.ReviewInvitation => new(
+                $"ขอบคุณที่พา {Value("pet_name")} มาที่คลินิก",
+                $"ขอบคุณที่พา {Value("pet_name")} มาใช้บริการ ให้คะแนนและเล่าให้คลินิกฟังได้ที่หน้ารีวิวในระบบออนไลน์",
+                null),
+
             // The newer templates are worded once, in the catalogue, for every channel and the inbox.
             _ when NotificationTemplateCatalogue.Find(request.TemplateKey) is { } template => new(
                 TemplateText.Fill(template.Title, request.Data),

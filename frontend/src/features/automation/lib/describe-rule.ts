@@ -9,6 +9,7 @@ export function describeTiming(rule: Pick<Automation, 'trigger'>): string {
   if (hours !== undefined) return text.hoursBefore(hours);
   if (days === undefined || days === 0) return text.sameDay(time);
   if (rule.trigger.type === 'customer_lapsed') return text.daysAfterDueBack(Math.abs(days), time);
+  if (rule.trigger.type === 'visit_completed') return text.daysAfterVisit(Math.abs(days), time);
 
   return days > 0 ? text.daysBefore(days, time) : text.daysAfter(-days, time);
 }

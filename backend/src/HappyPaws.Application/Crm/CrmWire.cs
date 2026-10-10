@@ -30,6 +30,7 @@ public static class CrmWire
         LoyaltyEntryKind.Redeem => "redeem",
         LoyaltyEntryKind.Restore => "restore",
         LoyaltyEntryKind.Adjust => "adjust",
+        LoyaltyEntryKind.Referral => "referral",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 

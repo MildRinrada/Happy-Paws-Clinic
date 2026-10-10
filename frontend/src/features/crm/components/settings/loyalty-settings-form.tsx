@@ -9,7 +9,9 @@ import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceLoyaltySettingsAction } from '../../actions/crm-manage-actions';
 import { loyaltySettingsText } from '../../content/loyalty-settings';
 import { draftFromSettings, toSettingsInput, type LoyaltySettingsDraft, type LoyaltySettingsField } from '../../lib/loyalty-settings-draft';
+import { referralDraftFrom, toReferralInput, type ReferralDraft, type ReferralNumberField } from '../../lib/referral-settings-draft';
 import type { LoyaltySettings } from '../../types/crm.types';
+import { ReferralSettingsFields } from './referral-settings-fields';
 
 const FIELDS: {
   field: LoyaltySettingsField;
@@ -35,11 +37,18 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
   const [draft, setDraft] = useState<LoyaltySettingsDraft>(() => draftFromSettings(settings));
   const [version, setVersion] = useState(settings.version);
   const [bad, setBad] = useState<LoyaltySettingsField[]>([]);
+  const [referral, setReferral] = useState<ReferralDraft>(() => referralDraftFrom(settings));
+  const [badReferral, setBadReferral] = useState<ReferralNumberField[]>([]);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
 
   function set(field: LoyaltySettingsField, value: string) {
     touch();
     setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function setReferralPart(patch: Partial<ReferralDraft>) {
+    touch();
+    setReferral((current) => ({ ...current, ...patch }));
   }
 
   function badText(field: LoyaltySettingsField, money?: boolean) {
@@ -51,14 +60,17 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const { input, bad: wrong } = toSettingsInput(draft);
+    const { input: referralInput, bad: wrongReferral } = toReferralInput(referral);
     setBad(wrong);
-    if (!input) return;
+    setBadReferral(wrongReferral);
+    if (!input || !referralInput) return;
 
     submit(
-      () => replaceLoyaltySettingsAction({ version, values: input }),
+      () => replaceLoyaltySettingsAction({ version, values: { ...input, ...referralInput } }),
       (stored) => {
         setVersion(stored.version);
         setDraft(draftFromSettings(stored));
+        setReferral(referralDraftFrom(stored));
       },
     );
   }
@@ -85,6 +97,8 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
           </Field>
         ))}
       </div>
+
+      <ReferralSettingsFields draft={referral} bad={badReferral} errors={errors} onChange={setReferralPart} />
 
       {saved && (
         <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-900">

@@ -11,11 +11,13 @@ using HappyPaws.Application.Identity.Register;
 using HappyPaws.Application.Identity.RequestOtp;
 using HappyPaws.Application.Identity.Sessions;
 using HappyPaws.Application.Patients;
+using HappyPaws.Application.Referrals;
 using HappyPaws.Domain.Appointments;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Common;
 using HappyPaws.Domain.Customers;
 using HappyPaws.Domain.Identity;
+using HappyPaws.Domain.Referrals;
 
 namespace HappyPaws.Application.Appointments.GuestBooking;
 
@@ -31,6 +33,10 @@ namespace HappyPaws.Application.Appointments.GuestBooking;
 /// <c>PolicyVersion</c> is still accepted (at most 32 characters) and ignored: the consents are
 /// stamped with the privacy notice current on the server (<c>docs/contract-extensions.md § 35</c>).
 /// </para>
+/// <para>
+/// <c>ReferralCode</c> is optional (<c>docs/contract-extensions.md § 39</c>): the code from a friend's
+/// link. It never changes the answer, and a code that does not count is ignored rather than refused.
+/// </para>
 /// </summary>
 public sealed record VerifyGuestBookingCommand(
     string HoldId,
@@ -41,7 +47,8 @@ public sealed record VerifyGuestBookingCommand(
     string? PolicyVersion = null,
     bool MarketingConsent = false,
     string? UserAgent = null,
-    string? IpAddress = null);
+    string? IpAddress = null,
+    string? ReferralCode = null);
 
 public sealed class VerifyGuestBookingValidator : AbstractValidator<VerifyGuestBookingCommand>
 {
@@ -57,6 +64,7 @@ public sealed class VerifyGuestBookingValidator : AbstractValidator<VerifyGuestB
         RuleFor(command => command.DisplayName).NotEmpty().MaximumLength(UserAccount.DisplayNameMaxLength);
         RuleFor(command => command.AcceptPrivacyNotice).Equal(true).WithMessage("กรุณายอมรับประกาศความเป็นส่วนตัวก่อนจอง");
         RuleFor(command => command.PolicyVersion).MaximumLength(32);
+        RuleFor(command => command.ReferralCode).MaximumLength(32);
     }
 }
 
@@ -112,6 +120,7 @@ public sealed class VerifyGuestBookingHandler(
     SessionIssuer sessionIssuer,
     RecordConsentHandler consents,
     IPetRepository pets,
+    ReferralRecorder referrals,
     IAuditTrail audit,
     IUnitOfWork unitOfWork,
     RequestValidator validator,
@@ -143,12 +152,22 @@ public sealed class VerifyGuestBookingHandler(
 
         await unitOfWork.ExecuteInTransactionAsync(async token =>
         {
-            var (account, customerId, signedUp) = await CustomerForAsync(phone, command.DisplayName, token);
+            var (account, customerId, signedUp, newRecord) = await CustomerForAsync(phone, command.DisplayName, token);
 
             var hold = await holds.FindByIdAsync(command.HoldId, token)
                 ?? throw new NotFoundException("hold", command.HoldId);
 
             hold.ClaimForCustomer(phone, customerId, clock.UtcNow);
+
+            // docs/contract-extensions.md § 39. Only a record this request created can be a new
+            // customer; the answer below is the same whatever the recorder decided.
+            await referrals.RecordAsync(
+                command.ReferralCode,
+                new ReferralParty(customerId, phone, account.Email),
+                friendIsNew: newRecord,
+                ReferralChannels.GuestBooking,
+                clock.UtcNow,
+                token);
 
             // Saved before the session is issued: the issuer reads the customer link back to put
             // the customer id on the token.
@@ -187,9 +206,10 @@ public sealed class VerifyGuestBookingHandler(
 
     /// <summary>
     /// The login and customer record a proved number belongs to, opening them when there are none.
-    /// <c>SignedUp</c> is true when this request gave the login its customer record.
+    /// <c>SignedUp</c> is true when this request gave the login its customer record, and
+    /// <c>NewRecord</c> when that record was created now rather than found at the counter.
     /// </summary>
-    private async Task<(UserAccount Account, string CustomerId, bool SignedUp)> CustomerForAsync(
+    private async Task<(UserAccount Account, string CustomerId, bool SignedUp, bool NewRecord)> CustomerForAsync(
         string phone,
         string displayName,
         CancellationToken cancellationToken)
@@ -214,7 +234,7 @@ public sealed class VerifyGuestBookingHandler(
 
             if (await identity.FindCustomerIdAsync(account.Id, cancellationToken) is { } customerId)
             {
-                return (account, customerId, false);
+                return (account, customerId, false, false);
             }
         }
         else
@@ -236,7 +256,7 @@ public sealed class VerifyGuestBookingHandler(
                 ["via"] = "guest_booking",
             }));
 
-        return (account, customer.Id, true);
+        return (account, customer.Id, true, !linkedExisting);
     }
 
     private Task RecordConsentAsync(string customerId, VerifyGuestBookingCommand command, CancellationToken cancellationToken)

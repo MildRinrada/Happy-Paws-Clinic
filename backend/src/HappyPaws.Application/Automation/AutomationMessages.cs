@@ -22,6 +22,7 @@ public static class AutomationMessages
         AutomationTrigger.VaccineDue => NotificationTemplates.VaccineDue,
         AutomationTrigger.AppointmentUpcoming => NotificationTemplates.AppointmentReminder,
         AutomationTrigger.CustomerLapsed => NotificationTemplates.CustomerLapsed,
+        AutomationTrigger.VisitCompleted => NotificationTemplates.ReviewInvitation,
         _ => NotificationTemplates.TreatmentPlanSession,
     };
 

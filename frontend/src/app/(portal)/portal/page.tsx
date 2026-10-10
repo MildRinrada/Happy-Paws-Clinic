@@ -9,6 +9,7 @@ import { VisitEmpty } from '@/features/portal/components/visit-card/visit-empty'
 import { portalHome } from '@/features/portal/content/portal-home';
 import { loadPortalHome } from '@/features/portal/lib/load-portal-home';
 import { loadVisitCards } from '@/features/portal/lib/load-visit-card';
+import { PendingReviewsCard } from '@/features/reviews/components/portal/pending-reviews-card';
 
 export const metadata: Metadata = { title: `${portalHome.metaTitle} · Happy Paws Clinic` };
 
@@ -40,6 +41,7 @@ export default async function PortalHomePage() {
 
         <div className="space-y-6">
           <VaccinesDue items={home.vaccinations_due} />
+          <PendingReviewsCard />
           <PetsOverview pets={home.pets} />
         </div>
       </div>

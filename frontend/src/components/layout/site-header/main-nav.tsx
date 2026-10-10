@@ -5,10 +5,10 @@ import { mainNavLinks } from '@/config/site-navigation';
 export function MainNav() {
   return (
     <nav aria-label="เมนูหลัก" className="hidden xl:block">
-      <ul className="flex items-center gap-x-9">
+      <ul className="flex items-center gap-x-8">
         {mainNavLinks.map((link) => (
           <li key={link.label}>
-            <Link href={link.href} className="text-sm text-ink-700 hover:text-site-teal">
+            <Link href={link.href} className="whitespace-nowrap text-sm text-ink-700 hover:text-site-teal">
               {link.label}
             </Link>
           </li>

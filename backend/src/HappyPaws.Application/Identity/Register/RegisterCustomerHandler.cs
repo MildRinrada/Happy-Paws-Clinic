@@ -6,14 +6,18 @@ using HappyPaws.Application.Common.Validation;
 using HappyPaws.Application.Identity.Dtos;
 using HappyPaws.Application.Identity.RequestOtp;
 using HappyPaws.Application.Identity.Sessions;
+using HappyPaws.Application.Referrals;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Identity;
+using HappyPaws.Domain.Referrals;
 
 namespace HappyPaws.Application.Identity.Register;
 
 /// <summary>
 /// <c>POST /auth/register</c> — "สมัครด้วยเบอร์โทร + OTP". The password is optional: without one
-/// the customer signs in with a code each time.
+/// the customer signs in with a code each time. <c>ReferralCode</c> is an optional field this
+/// project added (<c>docs/contract-extensions.md § 39</c>): a friend's code, which never changes the
+/// answer and is ignored when it does not count.
 /// </summary>
 public sealed record RegisterCustomerCommand(
     string Phone,
@@ -22,7 +26,8 @@ public sealed record RegisterCustomerCommand(
     string? Password = null,
     string? Email = null,
     string? UserAgent = null,
-    string? IpAddress = null);
+    string? IpAddress = null,
+    string? ReferralCode = null);
 
 public sealed class RegisterCustomerValidator : AbstractValidator<RegisterCustomerCommand>
 {
@@ -36,6 +41,7 @@ public sealed class RegisterCustomerValidator : AbstractValidator<RegisterCustom
         RuleFor(command => command.DisplayName).NotEmpty().MaximumLength(UserAccount.DisplayNameMaxLength);
         RuleFor(command => command.Password).MinimumLength(8).MaximumLength(256).When(command => command.Password is not null);
         RuleFor(command => command.Email).EmailAddress().MaximumLength(UserAccount.EmailMaxLength).When(command => command.Email is not null);
+        RuleFor(command => command.ReferralCode).MaximumLength(32);
     }
 }
 
@@ -58,9 +64,11 @@ public sealed class RegisterCustomerHandler(
     OtpVerifier otp,
     IPasswordHasher passwordHasher,
     SessionIssuer sessionIssuer,
+    ReferralRecorder referrals,
     IAuditTrail audit,
     IUnitOfWork unitOfWork,
-    RequestValidator validator)
+    RequestValidator validator,
+    IClock clock)
 {
     public async Task<AuthTokens> HandleAsync(RegisterCustomerCommand command, CancellationToken cancellationToken = default)
     {
@@ -110,6 +118,15 @@ public sealed class RegisterCustomerHandler(
                     ["customer_id"] = customer.Id,
                     ["linked_existing_record"] = linkedExisting,
                 }));
+
+            // docs/contract-extensions.md § 39: only a record created now is a new customer.
+            await referrals.RecordAsync(
+                command.ReferralCode,
+                new ReferralParty(customer.Id, phone, account.Email),
+                friendIsNew: !linkedExisting,
+                ReferralChannels.Register,
+                clock.UtcNow,
+                token);
 
             // Saved before the session is issued: the issuer reads the customer link back to put
             // the customer id on the token.

@@ -22,8 +22,9 @@
 | `DELETE /staff/queue/displays/{id}` | `queue:write` | ยกเลิกจอ **ส่วนขยาย** |
 | `POST /queue/displays/claim` | ไม่ต้องเข้าสู่ระบบ | ทีวีแลกรหัสตั้งจอเป็น token **ส่วนขยาย** |
 | `GET /queue/display-board?branch=` | token ของจอ | กระดานที่ย่อแล้วสำหรับจอ **ส่วนขยาย** |
+| `GET /queue/wait-estimate?branch=` | ไม่ต้องเข้าสู่ระบบ | จำนวนคิวที่รอและเวลารอโดยประมาณของ walk-in ตอบแค่จำนวน **ส่วนขยาย** |
 
-เส้นและช่องที่ติด **ส่วนขยาย** ไม่อยู่ใน contract เหตุผลอยู่ใน [endpoint ส่วนขยาย](../contract-extensions.md) ข้อ 1, 2, 30 และ 31 ทุก path อยู่ใต้ `/v1`
+เส้นและช่องที่ติด **ส่วนขยาย** ไม่อยู่ใน contract เหตุผลอยู่ใน [endpoint ส่วนขยาย](../contract-extensions.md) ข้อ 1, 2, 30, 31 และ 37 ทุก path อยู่ใต้ `/v1`
 
 ## สถานะ 6 แบบ
 
@@ -276,6 +277,29 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 
 หน้าคิวของลูกค้าแบบแยกหน้า (ตอนนี้ลูกค้าเห็นคิวบนการ์ดในหน้าแรกของ portal) และจอแยกตามห้อง (`room=` ของ `GET /staff/queue` รองรับแล้ว แต่จอยังไม่ใช้)
 
+## เวลารอ walk-in (ส่วนขยาย)
+
+`GET /queue/wait-estimate?branch=` บอกคนที่จะมาโดยไม่ได้นัดว่าตอนนี้น่าจะรอนานเท่าไร เปิดให้ทุกคนอ่านโดยไม่ต้องเข้าสู่ระบบ และตอบแค่จำนวน ไม่มีเลขคิว ชื่อสัตว์ ชื่อเจ้าของ หรือชื่อหมอ
+
+```http
+GET /v1/queue/wait-estimate?branch=brn_...
+
+200 { "branch_id": "brn_...", "open_now": true, "waiting": 3, "vets_on_duty": 2,
+      "estimate_minutes_low": 30, "estimate_minutes_high": 40, "updated_at": "..." }
+```
+
+| เรื่อง | กติกา |
+|---|---|
+| คิวที่รอ | บัตรของวันนี้ที่ยังไม่ถูกเรียก (`waiting` และ `skipped`) |
+| เวลาตรวจปกติ | ค่ากลางของเวลาตั้งแต่เข้าห้องถึงตรวจเสร็จของสาขานั้นใน 28 วัน ไม่นับเคสที่ยาวตั้งแต่ 4 ชั่วโมง มีไม่ถึง 5 ครั้งใช้ 20 นาที |
+| หมอที่เข้าเวร | หมอที่มีเวรไม่ถูกยกเลิกครอบเวลาตอนนี้ เปิดอยู่แต่ไม่มีใครในตารางเวรคิดเป็น 1 คน |
+| เวลารอ | คิวที่รอ คูณเวลาตรวจปกติ หารด้วยหมอ ปัดลงเป็นหลักสิบ แล้วตอบเป็นช่วง 10 นาที เช่น 30 ถึง 40 ไม่มีคิวรอตอบ 0 ถึง 10 |
+| ปิดอยู่ | วันหยุดพิเศษของสาขาหรือทุกสาขา หรือนอกเวลาทำการตามเวลาคลินิก ตอบ `open_now: false` ไม่มีช่วงเวลารอ และมี `opens_at` เมื่อรู้เวลาเปิดครั้งถัดไป ถ้าคลินิกยังไม่ตั้งเวลาทำการ ถือว่าเปิดเมื่อมีหมอเข้าเวร |
+
+คลินิกที่มีหลายสาขาต้องส่ง `branch` ไม่อย่างนั้นตอบ `422` ที่ช่อง `branch` สาขาที่ไม่มีหรือปิดถาวรแล้วก็ได้ `422` แบบเดียวกัน คำตอบของแต่ละสาขาเก็บไว้ในหน่วยความจำ 30 วินาที พร้อม `Cache-Control: public, max-age=30` และแต่ละที่อยู่ IP อ่านได้ 60 ครั้งต่อนาที (`RateLimits:WaitEstimatePerIpPerMinute`) เกินแล้วตอบ `429`
+
+หน้าเว็บแสดงกล่อง "เวลารอ walk-in ตอนนี้" บรรทัดละสาขา เช่น "ตอนนี้รอประมาณ 20 ถึง 30 นาที (3 คิว)" หรือ "ตอนนี้ปิดอยู่" บนหน้าแรก หน้าติดต่อ และหน้าฉุกเฉิน อ่านบนเซิร์ฟเวอร์และใช้ร่วมกันทุกคน 30 วินาที ถ้าอ่าน API ไม่ได้จะไม่แสดงเลย เหตุผลของแต่ละกติกาอยู่ใน [endpoint ส่วนขยาย](../contract-extensions.md) ข้อ 37
+
 ## ข้อจำกัด
 
 - **แจ้งเตือนตอนเรียกคิวส่งจริงเมื่อตั้งค่าช่องทางแล้ว** ข้อความ `queue.called` ผ่านประตูความยินยอม แล้วออกทาง LINE, SMS หรืออีเมลตามลำดับที่ระบบเลือก ทุกครั้งที่ลองส่งอยู่ในประวัติการส่ง ถ้ายังไม่ตั้งช่องทางใดเลย (เครื่องนักพัฒนา) ข้อความไปจบที่ `LoggingNotificationChannel` และประวัติบันทึก `skipped` `channel_not_configured` ดู [การแจ้งเตือน](notifications.md)
@@ -312,4 +336,5 @@ contract มีแค่ "มาก่อนได้ก่อน" กับก�
 | ข้อความภาษาไทยของหน้าใหม่ | `frontend/src/features/queue/content/` |
 | ส่งต่อ SSE | `frontend/src/app/api/queue/stream/route.ts`, `frontend/src/lib/api/event-stream.ts`, `frontend/src/features/queue/hooks/use-queue-stream.ts` |
 | คำภาษาไทยของสถานะ | `frontend/src/features/queue/lib/ticket-labels.ts` |
+| เวลารอ walk-in | `backend/src/HappyPaws.Application/Queueing/WaitEstimate/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/WaitEstimateQueries.cs`, `backend/src/HappyPaws.Api/Controllers/Public/WaitEstimateController.cs`, `frontend/src/features/wait-estimate/`, `backend/tests/HappyPaws.UnitTests/Application/Queueing/WaitEstimateRulesTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/WaitEstimateTests.cs` |
 | เทสต์ | `backend/tests/HappyPaws.UnitTests/Domain/Queueing/QueueTicketStateMachineTests.cs`, `QueueDisplayTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/` (รวม `QueueDisplayTests.cs`, `DisplayClaimLimitTests.cs`, `QueueTicketDetailTests.cs`) |

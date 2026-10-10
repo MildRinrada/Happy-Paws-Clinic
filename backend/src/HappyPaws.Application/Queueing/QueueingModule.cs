@@ -7,6 +7,7 @@ using HappyPaws.Application.Queueing.IssueWalkInTicket;
 using HappyPaws.Application.Queueing.LeaveQueue;
 using HappyPaws.Application.Queueing.SetTicketPriority;
 using HappyPaws.Application.Queueing.SkipTicket;
+using HappyPaws.Application.Queueing.WaitEstimate;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application.Queueing;
@@ -31,6 +32,11 @@ public static class QueueingModule
         services.AddScoped<RevokeQueueDisplayHandler>();
         services.AddScoped<ClaimQueueDisplayHandler>();
         services.AddScoped<GetDisplayBoardHandler>();
+
+        // The public walk-in wait estimate (docs/contract-extensions.md § 37). The cache is a
+        // singleton because it is the last answer per branch across every request.
+        services.AddSingleton<WaitEstimateCache>();
+        services.AddScoped<GetWaitEstimateHandler>();
 
         services.AddScoped<GetQueueBoardHandler>();
         services.AddScoped<IssueWalkInTicketHandler>();

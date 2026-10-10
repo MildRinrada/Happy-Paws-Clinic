@@ -39,6 +39,7 @@ export const sitePages = {
   about: { name: 'เกี่ยวกับคลินิก', path: '/about' },
   team: { name: 'ทีมของเรา', path: '/team' },
   articles: { name: 'บทความ', path: '/articles' },
+  reviews: { name: 'รีวิวจากลูกค้า', path: '/reviews' },
   contact: { name: 'ติดต่อเรา', path: '/contact' },
   emergency: { name: 'กรณีฉุกเฉิน', path: '/emergency' },
   privacy: { name: 'นโยบายความเป็นส่วนตัว', path: '/privacy' },

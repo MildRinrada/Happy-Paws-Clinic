@@ -11,6 +11,10 @@ export const crmPaths = {
     customerId ? `/crm/customer-packages?customer_id=${encodeURIComponent(customerId)}` : '/crm/customer-packages',
   customer: (customerId: string) => `/customers/${encodeURIComponent(customerId)}`,
 
+  /** Who referred whom (docs/contract-extensions.md § 39), for one customer when given. */
+  referrals: (customerId?: string) =>
+    customerId ? `/crm/referrals?customer=${encodeURIComponent(customerId)}` : '/crm/referrals',
+
   /** The call list of docs/contract-extensions.md § 33, on one reason and, past the first page, a cursor. */
   dueBack: (reason: DueBackReason, cursor?: string) =>
     `/crm/due-back?${new URLSearchParams({ reason, ...(cursor ? { cursor } : {}) }).toString()}`,

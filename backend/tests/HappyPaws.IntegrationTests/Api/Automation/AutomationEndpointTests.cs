@@ -141,10 +141,12 @@ public class AutomationEndpointTests(ApiFixture fixture)
             .Where(item => item.GetProperty("id").GetString()!.StartsWith("atm_starter_", StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(4, rules.Count);
+        // Four from the contract's reminders, and the review invitation (docs/contract-extensions.md § 36).
+        Assert.Equal(5, rules.Count);
         Assert.All(rules, rule => Assert.False(rule.GetProperty("enabled").GetBoolean()));
-        Assert.Contains(rules, rule => rule.GetProperty("trigger").GetProperty("offset_hours").ValueKind == JsonValueKind.Number
-            && rule.GetProperty("trigger").GetProperty("offset_hours").GetInt32() == 24);
+        Assert.Contains(rules, rule => rule.GetProperty("trigger").TryGetProperty("offset_hours", out var hours)
+            && hours.ValueKind == JsonValueKind.Number
+            && hours.GetInt32() == 24);
     }
 
     [Fact]

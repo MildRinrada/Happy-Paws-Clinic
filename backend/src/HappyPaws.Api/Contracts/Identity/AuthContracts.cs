@@ -64,13 +64,18 @@ public sealed record AuthTokensResponse(
 /// <summary><c>POST /auth/otp/request</c>. <c>purpose</c> is <c>register</c> or <c>login</c>.</summary>
 public sealed record RequestOtpRequest(string Phone, string Purpose);
 
-/// <summary><c>POST /auth/register</c> — the phone, the code sent to it, and a name. Password and email are optional.</summary>
+/// <summary>
+/// <c>POST /auth/register</c>: the phone, the code sent to it, and a name. Password and email are
+/// optional. <c>referral_code</c> is an optional field this project added: a friend's code
+/// (<c>docs/contract-extensions.md § 39</c>).
+/// </summary>
 public sealed record RegisterRequest(
     string Phone,
     string Code,
     string DisplayName,
     string? Password = null,
-    string? Email = null);
+    string? Email = null,
+    string? ReferralCode = null);
 
 /// <summary>
 /// <c>POST /auth/login</c>. Either <c>phone</c> with <c>code</c>, or <c>identifier</c> (an email

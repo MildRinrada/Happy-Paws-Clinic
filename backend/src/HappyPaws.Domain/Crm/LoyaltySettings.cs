@@ -29,6 +29,15 @@ public sealed class LoyaltySettings : Entity
     public const int MaxTierPoints = 10_000_000;
     public const int MaxExpiryMonths = 120;
 
+    /// <summary>The most points one referral can give either person (<c>docs/contract-extensions.md § 39</c>).</summary>
+    public const int MaxReferralPoints = 10_000;
+
+    /// <summary>The highest monthly cap of rewarded referrals per person.</summary>
+    public const int MaxReferralMonthlyCap = 100;
+
+    public const int DefaultReferralPoints = 100;
+    public const int DefaultReferralMonthlyCap = 5;
+
     private LoyaltySettings()
     {
     }
@@ -47,6 +56,25 @@ public sealed class LoyaltySettings : Entity
 
     /// <summary>Months after which points given from now on expire, or null for never.</summary>
     public int? PointsExpireAfterMonths { get; private set; }
+
+    /// <summary>
+    /// Whether a friend's first paid bill earns referral points (<c>docs/contract-extensions.md
+    /// § 39</c>). Off until the clinic turns it on: the programme gives away points, which are
+    /// money off bills, and points have no switch of their own to follow.
+    /// </summary>
+    public bool ReferralEnabled { get; private set; }
+
+    /// <summary>Points for the person whose code was used, per rewarded friend. Default 100.</summary>
+    public int ReferralReferrerPoints { get; private set; } = DefaultReferralPoints;
+
+    /// <summary>Points for the friend, on their first paid bill. Default 100.</summary>
+    public int ReferralFriendPoints { get; private set; } = DefaultReferralPoints;
+
+    /// <summary>
+    /// How many friends a calendar month (clinic time) earn the person who invited them points.
+    /// Friends past the cap are still recorded and still get their own points. Default 5.
+    /// </summary>
+    public int ReferralMonthlyCap { get; private set; } = DefaultReferralMonthlyCap;
 
     /// <summary>The levels and where each starts, lowest first.</summary>
     public IReadOnlyList<(LoyaltyTier Tier, int MinPoints)> Tiers =>
@@ -91,6 +119,29 @@ public sealed class LoyaltySettings : Entity
         SilverMinPoints = silverMinPoints;
         GoldMinPoints = goldMinPoints;
         PointsExpireAfterMonths = pointsExpireAfterMonths;
+    }
+
+    /// <summary>
+    /// Replaces the referral rules (§ 39). Part of the same <c>PUT</c>, called with the request's
+    /// values over the current ones, so a client that predates the referral fields leaves them as
+    /// they are.
+    /// </summary>
+    public void ReplaceReferral(bool enabled, int referrerPoints, int friendPoints, int monthlyCap)
+    {
+        if (referrerPoints is < 0 or > MaxReferralPoints || friendPoints is < 0 or > MaxReferralPoints)
+        {
+            throw new DomainException("invalid_loyalty_settings", "แต้มชวนเพื่อนต้องอยู่ระหว่าง 0 ถึง 10,000 แต้ม");
+        }
+
+        if (monthlyCap is < 1 or > MaxReferralMonthlyCap)
+        {
+            throw new DomainException("invalid_loyalty_settings", $"เพดานต่อเดือนต้องอยู่ระหว่าง 1 ถึง {MaxReferralMonthlyCap} คน");
+        }
+
+        ReferralEnabled = enabled;
+        ReferralReferrerPoints = referrerPoints;
+        ReferralFriendPoints = friendPoints;
+        ReferralMonthlyCap = monthlyCap;
     }
 
     /// <summary>Whole points for an amount at today's rate, rounded down.</summary>

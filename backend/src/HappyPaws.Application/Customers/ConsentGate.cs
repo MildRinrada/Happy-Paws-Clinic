@@ -64,6 +64,11 @@ public sealed class ConsentGate(IConsentRepository consents)
         // (docs/contract-extensions.md § 33). Nothing is due and nobody asked: it is an invitation
         // to come back, which is marketing however kindly worded.
         ["customer.lapsed"] = ConsentPurpose.Marketing,
+
+        // "ช่วยรีวิวการมาครั้งนี้" a few days after a visit (docs/contract-extensions.md § 36). The
+        // clinic is asking for something for itself, not telling the customer about their pet's
+        // care, so it is marketing. Listed so nobody reads its absence as an oversight.
+        ["review.invitation"] = ConsentPurpose.Marketing,
     };
 
     public static ConsentPurpose PurposeOf(string templateKey) =>

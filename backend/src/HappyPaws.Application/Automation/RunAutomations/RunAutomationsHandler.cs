@@ -1,6 +1,7 @@
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Application.Notifications;
 using HappyPaws.Application.Notifications.Delivery;
+using HappyPaws.Application.Reviews.Invitations;
 using HappyPaws.Domain.Automation;
 using Microsoft.Extensions.Logging;
 
@@ -47,9 +48,13 @@ public sealed class RunAutomationsHandler(
     IDeliveryLog deliveryLog,
     IClock clock,
     AutomationSettings settings,
+    ReviewInvitationIssuer reviewInvitations,
     ILogger<RunAutomationsHandler> logger)
 {
     private const int ReconcileBatch = 100;
+
+    /// <summary>The code on a review invitation not sent because the visit already had one.</summary>
+    public const string AlreadyInvited = "already_invited";
 
     public async Task<AutomationRunSummary> RunAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
     {
@@ -112,6 +117,16 @@ public sealed class RunAutomationsHandler(
         return new AutomationRunSummary(1, claimed, contended, 0);
     }
 
+    /// <summary>
+    /// The message as it goes out. A review invitation gets its link here, at send time, so a
+    /// simulation never makes one (<c>docs/contract-extensions.md § 36</c>); null means the visit
+    /// was invited already and nothing is sent.
+    /// </summary>
+    private async Task<NotificationRequest?> RequestForAsync(AutomationDispatch claim, AutomationOccurrence occurrence, CancellationToken cancellationToken) =>
+        occurrence.Rule.Trigger == AutomationTrigger.VisitCompleted
+            ? await reviewInvitations.PrepareAsync(occurrence, claim.Id, cancellationToken)
+            : occurrence.Request;
+
     private async Task SendAsync(AutomationDispatch claim, AutomationOccurrence occurrence, CancellationToken cancellationToken)
     {
         DispatchStatus status;
@@ -119,8 +134,15 @@ public sealed class RunAutomationsHandler(
 
         try
         {
-            await dispatcher.SendAsync(occurrence.Request with { BatchId = claim.Id }, cancellationToken);
-            (status, errorCode) = AutomationDispatch.OutcomeOf(await deliveryLog.ForBatchAsync(claim.Id, cancellationToken));
+            if (await RequestForAsync(claim, occurrence, cancellationToken) is { } request)
+            {
+                await dispatcher.SendAsync(request with { BatchId = claim.Id }, cancellationToken);
+                (status, errorCode) = AutomationDispatch.OutcomeOf(await deliveryLog.ForBatchAsync(claim.Id, cancellationToken));
+            }
+            else
+            {
+                (status, errorCode) = (DispatchStatus.Skipped, AlreadyInvited);
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

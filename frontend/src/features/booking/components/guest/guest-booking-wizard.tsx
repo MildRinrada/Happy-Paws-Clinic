@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useCooldown } from '@/features/authentication/hooks/use-cooldown';
+import { ReferredNote } from '@/features/referrals/components/guest/referred-note';
 import { clinicDay } from '@/lib/format/datetime';
 import { bookAction } from '../../actions/booking-actions';
 import { startGuestBookingAction, verifyGuestBookingAction } from '../../actions/guest-booking-actions';
@@ -53,6 +54,7 @@ export function GuestBookingWizard({
   options,
   initial,
   start,
+  referralCode,
 }: {
   options: BookingOptions;
   initial: BookingDetails;
@@ -61,9 +63,16 @@ export function GuestBookingWizard({
    * the form on the phone step with it picked; one taken since opens that day's times with a note.
    */
   start?: TimePreselect;
+  /**
+   * A friend's referral code from `?ref=`, already checked on the server (docs/contract-extensions.md
+   * § 39). Sent with the phone's proof; kept from the first render, so the page re-rendering inside
+   * an action cannot drop it.
+   */
+  referralCode?: string;
 }) {
   const router = useRouter();
   const cooldown = useCooldown(60);
+  const [referral] = useState(referralCode);
   const [step, setStep] = useState<GuestStep>(start?.startsAt ? 'phone' : start ? 'time' : 'details');
   const [details, setDetails] = useState(initial);
 
@@ -138,7 +147,7 @@ export function GuestBookingWizard({
     setCodeErrors({});
 
     try {
-      const result = await verifyGuestBookingAction({ holdId: started.hold.id, phone, ...form });
+      const result = await verifyGuestBookingAction({ holdId: started.hold.id, phone, ...form, referralCode: referral });
 
       if (result.ok) {
         setVerified({ value: result.data, key: crypto.randomUUID() });
@@ -202,6 +211,8 @@ export function GuestBookingWizard({
   return (
     <div className="space-y-6" data-booking-flow="guest" data-booking-step={step}>
       <BookingSteps current={STEPS.indexOf(step)} labels={guestBookingPage.steps} />
+
+      {referral && step !== 'pet' && <ReferredNote />}
 
       {step === 'details' && (
         <DetailsStep

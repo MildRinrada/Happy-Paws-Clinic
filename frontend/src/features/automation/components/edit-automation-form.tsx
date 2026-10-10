@@ -13,6 +13,7 @@ import type { Automation, AutomationChannel } from '../types/automation.types';
 import { ChannelField } from './channel-field';
 import { ConditionFields } from './condition-fields';
 import { LapsedConsentNote } from './lapsed-consent-note';
+import { ReviewConsentNote } from './review-consent-note';
 import { RuleNameField } from './rule-name-field';
 import { TimingFields } from './timing-fields';
 
@@ -52,6 +53,7 @@ export function EditAutomationForm({ rule, onDone, onCancel }: EditAutomationFor
     <form onSubmit={save} onChange={touch} className="space-y-4 rounded-lg border border-ink-100 bg-ink-50 p-4">
       <p className="text-xs text-ink-500">{text.watches(triggerLabels[rule.trigger.type])}</p>
       {rule.trigger.type === 'customer_lapsed' && <LapsedConsentNote />}
+      {rule.trigger.type === 'visit_completed' && <ReviewConsentNote />}
       <div className="grid gap-4 sm:grid-cols-2">
         <RuleNameField id={`${prefix}-name`} value={name} error={errors.name} onChange={setName} />
         <ChannelField id={`${prefix}-channel`} value={channel} error={errors['action.channel']} onChange={setChannel} />

@@ -97,6 +97,14 @@ internal sealed class LoyaltyEntryConfiguration : EntityConfiguration<LoyaltyEnt
             .HasFilter("kind = 'Earn'")
             .HasDatabaseName("ux_loyalty_entries_earn_per_invoice");
 
+        // A referral pays each person once (docs/contract-extensions.md § 39). The rewarder closes
+        // the referral under the friend's lock first; this is the backstop.
+        builder.Property(entry => entry.ReferralId).HasMaxLength(40);
+        builder.HasIndex(entry => new { entry.ReferralId, entry.CustomerId })
+            .IsUnique()
+            .HasFilter("kind = 'Referral'")
+            .HasDatabaseName("ux_loyalty_entries_referral_per_customer");
+
         builder.HasIndex(entry => new { entry.CustomerId, entry.OccurredAt });
 
         builder.HasOne<Customer>().WithMany()
@@ -121,7 +129,19 @@ internal sealed class LoyaltySettingsConfiguration : EntityConfiguration<Loyalty
                 "ck_loyalty_settings_values",
                 "satang_per_point > 0 AND point_value_satang > 0 AND silver_min_points > 0 AND gold_min_points > silver_min_points "
                 + "AND (points_expire_after_months IS NULL OR points_expire_after_months > 0)");
+            table.HasCheckConstraint(
+                "ck_loyalty_settings_referral",
+                "referral_referrer_points >= 0 AND referral_friend_points >= 0 AND referral_monthly_cap > 0");
         });
+
+        // Refer a friend (docs/contract-extensions.md § 39). The defaults put a saved row from before
+        // this migration where an unsaved one starts: switched off, 100 and 100 points, five a month.
+        // The sentinel is a value the entity never holds, so EF always writes the real value and a
+        // clinic that saves 0 points gets 0, not the column's default.
+        builder.Property(settings => settings.ReferralEnabled).HasDefaultValue(false);
+        builder.Property(settings => settings.ReferralReferrerPoints).HasDefaultValue(LoyaltySettings.DefaultReferralPoints).HasSentinel(-1);
+        builder.Property(settings => settings.ReferralFriendPoints).HasDefaultValue(LoyaltySettings.DefaultReferralPoints).HasSentinel(-1);
+        builder.Property(settings => settings.ReferralMonthlyCap).HasDefaultValue(LoyaltySettings.DefaultReferralMonthlyCap).HasSentinel(-1);
     }
 }
 

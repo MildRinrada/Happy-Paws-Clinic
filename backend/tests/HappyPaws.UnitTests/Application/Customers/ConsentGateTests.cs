@@ -28,7 +28,7 @@ public class ConsentGateTests
                 var key = (string)constant.GetRawConstantValue()!;
 
                 // The templates that are marketing on purpose, asserted on their own below.
-                if (key is not (NotificationTemplates.ClinicAnnouncement or NotificationTemplates.CustomerLapsed))
+                if (key is not (NotificationTemplates.ClinicAnnouncement or NotificationTemplates.CustomerLapsed or NotificationTemplates.ReviewInvitation))
                 {
                     data.Add(key);
                 }

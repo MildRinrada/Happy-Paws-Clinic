@@ -31,6 +31,7 @@ export const pointsKindLabels: Record<PointsEntryKind, string> = {
   redeem: 'แลกแต้มเป็นส่วนลด',
   restore: 'คืนแต้มที่แลกไว้',
   adjust: 'ปรับแต้มโดยพนักงาน',
+  referral: 'แต้มชวนเพื่อน',
 };
 
 export const packageText = {

@@ -26,6 +26,15 @@ export const bookingPage = {
     next: 'เลือกวันและเวลา',
   },
 
+  /**
+   * A time picked before the form opened (`/portal/book?date=&time=`, as the home page's "จองเวลานี้"
+   * button sends a signed-in owner). Shown above the details, which still ask which pet.
+   */
+  preset: {
+    note: (when: string) => `เวลาที่เลือกไว้ ${when} เลือกน้องที่จะมา แล้วกดปุ่มด้านล่างเพื่อกันเวลานี้ไว้`,
+    next: 'จองเวลาที่เลือกไว้',
+  },
+
   time: {
     day: 'เลือกวัน',
     otherDay: 'วันอื่น',

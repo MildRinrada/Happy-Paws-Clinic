@@ -5,11 +5,12 @@ import { clinicDay } from '@/lib/format/datetime';
 import { bookAction, holdSlotAction } from '../actions/booking-actions';
 import { bookingPage } from '../content/booking-page';
 import { suggestedTimes } from '../lib/slot-times';
-import type { BookingDetails, BookingOptions, SlotHold } from '../types/booking.types';
+import type { BookingDetails, BookingOptions, SlotHold, TimePreselect } from '../types/booking.types';
 import { BookingDone } from './booking-done';
 import { BookingSteps } from './booking-steps';
 import { ConfirmStep } from './confirm-step';
 import { DetailsStep } from './details-step';
+import { PresetTimeNote } from './preset-time-note';
 import { TimeStep, type PickRefusal } from './time-step';
 
 const DETAILS = 0;
@@ -23,10 +24,26 @@ const DONE = 3;
  * Picking a time holds it at once (`POST /booking/holds`), so nobody else can take it while the
  * owner reads the summary. The idempotency key belongs to that hold: a double tap on "ยืนยัน"
  * books once, and choosing a new time starts a new key.
+ *
+ * `start` is a time the address asked for (`?date=&time=`), checked on the server by the same
+ * `preselectTime` as `/book`. The form still opens on the details, because the owner has to say which
+ * pet; leaving them with the service and branch unchanged then holds a free time at once (on to
+ * confirming), or opens that day's times, with a note when the time was taken. Changing the service
+ * or branch drops it.
  */
-export function BookingWizard({ options, initial }: { options: BookingOptions; initial: BookingDetails }) {
+export function BookingWizard({
+  options,
+  initial,
+  start,
+}: {
+  options: BookingOptions;
+  initial: BookingDetails;
+  start?: TimePreselect;
+}) {
   const [step, setStep] = useState(DETAILS);
   const [details, setDetails] = useState(initial);
+  // Used once, on the first "next" from the details.
+  const [preset, setPreset] = useState(start);
 
   const [holding, setHolding] = useState(false);
   // The clinic day of the last time picked, so coming back to the times (a refusal on confirm, or
@@ -102,6 +119,23 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
     return <BookingDone startsAt={bookedAt} />;
   }
 
+  // Only for what it was checked against: the service and branch the page opened on.
+  const kept = preset && details.serviceId === initial.serviceId && details.branchId === initial.branchId ? preset : undefined;
+
+  function leaveDetails() {
+    setRefusal(undefined);
+    setPreset(undefined);
+
+    if (kept) {
+      setDay(kept.day);
+      if (kept.notice) setRefusal({ message: kept.notice, suggested: [] });
+    }
+
+    setStep(TIME);
+
+    if (kept?.startsAt) void pick(kept.startsAt);
+  }
+
   const pet = options.pets.find((item) => item.id === details.petId);
   const service = options.servicesByBranch[details.branchId]?.find((item) => item.id === details.serviceId);
   const branch = options.branches.length > 1 ? options.branches.find((item) => item.id === details.branchId) : undefined;
@@ -110,15 +144,15 @@ export function BookingWizard({ options, initial }: { options: BookingOptions; i
     <div className="space-y-6">
       <BookingSteps current={step} />
 
+      {step === DETAILS && kept?.startsAt && <PresetTimeNote startsAt={kept.startsAt} />}
+
       {step === DETAILS && (
         <DetailsStep
           options={options}
           value={details}
           onChange={setDetails}
-          onNext={() => {
-            setRefusal(undefined);
-            setStep(TIME);
-          }}
+          onNext={leaveDetails}
+          nextLabel={kept?.startsAt ? bookingPage.preset.next : undefined}
         />
       )}
 

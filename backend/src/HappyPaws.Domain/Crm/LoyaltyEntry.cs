@@ -22,6 +22,14 @@ public enum LoyaltyEntryKind
     /// as entered. Moves the balance, never the lifetime points the level is judged on.
     /// </summary>
     Adjust,
+
+    /// <summary>
+    /// Points for a referral (<c>docs/contract-extensions.md § 39</c>): to the person whose code a
+    /// new customer used, and to that customer, when the newcomer's first bill was paid. Always
+    /// positive. Moves the balance, never the lifetime points the level is judged on, like
+    /// <see cref="Adjust"/>: a level reflects money the customer paid.
+    /// </summary>
+    Referral,
 }
 
 /// <summary>
@@ -71,6 +79,12 @@ public sealed class LoyaltyEntry : Entity
     /// </summary>
     public long? SatangPerPoint { get; private set; }
 
+    /// <summary>
+    /// On a <see cref="LoyaltyEntryKind.Referral"/> row: the referral it pays. With the customer, unique
+    /// among referral rows, which is what makes a referral pay each person once.
+    /// </summary>
+    public string? ReferralId { get; private set; }
+
     public static LoyaltyEntry Create(
         string customerId,
         LoyaltyEntryKind kind,
@@ -81,11 +95,12 @@ public sealed class LoyaltyEntry : Entity
         string? note = null,
         string? staffId = null,
         DateTimeOffset? expiresAt = null,
-        long? satangPerPoint = null)
+        long? satangPerPoint = null,
+        string? referralId = null)
     {
         var signed = kind switch
         {
-            LoyaltyEntryKind.Earn or LoyaltyEntryKind.Restore => Math.Abs(points),
+            LoyaltyEntryKind.Earn or LoyaltyEntryKind.Restore or LoyaltyEntryKind.Referral => Math.Abs(points),
             LoyaltyEntryKind.Adjust => points,
             _ => -Math.Abs(points),
         };
@@ -108,6 +123,7 @@ public sealed class LoyaltyEntry : Entity
             OccurredAt = occurredAt,
             ExpiresAt = signed > 0 ? expiresAt : null,
             SatangPerPoint = kind == LoyaltyEntryKind.Earn ? satangPerPoint : null,
+            ReferralId = kind == LoyaltyEntryKind.Referral ? referralId : null,
         };
     }
 }

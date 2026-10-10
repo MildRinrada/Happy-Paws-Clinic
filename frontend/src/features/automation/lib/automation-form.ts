@@ -8,10 +8,20 @@ export const initialTiming: TimingValue = { mode: 'days', days: '14', hours: '24
 export const initialCondition: ConditionValue = { species: '', vaccineName: '', unconfirmedOnly: false };
 
 /**
- * Triggers whose subject is a day with no time in it (a due date, the day a customer was due back),
- * so they only count in days.
+ * Triggers whose subject is a day with no time in it (a due date, the day a customer was due back,
+ * the day of a visit), so they only count in days.
  */
-export const countsInDaysOnly = (type: AutomationTriggerType) => type === 'vaccine_due' || type === 'customer_lapsed';
+export const countsInDaysOnly = (type: AutomationTriggerType) =>
+  type === 'vaccine_due' || type === 'customer_lapsed' || type === 'visit_completed';
+
+/**
+ * Triggers that only send after their day, so the form's offset is negative: a lapsed customer
+ * (docs/contract-extensions.md § 33) and a review invitation (§ 36). The range is the API's.
+ */
+export const afterOnlyRange: Partial<Record<AutomationTriggerType, { min: number; max: number }>> = {
+  customer_lapsed: { min: -90, max: -1 },
+  visit_completed: { min: -30, max: -1 },
+};
 
 /** The form's text fields as the API's trigger. A number field left empty is sent as 0 and refused there. */
 export function toTrigger(type: AutomationTriggerType, timing: TimingValue): AutomationTrigger {

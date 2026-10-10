@@ -17,10 +17,12 @@ interface DetailsStepProps {
    */
   askPet?: boolean;
   askType?: boolean;
+  /** The button's words, when the next step is not simply choosing a time. */
+  nextLabel?: string;
 }
 
 /** Step 1: which pet, where, what service and what kind of visit, and anything for the vet. */
-export function DetailsStep({ options, value, onChange, onNext, askPet = true, askType = true }: DetailsStepProps) {
+export function DetailsStep({ options, value, onChange, onNext, askPet = true, askType = true, nextLabel }: DetailsStepProps) {
   const text = bookingPage.details;
   const services = options.servicesByBranch[value.branchId] ?? [];
   const set = (patch: Partial<BookingDetails>) => onChange({ ...value, ...patch });
@@ -128,7 +130,7 @@ export function DetailsStep({ options, value, onChange, onNext, askPet = true, a
         disabled={!ready}
         className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {text.next}
+        {nextLabel ?? text.next}
       </button>
     </div>
   );

@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl(sitePages.services.path), changeFrequency: 'weekly', priority: 0.9 },
     { url: absoluteUrl(sitePages.vaccineSchedule.path), changeFrequency: 'monthly', priority: 0.8 },
     { url: absoluteUrl(sitePages.articles.path), changeFrequency: 'weekly', priority: 0.7 },
+    { url: absoluteUrl(sitePages.reviews.path), changeFrequency: 'weekly', priority: 0.6 },
     { url: absoluteUrl(sitePages.about.path), changeFrequency: 'monthly', priority: 0.6 },
     { url: absoluteUrl(sitePages.team.path), changeFrequency: 'monthly', priority: 0.6 },
     { url: absoluteUrl(sitePages.contact.path), changeFrequency: 'monthly', priority: 0.6 },

@@ -61,6 +61,30 @@ public static class RateLimitingExtensions
     /// </summary>
     public const string DisplayClaimPolicy = "display-claim";
 
+    /// <summary>
+    /// <c>GET /queue/wait-estimate</c> (<c>docs/contract-extensions.md § 37</c>): open to anyone, so it
+    /// is capped per address (<c>RateLimits:WaitEstimatePerIpPerMinute</c>, 60) and keyed on the
+    /// address even for a caller with a token. The answer is reused for 30 seconds, so a page that
+    /// polls faster gains nothing; the website's server asks about once per branch per 30 seconds.
+    /// </summary>
+    public const string WaitEstimatePolicy = "wait-estimate";
+
+    /// <summary>
+    /// <c>POST /reviews/invitations/{token}</c> (<c>docs/contract-extensions.md § 36</c>): a review
+    /// written through a one-time link, open to anyone holding one, so capped per address
+    /// (<c>RateLimits:ReviewSubmitsPerIpPerHour</c>, 20), keyed like the guest policies. Each token
+    /// writes one review at most; the cap is on how fast one place can try tokens.
+    /// </summary>
+    public const string ReviewSubmitPolicy = "review-submit";
+
+    /// <summary>
+    /// <c>GET /referrals/{code}</c> (<c>docs/contract-extensions.md § 39</c>): whether a referral code
+    /// can be used, open to anyone, so capped per address (<c>RateLimits:ReferralChecksPerIpPerMinute</c>,
+    /// 30) and keyed like the guest policies. The answer is only valid or not, and the codes are too
+    /// many to guess; the cap is on how fast one place can try.
+    /// </summary>
+    public const string ReferralCheckPolicy = "referral-check";
+
     public static IServiceCollection AddClinicRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var perToken = configuration.GetValue("RateLimits:PerTokenPerMinute", 600);
@@ -77,6 +101,9 @@ public static class RateLimitingExtensions
             var perDisplay = configuration.GetValue("RateLimits:PerDisplayPerMinute", 120);
             var displayClaims = configuration.GetValue("RateLimits:DisplayClaimsPerIpPerHour", 30);
             var staffAi = configuration.GetValue("StaffAi:CallsPerMinutePerUser", 10);
+            var waitEstimates = configuration.GetValue("RateLimits:WaitEstimatePerIpPerMinute", 60);
+            var reviewSubmits = configuration.GetValue("RateLimits:ReviewSubmitsPerIpPerHour", 20);
+            var referralChecks = configuration.GetValue("RateLimits:ReferralChecksPerIpPerMinute", 30);
 
             // An API key gets its own window, apart from the person who made it: a sync job
             // running hot must not lock its creator out of the counter screen, nor the reverse.
@@ -109,6 +136,15 @@ public static class RateLimitingExtensions
             options.AddPolicy(DisplayClaimPolicy, context =>
                 PerAddressPerHour(context, displayClaims, ":display-claim"));
 
+            options.AddPolicy(WaitEstimatePolicy, context =>
+                PerAddressPerMinute(context, waitEstimates, ":wait-estimate"));
+
+            options.AddPolicy(ReviewSubmitPolicy, context =>
+                PerAddressPerHour(context, reviewSubmits, ":review-submit"));
+
+            options.AddPolicy(ReferralCheckPolicy, context =>
+                PerAddressPerMinute(context, referralChecks, ":referral-check"));
+
             options.OnRejected = async (context, cancellationToken) =>
             {
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
@@ -138,6 +174,16 @@ public static class RateLimitingExtensions
             {
                 PermitLimit = permitPerHour,
                 Window = TimeSpan.FromHours(1),
+                QueueLimit = 0,
+            });
+
+    private static RateLimitPartition<string> PerAddressPerMinute(HttpContext context, int permitPerMinute, string suffix) =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            (context.Connection.RemoteIpAddress?.ToString() ?? "unknown") + suffix,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitPerMinute,
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             });
 

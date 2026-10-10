@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { isValidPhone, phoneDigits } from '@/features/authentication/lib/phone-number';
+import { readReferralCode } from '@/features/referrals/lib/read-referral-code';
 import { runAction, type ActionError, type ActionResult } from '@/lib/actions/action-result';
 import { oneTimeCodeDigits } from '@/lib/auth/one-time-code';
 import { writeSession } from '@/lib/auth/session';
@@ -53,6 +54,9 @@ const verifyInput = z.object({
   displayName: z.string().trim().min(1).max(200),
   acceptPrivacy: z.boolean().refine((accepted) => accepted),
   marketingConsent: z.boolean(),
+  // A friend's referral code (docs/contract-extensions.md § 39). One that is not a code is dropped
+  // rather than refused: it must never stand between the visitor and the booking.
+  referralCode: z.string().max(32).optional().catch(undefined),
 });
 
 export type VerifyGuestInput = z.input<typeof verifyInput>;
@@ -79,7 +83,7 @@ export async function verifyGuestBookingAction(input: VerifyGuestInput): Promise
     return invalid(wireField, message);
   }
 
-  const { holdId, phone, code, displayName, marketingConsent } = parsed.data;
+  const { holdId, phone, code, displayName, marketingConsent, referralCode } = parsed.data;
   const result = await runAction(() =>
     verifyGuestBooking({
       holdId,
@@ -87,6 +91,7 @@ export async function verifyGuestBookingAction(input: VerifyGuestInput): Promise
       code,
       displayName,
       marketingConsent,
+      referralCode: readReferralCode(referralCode),
     }),
   );
 

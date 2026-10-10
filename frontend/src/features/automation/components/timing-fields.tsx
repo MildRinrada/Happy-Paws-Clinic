@@ -2,7 +2,7 @@
 
 import { Field, Input, Select } from '@/components/ui/field';
 import { automationsPage } from '../content/automations-page';
-import { countsInDaysOnly } from '../lib/automation-form';
+import { afterOnlyRange, countsInDaysOnly } from '../lib/automation-form';
 import type { AutomationTriggerType } from '../types/automation.types';
 
 export interface TimingValue {
@@ -23,13 +23,16 @@ interface TimingFieldsProps {
 
 /**
  * When the rule sends: so many days before at a time of day, or so many hours before the start.
- * A vaccine's due date and a lapsed customer's due-back day have no time of day, so they only count
- * in days; the lapsed one only after the day (a negative number).
+ * A vaccine's due date, a lapsed customer's due-back day and the day of a visit have no time of day,
+ * so they only count in days; the lapsed one and the review invitation only after the day (a
+ * negative number).
  */
 export function TimingFields({ trigger, value, errors, onChange, idPrefix = 'automation' }: TimingFieldsProps) {
   const text = automationsPage.create;
   const daysOnly = countsInDaysOnly(trigger);
   const lapsed = trigger === 'customer_lapsed';
+  const review = trigger === 'visit_completed';
+  const range = afterOnlyRange[trigger];
   const mode = daysOnly ? 'days' : value.mode;
   const set = (change: Partial<TimingValue>) => onChange({ ...value, ...change });
 
@@ -47,17 +50,17 @@ export function TimingFields({ trigger, value, errors, onChange, idPrefix = 'aut
       {mode === 'days' ? (
         <>
           <Field
-            label={lapsed ? text.offsetDaysLapsed : text.offsetDays}
+            label={lapsed ? text.offsetDaysLapsed : review ? text.offsetDaysReview : text.offsetDays}
             htmlFor={`${idPrefix}-days`}
-            hint={lapsed ? text.offsetDaysLapsedHint : text.offsetDaysHint}
+            hint={lapsed ? text.offsetDaysLapsedHint : review ? text.offsetDaysReviewHint : text.offsetDaysHint}
             error={errors['trigger.offset_days']}
           >
             <Input
               id={`${idPrefix}-days`}
               type="number"
               inputMode="numeric"
-              min={lapsed ? -90 : undefined}
-              max={lapsed ? -1 : undefined}
+              min={range?.min}
+              max={range?.max}
               value={value.days}
               onChange={(event) => set({ days: event.target.value })}
             />

@@ -5,6 +5,7 @@ using HappyPaws.Domain.Automation;
 using HappyPaws.Infrastructure.Common;
 using HappyPaws.Infrastructure.Persistence.Repositories.Analytics;
 using HappyPaws.Infrastructure.Persistence.Repositories.Forecasting;
+using HappyPaws.Infrastructure.Persistence.Repositories.Reviews;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
@@ -33,6 +34,10 @@ namespace HappyPaws.Infrastructure.Persistence.Repositories.Automation;
 /// <c>GET /staff/customers/due-back?reason=lapsed</c> (<c>docs/contract-extensions.md § 33</c>), for
 /// customers whose due-back day falls in the span. A rule with a branch counts visits at that
 /// branch only.
+/// </para>
+/// <para>
+/// <b>Finished visits</b>: <c>ReviewVisitSql.Subjects</c>, the visits the review pages also read
+/// (<c>docs/contract-extensions.md § 36</c>), with no review and no invitation yet.
 /// </para>
 /// <para>
 /// Every query drops deceased patients and merged customer records, and applies the rule's
@@ -148,6 +153,18 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
                 reader => Lapsed(reader, query.BranchId),
                 cancellationToken),
 
+            AutomationTrigger.VisitCompleted => await AnalyticsSql.QueryAsync(
+                db,
+                ReviewVisitSql.Subjects,
+                ReviewVisitSql.Parameters(
+                    clinic.Value.TimeZone,
+                    ReviewVisitSql.DaySpan(query.FirstDay, query.LastDay, zone).From,
+                    ReviewVisitSql.DaySpan(query.FirstDay, query.LastDay, zone).To,
+                    branchId: query.BranchId,
+                    species: query.Species),
+                VisitCompleted,
+                cancellationToken),
+
             _ => await AnalyticsSql.QueryAsync(
                 db, SessionsSql, Parameters(query), reader => Session(reader, zone), cancellationToken),
         };
@@ -181,6 +198,23 @@ internal sealed class AutomationSubjectReader(HappyPawsDbContext db, IClock cloc
         reader.GetString(3),
         reader.GetString(4),
         ruleBranchId ?? reader.NullableString(5));
+
+    /// <summary>
+    /// A finished visit with no review and no invitation (<c>docs/contract-extensions.md § 36</c>): the
+    /// subject is the consultation or bill that names it, due on the visit's day, so the rule's
+    /// negative offset sends it that many days after. The label is the service, for the invitation page.
+    /// </summary>
+    private static AutomationSubject VisitCompleted(DbDataReader reader) => new(
+        AutomationSubjectKind.Visit,
+        reader.GetString(0),
+        StartsAt: null,
+        reader.GetFieldValue<DateOnly>(1),
+        reader.GetString(2),
+        reader.GetString(3),
+        reader.GetString(4),
+        reader.GetString(5),
+        reader.GetString(6),
+        Label: reader.NullableString(7));
 
     private static AutomationSubject Appointment(DbDataReader reader, TimeZoneInfo zone)
     {

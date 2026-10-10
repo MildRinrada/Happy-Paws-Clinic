@@ -2,6 +2,7 @@ using HappyPaws.Application.Auditing;
 using HappyPaws.Application.Billing;
 using HappyPaws.Application.Clinics;
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Application.Referrals;
 using HappyPaws.Application.Scheduling;
 using HappyPaws.Domain.Auditing;
 using HappyPaws.Domain.Billing;
@@ -25,6 +26,8 @@ namespace HappyPaws.Application.Crm;
 /// (<c>docs/contract-extensions.md § 25</c>).</item>
 /// <item>A <b>void</b> gives back everything the bill took: package uses, coupon uses and points.
 /// A <b>refund</b> does not, because the service and the discount happened.</item>
+/// <item>A <b>referral</b> pays when the friend's first bill reaches <c>paid</c>
+/// (<see cref="ReferralRewarder"/>, <c>docs/contract-extensions.md § 39</c>).</item>
 /// </list>
 /// </summary>
 public sealed class InvoiceRewards(
@@ -35,7 +38,8 @@ public sealed class InvoiceRewards(
     IBilledServiceLookup billedServices,
     IAuditTrail audit,
     ClinicDays clinicDays,
-    IClinicSettingsStore settings) : IInvoiceRewards
+    IClinicSettingsStore settings,
+    ReferralRewarder referrals) : IInvoiceRewards
 {
     public async Task AddServiceLineAsync(
         Invoice invoice,
@@ -226,6 +230,8 @@ public sealed class InvoiceRewards(
         {
             package.Activate(now);
         }
+
+        await referrals.InvoicePaidAsync(invoice, now, cancellationToken);
     }
 
     public async Task RefundedAsync(Invoice invoice, DateTimeOffset now, CancellationToken cancellationToken = default)

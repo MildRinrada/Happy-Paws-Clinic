@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { SiteContainer } from '@/components/layout/site-container';
 import { CtaLink } from '@/components/ui/cta-link';
 import { loadSiteInfo } from '@/features/clinic/lib/load-site-info';
@@ -11,12 +12,14 @@ import { BreadcrumbJsonLd } from '@/features/seo/components/breadcrumb-json-ld';
 import { ClinicJsonLd } from '@/features/seo/components/clinic-json-ld';
 import { sitePages } from '@/features/seo/content/seo';
 import { pageMetadata } from '@/features/seo/lib/page-metadata';
+import { WalkInWait } from '@/features/wait-estimate/components/walk-in-wait';
 
 export const metadata = pageMetadata({ ...contactPage.meta, path: sitePages.contact.path });
 
 /**
  * How to reach the clinic. Every number, account and map here is one of the clinic's contact
- * entries, edited in the staff console; the footer and the home page read the same list.
+ * entries, edited in the staff console; the footer and the home page read the same list. Beside
+ * the hours, the walk-in wait now (`features/wait-estimate`), hidden when it cannot be read.
  */
 export default async function ContactPage() {
   const info = await loadSiteInfo();
@@ -41,7 +44,10 @@ export default async function ContactPage() {
             )}
           </section>
 
-          <aside>
+          <aside className="space-y-8">
+            <Suspense fallback={null}>
+              <WalkInWait />
+            </Suspense>
             <ContactHours hours={info.hours} />
           </aside>
         </div>

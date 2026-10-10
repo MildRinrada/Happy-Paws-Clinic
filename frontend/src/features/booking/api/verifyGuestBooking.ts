@@ -7,6 +7,8 @@ export interface VerifyGuestBookingInput {
   code: string;
   displayName: string;
   marketingConsent: boolean;
+  /** A friend's referral code, already checked (docs/contract-extensions.md § 39). */
+  referralCode?: string;
 }
 
 /**
@@ -25,5 +27,6 @@ export function verifyGuestBooking(input: VerifyGuestBookingInput): Promise<{ si
     display_name: input.displayName,
     accept_privacy_notice: true,
     marketing_consent: input.marketingConsent,
+    ...(input.referralCode ? { referral_code: input.referralCode } : {}),
   });
 }

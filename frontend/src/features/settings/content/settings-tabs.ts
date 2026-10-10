@@ -19,6 +19,7 @@ export const settingsTabs: SettingsTab[] = [
   { href: '/settings/contacts', label: 'ข้อมูลติดต่อ', scope: Scope.SettingsWrite },
   { href: '/settings/privacy-policy', label: 'ประกาศความเป็นส่วนตัว', scope: Scope.SettingsRead },
   { href: '/settings/articles', label: 'บทความ', scope: Scope.ContentManage },
+  { href: '/settings/reviews', label: 'รีวิวจากลูกค้า', scope: Scope.ContentManage },
   { href: '/settings/line', label: 'LINE', scope: Scope.IntegrationManage },
   { href: '/settings/integrations', label: 'เชื่อมต่อระบบ', scope: Scope.IntegrationManage },
 ];

@@ -76,7 +76,8 @@ public sealed class GuestBookingController(IWebHostEnvironment environment) : Co
                 request.PolicyVersion,
                 request.MarketingConsent,
                 Request.Headers.UserAgent.ToString(),
-                HttpContext.Connection.RemoteIpAddress?.ToString()),
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                request.ReferralCode),
             cancellationToken);
 
         RefreshTokenCookie.Write(

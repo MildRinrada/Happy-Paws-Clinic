@@ -21,6 +21,13 @@ public enum AutomationTrigger
     /// reads. A message nobody asked for, so it goes out under marketing consent, not care.
     /// </summary>
     CustomerLapsed,
+
+    /// <summary>
+    /// A visit is over (a closed consultation or a bill that was not voided, for a pet) and has not
+    /// been reviewed: the review invitation of <c>docs/contract-extensions.md § 36</c>, sent a few
+    /// days after. Asking for a review is marketing, so it goes out under marketing consent.
+    /// </summary>
+    VisitCompleted,
 }
 
 /// <summary>Where a rule's message goes. <see cref="Auto"/> lets the router try LINE, then SMS, then email.</summary>
@@ -41,4 +48,7 @@ public enum AutomationSubjectKind
 
     /// <summary>The customer themselves, for <see cref="AutomationTrigger.CustomerLapsed"/>.</summary>
     Customer,
+
+    /// <summary>One visit, named by its consultation or bill, for <see cref="AutomationTrigger.VisitCompleted"/>.</summary>
+    Visit,
 }

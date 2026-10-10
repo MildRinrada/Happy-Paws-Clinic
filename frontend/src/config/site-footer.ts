@@ -73,6 +73,7 @@ export const footerLinks: SiteLink[] = [
   { label: 'เกี่ยวกับคลินิก', href: '/about' },
   { label: 'ทีมของเรา', href: '/team' },
   { label: 'บทความสุขภาพสัตว์', href: '/articles' },
+  { label: 'รีวิวจากลูกค้า', href: '/reviews' },
   { label: 'ตารางวัคซีนน้อง', href: '/vaccine-schedule' },
   { label: 'จองนัดหมาย', href: '/book' },
   { label: 'กรณีฉุกเฉิน', href: '/emergency' },

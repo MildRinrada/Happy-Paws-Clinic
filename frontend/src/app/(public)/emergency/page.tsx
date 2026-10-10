@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { SiteContainer } from '@/components/layout/site-container';
 import { loadSiteInfo } from '@/features/clinic/lib/load-site-info';
 import { CareStepsSection } from '@/features/emergency/components/care-steps-section';
@@ -14,6 +15,7 @@ import { ClinicJsonLd } from '@/features/seo/components/clinic-json-ld';
 import { EmergencyJsonLd } from '@/features/seo/components/emergency-json-ld';
 import { sitePages } from '@/features/seo/content/seo';
 import { pageMetadata } from '@/features/seo/lib/page-metadata';
+import { WalkInWait } from '@/features/wait-estimate/components/walk-in-wait';
 
 export const metadata = pageMetadata({ ...emergencyPage.meta, path: sitePages.emergency.path });
 
@@ -28,6 +30,7 @@ export const dynamic = 'force-dynamic';
  * The numbers, hours, closures and maps are the clinic's own entries (`GET /clinic/contacts`,
  * `GET /clinic/hours`, `GET /clinic/branches`), the same read the footer and contact page make. The
  * medical advice is `features/emergency/content/emergency-care.ts`, which a clinic vet signs off.
+ * Under "open now", the walk-in wait (`features/wait-estimate`), hidden when it cannot be read.
  */
 export default async function EmergencyPage() {
   const info = await loadSiteInfo();
@@ -38,7 +41,12 @@ export default async function EmergencyPage() {
       <EmergencyHero numbers={numbers} />
 
       <SiteContainer className="space-y-12 py-10 lg:py-12">
-        <OpenStatusSection hours={info.hours} branches={info.branches} now={new Date()} />
+        <div className="space-y-5">
+          <OpenStatusSection hours={info.hours} branches={info.branches} now={new Date()} />
+          <Suspense fallback={null}>
+            <WalkInWait className="max-w-[560px]" />
+          </Suspense>
+        </div>
         <WarningSignsSection />
         <CareStepsSection />
         <ClinicalNote />

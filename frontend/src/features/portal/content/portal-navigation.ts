@@ -26,6 +26,8 @@ export const portalPaths = {
   packages: '/portal/packages',
   invoices: '/portal/invoices',
   appointments: '/portal/appointments',
+  reviews: '/portal/reviews',
+  referral: '/portal/referral',
   reschedule: (appointmentId: string) => `/portal/appointments/${encodeURIComponent(appointmentId)}/reschedule`,
 };
 
@@ -47,6 +49,8 @@ export const portalHeader = {
     { label: 'แพ็กเกจของฉัน', href: portalPaths.packages },
     { label: 'บิลและใบเสร็จ', href: portalPaths.invoices },
     { label: 'แชทกับคลินิก', href: portalPaths.messages },
+    { label: 'รีวิวการมาใช้บริการ', href: portalPaths.reviews },
+    { label: 'ชวนเพื่อน', href: portalPaths.referral },
     { label: 'แจ้งเตือน', href: portalPaths.notifications },
     { label: 'หน้าเว็บคลินิก', href: '/' },
   ] satisfies SiteLink[],

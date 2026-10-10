@@ -41,7 +41,8 @@ public sealed class AuthController(IWebHostEnvironment environment) : Controller
                 request.Password,
                 request.Email,
                 Request.Headers.UserAgent.ToString(),
-                HttpContext.Connection.RemoteIpAddress?.ToString()),
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                request.ReferralCode),
             cancellationToken);
 
         WriteCookie(tokens);

@@ -157,6 +157,18 @@ public static class EntityId
     /// <summary>One version of the clinic's privacy notice (<c>docs/contract-extensions.md § 35</c>).</summary>
     public const string PrivacyPolicyVersion = "ppv";
 
+    /// <summary>A customer's review of one visit (<c>docs/contract-extensions.md § 36</c>).</summary>
+    public const string Review = "rev";
+
+    /// <summary>An invitation to review one visit, sent by the <c>visit_completed</c> reminder (§ 36).</summary>
+    public const string ReviewInvitation = "rvi";
+
+    /// <summary>One customer's referral code, made the first time they open the page (<c>docs/contract-extensions.md § 39</c>).</summary>
+    public const string ReferralCode = "rfc";
+
+    /// <summary>A friend who came through someone's referral code, and what it earned (§ 39).</summary>
+    public const string Referral = "rfr";
+
     public static string New(string prefix)
     {
         Span<byte> buffer = stackalloc byte[16];

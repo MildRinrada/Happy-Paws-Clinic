@@ -1,18 +1,22 @@
-import { testimonials, testimonialsHeading } from '../../content/testimonials';
+import Link from 'next/link';
+import { ReviewCardList } from '@/features/reviews/components/public/review-card-list';
+import { reviewPaths } from '@/features/reviews/lib/review-paths';
+import type { PublicReview } from '@/features/reviews/types/review.types';
+import { testimonialsHeading, testimonialsMore } from '../../content/testimonials';
 import { SectionHeading } from '../shared/section-heading';
-import { TestimonialCard } from './testimonial-card';
 
-/** The reviews column: a heading and the owners' words under it. */
-export function TestimonialList() {
+/**
+ * The reviews column: a heading, the newest published reviews in the owners' own words, and a link
+ * to all of them. Only real, published reviews reach here (docs/contract-extensions.md § 36).
+ */
+export function TestimonialList({ reviews }: { reviews: PublicReview[] }) {
   return (
     <section id="reviews" aria-labelledby="reviews-heading" className="scroll-mt-6">
       <SectionHeading id="reviews-heading">{testimonialsHeading}</SectionHeading>
-
-      <ul className="mt-7 space-y-[18px]">
-        {testimonials.map((testimonial) => (
-          <TestimonialCard key={testimonial.id} testimonial={testimonial} />
-        ))}
-      </ul>
+      <ReviewCardList reviews={reviews} />
+      <Link href={reviewPaths.list} className="mt-5 inline-block text-[15px] font-medium text-site-teal hover:underline">
+        {testimonialsMore}
+      </Link>
     </section>
   );
 }

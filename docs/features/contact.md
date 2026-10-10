@@ -48,6 +48,7 @@
 - สายด่วนฉุกเฉินรายการแรกเป็นแถบสีแดงพร้อมปุ่มโทรอยู่บนสุด
 - รายการอื่นเป็นการ์ด แบ่งกลุ่มเป็นทั้งคลินิก แล้วแยกตามสาขา หัวข้อกลุ่มขึ้นเมื่อมีรายการของสาขา แผนที่ของแต่ละกลุ่มอยู่ใต้การ์ดของกลุ่มนั้น
 - ด้านข้างเป็นเวลาทำการจาก `GET /clinic/hours` ไฮไลต์วันนี้ ตารางเดียวกับหน้าเกี่ยวกับคลินิก
+- เหนือเวลาทำการมีกล่อง "เวลารอ walk-in ตอนนี้" บอกว่าตอนนี้น่าจะรอนานเท่าไร บรรทัดละสาขา เช่น "ตอนนี้รอประมาณ 20 ถึง 30 นาที (3 คิว)" หรือ "ตอนนี้ปิดอยู่" อ่านจาก `GET /queue/wait-estimate` ใช้ร่วมกันทุกคน 30 วินาที ถ้าอ่านไม่ได้กล่องไม่ขึ้น ดู [คิว](queue.md#เวลารอ-walk-in-ส่วนขยาย)
 
 **footer ทุกหน้า**
 
@@ -95,5 +96,6 @@ dotnet run --project backend/src/HappyPaws.Api -- seed-contacts
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Clinics/ClinicContactTests.cs` |
 | อ่านข้อมูลให้ทุกหน้า | `frontend/src/features/clinic/lib/load-site-info.ts`, `contact-links.ts`, `weekdays.ts` |
 | หน้าติดต่อเรา | `frontend/src/app/(public)/contact/`, `frontend/src/features/contact/` |
+| เวลารอ walk-in | `frontend/src/features/wait-estimate/` |
 | footer | `frontend/src/components/layout/site-footer/`, `frontend/src/config/site-footer.ts` (เฉพาะข้อความ) |
 | หน้าจอพนักงาน | `frontend/src/app/(staff)/settings/contacts/`, `frontend/src/features/clinic/components/settings/`, `actions/contact-actions.ts` |

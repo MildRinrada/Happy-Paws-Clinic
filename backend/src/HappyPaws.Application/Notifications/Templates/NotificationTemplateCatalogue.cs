@@ -127,6 +127,18 @@ public static class NotificationTemplateCatalogue
             "ไม่ได้เจอ {pet_name} มาสักพักแล้ว ถ้าถึงเวลาตรวจสุขภาพหรือมีเรื่องอยากปรึกษา นัดกับคลินิกได้เลย",
             "{clinic}: คิดถึง{pet_name} นัดตรวจสุขภาพได้เลย"),
 
+        // The review link is a one-time token for a customer without a portal account. It goes on
+        // LINE, SMS and email only: the web inbox words this message without it (NotificationText),
+        // so the token is never stored anywhere (docs/contract-extensions.md § 36).
+        new(
+            NotificationTemplates.ReviewInvitation,
+            "ชวนรีวิวหลังมาใช้บริการ",
+            StaffSendable: false,
+            [new("pet_name", MaxLength: 200), new("date", Required: false, MaxLength: 40), new("review_url", Required: false, MaxLength: 300)],
+            "ขอบคุณที่พา {pet_name} มาที่คลินิก",
+            "ขอบคุณที่พา {pet_name} มาใช้บริการ[ เมื่อ {date}] ช่วยให้คะแนนและเล่าให้คลินิกฟังได้ที่[ {review_url}] รีวิวขึ้นหน้าเว็บหลังคลินิกอ่านแล้วเท่านั้น",
+            "{clinic}: ขอบคุณที่มาใช้บริการ รีวิวได้ที่[ {review_url}]"),
+
         new(
             NotificationTemplates.ClinicAnnouncement,
             "ประกาศ (LINE)",

@@ -124,7 +124,8 @@ export interface Segment {
   created_at: string;
 }
 
-export type PointsEntryKind = 'earn' | 'reverse' | 'redeem' | 'restore' | 'adjust';
+/** `referral` is a refer-a-friend reward (docs/contract-extensions.md § 39). */
+export type PointsEntryKind = 'earn' | 'reverse' | 'redeem' | 'restore' | 'adjust' | 'referral';
 
 export interface PointsEntry {
   id: string;
@@ -159,20 +160,36 @@ export interface LoyaltyRules {
   points_expire_after_months?: number;
 }
 
-/** `GET` and `PUT /clinic/settings/loyalty`. docs/contract-extensions.md § 25. */
+/**
+ * `GET` and `PUT /clinic/settings/loyalty`. docs/contract-extensions.md § 25. The `referral_*`
+ * values are refer a friend (§ 39).
+ */
 export interface LoyaltySettings {
   satang_per_point: number;
   point_value_satang: number;
   silver_min_points: number;
   gold_min_points: number;
   points_expire_after_months?: number;
+  referral_enabled: boolean;
+  referral_referrer_points: number;
+  referral_friend_points: number;
+  referral_monthly_cap: number;
   version: number;
   updated_at?: string;
 }
 
-export type LoyaltySettingsInput = Omit<LoyaltySettings, 'version' | 'updated_at' | 'points_expire_after_months'> & {
+/** The referral values of a `PUT`. Optional on the wire: one not sent keeps its stored value (§ 39). */
+export type ReferralSettingsInput = Pick<
+  LoyaltySettings,
+  'referral_enabled' | 'referral_referrer_points' | 'referral_friend_points' | 'referral_monthly_cap'
+>;
+
+export type LoyaltySettingsInput = Omit<
+  LoyaltySettings,
+  'version' | 'updated_at' | 'points_expire_after_months' | keyof ReferralSettingsInput
+> & {
   points_expire_after_months: number | null;
-};
+} & Partial<ReferralSettingsInput>;
 
 /** `POST /staff/loyalty/{customer_id}/adjustments`: the row written and the balance after (§ 25). */
 export interface PointsAdjustment {

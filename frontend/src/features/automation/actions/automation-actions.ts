@@ -17,7 +17,7 @@ import type { Automation, Simulation } from '../types/automation.types';
 const optionalText = z.string().trim().max(200).optional();
 
 const trigger = z.object({
-  type: z.enum(['vaccine_due', 'appointment_upcoming', 'treatment_plan_session', 'customer_lapsed']),
+  type: z.enum(['vaccine_due', 'appointment_upcoming', 'treatment_plan_session', 'customer_lapsed', 'visit_completed']),
   offset_days: z.number().int().min(-90).max(90).optional(),
   offset_hours: z.number().int().min(1).max(168).optional(),
   send_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),

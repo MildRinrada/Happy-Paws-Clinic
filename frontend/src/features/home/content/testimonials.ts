@@ -1,19 +1,12 @@
-import type { Testimonial } from '../types/home.types';
-
+/**
+ * The words around the home page's review column. The reviews themselves are real ones, read from
+ * `GET /reviews` and published by staff (docs/contract-extensions.md § 36); the column is left out
+ * when none is published, and there are no sample quotes to fall back on.
+ */
 export const testimonialsHeading = 'เสียงจากครอบครัวน้อง ๆ';
 
-/** What owners said, top to bottom. Write the quote without quote marks; the card adds them. */
-export const testimonials: Testimonial[] = [
-  {
-    id: 'milo',
-    quote: ['จองคิวออนไลน์แล้วไปถึงได้ตรวจเลย', 'ไม่ต้องนั่งรอเป็นชั่วโมงเหมือนที่เก่า หมออธิบายละเอียดมาก'],
-    author: 'คุณมายด์',
-    relation: 'เจ้าของไมโล',
-  },
-  {
-    id: 'pangpang',
-    quote: ['จองคิวออนไลน์แล้วไปถึงได้ตรวจเลย', 'ไม่ต้องนั่งรอเป็นชั่วโมงเหมือนที่เก่า หมออธิบายละเอียดมาก'],
-    author: 'คุณเบล',
-    relation: 'เจ้าของปังปัง',
-  },
-];
+/** The link under the column, to every published review. */
+export const testimonialsMore = 'ดูรีวิวทั้งหมด';
+
+/** How many of the newest published reviews the home page shows. */
+export const homeReviewCount = 2;

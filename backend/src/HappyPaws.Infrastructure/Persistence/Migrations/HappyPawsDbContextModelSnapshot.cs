@@ -2480,6 +2480,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("points");
 
+                    b.Property<string>("ReferralId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("referral_id");
+
                     b.Property<long?>("SatangPerPoint")
                         .HasColumnType("bigint")
                         .HasColumnName("satang_per_point");
@@ -2510,6 +2515,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.HasIndex("CustomerId", "OccurredAt")
                         .HasDatabaseName("ix_loyalty_entries_customer_id_occurred_at");
 
+                    b.HasIndex("ReferralId", "CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_loyalty_entries_referral_per_customer")
+                        .HasFilter("kind = 'Referral'");
+
                     b.ToTable("loyalty_entries", (string)null);
                 });
 
@@ -2536,6 +2546,30 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("points_expire_after_months");
 
+                    b.Property<bool>("ReferralEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("referral_enabled");
+
+                    b.Property<int>("ReferralFriendPoints")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(100)
+                        .HasColumnName("referral_friend_points");
+
+                    b.Property<int>("ReferralMonthlyCap")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(5)
+                        .HasColumnName("referral_monthly_cap");
+
+                    b.Property<int>("ReferralReferrerPoints")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(100)
+                        .HasColumnName("referral_referrer_points");
+
                     b.Property<long>("SatangPerPoint")
                         .HasColumnType("bigint")
                         .HasColumnName("satang_per_point");
@@ -2559,6 +2593,8 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
 
                     b.ToTable("loyalty_settings", null, t =>
                         {
+                            t.HasCheckConstraint("ck_loyalty_settings_referral", "referral_referrer_points >= 0 AND referral_friend_points >= 0 AND referral_monthly_cap > 0");
+
                             t.HasCheckConstraint("ck_loyalty_settings_singleton", "id = 'set_loyalty'");
 
                             t.HasCheckConstraint("ck_loyalty_settings_values", "satang_per_point > 0 AND point_value_satang > 0 AND silver_min_points > 0 AND gold_min_points > silver_min_points AND (points_expire_after_months IS NULL OR points_expire_after_months > 0)");
@@ -5954,6 +5990,162 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("queue_tickets", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Referrals.Referral", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("channel");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FriendCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("friend_customer_id");
+
+                    b.Property<int>("FriendPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("friend_points");
+
+                    b.Property<bool>("OverMonthlyCap")
+                        .HasColumnType("boolean")
+                        .HasColumnName("over_monthly_cap");
+
+                    b.Property<string>("ReferrerCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("referrer_customer_id");
+
+                    b.Property<int>("ReferrerPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("referrer_points");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("reject_reason");
+
+                    b.Property<DateTimeOffset?>("RejectedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("rejected_at");
+
+                    b.Property<string>("RewardInvoiceId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("reward_invoice_id");
+
+                    b.Property<DateTimeOffset?>("RewardedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("rewarded_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_referrals");
+
+                    b.HasIndex("FriendCustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_referrals_friend");
+
+                    b.HasIndex("RewardInvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_referrals_reward_invoice_id")
+                        .HasFilter("reward_invoice_id IS NOT NULL");
+
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_referrals_created_at_id");
+
+                    b.HasIndex("ReferrerCustomerId", "RewardedAt")
+                        .HasDatabaseName("ix_referrals_referrer_customer_id_rewarded_at");
+
+                    b.ToTable("referrals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_referrals_not_self_reward", "status <> 'Rewarded' OR referrer_customer_id <> friend_customer_id");
+
+                            t.HasCheckConstraint("ck_referrals_points", "referrer_points >= 0 AND friend_points >= 0");
+
+                            t.HasCheckConstraint("ck_referrals_status", "(status = 'Pending' AND reject_reason IS NULL AND rewarded_at IS NULL AND rejected_at IS NULL) OR (status = 'Rewarded' AND reject_reason IS NULL AND rewarded_at IS NOT NULL AND reward_invoice_id IS NOT NULL) OR (status = 'Rejected' AND reject_reason IS NOT NULL AND rejected_at IS NOT NULL AND rewarded_at IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Referrals.ReferralCode", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_referral_codes");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_referral_codes_code");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_referral_codes_customer");
+
+                    b.ToTable("referral_codes", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Reporting.ReportExport", b =>
                 {
                     b.Property<string>("Id")
@@ -6068,6 +6260,245 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasFilter("status = 'Running'");
 
                     b.ToTable("report_exports", (string)null);
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Reviews.CustomerReview", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("InvitationId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("invitation_id");
+
+                    b.Property<DateTimeOffset?>("ModeratedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("moderated_at");
+
+                    b.Property<string>("ModeratedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("moderated_by_staff_id");
+
+                    b.Property<string>("NameChoice")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("name_choice");
+
+                    b.Property<string>("PetId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("pet_id");
+
+                    b.Property<string>("PetSpecies")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("pet_species");
+
+                    b.Property<string>("PublicName")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("public_name");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("published_at");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer")
+                        .HasColumnName("rating");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("reject_reason");
+
+                    b.Property<DateTimeOffset?>("RepliedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("replied_at");
+
+                    b.Property<string>("RepliedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("replied_by_staff_id");
+
+                    b.Property<string>("ReplyText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reply_text");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("VisitId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visit_id");
+
+                    b.Property<DateOnly>("VisitOn")
+                        .HasColumnType("date")
+                        .HasColumnName("visit_on");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_reviews");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_customer_reviews_branch_id");
+
+                    b.HasIndex("CustomerId", "BranchId", "VisitOn")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customer_reviews_visit");
+
+                    b.HasIndex("Status", "CreatedAt", "Id")
+                        .HasDatabaseName("ix_customer_reviews_status_created_at_id");
+
+                    b.ToTable("customer_reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_reviews_published_has_time", "status <> 'Published' OR published_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_customer_reviews_rating", "rating BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("ck_customer_reviews_rejected_has_reason", "(status = 'Rejected') = (reject_reason IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Reviews.ReviewInvitation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BranchId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DispatchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("dispatch_id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("PetId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("pet_id");
+
+                    b.Property<string>("ReviewId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("review_id");
+
+                    b.Property<string>("ServiceName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("service_name");
+
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("used_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("VisitId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visit_id");
+
+                    b.Property<DateOnly>("VisitOn")
+                        .HasColumnType("date")
+                        .HasColumnName("visit_on");
+
+                    b.HasKey("Id")
+                        .HasName("pk_review_invitations");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_review_invitations_branch_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_review_invitations_token_hash")
+                        .HasFilter("token_hash IS NOT NULL");
+
+                    b.HasIndex("CustomerId", "BranchId", "VisitOn")
+                        .IsUnique()
+                        .HasDatabaseName("ix_review_invitations_visit");
+
+                    b.ToTable("review_invitations", (string)null);
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Scheduling.AssignmentRules", b =>
@@ -7361,6 +7792,73 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_queue_tickets_branches_branch_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Referrals.Referral", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("FriendCustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_referrals_customers_friend_customer_id");
+
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("ReferrerCustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_referrals_customers_referrer_customer_id");
+
+                    b.HasOne("HappyPaws.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("RewardInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_referrals_invoices_reward_invoice_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Referrals.ReferralCode", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_referral_codes_customers_customer_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Reviews.CustomerReview", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_reviews_branches_branch_id");
+
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_reviews_customers_customer_id");
+                });
+
+            modelBuilder.Entity("HappyPaws.Domain.Reviews.ReviewInvitation", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_review_invitations_branches_branch_id");
+
+                    b.HasOne("HappyPaws.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_review_invitations_customers_customer_id");
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Scheduling.StaffShift", b =>

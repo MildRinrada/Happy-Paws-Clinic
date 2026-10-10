@@ -23,6 +23,11 @@ public sealed class GetLoyaltySettingsHandler(IClinicSettingsStore settings)
 /// <summary>
 /// <c>PUT /clinic/settings/loyalty</c> (§ 25). A <c>PUT</c>: every value is sent. Absent
 /// <c>points_expire_after_months</c> means points do not expire.
+/// <para>
+/// The four referral values (<c>docs/contract-extensions.md § 39</c>) came later and are optional:
+/// one that is not sent keeps its current value, so a client written before them neither switches
+/// the programme off nor resets its points.
+/// </para>
 /// </summary>
 public sealed record ReplaceLoyaltySettingsCommand(
     long? SatangPerPoint = null,
@@ -30,7 +35,11 @@ public sealed record ReplaceLoyaltySettingsCommand(
     int? SilverMinPoints = null,
     int? GoldMinPoints = null,
     int? PointsExpireAfterMonths = null,
-    uint? IfMatchVersion = null);
+    uint? IfMatchVersion = null,
+    bool? ReferralEnabled = null,
+    int? ReferralReferrerPoints = null,
+    int? ReferralFriendPoints = null,
+    int? ReferralMonthlyCap = null);
 
 public sealed class ReplaceLoyaltySettingsValidator : AbstractValidator<ReplaceLoyaltySettingsCommand>
 {
@@ -63,6 +72,21 @@ public sealed class ReplaceLoyaltySettingsValidator : AbstractValidator<ReplaceL
             .InclusiveBetween(1, LoyaltySettings.MaxExpiryMonths)
             .WithMessage($"อายุแต้มต้องอยู่ระหว่าง 1 ถึง {LoyaltySettings.MaxExpiryMonths} เดือน")
             .When(command => command.PointsExpireAfterMonths is not null);
+
+        RuleFor(command => command.ReferralReferrerPoints)
+            .InclusiveBetween(0, LoyaltySettings.MaxReferralPoints)
+            .WithMessage("แต้มของคนชวนต้องอยู่ระหว่าง 0 ถึง 10,000 แต้ม")
+            .When(command => command.ReferralReferrerPoints is not null);
+
+        RuleFor(command => command.ReferralFriendPoints)
+            .InclusiveBetween(0, LoyaltySettings.MaxReferralPoints)
+            .WithMessage("แต้มของเพื่อนที่ถูกชวนต้องอยู่ระหว่าง 0 ถึง 10,000 แต้ม")
+            .When(command => command.ReferralFriendPoints is not null);
+
+        RuleFor(command => command.ReferralMonthlyCap)
+            .InclusiveBetween(1, LoyaltySettings.MaxReferralMonthlyCap)
+            .WithMessage($"เพดานต่อเดือนต้องอยู่ระหว่าง 1 ถึง {LoyaltySettings.MaxReferralMonthlyCap} คน")
+            .When(command => command.ReferralMonthlyCap is not null);
     }
 }
 
@@ -109,6 +133,12 @@ public sealed class ReplaceLoyaltySettingsHandler(
                 command.GoldMinPoints!.Value,
                 command.PointsExpireAfterMonths);
 
+            loyalty.ReplaceReferral(
+                command.ReferralEnabled ?? loyalty.ReferralEnabled,
+                command.ReferralReferrerPoints ?? loyalty.ReferralReferrerPoints,
+                command.ReferralFriendPoints ?? loyalty.ReferralFriendPoints,
+                command.ReferralMonthlyCap ?? loyalty.ReferralMonthlyCap);
+
             audit.Record(new AuditEvent(
                 AuditActions.LoyaltySettingsChanged,
                 AuditResources.Settings,
@@ -132,5 +162,9 @@ public sealed class ReplaceLoyaltySettingsHandler(
         ["silver_min_points"] = loyalty.SilverMinPoints,
         ["gold_min_points"] = loyalty.GoldMinPoints,
         ["points_expire_after_months"] = loyalty.PointsExpireAfterMonths,
+        ["referral_enabled"] = loyalty.ReferralEnabled,
+        ["referral_referrer_points"] = loyalty.ReferralReferrerPoints,
+        ["referral_friend_points"] = loyalty.ReferralFriendPoints,
+        ["referral_monthly_cap"] = loyalty.ReferralMonthlyCap,
     };
 }

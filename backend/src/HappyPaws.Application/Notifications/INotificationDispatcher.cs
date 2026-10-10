@@ -120,4 +120,11 @@ public static class NotificationTemplates
     /// reminder rule (<c>docs/contract-extensions.md § 33</c>). Marketing: it needs that consent.
     /// </summary>
     public const string CustomerLapsed = "customer.lapsed";
+
+    /// <summary>
+    /// "ช่วยรีวิวการมาครั้งนี้": a visit is over and the customer is asked to review it, from the
+    /// <c>visit_completed</c> reminder rule (<c>docs/contract-extensions.md § 36</c>). Carries the
+    /// review link as <c>review_url</c>. Marketing: it needs that consent.
+    /// </summary>
+    public const string ReviewInvitation = "review.invitation";
 }

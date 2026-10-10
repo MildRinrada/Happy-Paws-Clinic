@@ -31,7 +31,7 @@ public sealed record CreateAutomationCommand(
 
 /// <param name="Type">
 /// <c>vaccine_due</c>, <c>appointment_upcoming</c>, <c>treatment_plan_session</c> or
-/// <c>customer_lapsed</c> (<c>docs/contract-extensions.md § 33</c>).
+/// <c>customer_lapsed</c> (<c>docs/contract-extensions.md § 33</c>) or <c>visit_completed</c> (§ 36).
 /// </param>
 /// <param name="OffsetDays">
 /// Days before the subject's day (negative is after: a vaccine follow-up, or -1 to -90 days after a
@@ -123,11 +123,7 @@ public sealed class CreateAutomationValidator : AbstractValidator<CreateAutomati
         {
             if (!AutomationRule.AllowsHours(type))
             {
-                context.AddFailure(
-                    "trigger.offset_hours",
-                    type == AutomationTrigger.VaccineDue
-                        ? "การเตือนวัคซีนนับเป็นวัน ใช้ offset_days"
-                        : "การชวนลูกค้าที่หายไปนับเป็นวัน ใช้ offset_days");
+                context.AddFailure("trigger.offset_hours", AutomationRule.DaysOnlyMessage(type));
             }
             else if (hours is < 1 or > AutomationRule.MaxOffsetHours)
             {

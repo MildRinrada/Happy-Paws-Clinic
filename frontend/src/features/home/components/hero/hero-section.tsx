@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { WalkInWait } from '@/features/wait-estimate/components/walk-in-wait';
 import { hero } from '../../content/hero';
 import { NextFreeTime } from '../next-free/next-free-time';
 import { SectionContainer } from '../shared/section-container';
@@ -9,8 +10,9 @@ import { SocialProof } from './social-proof';
 
 /**
  * The opening of the page: what the clinic is, the two things to do next, the earliest free time
- * to book, and the banner. The free time streams in on its own, so a slow read never holds up the
- * rest of the page, and leaves no gap when there is nothing to show.
+ * to book, the walk-in wait now, and the banner. The free time and the wait each stream in on their
+ * own, so a slow read never holds up the rest of the page, and leave no gap when there is nothing
+ * to show.
  */
 export function HeroSection() {
   return (
@@ -32,8 +34,14 @@ export function HeroSection() {
             <NextFreeTime />
           </Suspense>
 
+          <Suspense fallback={null}>
+            <WalkInWait tone="hero" className="mt-4 max-w-[520px]" />
+          </Suspense>
+
           <div className="mt-8">
-            <SocialProof />
+            <Suspense fallback={null}>
+              <SocialProof />
+            </Suspense>
           </div>
         </div>
       </SectionContainer>

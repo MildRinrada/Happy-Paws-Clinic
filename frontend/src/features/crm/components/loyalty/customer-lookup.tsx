@@ -20,7 +20,7 @@ export function CustomerLookup({
   target = 'loyalty',
 }: {
   canSearch: boolean;
-  target?: 'loyalty' | 'customerPackages';
+  target?: 'loyalty' | 'customerPackages' | 'referrals';
 }) {
   const pathFor = crmPaths[target];
   const text = loyaltyPage.lookup;

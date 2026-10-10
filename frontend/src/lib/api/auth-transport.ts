@@ -147,6 +147,8 @@ export interface GuestVerifyBody {
   /** Still accepted and ignored by the backend, which stamps its published notice (§ 35). Not sent. */
   policy_version?: string;
   marketing_consent: boolean;
+  /** A friend's referral code (docs/contract-extensions.md § 39). Optional; never changes the answer. */
+  referral_code?: string;
 }
 
 /**

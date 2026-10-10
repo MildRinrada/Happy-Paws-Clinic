@@ -66,7 +66,11 @@ public sealed class LoyaltySettingsController : ControllerBase
                 request.SilverMinPoints,
                 request.GoldMinPoints,
                 request.PointsExpireAfterMonths,
-                IfMatch.Parse(Request.Headers.IfMatch)),
+                IfMatch.Parse(Request.Headers.IfMatch),
+                request.ReferralEnabled,
+                request.ReferralReferrerPoints,
+                request.ReferralFriendPoints,
+                request.ReferralMonthlyCap),
             cancellationToken);
 
         Response.Headers.ETag = IfMatch.ToETag(settings.Version);

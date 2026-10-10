@@ -393,6 +393,13 @@ public static class AuditActions
     /// <summary>The points programme was changed (§ 25): rate, point value, levels or expiry.</summary>
     public const string LoyaltySettingsChanged = "settings.loyalty_changed";
 
+    /// <summary>
+    /// A referral paid out (<c>docs/contract-extensions.md § 39</c>): a new customer's first bill
+    /// was paid, and points went to them and, under the monthly cap, to the person who invited them.
+    /// Points no bill accounts for, like an adjustment.
+    /// </summary>
+    public const string ReferralRewarded = "referral.rewarded";
+
     // ---- Articles on the public site (docs/contract-extensions.md § 26) -------------------------
 
     // Neither personal data nor who-can-do-what, so outside the two rules above on their face. They
@@ -427,6 +434,20 @@ public static class AuditActions
 
     /// <summary>A version of the privacy notice was published and became the current one. It is fixed from now on.</summary>
     public const string PrivacyPolicyPublished = "privacy_policy.published";
+
+    // ---- Customer reviews (docs/contract-extensions.md § 36) ----------------------------------
+
+    // Every decision on what the public page says about the clinic names the member of staff who
+    // made it. The customer's words are not copied here: they stay in the review.
+
+    /// <summary>A review was put on the public site and into the average.</summary>
+    public const string ReviewPublished = "review.published";
+
+    /// <summary>A review was kept off, or taken down, for one of the listed reasons.</summary>
+    public const string ReviewRejected = "review.rejected";
+
+    /// <summary>The clinic's public answer under a review was written or rewritten. Its length, not its text.</summary>
+    public const string ReviewReplied = "review.replied";
 
     // ---- The staff AI assistant (docs/contract-extensions.md § 34) ------------------------------
 
@@ -522,9 +543,11 @@ public static class AuditActions
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
         PackageSold, PackageUsed, PackageCancelled, CouponCreated, SegmentCreated,
         InventoryItemUpdated, PurchaseOrderCancelled, CouponDeactivated, LoyaltyAdjusted, LoyaltySettingsChanged,
+        ReferralRewarded,
         ArticleCreated, ArticleUpdated, ArticlePublished, ArticleUnpublished, ArticleDeleted,
         AiPetSummary, AiSoapDraft, AiOwnerMessageDraft, AiAsk,
         PrivacyPolicyDraftCreated, PrivacyPolicyDraftUpdated, PrivacyPolicyPublished,
+        ReviewPublished, ReviewRejected, ReviewReplied,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -574,6 +597,12 @@ public static class AuditResources
 
     /// <summary>A version of the clinic's privacy notice (<c>docs/contract-extensions.md § 35</c>).</summary>
     public const string PrivacyPolicy = "privacy_policy";
+
+    /// <summary>A customer's review of a visit (<c>docs/contract-extensions.md § 36</c>).</summary>
+    public const string Review = "review";
+
+    /// <summary>A friend who came through someone's referral code (<c>docs/contract-extensions.md § 39</c>).</summary>
+    public const string Referral = "referral";
 
     /// <summary>The staff AI assistant itself, for <c>ai.ask</c>, which reads reports rather than one record.</summary>
     public const string AiAssistant = "ai_assistant";
