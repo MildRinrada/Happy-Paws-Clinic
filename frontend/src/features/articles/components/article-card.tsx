@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { ImageSlot } from '@/components/shared/image-slot';
 import { articleHref, articleMeta } from '../lib/article-text';
 import type { ArticleSummary } from '../types/article.types';
+import { ArticleCover } from './article-cover';
 
 /** One article in a list: thumbnail, title, and who wrote it. The whole card is the link. */
 export function ArticleCard({ article }: { article: ArticleSummary }) {
@@ -11,9 +11,8 @@ export function ArticleCard({ article }: { article: ArticleSummary }) {
         href={articleHref(article.slug)}
         className="flex items-center gap-5 rounded-2xl border border-site-border bg-white p-[18px] transition hover:border-site-teal"
       >
-        <ImageSlot
-          src={article.cover_image_path}
-          alt=""
+        <ArticleCover
+          article={article}
           label="รูป"
           sizes="110px"
           className="h-[94px] w-[109px] shrink-0 overflow-hidden rounded-lg"

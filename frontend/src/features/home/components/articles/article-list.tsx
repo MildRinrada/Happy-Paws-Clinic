@@ -5,8 +5,8 @@ import { SectionHeading } from '../shared/section-heading';
 
 /**
  * The articles column: a heading and the newest articles under it, read from `GET /articles`.
- * What the articles say is data in the database, put there by the operator's `seed-articles`
- * command; only the heading and how many to show are set here.
+ * What the articles say is data in the database, written by staff on `/settings/articles` or put
+ * there by the operator's `seed-articles` command; only the heading and how many to show are set here.
  */
 export async function ArticleList() {
   const articles = await loadArticles(homeArticleCount);

@@ -416,7 +416,7 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 | POST | `/staff/coupons` | `crm:manage` | `Staff/CouponsController` | `Crm/CreateCoupon/` | `Crm` (`Coupon`) | ✅ |
 | GET | `/staff/loyalty/{customer_id}` | `crm:read` | `Staff/LoyaltyController` | `Crm/GetLoyaltyAccount/` | `Crm` (`LoyaltyEntry`) | ✅ |
 
-ขายแพ็กเกจคือออกบิลหนึ่งใบในจังหวะเดียวกัน (ต้องส่ง `Idempotency-Key`) แพ็กเกจใช้ได้เมื่อบิลนั้นชำระครบ แล้วถูกตัดสิทธิ์เองเมื่อบิลมีบริการที่แพ็กเกจครอบ ส่วนนั้นลงบิลเป็นรายการราคา 0 คูปองและแต้มใช้ผ่าน `POST /staff/invoices/{id}/discounts` ด้วยช่อง `coupon_code` หรือ `points` แต้มได้ 1 แต้มต่อ ฿100 ที่จ่ายจริงเมื่อบิลชำระครบ และถูกหักคืนตามเงินที่คืน กลุ่มลูกค้าเก็บเป็นเงื่อนไข และใช้ส่งประกาศ LINE ด้วย `segment_id` ไม่มี endpoint อ่านหรือแก้คูปองและกลุ่มลูกค้า เพราะ contract ไม่มี รายละเอียดอยู่ใน [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) และการตีความใน [assumptions.md § 43](./assumptions.md)
+ขายแพ็กเกจคือออกบิลหนึ่งใบในจังหวะเดียวกัน (ต้องส่ง `Idempotency-Key`) แพ็กเกจใช้ได้เมื่อบิลนั้นชำระครบ แล้วถูกตัดสิทธิ์เองเมื่อบิลมีบริการที่แพ็กเกจครอบ ส่วนนั้นลงบิลเป็นรายการราคา 0 คูปองและแต้มใช้ผ่าน `POST /staff/invoices/{id}/discounts` ด้วยช่อง `coupon_code` หรือ `points` แต้มได้ 1 แต้มต่อ ฿100 ที่จ่ายจริงเมื่อบิลชำระครบ และถูกหักคืนตามเงินที่คืน กลุ่มลูกค้าเก็บเป็นเงื่อนไข และใช้ส่งประกาศ LINE ด้วย `segment_id` การอ่านและปิดคูปอง การอ่านกลุ่มลูกค้าและแพ็กเกจ การปรับแต้มด้วยมือ และกติกาแต้มที่ตั้งได้ เป็นส่วนขยาย [contract-extensions.md § 25](./contract-extensions.md) รายละเอียดอยู่ใน [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) และการตีความใน [assumptions.md § 43](./assumptions.md)
 
 ## Reminders and Automation
 
@@ -518,6 +518,25 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 | DELETE | `/staff/waiting-list/{id}` | `appointment:write` | `Staff/WaitingListController` | `Appointments/RemoveFromWaitingList/` | § 23 | ✅ |
 | GET | `/portal/thread` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`GetMyThreadHandler`) | § 24 | ✅ |
 | POST | `/portal/thread/messages` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`WriteToClinicHandler`) | § 24 | ✅ |
+| GET | `/staff/coupons` | `crm:read` | `Staff/CouponsController` | `Crm/ListCoupons/` | § 25 | ✅ |
+| POST | `/staff/coupons/{id}/deactivate` | `crm:manage` | `Staff/CouponsController` | `Crm/DeactivateCoupon/` | § 25 | ✅ |
+| GET | `/staff/segments` | `crm:read` | `Staff/SegmentsController` | `Crm/ListSegments/` | § 25 | ✅ |
+| GET | `/staff/segments/{id}` | `crm:read` | `Staff/SegmentsController` | `Crm/GetSegment/` | § 25 | ✅ |
+| GET | `/staff/packages` | `crm:read` | `Staff/PackagesController` | `Crm/ListPackages/` | § 25 | ✅ |
+| POST | `/staff/loyalty/{customer_id}/adjustments` | `crm:manage` | `Staff/LoyaltyController` | `Crm/AdjustPoints/` | § 25 | ✅ |
+| GET | `/clinic/settings/loyalty` | `settings:read` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 | ✅ |
+| PUT | `/clinic/settings/loyalty` | `settings:write` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 | ✅ |
+| PATCH | `/staff/inventory/items/{id}` | `inventory:write` | `Staff/InventoryManagementController` | `Inventory/UpdateItem/` | § 25 | ✅ |
+| GET | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/ListPurchaseOrders/` | § 25 | ✅ |
+| POST | `/staff/inventory/purchase-orders/{id}/cancel` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/CancelPurchaseOrder/` | § 25 | ✅ |
+| GET | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/ListStaffArticlesHandler` | § 26 | ✅ |
+| GET | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/GetStaffArticleHandler` | § 26 | ✅ |
+| POST | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/CreateArticleHandler` | § 26 | ✅ |
+| PATCH | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UpdateArticleHandler` | § 26 | ✅ |
+| POST | `/staff/articles/{id}/publish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/PublishArticleHandler` | § 26 | ✅ |
+| POST | `/staff/articles/{id}/unpublish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UnpublishArticleHandler` | § 26 | ✅ |
+| DELETE | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/DeleteArticleHandler` | § 26 | ✅ |
+| POST | `/staff/articles/{id}/cover` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/RequestArticleCoverHandler` | § 26 | ✅ |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -530,6 +549,10 @@ endpoint 36 เส้นที่ **ไม่อยู่** ใน `API Referenc
 § 23 ไม่เปลี่ยนเส้นเดิมของ contract แถวของ `GET /staff/waiting-list` มี `status`, `pet_name` และ `service_name` เพิ่มจากรูปของคำตอบ `POST /staff/waiting-list` และการถอนคิวรอเขียน audit `waiting_list.removed`
 
 § 24 ไม่เปลี่ยนรูปของ `/staff/threads` แต่เพิ่มค่า `portal` ให้ช่อง `channel` ของข้อความขาเข้าและช่อง `reply_channel` คำตอบถึงกล่องที่ลูกค้าเขียนล่าสุดจาก portal ไม่มีช่องทางให้ลองก่อน จึงเข้ากล่องแจ้งเตือนและส่งทาง LINE, SMS หรืออีเมลตามลำดับปกติ
+
+§ 25 เพิ่มช่องในเส้นเดิมโดยไม่เปลี่ยนของเดิม คือ คูปองในคำตอบของ `POST /staff/coupons` มี `status`, `remaining` และช่องการปิด กลุ่มลูกค้ามี `counted_at` บัญชีแต้ม (`GET /staff/loyalty/{customer_id}`) มี `expired_points`, `next_expiry`, `rules.points_expire_after_months` และแถวประวัติมี `expires_at` กับชนิด `adjust` รายการในคลัง (`GET /staff/inventory/items`) รับตัวกรอง `active` และมี `active` กับ `retired_at` ใบสั่งซื้อมีสถานะ `cancelled` และ `received_cost_satang` การใช้คูปองที่ปิดแล้วตอบ `409 coupon_deactivated` และการรับเข้า สั่งซื้อ หรือสั่งยาด้วยรายการที่เลิกใช้ตอบ `409 inventory_item_retired`
+
+§ 26 เพิ่มช่อง `cover_image_url` (ลิงก์รูปปกที่ลงชื่อแล้ว อายุหนึ่งชั่วโมง มีเฉพาะบทความที่เผยแพร่อยู่) ในคำตอบของ `GET /articles` และ `GET /articles/{slug}` ซึ่งเป็นส่วนขยาย § 9 อยู่แล้ว และเพิ่ม scope `content:manage` เป็น scope แรกที่ไม่อยู่ในรายการของ contract ตอบ `409 article_slug_taken` เมื่อ slug ซ้ำกับบทความอื่น รวมบทความที่ลบไปแล้ว
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 

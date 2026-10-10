@@ -369,6 +369,27 @@ public static class AuditActions
     /// <summary>The points programme was changed (§ 25): rate, point value, levels or expiry.</summary>
     public const string LoyaltySettingsChanged = "settings.loyalty_changed";
 
+    // ---- Articles on the public site (docs/contract-extensions.md § 26) -------------------------
+
+    // Neither personal data nor who-can-do-what, so outside the two rules above on their face. They
+    // are here because an article is the clinic speaking in public under a vet's name: when a page
+    // says something it should not, "who put this up, and when" must have an answer.
+
+    /// <summary>A draft article was written. Nobody outside the clinic sees it yet.</summary>
+    public const string ArticleCreated = "article.created";
+
+    /// <summary>An article's text, address or cover was changed. Lists the fields that changed.</summary>
+    public const string ArticleUpdated = "article.updated";
+
+    /// <summary>An article was put on the public site.</summary>
+    public const string ArticlePublished = "article.published";
+
+    /// <summary>An article was taken off the public site and is a draft again.</summary>
+    public const string ArticleUnpublished = "article.unpublished";
+
+    /// <summary>An article was deleted. The row stays so its address is never reused.</summary>
+    public const string ArticleDeleted = "article.deleted";
+
     // ---- Reminders and reports -----------------------------------------------------------------
 
     /// <summary>
@@ -440,6 +461,7 @@ public static class AuditActions
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,
         PackageSold, PackageUsed, PackageCancelled, CouponCreated, SegmentCreated,
         InventoryItemUpdated, PurchaseOrderCancelled, CouponDeactivated, LoyaltyAdjusted, LoyaltySettingsChanged,
+        ArticleCreated, ArticleUpdated, ArticlePublished, ArticleUnpublished, ArticleDeleted,
     };
 
     public static bool IsKnown(string action) => All.Contains(action);
@@ -483,4 +505,5 @@ public static class AuditResources
     public const string Package = "package";
     public const string Coupon = "coupon";
     public const string Segment = "segment";
+    public const string Article = "article";
 }

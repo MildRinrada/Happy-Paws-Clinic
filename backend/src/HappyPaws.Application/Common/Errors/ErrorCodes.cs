@@ -96,4 +96,11 @@ public static class ErrorCodes
 
     /// <summary>409 — a retired inventory item was received, ordered or prescribed (§ 25).</summary>
     public const string InventoryItemRetired = "inventory_item_retired";
+
+    /// <summary>
+    /// 409 — another article already has this slug, deleted articles included; <c>details.article_id</c>
+    /// names it when known and <c>details.deleted</c> says whether it was deleted
+    /// (<c>docs/contract-extensions.md § 26</c>).
+    /// </summary>
+    public const string ArticleSlugTaken = "article_slug_taken";
 }

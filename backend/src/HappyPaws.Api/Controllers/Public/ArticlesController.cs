@@ -12,8 +12,9 @@ namespace HappyPaws.Api.Controllers.Public;
 /// articles at all; these two reads were authorised so the public site can show the vets'
 /// articles. See <c>docs/contract-extensions.md § 9</c>.
 /// <para>
-/// Public and read-only. Articles arrive from the operator's <c>seed-articles</c> command; there is
-/// no endpoint that writes one.
+/// Public and read-only, and only ever what is published: a draft, a scheduled article and a
+/// deleted one answer exactly like one that does not exist. Articles arrive from the operator's
+/// <c>seed-articles</c> command and from staff on <c>/staff/articles</c> (<c>§ 26</c>).
 /// </para>
 /// </summary>
 [ApiController]

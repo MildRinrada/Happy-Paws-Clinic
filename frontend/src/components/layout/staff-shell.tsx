@@ -28,7 +28,7 @@ const navigation: NavItem[] = [
   { href: '/crm', label: 'แพ็กเกจและโปรโมชัน', scopes: [Scope.CrmRead, Scope.CrmManage] },
   { href: '/notifications', label: 'แจ้งเตือนลูกค้า', scopes: [Scope.NotifyRead, Scope.NotifySend, Scope.AutomationRead] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
-  { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead] },
+  { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead, Scope.ContentManage] },
 ];
 
 /**

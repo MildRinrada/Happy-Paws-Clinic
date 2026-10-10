@@ -1,4 +1,6 @@
+using HappyPaws.Application.Articles.Manage;
 using HappyPaws.Application.Common.Errors;
+using HappyPaws.Infrastructure.Persistence.Configurations.Articles;
 using HappyPaws.Application.Customers.LineAddress;
 using HappyPaws.Infrastructure.Persistence.Configurations.Crm;
 using HappyPaws.Infrastructure.Persistence.Configurations.Customers;
@@ -63,6 +65,11 @@ internal static class PostgresErrorTranslator
                 {
                     MessageEn = "A coupon with this code already exists.",
                 },
+
+            // Two writers taking the same slug at the same moment (docs/contract-extensions.md § 26):
+            // the loser hears what it would have a second later, without the holder it cannot see.
+            PostgresException { SqlState: UniqueViolation, ConstraintName: ArticleConfiguration.SlugIndex } =>
+                ArticleSlugs.Taken(slug: null, holder: null),
 
             _ => null,
         };

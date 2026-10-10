@@ -76,4 +76,6 @@ export const Scope = {
   PaymentRefund: 'payment:refund',
   InvoiceDiscount: 'invoice:discount',
   ReceiptIssue: 'receipt:issue',
+  /** Not in the contract: approved with the article routes (docs/contract-extensions.md § 26). */
+  ContentManage: 'content:manage',
 } as const;

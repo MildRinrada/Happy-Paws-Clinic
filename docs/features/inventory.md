@@ -12,6 +12,9 @@
 | GET | `/staff/inventory/alerts` | `inventory:read` | ใกล้หมด หมด ใกล้หมดอายุ และล็อตที่หมดอายุแล้ว |
 | POST | `/staff/inventory/purchase-orders` | `inventory:purchase` | ใบสั่งซื้อจากซัพพลายเออร์ ต้องมี `Idempotency-Key` |
 | GET | `/staff/prescriptions/drug-options` | `rx:write` | ส่วนขยาย ([contract-extensions.md § 20](../contract-extensions.md)) ยาในคลังให้สัตวแพทย์เลือกตอนสั่งยา พร้อมราคาขายและสถานะสต๊อกของสาขาเดียว |
+| PATCH | `/staff/inventory/items/{id}` | `inventory:write` | ส่วนขยาย ([contract-extensions.md § 25](../contract-extensions.md)) แก้ชื่อ หน่วย ราคาขาย จุดสั่งซื้อ และเลิกใช้หรือกลับมาใช้รายการ |
+| GET | `/staff/inventory/purchase-orders` | `inventory:purchase` | ส่วนขยาย (§ 25) ใบสั่งซื้อพร้อมรายการ ใหม่สุดก่อน กรองสถานะ สาขา และซัพพลายเออร์ แบ่งหน้าด้วย cursor |
+| POST | `/staff/inventory/purchase-orders/{id}/cancel` | `inventory:purchase` | ส่วนขยาย (§ 25) ยกเลิกส่วนที่ยังค้างรับ |
 
 contract ให้แต่บรรทัดอธิบายของห้าเส้นนี้ ไม่มีรูป body หรือคำตอบ รูปที่ใช้และเหตุผลอยู่ในเอกสารนี้ และจุดที่ต้องตีความอยู่ใน [assumptions.md § 42](../assumptions.md) role ตั้งต้นที่ถือ scope กลุ่มนี้มีแค่ `clinic_owner` (`*`) และ `clinic_admin` ถ้าต้องการให้พนักงานคนอื่นใช้ ให้เพิ่ม scope ให้ role ผ่าน `PUT /staff/roles/{id}/permissions`
 
@@ -43,7 +46,35 @@ contract ไม่มี endpoint สร้างรายการ รายก
 - `reorder_level` เหลือเท่านี้หรือน้อยกว่าคือใกล้หมด `0` คือไม่เตือนใกล้หมด แต่ยังเตือนเมื่อหมด
 - ชื่อซ้ำกับรายการที่มีแล้วตอบ `409 inventory_item_exists` พร้อม `details.item_id` ของรายการเดิม ระบบไม่เอารายการเดิมมาใช้แทนเงียบ ๆ เพราะคำขอมีราคาและหน่วยมาด้วย คนส่งจะเข้าใจผิดว่าบันทึกแล้ว ฐานข้อมูลกันชื่อซ้ำอีกชั้นด้วย unique index `ux_inventory_items_name_key` ถ้าสองคนสร้างพร้อมกัน คนที่สองได้ `409` แบบเดียวกัน
 - การสร้างรายการเขียน audit `inventory.item_created` พร้อมราคา
-- **แก้ชื่อ ราคา หรือจุดสั่งซื้อภายหลังยังทำไม่ได้** เพราะไม่มี endpoint ดูข้อเสนอท้ายเอกสาร
+- แก้ชื่อ ราคา หน่วย จุดสั่งซื้อ หรือเลิกใช้ภายหลัง ทำได้ด้วยส่วนขยาย § 25 ดูหัวข้อถัดไป
+
+## แก้และเลิกใช้รายการ
+
+ส่วนขยาย [contract-extensions.md § 25](../contract-extensions.md) `PATCH /staff/inventory/items/{id}` scope `inventory:write` รองรับ `If-Match`
+
+```json
+{ "name": "Amoxicillin 250mg tab", "unit": "เม็ด", "unit_price_satang": 550, "reorder_level": 40, "active": false }
+```
+
+- ช่องที่ไม่ส่งไม่เปลี่ยน กติกาของแต่ละช่องเหมือนตอนสร้าง คำตอบคือรายการพร้อมคงเหลือ แก้แล้วไม่มีอะไรเปลี่ยนไม่เขียน audit ที่เปลี่ยนเขียน `inventory.item_updated` พร้อมค่าก่อนและหลัง
+- **ราคา** ใช้กับการจ่ายยาครั้งถัดไป ราคาที่คิดไปแล้วเก็บอยู่ที่ใบสั่งยา (`charged_unit_price_satang`) จึงไม่เปลี่ยน แม้เคสยังไม่ปิด
+- **ชื่อ** เปลี่ยนชื่อที่ใช้จับคู่ด้วย ชื่อที่ซ้ำกับรายการอื่นตอบ `409 inventory_item_exists` ใบสั่งยาที่พิมพ์ชื่อเองและยังไม่จ่ายจะจับคู่กับชื่อใหม่ ใบที่เลือกจากคลังผูกด้วยรหัสจึงไม่กระทบ
+- **หน่วย** แก้ชื่อหน่วยเท่านั้น จำนวนในคลังไม่ถูกแปลง
+- **เลิกใช้** (`active: false`) และ **กลับมาใช้** (`active: true`)
+
+| เรื่อง | รายการที่เลิกใช้ |
+|---|---|
+| ตัวเลือกยาของหมอ (§ 20) | ไม่ขึ้น |
+| สั่งยาด้วย `inventory_item_id` | `409 inventory_item_retired` |
+| รับเข้า และแถวของใบสั่งซื้อ | `409 inventory_item_retired` หน้าสั่งซื้อไม่เสนอรายการนี้ |
+| จ่ายออก โอน ปรับยอด | ทำได้ ของที่เหลือบนชั้นต้องเอาออกได้ |
+| จ่ายยาตามใบสั่งยาที่สั่งไว้ก่อน ทั้งด้วยรหัสและด้วยชื่อ | ทำได้ ตัดสต๊อกและคิดเงินตามปกติ |
+| แจ้งเตือนใกล้หมดและหมด และ webhook `inventory.low_stock` | ไม่มี |
+| แจ้งเตือนวันหมดอายุของล็อต | ยังมี |
+| รายการในคลัง `GET /staff/inventory/items` | ยังขึ้น พร้อม `active: false` และ `retired_at` กรองด้วย `?active=true` หรือ `false` ได้ |
+| สร้างรายการใหม่ชื่อเดียวกัน | `409 inventory_item_exists` พร้อม `details.retired: true` |
+
+ประวัติทุกแถว ล็อต สมุดสต๊อก ใบสั่งยา และใบสั่งซื้อ ยังชี้มาที่รายการเดิม การเลิกใช้จึงไม่ใช่การลบ
 
 ## รายการและคงเหลือ
 
@@ -113,7 +144,19 @@ contract ไม่มี endpoint สร้างรายการ รายก
 - รับเกินจำนวนที่ค้างตอบ `409 over_receipt` รับรายการที่ไม่อยู่ในใบตอบ `409 invalid_movement` รับลงสาขาอื่นที่ไม่ใช่สาขาของใบตอบ `422`
 - การรับสองครั้งที่อ้างใบเดียวกันล็อกแถวใบสั่งซื้อ (`FOR UPDATE`) จึงทำทีละครั้ง และไม่มีทางรับเกิน
 - ต้องส่ง `Idempotency-Key` และเขียน audit `inventory.purchase_order_raised` พร้อมยอดรวม
-- **ยกเลิกหรือแก้ใบสั่งซื้อ และอ่านใบสั่งซื้อย้อนหลังยังทำไม่ได้** เพราะไม่มี endpoint ใบที่ยังค้างดูได้จาก `open_orders` ในรายการ
+- **อ่านและยกเลิก** เป็นส่วนขยาย § 25 แก้ใบสั่งซื้อยังทำไม่ได้
+
+### อ่านและยกเลิกใบสั่งซื้อ
+
+`GET /staff/inventory/purchase-orders?status=&branch=&supplier=&limit=&cursor=` scope `inventory:purchase` คืนใบสั่งซื้อพร้อมรายการ ใหม่สุดก่อน ครอบคลุมสาขาที่ผู้เรียกเห็น ขอสาขาอื่นตอบ `403` แต่ละใบมี `received_cost_satang` คือต้นทุนของที่รับแล้ว
+
+`POST /staff/inventory/purchase-orders/{id}/cancel` scope `inventory:purchase` รองรับ `If-Match` เหตุผล (`reason`) ไม่บังคับ
+
+- **ยกเลิกส่วนที่ค้าง ไม่ใช่ทั้งใบ** ทำได้เมื่อยังมีของค้าง ไม่ว่ายังไม่ได้รับเลยหรือรับมาบางส่วน สถานะเป็น `cancelled` จำนวนที่รับแล้วอยู่ในแถวเหมือนเดิม และของนั้นยังอยู่ในคลัง แต่ละแถวมี `cancelled_quantity` คือจำนวนที่ค้างตอนยกเลิก และ `outstanding` เป็นศูนย์
+- ส่วนที่ค้างหายจาก `on_order` และ `open_orders` ของรายการสต๊อก
+- รับของตามใบที่ยกเลิกแล้ว ใบที่รับครบแล้ว และการยกเลิกซ้ำ ตอบ `409 state_conflict`
+- การยกเลิกถือ row lock ของใบตัวเดียวกับการรับของ จึงทำทีละครั้งกับการรับ
+- audit `inventory.purchase_order_cancelled`
 
 ## ปรับยอดหลังนับสต๊อก
 
@@ -164,7 +207,7 @@ contract ไม่มี endpoint สร้างรายการ รายก
 
 `POST /staff/consultations/{id}/prescriptions` รับ `inventory_item_id` เพิ่ม ไม่บังคับ
 
-- รหัสที่ไม่มีในคลังตอบ `404` รหัสของเวชภัณฑ์ตอบ `422` ที่ `inventory_item_id` คลังยังไม่มีการปิดรายการ ยาทุกตัวในคลังจึงเลือกได้
+- รหัสที่ไม่มีในคลังตอบ `404` รหัสของเวชภัณฑ์ตอบ `422` ที่ `inventory_item_id` รายการที่เลิกใช้ตอบ `409 inventory_item_retired` (§ 25)
 - ไม่ส่ง `drug_name` ระบบใช้ชื่อของรายการ ส่งมาด้วยระบบเก็บตามที่พิมพ์ เพราะเป็นข้อความบนฉลาก รหัสคือสิ่งที่ใช้ตัดสต๊อก
 - การตรวจแพ้ยาเทียบทั้งชื่อที่พิมพ์และชื่อของรายการ
 - รหัสเก็บในคอลัมน์ `prescriptions.inventory_item_id` ตัวเดิมที่การจ่ายยาใช้บันทึกว่าจับคู่กับรายการไหน จึงไม่มี migration
@@ -234,11 +277,11 @@ contract ไม่มี endpoint สร้างรายการ รายก
 
 | แท็บ | path | scope | มีอะไร |
 |---|---|---|---|
-| รายการยา | `/inventory` | `inventory:read` | ค้นหาชื่อ กรองสถานะ ราคาขาย ใช้ได้ สถานะ สั่งไว้ วันหมดอายุที่ใกล้สุด และล็อต |
+| รายการยา | `/inventory` | `inventory:read` | ค้นหาชื่อ กรองสถานะ ราคาขาย ใช้ได้ สถานะ สั่งไว้ วันหมดอายุที่ใกล้สุด และล็อต รายการที่เลิกใช้มีป้าย "เลิกใช้" ผู้ถือ `inventory:write` มีปุ่มแก้ไข (ฟอร์มในแถว ส่งเฉพาะช่องที่เปลี่ยน) และปุ่มเลิกใช้หรือกลับมาใช้ที่ถามยืนยันก่อน (§ 25) |
 | แจ้งเตือน | `/inventory/alerts` | `inventory:read` | รายการแจ้งเตือน เลือกดูวันหมดอายุล่วงหน้า 30 ถึง 180 วัน |
 | รับเข้า จ่ายออก | `/inventory/movements` | `inventory:write` | ฟอร์มเดียวสามชนิด รับรายการใหม่ได้ เลือกล็อตหรือให้ระบบเลือก เลือกใบสั่งซื้อที่ค้างรับ |
 | ปรับยอด | `/inventory/adjustments` | `inventory:adjust` | เลือกรายการและล็อต กรอกจำนวนที่นับและเหตุผล ต้องถือ `inventory:read` ด้วย |
-| สั่งซื้อ | `/inventory/purchase-orders` | `inventory:purchase` | ซัพพลายเออร์ วันที่คาดว่าได้ของ และหลายรายการ แสดงยอดรวมระหว่างกรอก |
+| สั่งซื้อ | `/inventory/purchase-orders` | `inventory:purchase` | ซัพพลายเออร์ วันที่คาดว่าได้ของ และหลายรายการ แสดงยอดรวมระหว่างกรอก ไม่เสนอรายการที่เลิกใช้ ใต้ฟอร์มมีใบสั่งซื้อของสาขา กรองซัพพลายเออร์และสถานะ แต่ละใบมีความคืบหน้าของแต่ละรายการ และปุ่ม "ยกเลิกส่วนที่ค้าง" ที่ถามยืนยันก่อน (§ 25) |
 
 - บัญชีที่ไม่มี `inventory:read` แต่มี scope อื่นของกลุ่มนี้ เปิด `/inventory` แล้วถูกพาไปแท็บแรกที่ใช้ได้ ฟอร์มรับเข้าและสั่งซื้อของบัญชีนี้เลือกได้เฉพาะรายการใหม่
 - ฟอร์มรับเข้าและสั่งซื้อสร้าง `Idempotency-Key` ครั้งเดียวต่อหนึ่งรายการที่บันทึก และใช้ key เดิมเมื่อลองซ้ำ
@@ -255,8 +298,8 @@ contract ไม่มี endpoint สร้างรายการ รายก
 
 ## ข้อจำกัดที่รู้อยู่
 
-- แก้ชื่อ ราคา หน่วย หรือจุดสั่งซื้อของรายการไม่ได้ ลบหรือปิดรายการก็ไม่ได้
-- ยกเลิกใบสั่งซื้อ แก้ใบสั่งซื้อ และอ่านใบสั่งซื้อทั้งหมดไม่ได้ ใบที่ค้างรับดูได้จาก `open_orders`
+- ลบรายการไม่ได้ เลิกใช้ได้ (§ 25) และแก้ชนิดรายการไม่ได้
+- แก้ใบสั่งซื้อไม่ได้ ยกเลิกได้เฉพาะส่วนที่ค้าง (§ 25)
 - อ่านสมุดสต๊อกย้อนหลังผ่าน API ไม่ได้ แถวอยู่ในฐานข้อมูลครบ
 - ใบสั่งยาที่พิมพ์ชื่อเองยังต้องมีชื่อตรงกับชื่อรายการถึงจะตัดสต๊อก ใบสั่งยาที่สร้างก่อนมีส่วนขยาย § 20 เป็นแบบนี้ทั้งหมด role `veterinarian` ยังไม่มี `inventory:read` และไม่ต้องมี เพราะตัวเลือกยาใช้ `rx:write`
 - จำนวนในใบสั่งยาถือว่าเป็นหน่วยเดียวกับหน่วยของรายการ
@@ -267,25 +310,23 @@ contract ไม่มี endpoint สร้างรายการ รายก
 
 | ข้อเสนอ | เหตุผล |
 |---|---|
-| `PATCH /staff/inventory/items/{id}` (`inventory:write`) แก้ชื่อ ราคา หน่วย จุดสั่งซื้อ และปิดรายการ | ตอนนี้ราคาที่ตั้งตอนสร้างแก้ไม่ได้เลย |
-| `GET /staff/inventory/purchase-orders` และ `POST /staff/inventory/purchase-orders/{id}/cancel` | ดูใบสั่งซื้อย้อนหลังและยกเลิกใบที่ไม่ได้ของ |
 | `GET /staff/inventory/movements?item_id=&branch=` | ดูสมุดสต๊อกของรายการหนึ่ง สำหรับตรวจสอบและตามหาล็อตตอนเรียกคืน |
 | `POST /staff/inventory/lots/{id}/recall` | บันทึกล็อตที่ผู้ผลิตเรียกคืน ให้ขึ้นในแจ้งเตือนแยกจากล็อตหมดอายุ |
 | ต้นทุนยาในรายงานบริการ เช่น `medicine_cost_satang` | กำไรจริงหลังหักต้นทุนยา ใช้ต้นทุนจากล็อตที่ถูกตัดตอนจ่าย |
 
-ข้อเสนอ `inventory_item_id` ในคำขอสั่งยาได้รับอนุมัติและทำแล้ว เป็น [contract-extensions.md § 20](../contract-extensions.md)
+ข้อเสนอ `inventory_item_id` ในคำขอสั่งยาได้รับอนุมัติและทำแล้ว เป็น [contract-extensions.md § 20](../contract-extensions.md) ข้อเสนอแก้รายการ และอ่านกับยกเลิกใบสั่งซื้อ ได้รับอนุมัติและทำแล้ว เป็น [§ 25](../contract-extensions.md)
 
 ## โค้ด
 
 | ส่วน | ไฟล์ |
 |---|---|
 | รายการ ล็อต สมุด ใบสั่งซื้อ | `backend/src/HappyPaws.Domain/Inventory/` (`InventoryItem.cs`, `StockLot.cs`, `StockMovement.cs`, `StockAllocation.cs`, `PurchaseOrder.cs`) |
-| use case | `backend/src/HappyPaws.Application/Inventory/` (`ListItems/`, `RecordMovement/`, `AdjustStock/`, `ListAlerts/`, `CreatePurchaseOrder/`, `StockView.cs`, `InventoryBranches.cs`, `InventoryItemResolver.cs`) |
+| use case | `backend/src/HappyPaws.Application/Inventory/` (`ListItems/`, `RecordMovement/`, `AdjustStock/`, `ListAlerts/`, `CreatePurchaseOrder/`, `StockView.cs`, `InventoryBranches.cs`, `InventoryItemResolver.cs`, และจาก § 25 `UpdateItem/`, `ListPurchaseOrders/`, `CancelPurchaseOrder/`) |
 | ตัดสต๊อกตอนจ่ายยา | `backend/src/HappyPaws.Application/Inventory/Dispensing/StockDispenser.cs`, `backend/src/HappyPaws.Application/Prescriptions/DispensePrescription/DispensePrescriptionHandler.cs` |
 | เลือกยาจากคลังตอนสั่งยา (§ 20) | `backend/src/HappyPaws.Application/Prescriptions/ListDrugOptions/`, `backend/src/HappyPaws.Application/Consultations/AddPrescription/AddPrescriptionHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Staff/PrescriptionsController.cs`, `frontend/src/features/consultations/components/prescriptions/drug-search-field.tsx` |
 | ค่ายาบนบิล | `backend/src/HappyPaws.Application/Billing/MedicineBilling.cs`, `ConsultationBilling.cs` |
 | lock และ query | `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Inventory/` (`StockLedger.cs`, `PurchaseOrderRepository.cs`, `InventoryItemRepository.cs`) |
 | ตารางและ constraint | `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Inventory/InventoryConfiguration.cs`, migration `InventoryAndDispensing` |
-| controller | `backend/src/HappyPaws.Api/Controllers/Staff/InventoryController.cs`, `InventoryStockController.cs`, `backend/src/HappyPaws.Api/Contracts/Inventory/InventoryContracts.cs` |
+| controller | `backend/src/HappyPaws.Api/Controllers/Staff/InventoryController.cs`, `InventoryStockController.cs`, `InventoryManagementController.cs` (§ 25), `backend/src/HappyPaws.Api/Contracts/Inventory/InventoryContracts.cs` |
 | หน้าจอ | `frontend/src/app/(staff)/inventory/`, `frontend/src/features/inventory/`, `frontend/src/features/prescriptions/components/dispense-outcome.tsx` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Inventory/`, `Api/Prescriptions/DispensingStockTests.cs`, `Api/Prescriptions/DrugPickerTests.cs`, `Fixtures/InventoryScenario.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Inventory/`, `Application/Inventory/` |

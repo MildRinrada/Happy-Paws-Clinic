@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  23 migration และ model snapshot
+  Migrations/                  24 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -197,6 +197,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 21 | `CustomerMessageThreads` | ตาราง `message_threads` (หนึ่งแถวต่อลูกค้า unique `customer_id` เวลาข้อความล่าสุด เวลาที่ลูกค้าเขียนล่าสุดและช่องทาง เวลาที่พนักงานตอบล่าสุด สาขาที่ลูกค้าจองล่าสุด) และ `thread_messages` (ข้อความทั้งสองทาง ชนิดข้อความ ข้อความที่พิมพ์ ผู้ตอบ และผลการส่งของคำตอบ unique `(channel, external_id)` กัน webhook ที่ส่งซ้ำ) ดู [ข้อความลูกค้า](features/messaging.md) |
 | 22 | `LoyaltyPackagesAndPromotions` | ช่องใหม่ใน `customer_packages` (ราคา สาขา บิลที่ขาย ผู้ขาย เวลาที่จ่ายครบ เวลาและเหตุผลที่ยกเลิก) และใส่ `activated_at` ให้แถวเดิมเพื่อให้ยังใช้ได้ ตาราง `package_uses` (การตัดสิทธิ์ต่อรายการบิล) `coupons` (unique `code` check ว่าเป็นเปอร์เซ็นต์หรือจำนวนเงินอย่างใดอย่างหนึ่ง และจำนวนที่ใช้ไม่เกินจำนวนรวม) `coupon_redemptions` (unique `(coupon_id, invoice_id)` เฉพาะแถวที่ยังไม่คืน) `loyalty_entries` (สมุดแต้ม unique `invoice_id` เฉพาะชนิด `Earn`) และ `customer_segments` ดู [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) |
 | 23 | `WebhooksAndIntegrations` | ตาราง `webhook_subscriptions` (URL รายการ event `text[]` และ secret ที่เข้ารหัสแล้ว) `webhook_events` (outbox ข้อความ body เป็น `text` เพื่อให้ไบต์ที่ลงนามคงเดิม index เฉพาะแถวที่ยังไม่แตก) `webhook_deliveries` (unique `(event_id, subscription_id)` index คิวเฉพาะแถว `Pending` ลบตาม event และ webhook) `api_keys` (unique `prefix` และ `secret_hash` ไม่มีคอลัมน์ที่เก็บ key) `payment_provider_settings` และ `lab_provider_settings` (แถวเดียว ความลับเป็น ciphertext) และ `calendar_feeds` (หนึ่งแถวต่อพนักงาน unique `token_hash`) ดู [การเชื่อมต่อระบบ](features/integrations.md) |
+| 24 | `ManageCrmAndInventory` | บน `coupons` เพิ่ม `deactivated_at`, `deactivated_by_staff_id`, `deactivation_reason` (check ว่าเวลากับผู้ปิดมาคู่กัน) บน `loyalty_entries` เพิ่ม `expires_at` (วันหมดอายุของแต้มที่แถวนั้นเพิ่ม) และ `satang_per_point` (อัตราตอนได้แต้ม ใช้ตอนคืนเงิน) ตาราง `loyalty_settings` (แถวเดียว กติกาแต้มสะสม) บน `inventory_items` เพิ่ม `retired_at` บน `purchase_orders` เพิ่ม `cancelled_at`, `cancelled_by_staff_id`, `cancel_reason` และ index `(created_at, id)` ของคูปองกับ `(ordered_at, id)` ของใบสั่งซื้อสำหรับรายการแบบแบ่งหน้า ทุกคอลัมน์ใหม่เป็นค่าว่างได้ ไม่เติมข้อมูลเดิม ดู [contract-extensions.md § 25](./contract-extensions.md) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

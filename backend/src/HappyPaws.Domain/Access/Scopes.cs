@@ -6,7 +6,8 @@ namespace HappyPaws.Domain.Access;
 /// This is the authoritative list served by <c>GET /staff/permissions</c> and validated against by
 /// <c>PUT /staff/roles/{id}/permissions</c> ("ตรวจ scope ที่ไม่มีจริง" — reject unknown scopes).
 /// Every scope here is taken verbatim from <c>API Reference.dc.html</c>; do not invent new ones
-/// without a corresponding change to the contract.
+/// without a corresponding change to the contract. The one exception, <see cref="Content"/>, was
+/// approved by the contract owner (<c>docs/contract-extensions.md § 26</c>).
 /// </para>
 /// </summary>
 public static class Scopes
@@ -198,6 +199,18 @@ public static class Scopes
     public static class Audit
     {
         public const string Read = "audit:read";
+    }
+
+    /// <summary>
+    /// <b>Not in the API reference.</b> Writing and publishing the health articles on the public
+    /// site, approved as its own scope (<c>docs/contract-extensions.md § 26</c>): what the clinic
+    /// says in public is a different trust from any clinical or front-desk job. One scope covers
+    /// reading drafts too, because nobody needs to see unpublished articles except the people who
+    /// write them.
+    /// </summary>
+    public static class Content
+    {
+        public const string Manage = "content:manage";
     }
 
     /// <summary>

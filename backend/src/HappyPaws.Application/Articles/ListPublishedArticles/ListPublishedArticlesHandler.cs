@@ -16,7 +16,7 @@ public sealed record ListPublishedArticlesQuery(int? Limit = null);
 /// anyone if that ever changes. Scheduled articles stay hidden until their time comes.
 /// </para>
 /// </summary>
-public sealed class ListPublishedArticlesHandler(IArticleRepository articles, IClock clock)
+public sealed class ListPublishedArticlesHandler(IArticleRepository articles, IClock clock, IFileStorage storage)
 {
     public const int DefaultLimit = 10;
     public const int MaxLimit = 50;
@@ -35,6 +35,6 @@ public sealed class ListPublishedArticlesHandler(IArticleRepository articles, IC
 
         var published = await articles.ListPublishedAsync(clock.UtcNow, limit, cancellationToken);
 
-        return [.. published.Select(ArticleSummaryDto.From)];
+        return [.. published.Select(article => ArticleSummaryDto.From(article, storage))];
     }
 }

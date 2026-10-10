@@ -13,7 +13,9 @@ public sealed record SeedArticlesResult(IReadOnlyList<string> Created, IReadOnly
 /// <c>seed-articles</c> command, never by a request.
 /// <para>
 /// Safe to run again: an article whose slug already exists is skipped, not overwritten, so a clinic
-/// that has edited a sample in the database does not lose the edit to a second seed.
+/// that has edited a sample in the database does not lose the edit to a second seed. A sample staff
+/// deleted keeps its slug (<c>docs/contract-extensions.md § 26</c>), so it is skipped too and not
+/// brought back.
 /// </para>
 /// </summary>
 public sealed class SeedArticlesHandler(IArticleRepository articles, IUnitOfWork unitOfWork, IClock clock)

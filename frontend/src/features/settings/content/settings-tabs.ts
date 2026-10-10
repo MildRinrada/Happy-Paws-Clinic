@@ -13,9 +13,11 @@ export const settingsTabs: SettingsTab[] = [
   { href: '/settings/hours', label: 'เวลาทำการและวันหยุด', scope: Scope.SettingsWrite },
   { href: '/settings/rules', label: 'กติกาการจอง คิว และเวชระเบียน', scope: Scope.SettingsWrite },
   { href: '/settings/appointments', label: 'นโยบายยกเลิกและประเภทนัด', scope: Scope.SettingsWrite },
+  { href: '/settings/loyalty', label: 'แต้มสะสม', scope: Scope.SettingsWrite },
   { href: '/settings/services', label: 'บริการและราคา', scope: Scope.ServiceManage },
   { href: '/settings/staff', label: 'พนักงานและสิทธิ์', scope: Scope.StaffRead },
   { href: '/settings/contacts', label: 'ข้อมูลติดต่อ', scope: Scope.SettingsWrite },
+  { href: '/settings/articles', label: 'บทความ', scope: Scope.ContentManage },
   { href: '/settings/line', label: 'LINE', scope: Scope.IntegrationManage },
   { href: '/settings/integrations', label: 'เชื่อมต่อระบบ', scope: Scope.IntegrationManage },
 ];

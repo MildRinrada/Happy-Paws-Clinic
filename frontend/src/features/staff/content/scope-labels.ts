@@ -11,6 +11,7 @@ const resources: Record<string, string> = {
   automation: 'งานอัตโนมัติ',
   billing: 'การเงินของคลินิก',
   consult: 'การตรวจ',
+  content: 'บทความบนเว็บไซต์',
   crm: 'ลูกค้าสัมพันธ์',
   customer: 'ลูกค้า',
   dashboard: 'แดชบอร์ด',

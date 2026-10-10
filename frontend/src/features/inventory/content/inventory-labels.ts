@@ -34,4 +34,5 @@ export const orderStatusLabels: Record<PurchaseOrderStatus, string> = {
   ordered: 'สั่งแล้ว รอของ',
   partially_received: 'รับของบางส่วน',
   received: 'รับครบแล้ว',
+  cancelled: 'ยกเลิกแล้ว',
 };

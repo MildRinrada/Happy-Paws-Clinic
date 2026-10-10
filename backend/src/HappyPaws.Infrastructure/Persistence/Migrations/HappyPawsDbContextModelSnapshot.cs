@@ -485,6 +485,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20000)")
                         .HasColumnName("body");
 
+                    b.Property<string>("CoverImageKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("cover_image_key");
+
                     b.Property<string>("CoverImagePath")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
@@ -494,7 +499,25 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTimeOffset>("PublishedAt")
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DeletedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deleted_by_staff_id");
+
+                    b.Property<DateTimeOffset?>("FirstPublishedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("first_published_at");
+
+                    b.Property<string>("PendingCoverKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("pending_cover_key");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("published_at");
 
@@ -540,7 +563,13 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_articles_slug");
 
-                    b.ToTable("articles", (string)null);
+                    b.HasIndex("CreatedAt", "Id")
+                        .HasDatabaseName("ix_articles_created_at_id");
+
+                    b.ToTable("articles", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_articles_deleted_not_public", "deleted_at IS NULL OR published_at IS NULL");
+                        });
                 });
 
             modelBuilder.Entity("HappyPaws.Domain.Auditing.AuditEntry", b =>

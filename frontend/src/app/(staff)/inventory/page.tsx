@@ -55,7 +55,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
       ) : (
         <>
           <p className="text-sm text-ink-500">{itemsPage.count(items.length)}</p>
-          <ItemsTable items={items} branchId={branch.id} />
+          <ItemsTable items={items} branchId={branch.id} canEdit={context.can(Scope.InventoryWrite)} />
         </>
       )}
     </div>

@@ -1,3 +1,4 @@
+using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Domain.Articles;
 
 namespace HappyPaws.Application.Articles.Dtos;
@@ -9,7 +10,11 @@ namespace HappyPaws.Application.Articles.Dtos;
 /// <param name="Summary">One or two sentences.</param>
 /// <param name="AuthorName">Byline.</param>
 /// <param name="ReadingMinutes">Estimated reading time.</param>
-/// <param name="CoverImagePath">Path under the web app's <c>/public</c>; absent until a picture is supplied.</param>
+/// <param name="CoverImagePath">Path under the web app's <c>/public</c>, from the seed; absent otherwise.</param>
+/// <param name="CoverImageUrl">
+/// A signed link to the cover staff uploaded, good for an hour (<c>docs/contract-extensions.md § 26</c>).
+/// Absent when there is none. When both are present this one wins; in practice an upload clears the path.
+/// </param>
 /// <param name="PublishedAt">When it became public.</param>
 public sealed record ArticleSummaryDto(
     string Id,
@@ -19,9 +24,11 @@ public sealed record ArticleSummaryDto(
     string AuthorName,
     int ReadingMinutes,
     string? CoverImagePath,
+    string? CoverImageUrl,
     DateTimeOffset PublishedAt)
 {
-    public static ArticleSummaryDto From(Article article) => new(
+    /// <summary>Only for an article that is published now: the cover link is minted here.</summary>
+    public static ArticleSummaryDto From(Article article, IFileStorage storage) => new(
         article.Id,
         article.Slug,
         article.Title,
@@ -29,7 +36,8 @@ public sealed record ArticleSummaryDto(
         article.AuthorName,
         article.ReadingMinutes,
         article.CoverImagePath,
-        article.PublishedAt);
+        ArticleCovers.LinkOf(article, storage, ArticleCovers.PublicLinkLifetime),
+        article.PublishedAt!.Value);
 }
 
 /// <summary>One whole article.</summary>
@@ -40,7 +48,8 @@ public sealed record ArticleSummaryDto(
 /// <param name="Body">Plain text; a blank line separates paragraphs. Render as text, never as HTML.</param>
 /// <param name="AuthorName">Byline.</param>
 /// <param name="ReadingMinutes">Estimated reading time.</param>
-/// <param name="CoverImagePath">Path under the web app's <c>/public</c>; absent until a picture is supplied.</param>
+/// <param name="CoverImagePath">Path under the web app's <c>/public</c>, from the seed; absent otherwise.</param>
+/// <param name="CoverImageUrl">A signed link to the uploaded cover, good for an hour; absent when there is none.</param>
 /// <param name="PublishedAt">When it became public.</param>
 public sealed record ArticleDto(
     string Id,
@@ -51,9 +60,11 @@ public sealed record ArticleDto(
     string AuthorName,
     int ReadingMinutes,
     string? CoverImagePath,
+    string? CoverImageUrl,
     DateTimeOffset PublishedAt)
 {
-    public static ArticleDto From(Article article) => new(
+    /// <summary>Only for an article that is published now: the cover link is minted here.</summary>
+    public static ArticleDto From(Article article, IFileStorage storage) => new(
         article.Id,
         article.Slug,
         article.Title,
@@ -62,5 +73,6 @@ public sealed record ArticleDto(
         article.AuthorName,
         article.ReadingMinutes,
         article.CoverImagePath,
-        article.PublishedAt);
+        ArticleCovers.LinkOf(article, storage, ArticleCovers.PublicLinkLifetime),
+        article.PublishedAt!.Value);
 }
