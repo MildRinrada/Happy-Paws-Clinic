@@ -8,15 +8,58 @@ export const schedulePage = {
   empty: 'สัปดาห์นี้ยังไม่มีใครลงเวรที่สาขานี้',
   person: 'พนักงาน',
   leave: 'ลา',
+  me: 'คุณ',
+  today: 'วันนี้',
+  hours: 'รวม',
+  hoursValue: (hours: number) => `${hours} ชม.`,
+  hoursHint: 'ชั่วโมงทำงานทั้งสัปดาห์ ไม่นับเวลาพัก',
+  breakNote: (start: string, end: string) => `พัก ${start}-${end}`,
+  addHere: (name: string, day: string) => `ลงเวรให้ ${name} ${day}`,
+  editHere: (name: string, hours: string) => `แก้หรือลบเวร ${hours} ของ ${name}`,
+
+  actions: {
+    addShift: '+ ลงเวร',
+    timeOff: 'บันทึกวันลา',
+    copyWeek: 'คัดลอกเวรสัปดาห์ก่อน',
+  },
+
+  dialogs: {
+    addShift: 'ลงเวร',
+    timeOff: 'บันทึกวันลา',
+    editShift: 'แก้หรือลบเวร',
+    copyWeek: 'คัดลอกเวรสัปดาห์ก่อน',
+    close: 'ปิด',
+  },
+
+  groups: {
+    vets: 'สัตวแพทย์',
+    frontDesk: 'ต้อนรับ',
+    assistants: 'ผู้ช่วยสัตวแพทย์',
+    others: 'ฝ่ายอื่น',
+  },
+
+  cover: {
+    heading: 'คนเข้าเวร',
+    vets: (count: number) => `หมอ ${count}`,
+    frontDesk: (count: number) => `ต้อนรับ ${count}`,
+    noVet: 'ไม่มีหมอ',
+    busy: 'คาดคนไข้มาก',
+    busyHint: 'การคาดการณ์ความหนาแน่นบอกว่าวันนี้มีบางชั่วโมงที่คนไข้ต่อหมอสูงกว่าปกติ หรือมีคนไข้แต่ไม่มีหมอ',
+  },
+
+  dayView: {
+    pick: 'เลือกวัน',
+    nobody: 'วันนี้ยังไม่มีใครเข้าเวรที่สาขานี้',
+  },
 
   week: {
     previous: '← สัปดาห์ก่อน',
     next: 'สัปดาห์ถัดไป →',
     thisWeek: 'สัปดาห์นี้',
+    jump: 'ไปสัปดาห์ของวันที่',
   },
 
   shift: {
-    heading: 'ลงเวร',
     staff: 'พนักงาน',
     choose: 'เลือกพนักงาน',
     date: 'วันที่ (เวรแรก)',
@@ -32,12 +75,9 @@ export const schedulePage = {
     pickDay: 'เลือกอย่างน้อยหนึ่งวัน',
     submit: 'ลงเวร',
     submitting: 'กำลังลงเวร…',
-    created: (count: number) => `ลงเวรแล้ว ${count} เวร`,
-    note: 'ระบบยังลบเวรที่ลงไปแล้วไม่ได้ ถ้าลงผิด ให้บันทึกวันลาทับช่วงนั้นแทน',
   },
 
   timeOff: {
-    heading: 'บันทึกวันลา',
     from: 'ลาตั้งแต่',
     to: 'ถึง',
     reason: 'เหตุผล (ไม่บังคับ)',

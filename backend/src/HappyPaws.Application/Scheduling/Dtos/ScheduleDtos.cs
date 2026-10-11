@@ -3,10 +3,25 @@ using HappyPaws.Domain.Scheduling;
 namespace HappyPaws.Application.Scheduling.Dtos;
 
 /// <summary>One working block.</summary>
-public sealed record ShiftDto(string Id, string StaffId, string BranchId, DateTimeOffset StartsAt, DateTimeOffset EndsAt)
+/// <param name="Id">The block's id; a shift with a break is two blocks.</param>
+/// <param name="StaffId">Who.</param>
+/// <param name="BranchId">Where.</param>
+/// <param name="StartsAt">From.</param>
+/// <param name="EndsAt">Until.</param>
+/// <param name="Version">
+/// To send back as <c>If-Match</c> when changing or removing the block. Added with
+/// <c>docs/contract-extensions.md § 47</c>; a new field, so readers that ignore it are unaffected.
+/// </param>
+public sealed record ShiftDto(
+    string Id,
+    string StaffId,
+    string BranchId,
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt,
+    uint Version)
 {
     public static ShiftDto From(StaffShift shift) =>
-        new(shift.Id, shift.StaffId, shift.BranchId, shift.StartsAt, shift.EndsAt);
+        new(shift.Id, shift.StaffId, shift.BranchId, shift.StartsAt, shift.EndsAt, shift.Version);
 }
 
 /// <summary>One stretch of leave.</summary>
@@ -99,3 +114,21 @@ public sealed record AssignmentRulesDto(uint Version, IReadOnlyList<AssignmentRu
     public static AssignmentRulesDto From(AssignmentRules rules) =>
         new(rules.Version, [.. rules.Rules.Select(AssignmentRuleDto.From)]);
 }
+
+/// <summary>
+/// <c>PATCH /staff/schedules/shifts/{id}</c>: the block as it is now, and the appointments in the
+/// time it no longer covers. Not in the API reference; see <c>docs/contract-extensions.md § 47</c>.
+/// </summary>
+/// <param name="Shift">The block with its new times and version.</param>
+/// <param name="Conflicts">Appointments already booked in the time taken out, the same shape time off answers. None are moved.</param>
+public sealed record ShiftChangeResultDto(ShiftDto Shift, IReadOnlyList<TimeOffConflictDto> Conflicts);
+
+/// <summary><c>DELETE /staff/schedules/shifts/{id}</c> (§ 47): which block went, and the appointments that were in it.</summary>
+/// <param name="ShiftId">The block taken off the roster.</param>
+/// <param name="Conflicts">Appointments already booked in it, with who could take each. None are moved.</param>
+public sealed record ShiftRemovedDto(string ShiftId, IReadOnlyList<TimeOffConflictDto> Conflicts);
+
+/// <summary><c>POST /staff/schedules/shifts/copy-week</c> (<c>docs/contract-extensions.md § 49</c>).</summary>
+/// <param name="Data">The shifts created, earliest first.</param>
+/// <param name="SkippedStarted">Copies left out because their start had already passed; the roster does not write history.</param>
+public sealed record CopyWeekResultDto(IReadOnlyList<ShiftDto> Data, int SkippedStarted);

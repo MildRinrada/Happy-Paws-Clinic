@@ -79,6 +79,10 @@ URL ฐานของสัญญาคือ `https://api.happypaws.co.th/v1` 
 - `API_BASE_URL` ของหน้าเว็บต้องลงท้ายด้วย `/v1` ตาม `frontend/.env.example` คุกกี้ `hp_refresh` ของ API ตั้ง path ตามที่ผู้เรียกใช้ (`/v1/auth`)
 - path ที่ไม่มีอยู่จริงตอบ **401 ไม่ใช่ 404** ถ้าไม่ได้ส่ง token เพราะ `FallbackPolicy` บังคับเข้าสู่ระบบก่อนจะรู้ว่าไม่มี route เช่น `http://localhost:5080/` และ `/openapi/v1.json` ได้ 401
 
+## รูปแบบข้อมูลที่ส่ง
+
+response เป็น snake_case และ **สมาชิกที่เป็น null จะไม่ถูกส่งมาเลย** ไม่ได้ส่งเป็น `null` ตัวอย่างเช่น `/me` ของ token พนักงานล้วนจะไม่มีคีย์ `customer_id` ฝั่ง client จึงต้องตรวจว่ามีคีย์หรือไม่ ไม่ใช่ตรวจว่าค่าเป็น null กติกานี้ทำให้ error envelope สะอาดด้วย เพราะ `message_en`, `field` และ `details` เป็นค่าเลือกได้ทั้งหมด object ที่อยู่ใน `details` ก็เป็น snake_case เช่นกัน เช่น ลูกค้าใน `details.existing` ของ `duplicate_customer` มี `display_name` (`Api/Errors/ApiErrorWriter.cs` ใช้กติกาเดียวกับ `Program.cs`)
+
 ## ตัวแปรแวดล้อม
 
 **ฝั่ง API** ค่าใน `appsettings.json` เขียนทับได้ด้วยตัวแปรที่ใช้ `__` แทน `:`
@@ -333,8 +337,7 @@ integration test เป็นที่ตรวจสัญญา: status code, 
 
 ## ทำงานกับสัญญา
 
-`API Reference.dc.html` คือสัญญา ถ้าโค้ดกับสัญญาไม่ตรงกัน สัญญาชนะ
+`API Reference.dc.html` คือแบบตั้งต้นของ API ตอนนี้โปรเจกต์อยู่ในช่วงทำให้ระบบดีขึ้น จึงเพิ่ม endpoint ได้ แต่ห้ามเปลี่ยนชื่อ path หรือ method ของเส้นเดิมโดยไม่บอก
 
 - **จุดกำกวม** บันทึกใน [จุดกำกวมของสัญญา](assumptions.md) แล้วทำตามการอ่านที่รักษาพฤติกรรมที่เขียนไว้
-- **สิ่งที่ขาดไปเลย** รายงานและขออนุมัติก่อน แล้วบันทึกใน [endpoint ส่วนขยาย](contract-extensions.md) พร้อมเหตุผลและทางเลือกที่ไม่เลือก ใน controller ให้ระบุว่าเป็นส่วนขยายด้วย
-- **ห้ามสร้าง endpoint เติมช่องว่างเอง** ถ้า endpoint ไม่อยู่ใน [แผนที่ endpoint](api-mapping.md) ถือว่าอยู่นอกขอบเขต
+- **endpoint ใหม่** เสนอให้เจ้าของงานเลือกก่อน แล้วบันทึกเป็นข้อใหม่ใน [endpoint ส่วนขยาย](contract-extensions.md) พร้อมเหตุผลและทางเลือกที่ไม่เลือก เพิ่มแถวใน [ดัชนี API](api-mapping.md) และใน controller ให้ระบุว่าเป็นส่วนขยายด้วย

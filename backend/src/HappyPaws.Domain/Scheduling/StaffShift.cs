@@ -61,6 +61,34 @@ public sealed class StaffShift : Entity
 
     public void Cancel(DateTimeOffset at) => CancelledAt ??= at;
 
+    /// <summary>True once the shift is over. A shift that has ended is history and is not changed.</summary>
+    public bool HasEnded(DateTimeOffset now) => EndsAt <= now;
+
+    /// <summary>True once the shift has begun, including after it has ended.</summary>
+    public bool HasStarted(DateTimeOffset now) => StartsAt <= now;
+
+    /// <summary>
+    /// Moves this block to new times, in place: <c>PATCH /staff/schedules/shifts/{id}</c>, not in
+    /// the API reference (<c>docs/contract-extensions.md § 47</c>). The id stays, so a client
+    /// holding it keeps pointing at the same block; the times before the change are in the audit
+    /// log. Whether the new times clash, or rewrite time already worked, is the use case's check.
+    /// </summary>
+    public void Reschedule(DateTimeOffset startsAt, DateTimeOffset endsAt)
+    {
+        if (!IsActive)
+        {
+            throw new DomainException("invalid_shift", "เวรนี้ถูกยกเลิกไปแล้ว");
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new DomainException("invalid_shift", "เวลาสิ้นสุดเวรต้องอยู่หลังเวลาเริ่ม");
+        }
+
+        StartsAt = startsAt;
+        EndsAt = endsAt;
+    }
+
     /// <summary>
     /// Takes a window out of this shift: time off over part of a day. This shift is cancelled, not
     /// shortened, so the roster as it was planned stays on record, and the parts still worked come

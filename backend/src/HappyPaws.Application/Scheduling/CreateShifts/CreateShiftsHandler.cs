@@ -119,8 +119,10 @@ public sealed class CreateShiftsHandler(
             var from = planned.Min(shift => shift.StartsAt);
             var to = planned.Max(shift => shift.EndsAt);
 
-            EnsureNoOverlap(planned, await schedule.ActiveShiftsForStaffAsync(command.StaffId, from, to, token));
-            EnsureNotOnTimeOff(planned, await schedule.TimeOffAsync(from, to, command.StaffId, token));
+            var blocks = planned.Select(block => new PlannedShift(command.StaffId, block.StartsAt, block.EndsAt)).ToList();
+
+            ShiftClashes.EnsureNoOverlap(blocks, await schedule.ActiveShiftsForStaffAsync(command.StaffId, from, to, token));
+            ShiftClashes.EnsureNotOnTimeOff(blocks, await schedule.TimeOffAsync(from, to, command.StaffId, token));
 
             foreach (var (startsAt, endsAt) in planned)
             {
@@ -181,55 +183,6 @@ public sealed class CreateShiftsHandler(
         }
 
         return blocks;
-    }
-
-    private static void EnsureNoOverlap(
-        List<(DateTimeOffset StartsAt, DateTimeOffset EndsAt)> planned,
-        IReadOnlyList<StaffShift> existing)
-    {
-        var clashes = existing
-            .Where(shift => planned.Any(block => shift.Overlaps(block.StartsAt, block.EndsAt)))
-            .Select(shift => new Dictionary<string, object?>
-            {
-                ["shift_id"] = shift.Id,
-                ["branch_id"] = shift.BranchId,
-                ["starts_at"] = shift.StartsAt,
-                ["ends_at"] = shift.EndsAt,
-            })
-            .ToList();
-
-        if (clashes.Count > 0)
-        {
-            throw new ConflictException(ErrorCodes.ShiftOverlap, "เวรใหม่ทับเวรที่มีอยู่แล้ว")
-            {
-                MessageEn = "The new shifts overlap shifts this person already has.",
-                Details = new Dictionary<string, object> { ["conflicts"] = clashes },
-            };
-        }
-    }
-
-    private static void EnsureNotOnTimeOff(
-        List<(DateTimeOffset StartsAt, DateTimeOffset EndsAt)> planned,
-        IReadOnlyList<StaffTimeOff> timeOff)
-    {
-        var clashes = timeOff
-            .Where(leave => planned.Any(block => leave.Overlaps(block.StartsAt, block.EndsAt)))
-            .Select(leave => new Dictionary<string, object?>
-            {
-                ["time_off_id"] = leave.Id,
-                ["starts_at"] = leave.StartsAt,
-                ["ends_at"] = leave.EndsAt,
-            })
-            .ToList();
-
-        if (clashes.Count > 0)
-        {
-            throw new ConflictException(ErrorCodes.StaffOnTimeOff, "เวรใหม่ตรงกับช่วงที่พนักงานลา")
-            {
-                MessageEn = "The new shifts fall in this person's time off.",
-                Details = new Dictionary<string, object> { ["time_off"] = clashes },
-            };
-        }
     }
 
     private static ValidationFailedException Invalid(string field, string message) =>

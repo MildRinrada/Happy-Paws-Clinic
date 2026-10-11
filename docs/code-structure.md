@@ -187,7 +187,7 @@ feature ที่มีโค้ด: `about`, `account`, `appointments`, `articl
 
 ## เพิ่ม use case ใหม่
 
-1. อ่าน endpoint ใน `API Reference.dc.html` และดูว่าอยู่แถวไหนใน [แผนที่ endpoint](api-mapping.md)
+1. อ่าน endpoint ใน `API Reference.dc.html` และดูว่าอยู่แถวไหนใน [ดัชนี API](api-mapping.md)
 2. เพิ่ม method หรือ state ใน entity ของ `HappyPaws.Domain/<โมดูล>/` พร้อม unit test ใน `tests/HappyPaws.UnitTests/Domain/`
 3. สร้าง `HappyPaws.Application/<โมดูล>/<UseCase>/<UseCase>Handler.cs` มี command, validator และ handler แล้วลงทะเบียนใน `<Module>Module.cs`
 4. ถ้าต้องการ query ใหม่ เพิ่มใน interface ของ repository แล้วทำใน `Infrastructure/Persistence/Repositories/<โมดูล>/`

@@ -5,6 +5,8 @@ export interface Shift {
   branch_id: string;
   starts_at: string;
   ends_at: string;
+  /** Sent back as `If-Match` when changing or removing the block (docs/contract-extensions.md § 47). */
+  version: number;
 }
 
 /** One stretch of leave. */
@@ -78,8 +80,65 @@ export interface AssignmentRule {
   staff_ids: string[];
 }
 
-/** `PUT /staff/schedules/assignment-rules` answers the whole stored set. There is no `GET`. */
+/** The whole stored set, as `GET` (§ 48) and `PUT /staff/schedules/assignment-rules` answer it. */
 export interface AssignmentRules {
   version: number;
   rules: AssignmentRule[];
+}
+
+/** `PATCH /staff/schedules/shifts/{id}` (§ 47): the block at its new times, both ends. */
+export interface ShiftTimesInput {
+  starts_at: string;
+  ends_at: string;
+}
+
+/** What changing a block did: the block now, and the appointments in the time it no longer covers. */
+export interface ShiftChangeResult {
+  shift: Shift;
+  conflicts: TimeOffConflict[];
+}
+
+/** What removing a block did: which block, and the appointments that were in it. */
+export interface ShiftRemoved {
+  shift_id: string;
+  conflicts: TimeOffConflict[];
+}
+
+/** `POST /staff/schedules/shifts/copy-week` (§ 49). Weeks are named by their Monday. */
+export interface CopyWeekInput {
+  branch_id: string;
+  from_week: string;
+  to_week: string;
+  staff_ids?: string[];
+}
+
+/** The copies made, and how many were left out because their day had already begun. */
+export interface CopyWeekResult {
+  data: Shift[];
+  skipped_started: number;
+}
+
+/**
+ * One clash in a refusal (`details.conflicts` of `shift_overlap`, `details.time_off` of
+ * `staff_on_time_off`): whose, and when.
+ */
+export interface ShiftClash {
+  staff_id?: string;
+  shift_id?: string;
+  time_off_id?: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+/** What the roster page knows about the week before, to say what a copy would do before anyone presses it. */
+export interface CopyWeekPlan {
+  /** Mondays, `YYYY-MM-DD`. */
+  fromWeek: string;
+  toWeek: string;
+  /** "6 ต.ค. - 12 ต.ค.", for the sentence. */
+  fromLabel: string;
+  toLabel: string;
+  /** Shifts on the week before, a shift with a break counted once. */
+  shifts: number;
+  people: number;
 }

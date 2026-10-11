@@ -1,6 +1,6 @@
-# แผนผัง API
+# ดัชนี API
 
-ทุก endpoint ใน [`API Reference.dc.html`](../API%20Reference.dc.html) มีที่อยู่ในโค้ดที่หาเจอได้ทันที เอกสารนี้คือดัชนีนั้น
+ดัชนีว่าแต่ละ endpoint อยู่ที่ controller ไหน และ use case ไหน ทั้งเส้นของ [`API Reference.dc.html`](../API%20Reference.dc.html) และเส้นที่เพิ่มทีหลัง ใช้หาโค้ดของ endpoint ที่สนใจได้ทันที
 
 ```text
 API endpoint -> Controller -> Application use case -> Domain -> Data access
@@ -11,20 +11,14 @@ method, path และ scope คัดลอกจาก contract ตรงต�
 อ่านตารางอย่างไร
 
 - ทุก path จริงอยู่ใต้ path base `/v1` เช่น `/clinic` เรียกจริงที่ `/v1/clinic` (ดู [assumptions.md § 31](./assumptions.md))
+- กติกาของ response เช่นช่องที่เป็น null จะไม่ถูกส่งมาเลย อยู่ที่ [รูปแบบข้อมูลที่ส่ง](./development.md#รูปแบบข้อมูลที่ส่ง)
 - path ของ controller นับจาก `backend/src/HappyPaws.Api/Controllers/`
 - path ของ use case นับจาก `backend/src/HappyPaws.Application/`
-- ✅ คือทำแล้วและมี integration test ครอบ แถวที่ไม่มี ✅ ชื่อ controller และ use case เป็นชื่อที่วางไว้ ยังไม่มีไฟล์จริง
 - data access ทุกโมดูลเป็นแบบเดียวกัน คือ `HappyPaws.Infrastructure/Persistence/Repositories/<Module>` บน `HappyPawsDbContext` จึงไม่ใส่เป็นคอลัมน์ ช่อง Domain บอกชื่อ aggregate ส่วน endpoint ที่ต้องคุยกับระบบภายนอกจะระบุระบบนั้นไว้
-
-## รูปแบบข้อมูลที่ส่ง
-
-response เป็น snake_case และ **สมาชิกที่เป็น null จะไม่ถูกส่งมาเลย** ไม่ได้ส่งเป็น `null` ตัวอย่างเช่น `/me` ของ token พนักงานล้วนจะไม่มีคีย์ `customer_id` ฝั่ง client จึงต้องตรวจว่ามีคีย์หรือไม่ ไม่ใช่ตรวจว่าค่าเป็น null กติกานี้ทำให้ error envelope สะอาดด้วย เพราะ `message_en`, `field` และ `details` เป็นค่าเลือกได้ทั้งหมด object ที่อยู่ใน `details` ก็เป็น snake_case เช่นกัน เช่น ลูกค้าใน `details.existing` ของ `duplicate_customer` มี `display_name` (`Api/Errors/ApiErrorWriter.cs` ใช้กติกาเดียวกับ `Program.cs`)
 
 ## ดัชนีโดเมนไปโฟลเดอร์
 
 ช่อง use case ที่เขียนเป็น `<Module>/<โฟลเดอร์>/<ชื่อ>Handler` คือ use case ที่รวมอยู่ในโฟลเดอร์ร่วม เช่น ทุกเรื่องของ portal ฝั่งสัตว์เลี้ยงอยู่ใน `Patients/Portal/`
-
-คอลัมน์ frontend เป็นโครงที่วางไว้ หน้าที่มีจริงตอนนี้มีแค่ `(public)/`, `(auth)/login`, `(auth)/invitations`, `(staff)/queue`, `(staff)/appointments`, `(staff)/customers`, `(staff)/pets`, `(staff)/consultations`, `(staff)/billing`, `(staff)/settings/contacts`, `(staff)/settings/line`, `(staff)/settings/integrations` (webhook, API key, ผู้ให้บริการชำระเงิน แล็บภายนอก ลิงก์ปฏิทิน), `(staff)/notifications` (รวมแท็บเตือนอัตโนมัติและข้อความที่จะส่ง), `(staff)/dashboard`, `(staff)/inventory` (รายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ), `(staff)/crm` (ขายแพ็กเกจ คูปอง กลุ่มลูกค้า แต้ม), `(public)/about`, `(public)/contact` และ `(portal)/portal` ส่วน feature `home` ของหน้าแรกสาธารณะไม่ผูกกับ API โดเมนใด จึงไม่อยู่ในตารางนี้
 
 | API domain | Backend module | Frontend feature | Frontend routes |
 |---|---|---|---|
@@ -35,7 +29,7 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Customer | `Customers` | `customers` | `(staff)/customers` (ค้นหา ลงทะเบียน หน้าลูกค้า มีแล้ว) |
 | Pet | `Patients` | `pets` | `(staff)/pets`, `(portal)/pets` |
 | Services | `ServiceCatalog` | `service-catalog` | `(public)/services`, `(staff)/settings/services` |
-| Booking & Appointment | `Appointments` | `booking`, `appointments` | `(public)/booking`, `(portal)/appointments`, `(staff)/appointments` |
+| Booking & Appointment | `Appointments` | `booking`, `appointments` | `(public)/book`, `(portal)/appointments`, `(staff)/appointments` |
 | Queue | `Queueing` | `queue` | `(staff)/queue`, `(portal)/queue` |
 | Consultation | `Consultations` | `consultations` | `(staff)/consultations` |
 | Medical record | `MedicalRecords` | `medical-records` | `(staff)/records`, `(portal)/pets/[id]/records` |
@@ -56,49 +50,49 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ## Authentication
 
-| Method | Endpoint | ผู้เรียก | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/auth/register` | ลูกค้า | `Auth/AuthController` | `Identity/Register/` | `Identity`, `Customers` | ✅ |
-| POST | `/auth/otp/request` | ลูกค้า | `Auth/OtpController` | `Identity/RequestOtp/` | `Identity` | ✅ |
-| POST | `/auth/login` | ทั้งสองฝั่ง | `Auth/AuthController` | `Identity/Login/` | `Identity` | ✅ |
-| POST | `/auth/staff/login` | พนักงาน | `Auth/StaffAuthController` | `Identity/StaffLogin/` | `Identity` | ✅ |
-| POST | `/auth/2fa/verify` | พนักงาน | `Auth/StaffAuthController` | `Identity/VerifyTwoFactor/` | `Identity` | ✅ |
-| POST | `/auth/refresh` | ทั้งสองฝั่ง | `Auth/SessionController` | `Identity/RefreshSession/` | `Identity` | ✅ |
-| POST | `/auth/logout` | ทั้งสองฝั่ง | `Auth/SessionController` | `Identity/Logout/` | `Identity` | ✅ |
-| POST | `/auth/password/reset` | ทั้งสองฝั่ง | `Auth/PasswordController` | `Identity/ResetPassword/` | `Identity` | ✅ |
+| Method | Endpoint | ผู้เรียก | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/auth/register` | ลูกค้า | `Auth/AuthController` | `Identity/Register/` | `Identity`, `Customers` |
+| POST | `/auth/otp/request` | ลูกค้า | `Auth/OtpController` | `Identity/RequestOtp/` | `Identity` |
+| POST | `/auth/login` | ทั้งสองฝั่ง | `Auth/AuthController` | `Identity/Login/` | `Identity` |
+| POST | `/auth/staff/login` | พนักงาน | `Auth/StaffAuthController` | `Identity/StaffLogin/` | `Identity` |
+| POST | `/auth/2fa/verify` | พนักงาน | `Auth/StaffAuthController` | `Identity/VerifyTwoFactor/` | `Identity` |
+| POST | `/auth/refresh` | ทั้งสองฝั่ง | `Auth/SessionController` | `Identity/RefreshSession/` | `Identity` |
+| POST | `/auth/logout` | ทั้งสองฝั่ง | `Auth/SessionController` | `Identity/Logout/` | `Identity` |
+| POST | `/auth/password/reset` | ทั้งสองฝั่ง | `Auth/PasswordController` | `Identity/ResetPassword/` | `Identity` |
 
 ทางเข้าของลูกค้าทำครบแล้ว แต่ **ยังไม่มีตัวส่ง SMS และอีเมลจริง** รหัส OTP และลิงก์รีเซ็ตรหัสผ่านถูกเขียนลง log ของ API แทน (เฉพาะเมื่อเปิด `Auth:SignIn:LogUndeliveredSecrets` ซึ่งเปิดไว้แค่ในเครื่อง dev) รายละเอียดอยู่ใน [การเข้าสู่ระบบของลูกค้า](features/customer-sign-in.md)
 
 ## Account and Access
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/me` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/GetMe/` | `Identity`, `Staff` | ✅ |
-| PATCH | `/me` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/UpdateProfile/` | `Identity` | ✅ |
-| GET | `/me/capabilities` | เข้าสู่ระบบแล้ว | `Account/MeController` | อ่านจาก `ICurrentUser` ตรง (scope คำนวณตอนออก token โดย `Identity/Capabilities/EffectiveScopeResolver`) | `Access` | ✅ |
-| GET | `/me/sessions` | เข้าสู่ระบบแล้ว | `Account/SessionsController` | `Identity/ManageSessions/` | `Identity` | ✅ |
-| DELETE | `/me/sessions/{id}` | เข้าสู่ระบบแล้ว | `Account/SessionsController` | `Identity/ManageSessions/` | `Identity` | ✅ |
-| POST | `/me/password` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/ChangePassword/` | `Identity` | ✅ |
-| POST | `/me/2fa/enroll` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/EnrolTwoFactor/` | `Identity` | ✅ |
-| PATCH | `/staff/users/{id}/status` | `user:manage` | `Staff/UserStatusController` | `Identity/SetUserStatus/` | `Identity` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/me` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/GetMe/` | `Identity`, `Staff` |
+| PATCH | `/me` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/UpdateProfile/` | `Identity` |
+| GET | `/me/capabilities` | เข้าสู่ระบบแล้ว | `Account/MeController` | อ่านจาก `ICurrentUser` ตรง (scope คำนวณตอนออก token โดย `Identity/Capabilities/EffectiveScopeResolver`) | `Access` |
+| GET | `/me/sessions` | เข้าสู่ระบบแล้ว | `Account/SessionsController` | `Identity/ManageSessions/` | `Identity` |
+| DELETE | `/me/sessions/{id}` | เข้าสู่ระบบแล้ว | `Account/SessionsController` | `Identity/ManageSessions/` | `Identity` |
+| POST | `/me/password` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/ChangePassword/` | `Identity` |
+| POST | `/me/2fa/enroll` | เข้าสู่ระบบแล้ว | `Account/MeController` | `Identity/EnrolTwoFactor/` | `Identity` |
+| PATCH | `/staff/users/{id}/status` | `user:manage` | `Staff/UserStatusController` | `Identity/SetUserStatus/` | `Identity` |
 
 ## Clinic setup
 
 ทำครบทั้ง 11 เส้น controller ฝั่ง `Staff/` แยกตามสิ่งที่เปลี่ยน ไม่ได้แยกหนึ่งตัวต่อหนึ่ง path คือ `ClinicSetupController` ถือการเขียนข้อมูลที่สาธารณะเห็น (โปรไฟล์ สาขา เวลาทำการ วันหยุด) ส่วน `ClinicSettingsController` ถือเอกสารกติกาการทำงานสามชุด
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/clinic` | public | `Public/ClinicController` | `Clinics/GetClinicProfile/` | `Clinics` | ✅ |
-| PATCH | `/clinic` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/UpdateClinicProfile/` | `Clinics` | ✅ |
-| GET | `/clinic/branches` | public | `Public/ClinicController` | `Clinics/ListBranches/` | `Clinics` | ✅ |
-| POST | `/clinic/branches` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/CreateBranch/` | `Clinics` | ✅ |
-| GET | `/clinic/hours` | public | `Public/ClinicController` | `Clinics/GetOpeningHours/` | `Clinics` | ✅ |
-| PUT | `/clinic/hours` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/ReplaceOpeningHours/` | `Clinics` | ✅ |
-| POST | `/clinic/holidays` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/AddHoliday/` | `Clinics` | ✅ |
-| GET | `/clinic/settings/booking` | `settings:read` | `Staff/ClinicSettingsController` | `Clinics/ManageBookingSettings/` | `Clinics` | ✅ |
-| PATCH | `/clinic/settings/booking` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/ManageBookingSettings/` | `Clinics` | ✅ |
-| PATCH | `/clinic/settings/queue` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/UpdateQueueSettings/` | `Clinics` | ✅ |
-| PATCH | `/clinic/settings/medical-record` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/UpdateMedicalRecordSettings/` | `Clinics` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/clinic` | public | `Public/ClinicController` | `Clinics/GetClinicProfile/` | `Clinics` |
+| PATCH | `/clinic` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/UpdateClinicProfile/` | `Clinics` |
+| GET | `/clinic/branches` | public | `Public/ClinicController` | `Clinics/ListBranches/` | `Clinics` |
+| POST | `/clinic/branches` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/CreateBranch/` | `Clinics` |
+| GET | `/clinic/hours` | public | `Public/ClinicController` | `Clinics/GetOpeningHours/` | `Clinics` |
+| PUT | `/clinic/hours` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/ReplaceOpeningHours/` | `Clinics` |
+| POST | `/clinic/holidays` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/AddHoliday/` | `Clinics` |
+| GET | `/clinic/settings/booking` | `settings:read` | `Staff/ClinicSettingsController` | `Clinics/ManageBookingSettings/` | `Clinics` |
+| PATCH | `/clinic/settings/booking` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/ManageBookingSettings/` | `Clinics` |
+| PATCH | `/clinic/settings/queue` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/UpdateQueueSettings/` | `Clinics` |
+| PATCH | `/clinic/settings/medical-record` | `settings:write` | `Staff/ClinicSettingsController` | `Clinics/UpdateMedicalRecordSettings/` | `Clinics` |
 
 ค่าตั้งเหล่านี้ไม่ได้เก็บไว้เฉย ๆ โมดูลที่เกี่ยวข้องอ่านไปใช้จริง วันหยุดปิดช่วงจอง (`Appointments/Availability/BookingSlotResolver`) ค่าตั้งคิวกำหนดรูปแบบเลขคิวและการเริ่มเลขใหม่ทุกวัน (`Appointments/CheckInAppointment`, `Queueing/IssueWalkInTicket`) ค่าตั้งเวชระเบียนกำหนดว่าการตรวจต้องมีอะไรครบก่อนปิดเคส (`Consultations/CloseConsultation`) และแบบฟอร์มตรวจรายระบบ (`Consultations/RecordExamination`) การอ่านค่าที่ contract ไม่มีให้ ดู [assumptions.md § 27](./assumptions.md)
 
@@ -110,18 +104,18 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ทำครบทั้ง 10 เส้น
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/members` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListStaffMembers/` | `Staff` | ✅ |
-| POST | `/staff/members/invitations` | `staff:manage` | `Staff/StaffInvitationsController` | `Staff/InviteStaffMember/` | `Staff` | ✅ |
-| POST | `/staff/members/invitations/{id}/accept` | token ในคำเชิญ | `Staff/StaffInvitationsController` | `Staff/AcceptInvitation/` | `Staff`, `Identity` | ✅ |
-| PATCH | `/staff/members/{id}` | `staff:manage` | `Staff/StaffMembersController` | `Staff/UpdateStaffMember/` | `Staff` | ✅ |
-| POST | `/staff/members/{id}/deactivate` | `staff:manage` | `Staff/StaffMembersController` | `Staff/DeactivateStaffMember/` | `Staff` | ✅ |
-| GET | `/staff/staff-types` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListStaffTypes/` | `Staff` | ✅ |
-| GET | `/staff/roles` | `role:read` | `Staff/RolesController` | `Access/ListRoles/` | `Access` | ✅ |
-| POST | `/staff/roles` | `role:manage` | `Staff/RolesController` | `Access/CreateRole/` | `Access` | ✅ |
-| PUT | `/staff/roles/{id}/permissions` | `role:manage` | `Staff/RolesController` | `Access/ReplaceRolePermissions/` | `Access` | ✅ |
-| GET | `/staff/permissions` | `role:read` | `Staff/RolesController` | `Access/ListRoles/` (`ListPermissionCatalogueHandler` อ่าน `ScopeCatalogue`) | `Access` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/members` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListStaffMembers/` | `Staff` |
+| POST | `/staff/members/invitations` | `staff:manage` | `Staff/StaffInvitationsController` | `Staff/InviteStaffMember/` | `Staff` |
+| POST | `/staff/members/invitations/{id}/accept` | token ในคำเชิญ | `Staff/StaffInvitationsController` | `Staff/AcceptInvitation/` | `Staff`, `Identity` |
+| PATCH | `/staff/members/{id}` | `staff:manage` | `Staff/StaffMembersController` | `Staff/UpdateStaffMember/` | `Staff` |
+| POST | `/staff/members/{id}/deactivate` | `staff:manage` | `Staff/StaffMembersController` | `Staff/DeactivateStaffMember/` | `Staff` |
+| GET | `/staff/staff-types` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListStaffTypes/` | `Staff` |
+| GET | `/staff/roles` | `role:read` | `Staff/RolesController` | `Access/ListRoles/` | `Access` |
+| POST | `/staff/roles` | `role:manage` | `Staff/RolesController` | `Access/CreateRole/` | `Access` |
+| PUT | `/staff/roles/{id}/permissions` | `role:manage` | `Staff/RolesController` | `Access/ReplaceRolePermissions/` | `Access` |
+| GET | `/staff/permissions` | `role:read` | `Staff/RolesController` | `Access/ListRoles/` (`ListPermissionCatalogueHandler` อ่าน `ScopeCatalogue`) | `Access` |
 
 การเขียนทุกเส้นในตารางนี้มีกฎสองข้อคุมอยู่ (รายละเอียดใน [authorization.md](./authorization.md)) คือ ให้ scope ที่ตัวเองไม่ได้ถือไม่ได้ (`Access/ScopeGrantPolicy`) และห้ามเปลี่ยนจนคลินิกไม่เหลือเจ้าของที่ใช้งานอยู่ (`Access/OwnerLockoutGuard`) การรับคำเชิญคือการเรียก endpoint เดียวกันสองครั้ง ดู [authentication.md](./authentication.md) และ [assumptions.md § 30](./assumptions.md)
 
@@ -129,20 +123,20 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ทำครบทั้ง 12 เส้น
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/customers?q=` | `customer:read` | `Staff/CustomersController` | `Customers/SearchCustomers/` | `Customers` | ✅ |
-| POST | `/staff/customers` | `customer:write` | `Staff/CustomersController` | `Customers/CreateCustomer/` | `Customers` | ✅ |
-| GET | `/staff/customers/{id}` | `customer:read` | `Staff/CustomersController` | `Customers/GetCustomer/` | `Customers` | ✅ |
-| POST | `/staff/customers/{id}/invite` | `customer:write` | `Staff/CustomersController` | `Customers/InviteToPortal/` | `Customers`, `Identity` | ✅ |
-| POST | `/staff/customers/{id}/merge` | `customer:merge` | `Staff/CustomersController` | `Customers/MergeCustomers/` | `Customers`, `Patients` | ✅ |
-| GET | `/staff/pets` | `patient:read` | `Staff/PetsController` | `Patients/ListPets/` | `Patients` | ✅ |
-| POST | `/staff/pets` | `patient:write` | `Staff/PetsController` | `Patients/CreatePet/` | `Patients` | ✅ |
-| GET | `/staff/pets/{id}` | `patient:read` | `Staff/PetsController` | `Patients/GetPet/` | `Patients` | ✅ |
-| GET | `/staff/pets/{id}/history` | `record:read` | `Staff/PetHistoryController` | `Patients/GetPetHistory/` | `Patients`, `MedicalRecords` | ✅ |
-| POST | `/staff/pets/{id}/owners` | `patient:write` | `Staff/PetCarersController` | `Patients/ManageCarers/` | `Patients` | ✅ |
-| DELETE | `/staff/pets/{id}/owners/{cid}` | `patient:write` | `Staff/PetCarersController` | `Patients/ManageCarers/` | `Patients` | ✅ |
-| POST | `/staff/pets/{id}/deceased` | `patient:write` | `Staff/PetsController` | `Patients/MarkPetDeceased/` | `Patients`, `Appointments` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/customers?q=` | `customer:read` | `Staff/CustomersController` | `Customers/SearchCustomers/` | `Customers` |
+| POST | `/staff/customers` | `customer:write` | `Staff/CustomersController` | `Customers/CreateCustomer/` | `Customers` |
+| GET | `/staff/customers/{id}` | `customer:read` | `Staff/CustomersController` | `Customers/GetCustomer/` | `Customers` |
+| POST | `/staff/customers/{id}/invite` | `customer:write` | `Staff/CustomersController` | `Customers/InviteToPortal/` | `Customers`, `Identity` |
+| POST | `/staff/customers/{id}/merge` | `customer:merge` | `Staff/CustomersController` | `Customers/MergeCustomers/` | `Customers`, `Patients` |
+| GET | `/staff/pets` | `patient:read` | `Staff/PetsController` | `Patients/ListPets/` | `Patients` |
+| POST | `/staff/pets` | `patient:write` | `Staff/PetsController` | `Patients/CreatePet/` | `Patients` |
+| GET | `/staff/pets/{id}` | `patient:read` | `Staff/PetsController` | `Patients/GetPet/` | `Patients` |
+| GET | `/staff/pets/{id}/history` | `record:read` | `Staff/PetHistoryController` | `Patients/GetPetHistory/` | `Patients`, `MedicalRecords` |
+| POST | `/staff/pets/{id}/owners` | `patient:write` | `Staff/PetCarersController` | `Patients/ManageCarers/` | `Patients` |
+| DELETE | `/staff/pets/{id}/owners/{cid}` | `patient:write` | `Staff/PetCarersController` | `Patients/ManageCarers/` | `Patients` |
+| POST | `/staff/pets/{id}/deceased` | `patient:write` | `Staff/PetsController` | `Patients/MarkPetDeceased/` | `Patients`, `Appointments` |
 
 การปิดเรกคอร์ดสัตว์ที่เสียชีวิต **ยกเลิกนัดในอนาคตทุกนัด** และแจ้งเจ้าของครั้งเดียว ใน transaction เดียว contract ไม่ได้บอกทั้งสองอย่าง และถ้าปล่อยตามที่ contract เงียบ ผลคือค่า default ที่แย่ที่สุด คือมีข้อความเตือนนัดหรือโทรศัพท์จากเคาน์เตอร์ถึงสัตว์ที่ตายไปแล้ว กฎและทางเลือกที่ไม่เลือกอยู่ใน [contract-extensions.md § 6](./contract-extensions.md)
 
@@ -150,13 +144,13 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ทำครบทั้ง 5 เส้น
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/services` | public | `Public/ServicesController` | `ServiceCatalog/ListBookableServices/` | `ServiceCatalog` | ✅ |
-| GET | `/services/categories` | public | `Public/ServicesController` | `ServiceCatalog/ListBookableServices/` (`ListServiceCategoriesHandler` อ่าน `ServiceCategories`) | `ServiceCatalog` | ✅ |
-| POST | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/CreateService/` | `ServiceCatalog` | ✅ |
-| PATCH | `/staff/services/{id}/pricing` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdatePricing/` | `ServiceCatalog` | ✅ |
-| PATCH | `/staff/services/{id}/availability` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateAvailability/` | `ServiceCatalog` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/services` | public | `Public/ServicesController` | `ServiceCatalog/ListBookableServices/` | `ServiceCatalog` |
+| GET | `/services/categories` | public | `Public/ServicesController` | `ServiceCatalog/ListBookableServices/` (`ListServiceCategoriesHandler` อ่าน `ServiceCategories`) | `ServiceCatalog` |
+| POST | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/CreateService/` | `ServiceCatalog` |
+| PATCH | `/staff/services/{id}/pricing` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdatePricing/` | `ServiceCatalog` |
+| PATCH | `/staff/services/{id}/availability` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateAvailability/` | `ServiceCatalog` |
 
 การเปลี่ยนราคา **เป็นการตั้งล่วงหน้า ไม่ใช่เขียนทับ** `PATCH .../pricing` เพิ่มเวอร์ชันราคาที่มีวันที่เข้าไปในตารางราคาของบริการ การอ่านทุกครั้งแสดงเวอร์ชันที่มีผลในวันที่ถาม (`ClinicService.PricingOn`) จึงใส่ราคาใหม่ไว้ก่อนวันที่มีผลได้ และราคาเก่ายังอยู่ในระบบ ราคาในแคตตาล็อกเป็น *ราคาตั้ง* บรรทัดในใบแจ้งหนี้ยังมีราคาต่อหน่วยของตัวเอง และยังไม่มีอะไรคัดลอกราคาตั้งไปใส่บิล ส่วน availability จำกัดว่าบริการจองออนไลน์ได้ที่สาขาไหนและช่วงเวลาไหน การหาช่วงว่างอ่านค่านี้ตอนคำนวณ slot
 
@@ -164,19 +158,19 @@ response เป็น snake_case และ **สมาชิกที่เป�
 
 ## Booking and Appointment
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/booking/availability` | public | `Public/BookingAvailabilityController` | `Appointments/GetAvailability/` | `Appointments`, `Scheduling` | ✅ |
-| POST | `/booking/holds` | portal | `Portal/BookingHoldsController` | `Appointments/HoldSlot/` | `Appointments` | ✅ |
-| POST | `/portal/appointments` | portal | `Portal/PortalAppointmentsController` | `Appointments/BookAppointment/` | `Appointments` | ✅ |
-| POST | `/staff/appointments` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/CreateStaffAppointment/` | `Appointments` | ✅ |
-| GET | `/staff/appointments?date=&status=` | `appointment:read` | `Staff/AppointmentsController` | `Appointments/ListAppointments/` | `Appointments` | ✅ |
-| GET | `/appointments/{id}` | ทั้งสองฝั่ง | `Account/AppointmentsController` | `Appointments/GetAppointment/` | `Appointments` | ✅ |
-| POST | `/appointments/{id}/reschedule` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/RescheduleAppointment/` | `Appointments` | ✅ |
-| POST | `/appointments/{id}/cancel` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/CancelAppointment/` | `Appointments` | ✅ |
-| POST | `/appointments/{id}/confirm` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/ConfirmAppointment/` | `Appointments` | ✅ |
-| POST | `/appointments/{id}/check-in` | `appointment:checkin` | `Account/AppointmentActionsController` | `Appointments/CheckInAppointment/` | `Appointments`, `Queueing` | ✅ |
-| PATCH | `/staff/appointments/{id}` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/UpdateAppointment/` | `Appointments` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/booking/availability` | public | `Public/BookingAvailabilityController` | `Appointments/GetAvailability/` | `Appointments`, `Scheduling` |
+| POST | `/booking/holds` | portal | `Portal/BookingHoldsController` | `Appointments/HoldSlot/` | `Appointments` |
+| POST | `/portal/appointments` | portal | `Portal/PortalAppointmentsController` | `Appointments/BookAppointment/` | `Appointments` |
+| POST | `/staff/appointments` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/CreateStaffAppointment/` | `Appointments` |
+| GET | `/staff/appointments?date=&status=` | `appointment:read` | `Staff/AppointmentsController` | `Appointments/ListAppointments/` | `Appointments` |
+| GET | `/appointments/{id}` | ทั้งสองฝั่ง | `Account/AppointmentsController` | `Appointments/GetAppointment/` | `Appointments` |
+| POST | `/appointments/{id}/reschedule` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/RescheduleAppointment/` | `Appointments` |
+| POST | `/appointments/{id}/cancel` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/CancelAppointment/` | `Appointments` |
+| POST | `/appointments/{id}/confirm` | ทั้งสองฝั่ง | `Account/AppointmentActionsController` | `Appointments/ConfirmAppointment/` | `Appointments` |
+| POST | `/appointments/{id}/check-in` | `appointment:checkin` | `Account/AppointmentActionsController` | `Appointments/CheckInAppointment/` | `Appointments`, `Queueing` |
+| PATCH | `/staff/appointments/{id}` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/UpdateAppointment/` | `Appointments` |
 
 `/appointments/{id}/*` ใช้ร่วมกันทั้งพนักงานและลูกค้า controller ตัวเดียวรับทั้งสองกลุ่ม ส่วน use case ใช้กฎความเป็นเจ้าของและเวลาตัดรอบที่ต่างกันระหว่างสองกลุ่ม ถ้าแยกเป็น controller `/staff/...` กับ `/portal/...` จะขัดกับ path ใน contract
 
@@ -191,15 +185,15 @@ route ที่ใช้ร่วมเหล่านี้ **ไม่มี a
 
 ## Queue
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/queue?branch=&room=&date=&include_finished=&status=` | `queue:read` | `Staff/QueueController` | `Queueing/GetQueueBoard/` | `Queueing` | ✅ |
-| POST | `/staff/queue/tickets` | `queue:write` | `Staff/QueueController` | `Queueing/IssueWalkInTicket/` | `Queueing` | ✅ |
-| POST | `/staff/queue/{id}/assign` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/AssignTicket/` | `Queueing` | ✅ |
-| POST | `/staff/queue/{id}/call` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/CallTicket/` | `Queueing`, `Notifications` | ✅ |
-| POST | `/staff/queue/{id}/skip` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/SkipTicket/` | `Queueing` | ✅ |
-| GET | `/portal/queue/{id}` | portal | `Portal/PortalQueueController` | `Queueing/GetMyTicket/` | `Queueing` | ✅ |
-| SSE | `/queue/stream?branch=` | ทั้งสองฝั่ง และ token ของจอ (ส่วนขยาย § 30) | `Realtime/QueueStreamController` | ส่งจาก `IQueueEventStream` | `Queueing` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/queue?branch=&room=&date=&include_finished=&status=` | `queue:read` | `Staff/QueueController` | `Queueing/GetQueueBoard/` | `Queueing` |
+| POST | `/staff/queue/tickets` | `queue:write` | `Staff/QueueController` | `Queueing/IssueWalkInTicket/` | `Queueing` |
+| POST | `/staff/queue/{id}/assign` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/AssignTicket/` | `Queueing` |
+| POST | `/staff/queue/{id}/call` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/CallTicket/` | `Queueing`, `Notifications` |
+| POST | `/staff/queue/{id}/skip` | `queue:call` | `Staff/QueueTicketActionsController` | `Queueing/SkipTicket/` | `Queueing` |
+| GET | `/portal/queue/{id}` | portal | `Portal/PortalQueueController` | `Queueing/GetMyTicket/` | `Queueing` |
+| SSE | `/queue/stream?branch=` | ทั้งสองฝั่ง และ token ของจอ (ส่วนขยาย § 30) | `Realtime/QueueStreamController` | ส่งจาก `IQueueEventStream` | `Queueing` |
 
 SSE เป็นเส้นเดียวใน contract ที่ไม่ใช่ REST ตัวส่งอยู่ที่ `Infrastructure/Realtime/QueueEventBroker.cs` เป็นการกระจายภายใน process เดียว เพราะหนึ่งคลินิกคือหนึ่ง deployment ไม่มีอะไรต้องประสานข้ามเครื่อง controller เปิด stream แล้วส่ง domain event ต่อ (`ticket.called`, `ticket.updated`, `board.refresh`) ไม่มี `[RequireScope]` ด้วยเหตุผลเดียวกับ route นัดที่ใช้ร่วม และกรองให้ลูกค้าเห็นเฉพาะคิวของตัวเอง
 
@@ -215,18 +209,18 @@ SSE เป็นเส้นเดียวใน contract ที่ไม่ใ
 
 ## Consultation and Medical record
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/consultations` | `consult:write` | `Staff/ConsultationsController` | `Consultations/OpenConsultation/` | `Consultations`, `Queueing`, `Appointments` | ✅ |
-| PATCH | `/staff/consultations/{id}` | `consult:write` | `Staff/ConsultationsController` | `Consultations/UpdateConsultation/` | `Consultations` | ✅ |
-| POST | `/staff/consultations/{id}/vitals` | `vitals:write` | `Staff/ConsultationPartsController` | `Consultations/RecordVitals/` | `Consultations` | ✅ |
-| POST | `/staff/consultations/{id}/examination` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/RecordExamination/` | `Consultations` | ✅ |
-| POST | `/staff/consultations/{id}/diagnoses` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/AddDiagnosis/` | `Consultations` | ✅ |
-| POST | `/staff/consultations/{id}/treatments` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/AddTreatment/` | `Consultations` | ✅ |
-| POST | `/staff/consultations/{id}/prescriptions` | `rx:write` | `Staff/ConsultationPartsController` | `Consultations/AddPrescription/` | `Prescriptions`, `Patients` | ✅ |
-| POST | `/staff/consultations/{id}/close` | `record:sign` | `Staff/ConsultationPartsController` | `Consultations/CloseConsultation/` | `Consultations`, `MedicalRecords`, `Queueing`, `Appointments` | ✅ |
-| GET | `/staff/medical-records/{id}` | `record:read` | `Staff/MedicalRecordsController` | `MedicalRecords/GetMedicalRecord/` | `MedicalRecords`, `Auditing` | ✅ |
-| POST | `/staff/medical-records/{id}/amendments` | `record:amend` | `Staff/MedicalRecordsController` | `MedicalRecords/AmendMedicalRecord/` | `MedicalRecords` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/consultations` | `consult:write` | `Staff/ConsultationsController` | `Consultations/OpenConsultation/` | `Consultations`, `Queueing`, `Appointments` |
+| PATCH | `/staff/consultations/{id}` | `consult:write` | `Staff/ConsultationsController` | `Consultations/UpdateConsultation/` | `Consultations` |
+| POST | `/staff/consultations/{id}/vitals` | `vitals:write` | `Staff/ConsultationPartsController` | `Consultations/RecordVitals/` | `Consultations` |
+| POST | `/staff/consultations/{id}/examination` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/RecordExamination/` | `Consultations` |
+| POST | `/staff/consultations/{id}/diagnoses` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/AddDiagnosis/` | `Consultations` |
+| POST | `/staff/consultations/{id}/treatments` | `consult:write` | `Staff/ConsultationPartsController` | `Consultations/AddTreatment/` | `Consultations` |
+| POST | `/staff/consultations/{id}/prescriptions` | `rx:write` | `Staff/ConsultationPartsController` | `Consultations/AddPrescription/` | `Prescriptions`, `Patients` |
+| POST | `/staff/consultations/{id}/close` | `record:sign` | `Staff/ConsultationPartsController` | `Consultations/CloseConsultation/` | `Consultations`, `MedicalRecords`, `Queueing`, `Appointments` |
+| GET | `/staff/medical-records/{id}` | `record:read` | `Staff/MedicalRecordsController` | `MedicalRecords/GetMedicalRecord/` | `MedicalRecords`, `Auditing` |
+| POST | `/staff/medical-records/{id}/amendments` | `record:amend` | `Staff/MedicalRecordsController` | `MedicalRecords/AmendMedicalRecord/` | `MedicalRecords` |
 
 route เขียนแปดเส้นแบ่งไว้สอง controller `ConsultationsController` เปิดเคสและบันทึกร่าง `ConsultationPartsController` ถือส่วนย่อยของเคสและการปิดเคส การแบ่งนี้ตาม scope ซึ่งเป็นจุดที่น่าสนใจที่สุดของส่วนนี้ อ่าน scope ไล่ลงมาจะเห็นโมเดล role ของ contract คือ `vitals:write` ให้ผู้ช่วยชั่งน้ำหนักได้อย่างเดียว `consult:write` คือพื้นที่ทำงานของสัตวแพทย์ `rx:write` คือการสั่งยา และ `record:sign` ซึ่งผู้ช่วยและพนักงานต้อนรับไม่มี คือการลงนามในเอกสารทางการแพทย์ถาวร
 
@@ -244,17 +238,17 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 ## Customer portal
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/portal/home` | portal | `Portal/PortalHomeController` | `Patients/Portal/GetPortalHomeHandler` | ข้ามหลายโมดูล | ✅ |
-| GET | `/portal/pets` | portal | `Portal/PortalPetsController` | `Patients/Portal/ListMyPetsHandler` | `Patients` | ✅ |
-| PATCH | `/portal/pets/{id}` | portal | `Portal/PortalPetsController` | `Patients/Portal/UpdatePetByOwnerHandler` | `Patients` | ✅ |
-| GET | `/portal/pets/{id}/records` | portal | `Portal/PortalPetRecordsController` | `MedicalRecords/GetOwnerVisibleRecords/` | `MedicalRecords`, `Laboratory`, `Patients` | ✅ |
-| GET | `/portal/appointments` | portal | `Portal/PortalAppointmentsController` | `Appointments/ListMyAppointments/` | `Appointments` | ✅ |
-| GET | `/portal/notifications` | portal | `Portal/PortalNotificationsController` | `Notifications/ListMyNotifications/` | `Notifications` | ✅ |
-| POST | `/portal/documents` | portal | `Portal/PortalDocumentsController` | `Patients/Documents/UploadOwnerDocumentHandler` | `Patients` และที่เก็บไฟล์ | ✅ |
-| GET | `/portal/invoices` | portal | `Portal/PortalInvoicesController` | `Billing/ListMyInvoices/` | `Billing` | ✅ |
-| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/portal/home` | portal | `Portal/PortalHomeController` | `Patients/Portal/GetPortalHomeHandler` | ข้ามหลายโมดูล |
+| GET | `/portal/pets` | portal | `Portal/PortalPetsController` | `Patients/Portal/ListMyPetsHandler` | `Patients` |
+| PATCH | `/portal/pets/{id}` | portal | `Portal/PortalPetsController` | `Patients/Portal/UpdatePetByOwnerHandler` | `Patients` |
+| GET | `/portal/pets/{id}/records` | portal | `Portal/PortalPetRecordsController` | `MedicalRecords/GetOwnerVisibleRecords/` | `MedicalRecords`, `Laboratory`, `Patients` |
+| GET | `/portal/appointments` | portal | `Portal/PortalAppointmentsController` | `Appointments/ListMyAppointments/` | `Appointments` |
+| GET | `/portal/notifications` | portal | `Portal/PortalNotificationsController` | `Notifications/ListMyNotifications/` | `Notifications` |
+| POST | `/portal/documents` | portal | `Portal/PortalDocumentsController` | `Patients/Documents/UploadOwnerDocumentHandler` | `Patients` และที่เก็บไฟล์ |
+| GET | `/portal/invoices` | portal | `Portal/PortalInvoicesController` | `Billing/ListMyInvoices/` | `Billing` |
+| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` |
 
 `PATCH /portal/pets/{id}` รับเฉพาะรูป ชื่อเล่น อาหาร และพฤติกรรม ฟิลด์ทางคลินิกถูกปฏิเสธที่ขอบ DTO คือ DTO ฝั่งเจ้าของไม่มีฟิลด์เหล่านั้นอยู่เลย คำขอที่ปลอมขึ้นจึงเข้าไม่ถึง
 
@@ -262,39 +256,41 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 ## Schedules and Shifts
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/schedules?from=&to=` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetScheduleCalendar/` | `Scheduling` | ✅ |
-| POST | `/staff/schedules/shifts` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/CreateShifts/` | `Scheduling` | ✅ |
-| POST | `/staff/schedules/time-off` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/RequestTimeOff/` | `Scheduling`, `Appointments` | ✅ |
-| GET | `/staff/schedules/availability` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetStaffAvailability/` | `Scheduling` | ✅ |
-| PUT | `/staff/schedules/assignment-rules` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/ReplaceAssignmentRules/` | `Scheduling` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/schedules?from=&to=` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetScheduleCalendar/` | `Scheduling` |
+| POST | `/staff/schedules/shifts` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/CreateShifts/` | `Scheduling` |
+| POST | `/staff/schedules/time-off` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/RequestTimeOff/` | `Scheduling`, `Appointments` |
+| GET | `/staff/schedules/availability` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetStaffAvailability/` | `Scheduling` |
+| PUT | `/staff/schedules/assignment-rules` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/ReplaceAssignmentRules/` | `Scheduling` |
+
+การแก้และลบเวรทีละเวร การอ่านกติกาจ่ายเคส และการคัดลอกสัปดาห์ เป็นส่วนขยาย § 47 ถึง 49 อยู่ใน [ตารางส่วนขยาย](#ส่วนขยาย-contract)
 
 กะทำงานคือ input ของ `/booking/availability` ช่วงว่างมีได้เฉพาะที่มีกะ หักนัดที่จองแล้ว และวันหยุด เวลาพักและวันลาไม่ต้องหักแยก เพราะทั้งสองอย่างเป็นช่องว่างในกะอยู่แล้ว (เวลาพักแบ่งกะเป็นสองกะ วันลาตัดเวลาออกจากกะ) รายละเอียดอยู่ใน [ตารางเวร](features/schedules.md)
 
 ## Advanced appointment
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/appointments/recurring` | `appointment:write` | `Staff/RecurringAppointmentsController` | `Appointments/CreateRecurringSeries/` | `Appointments`, `Scheduling` | ✅ |
-| GET | `/staff/appointments/conflicts` | `appointment:read` | `Staff/AppointmentConflictsController` | `Appointments/DetectConflicts/` | `Appointments`, `Scheduling` | ✅ |
-| POST | `/staff/waiting-list` | `appointment:write` | `Staff/WaitingListController` | `Appointments/AddToWaitingList/` | `Appointments`, `Notifications` | ✅ |
-| POST | `/staff/appointments/{id}/no-show` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/MarkNoShow/` | `Appointments` | ✅ |
-| PUT | `/staff/appointment-types` | `settings:write` | `Staff/AppointmentTypesController` | `Appointments/ReplaceAppointmentTypes/` | `Appointments` | ✅ |
-| PUT | `/staff/policies/cancellation` | `settings:write` | `Staff/CancellationPolicyController` | `Appointments/ReplaceCancellationPolicy/` | `Appointments` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/appointments/recurring` | `appointment:write` | `Staff/RecurringAppointmentsController` | `Appointments/CreateRecurringSeries/` | `Appointments`, `Scheduling` |
+| GET | `/staff/appointments/conflicts` | `appointment:read` | `Staff/AppointmentConflictsController` | `Appointments/DetectConflicts/` | `Appointments`, `Scheduling` |
+| POST | `/staff/waiting-list` | `appointment:write` | `Staff/WaitingListController` | `Appointments/AddToWaitingList/` | `Appointments`, `Notifications` |
+| POST | `/staff/appointments/{id}/no-show` | `appointment:write` | `Staff/AppointmentsController` | `Appointments/MarkNoShow/` | `Appointments` |
+| PUT | `/staff/appointment-types` | `settings:write` | `Staff/AppointmentTypesController` | `Appointments/ReplaceAppointmentTypes/` | `Appointments` |
+| PUT | `/staff/policies/cancellation` | `settings:write` | `Staff/CancellationPolicyController` | `Appointments/ReplaceCancellationPolicy/` | `Appointments` |
 
 ประเภทนัดและนโยบายยกเลิกไม่ได้เก็บไว้เฉย ๆ การจองของลูกค้าอ่านว่าประเภทนั้นจองออนไลน์ได้ไหมและต้องจองล่วงหน้ากี่นาที ทุกทางจองอ่านระยะเวลา การเช็กอินตั้งความเร่งด่วนของคิวตามประเภท และการยกเลิกของลูกค้าที่กระชั้นกว่า cutoff ถูกนับเป็นครั้งที่ผิดนัด รายละเอียดอยู่ใน [นัดขั้นสูง](features/advanced-booking.md)
 
 ## Advanced patient management
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/pets/{id}/vaccinations` | `patient:read` | `Staff/PetVaccinationsController` | `Patients/ListVaccinations/` | `Patients` | ✅ |
-| POST | `/staff/pets/{id}/vaccinations` | `record:write` | `Staff/PetVaccinationsController` | `Patients/RecordVaccination/` | `Patients` | ✅ |
-| POST | `/staff/pets/{id}/allergies` | `record:write` | `Staff/PetsController` | `Patients/RecordAllergy/` | `Patients` | ✅ |
-| GET | `/staff/pets/{id}/weights` | `patient:read` | `Staff/PetWeightsController` | `Patients/GetWeightHistory/` (อ่านจาก `consultation_vitals`) | `Consultations` | ✅ |
-| POST | `/staff/pets/{id}/treatment-plans` | `consult:write` | `Staff/TreatmentPlansController` | `Patients/CreateTreatmentPlan/` | `Patients`, `Appointments` | ✅ |
-| POST | `/staff/pets/{id}/documents` | `record:write` | `Staff/PetDocumentsController` | `Patients/Documents/CreateDocumentUploadUrlHandler` | `Patients` และที่เก็บไฟล์ | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/pets/{id}/vaccinations` | `patient:read` | `Staff/PetVaccinationsController` | `Patients/ListVaccinations/` | `Patients` |
+| POST | `/staff/pets/{id}/vaccinations` | `record:write` | `Staff/PetVaccinationsController` | `Patients/RecordVaccination/` | `Patients` |
+| POST | `/staff/pets/{id}/allergies` | `record:write` | `Staff/PetsController` | `Patients/RecordAllergy/` | `Patients` |
+| GET | `/staff/pets/{id}/weights` | `patient:read` | `Staff/PetWeightsController` | `Patients/GetWeightHistory/` (อ่านจาก `consultation_vitals`) | `Consultations` |
+| POST | `/staff/pets/{id}/treatment-plans` | `consult:write` | `Staff/TreatmentPlansController` | `Patients/CreateTreatmentPlan/` | `Patients`, `Appointments` |
+| POST | `/staff/pets/{id}/documents` | `record:write` | `Staff/PetDocumentsController` | `Patients/Documents/CreateDocumentUploadUrlHandler` | `Patients` และที่เก็บไฟล์ |
 
 ทำแพ้ยาก่อนส่วนอื่นของหมวดนี้ เพราะ contract ให้ endpoint สั่งยารับผิดชอบ "ตรวจแพ้ยา" และการตรวจที่ไม่มีข้อมูลให้ตรวจเทียบเป็นแค่ของประดับ
 
@@ -304,16 +300,16 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 ## Lab, Prescription and medical documents
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/lab-requests` | `lab:request` | `Staff/LabRequestsController` | `Laboratory/CreateLabRequest/` | `Laboratory` | ✅ |
-| POST | `/staff/lab-requests/{id}/results` | `lab:write` | `Staff/LabResultsController` | `Laboratory/RecordLabResults/` | `Laboratory` | ✅ |
-| GET | `/staff/lab-requests?status=pending` | `lab:read` | `Staff/LabRequestsController` | `Laboratory/ListLabRequests/` | `Laboratory` | ✅ |
-| GET | `/staff/prescriptions?pet_id=` | `rx:read` | `Staff/PrescriptionsController` | `Prescriptions/ListPrescriptions/` | `Prescriptions` | ✅ |
-| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | `Staff/PrescriptionDispenseController` | `Prescriptions/DispensePrescription/` | `Prescriptions`, `Inventory`, `Billing` | ✅ |
-| GET | `/staff/templates/treatments` | `consult:read` | `Staff/TreatmentTemplatesController` | `Consultations/ListTreatmentTemplates/` | `Consultations` | ✅ |
-| POST | `/staff/documents/generate` | `record:read` | `Staff/DocumentGenerationController` | `MedicalRecords/GenerateDocument/` | `MedicalRecords` และตัวสร้าง PDF (QuestPDF) | ✅ |
-| GET | `/staff/medical-records/{id}/audit` | `record:audit` | `Staff/MedicalRecordsController` | `MedicalRecords/GetRecordAudit/` | `MedicalRecords`, `Auditing` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/lab-requests` | `lab:request` | `Staff/LabRequestsController` | `Laboratory/CreateLabRequest/` | `Laboratory` |
+| POST | `/staff/lab-requests/{id}/results` | `lab:write` | `Staff/LabResultsController` | `Laboratory/RecordLabResults/` | `Laboratory` |
+| GET | `/staff/lab-requests?status=pending` | `lab:read` | `Staff/LabRequestsController` | `Laboratory/ListLabRequests/` | `Laboratory` |
+| GET | `/staff/prescriptions?pet_id=` | `rx:read` | `Staff/PrescriptionsController` | `Prescriptions/ListPrescriptions/` | `Prescriptions` |
+| POST | `/staff/prescriptions/{id}/dispense` | `rx:dispense` | `Staff/PrescriptionDispenseController` | `Prescriptions/DispensePrescription/` | `Prescriptions`, `Inventory`, `Billing` |
+| GET | `/staff/templates/treatments` | `consult:read` | `Staff/TreatmentTemplatesController` | `Consultations/ListTreatmentTemplates/` | `Consultations` |
+| POST | `/staff/documents/generate` | `record:read` | `Staff/DocumentGenerationController` | `MedicalRecords/GenerateDocument/` | `MedicalRecords` และตัวสร้าง PDF (QuestPDF) |
+| GET | `/staff/medical-records/{id}/audit` | `record:audit` | `Staff/MedicalRecordsController` | `MedicalRecords/GetRecordAudit/` | `MedicalRecords`, `Auditing` |
 
 มุมมอง audit ของเวชระเบียนตอบจากสองแหล่ง เพราะคำถามมีสองครึ่ง amendment บอกว่า *ตอนนี้เอกสารเขียนว่าอะไร และมาถึงตรงนี้อย่างไร* ส่วน audit entry บอกว่า *ใครแตะ จากที่ไหน เมื่อไร* รวมถึงการเปิดดู ซึ่งไม่ทิ้งร่องรอยในตัวเอกสาร
 
@@ -323,13 +319,13 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 
 ## Notifications and Messaging
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/notifications/send` | `notify:send` | `Staff/NotificationsController` | `Notifications/SendNotification/` | `Notifications` | ✅ |
-| GET | `/staff/notifications/templates` | `notify:manage` | `Staff/NotificationTemplatesController` | `Notifications/ListTemplates/` | `Notifications` | ✅ |
-| GET | `/staff/notifications/log` | `notify:read` | `Staff/NotificationLogController` | `Notifications/GetDeliveryLog/` | `Notifications` | ✅ |
-| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` | ✅ |
-| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadsController` | `Messaging/ReplyToThread/` | `Messaging` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/notifications/send` | `notify:send` | `Staff/NotificationsController` | `Notifications/SendNotification/` | `Notifications` |
+| GET | `/staff/notifications/templates` | `notify:manage` | `Staff/NotificationTemplatesController` | `Notifications/ListTemplates/` | `Notifications` |
+| GET | `/staff/notifications/log` | `notify:read` | `Staff/NotificationLogController` | `Notifications/GetDeliveryLog/` | `Notifications` |
+| GET | `/staff/threads` | `message:read` | `Staff/ThreadsController` | `Messaging/ListThreads/` | `Messaging` |
+| POST | `/staff/threads/{id}/messages` | `message:write` | `Staff/ThreadsController` | `Messaging/ReplyToThread/` | `Messaging` |
 
 ข้อความออกจริงทาง LINE, SMS และอีเมล ทุกครั้งที่ลองส่งมีแถวในตาราง `notification_deliveries` ซึ่ง `GET /staff/notifications/log` อ่าน เทมเพลตเป็นโค้ด (`Notifications/Templates/`) เพราะสัญญามีแค่การอ่าน รายละเอียดอยู่ใน [การแจ้งเตือน](features/notifications.md)
 
@@ -343,11 +339,11 @@ route เขียนแปดเส้นแบ่งไว้สอง control
 Application -> Notification port -> Infrastructure/Notifications/Line/ -> LINE Messaging API
 ```
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| PUT | `/staff/integrations/line` | `integration:manage` | `Staff/LineIntegrationController` | `Integrations/ConfigureLineChannel/` | `Integrations` | ✅ |
-| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ หรือ `segment_id` ของ `Crm`) | ✅ |
-| POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| PUT | `/staff/integrations/line` | `integration:manage` | `Staff/LineIntegrationController` | `Integrations/ConfigureLineChannel/` | `Integrations` |
+| POST | `/staff/integrations/line/broadcast` | `notify:broadcast` | `Staff/LineBroadcastController` | `Notifications/BroadcastToSegment/` | `Notifications` (กลุ่มลูกค้าคือรายชื่อในคำขอ หรือ `segment_id` ของ `Crm`) |
+| POST | `/webhooks/line` | ลายเซ็น LINE | `Webhooks/LineWebhookController` | `Integrations/HandleLineWebhook/` | `Integrations` |
 
 `POST /webhooks/line` เป็น `[AllowAnonymous]` และยืนยันด้วยลายเซ็นของ LINE channel แทน bearer token เป็น callback ของ integration รับ event `follow`, `message` และ postback แล้วส่งต่อให้ handler ไม่ออก token และไม่สร้างบัญชี `follow` และ `message` ยังจดผู้ติดตามล่าสุดไว้ให้เคาน์เตอร์เลือกเป็นที่อยู่ LINE ของลูกค้า ([contract-extensions.md § 18](./contract-extensions.md)) `message` จากที่อยู่ที่ผูกกับลูกค้าแล้วเข้ากล่องข้อความของลูกค้าคนนั้น ([ข้อความลูกค้า](features/messaging.md))
 
@@ -357,34 +353,34 @@ postback action ใน `Domain/Integrations/LinePostbackActions.cs` ทำงา
 
 ## Operational statistics
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/dashboard/today` | `dashboard:read` | `Staff/DashboardController` | `Analytics/GetTodayDashboard/` | `Analytics` | ✅ |
-| GET | `/staff/stats/appointments` | `stats:read` | `Staff/StatsController` | `Analytics/GetAppointmentStats/` | `Analytics` | ✅ |
-| GET | `/staff/stats/queue` | `stats:read` | `Staff/StatsController` | `Analytics/GetQueueStats/` | `Analytics` | ✅ |
-| GET | `/staff/stats/workload` | `stats:read` | `Staff/StatsController` | `Analytics/GetWorkloadStats/` | `Analytics` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/dashboard/today` | `dashboard:read` | `Staff/DashboardController` | `Analytics/GetTodayDashboard/` | `Analytics` |
+| GET | `/staff/stats/appointments` | `stats:read` | `Staff/StatsController` | `Analytics/GetAppointmentStats/` | `Analytics` |
+| GET | `/staff/stats/queue` | `stats:read` | `Staff/StatsController` | `Analytics/GetQueueStats/` | `Analytics` |
+| GET | `/staff/stats/workload` | `stats:read` | `Staff/StatsController` | `Analytics/GetWorkloadStats/` | `Analytics` |
 
 ## Business dashboard
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/analytics/revenue` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRevenueAnalytics/` | `Analytics` | ✅ |
-| GET | `/staff/analytics/services` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetServiceAnalytics/` | `Analytics` | ✅ |
-| GET | `/staff/analytics/retention` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRetentionAnalytics/` | `Analytics` | ✅ |
-| GET | `/staff/analytics/staff-performance` | `analytics:hr` | `Staff/AnalyticsController` | `Analytics/GetStaffPerformance/` | `Analytics` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/analytics/revenue` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRevenueAnalytics/` | `Analytics` |
+| GET | `/staff/analytics/services` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetServiceAnalytics/` | `Analytics` |
+| GET | `/staff/analytics/retention` | `analytics:read` | `Staff/AnalyticsController` | `Analytics/GetRetentionAnalytics/` | `Analytics` |
+| GET | `/staff/analytics/staff-performance` | `analytics:hr` | `Staff/AnalyticsController` | `Analytics/GetStaffPerformance/` | `Analytics` |
 
 analytics อ่านผ่าน SQL projection ที่เขียนมือใน `Infrastructure/Persistence/Repositories/Analytics/` ไม่โหลด aggregate เป็นที่เดียวที่มี SQL เขียนมือใน repository ทุกค่าเป็น parameter ตัวเลขแต่ละตัวนับอย่างไร โดยเฉพาะรายรับ ดู [ภาพรวมและรายงาน](features/dashboard.md)
 
 ## Billing and Payments
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/invoices` | `invoice:write` | `Staff/InvoicesController` | `Billing/CreateInvoice/` | `Billing` | ✅ |
-| POST | `/staff/invoices/{id}/discounts` | `invoice:discount` | `Staff/InvoiceTransactionsController` | `Billing/ApplyDiscount/` | `Billing` | ✅ |
-| POST | `/staff/invoices/{id}/payments` | `payment:collect` | `Staff/InvoiceTransactionsController` | `Billing/CollectPayment/` | `Billing` | ✅ |
-| POST | `/staff/invoices/{id}/refunds` | `payment:refund` | `Staff/InvoiceTransactionsController` | `Billing/RefundPayment/` | `Billing` | ✅ |
-| POST | `/staff/invoices/{id}/receipt` | `receipt:issue` | `Staff/InvoiceTransactionsController` | `Billing/IssueReceipt/` | `Billing` | ✅ |
-| GET | `/portal/invoices` | portal | `Portal/PortalInvoicesController` | `Billing/ListMyInvoices/` | `Billing` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/invoices` | `invoice:write` | `Staff/InvoicesController` | `Billing/CreateInvoice/` | `Billing` |
+| POST | `/staff/invoices/{id}/discounts` | `invoice:discount` | `Staff/InvoiceTransactionsController` | `Billing/ApplyDiscount/` | `Billing` |
+| POST | `/staff/invoices/{id}/payments` | `payment:collect` | `Staff/InvoiceTransactionsController` | `Billing/CollectPayment/` | `Billing` |
+| POST | `/staff/invoices/{id}/refunds` | `payment:refund` | `Staff/InvoiceTransactionsController` | `Billing/RefundPayment/` | `Billing` |
+| POST | `/staff/invoices/{id}/receipt` | `receipt:issue` | `Staff/InvoiceTransactionsController` | `Billing/IssueReceipt/` | `Billing` |
+| GET | `/portal/invoices` | portal | `Portal/PortalInvoicesController` | `Billing/ListMyInvoices/` | `Billing` |
 
 ร่างแรกของตารางนี้มีสี่ controller แยกหนึ่งตัวต่อหนึ่ง action ตอนสร้างจริงรวมเหลือสองตัว ด้วยเหตุผลเดียวกับส่วนย่อยของการตรวจ `InvoicesController` ถือตัวเอกสาร (สร้าง อ่าน รายการ void) และ `InvoiceTransactionsController` ถือเงินที่เคลื่อนไหวกับเอกสารนั้น controller action เดียวสี่ตัวคือสี่ไฟล์ที่มี route ไฟล์ละเส้น
 
@@ -396,13 +392,13 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 ## Inventory
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/inventory/items` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListItems/` | `Inventory` | ✅ |
-| POST | `/staff/inventory/movements` | `inventory:write` | `Staff/InventoryStockController` | `Inventory/RecordMovement/` | `Inventory` | ✅ |
-| POST | `/staff/inventory/adjustments` | `inventory:adjust` | `Staff/InventoryStockController` | `Inventory/AdjustStock/` | `Inventory`, `Auditing` | ✅ |
-| GET | `/staff/inventory/alerts` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListAlerts/` | `Inventory` | ✅ |
-| POST | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryStockController` | `Inventory/CreatePurchaseOrder/` | `Inventory`, `Auditing` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/inventory/items` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListItems/` | `Inventory` |
+| POST | `/staff/inventory/movements` | `inventory:write` | `Staff/InventoryStockController` | `Inventory/RecordMovement/` | `Inventory` |
+| POST | `/staff/inventory/adjustments` | `inventory:adjust` | `Staff/InventoryStockController` | `Inventory/AdjustStock/` | `Inventory`, `Auditing` |
+| GET | `/staff/inventory/alerts` | `inventory:read` | `Staff/InventoryController` | `Inventory/ListAlerts/` | `Inventory` |
+| POST | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryStockController` | `Inventory/CreatePurchaseOrder/` | `Inventory`, `Auditing` |
 
 ร่างแรกมีห้า controller ตอนสร้างจริงรวมเหลือสองตัว `InventoryController` ถือการอ่าน `InventoryStockController` ถือการเขียนสามเส้น ซึ่งแต่ละเส้นใช้ scope ของตัวเอง
 
@@ -410,24 +406,24 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 ## Loyalty, Packages and Promotions
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/segments` | `crm:manage` | `Staff/SegmentsController` | `Crm/CreateSegment/` | `Crm` (`Segment`) | ✅ |
-| POST | `/staff/packages` | `crm:manage` | `Staff/PackagesController` | `Crm/CreatePackage/` | `Crm` (`CustomerPackage`), `Billing` | ✅ |
-| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` (อยู่ในตาราง Customer portal ด้วย) | ✅ |
-| POST | `/staff/coupons` | `crm:manage` | `Staff/CouponsController` | `Crm/CreateCoupon/` | `Crm` (`Coupon`) | ✅ |
-| GET | `/staff/loyalty/{customer_id}` | `crm:read` | `Staff/LoyaltyController` | `Crm/GetLoyaltyAccount/` | `Crm` (`LoyaltyEntry`) | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/segments` | `crm:manage` | `Staff/SegmentsController` | `Crm/CreateSegment/` | `Crm` (`Segment`) |
+| POST | `/staff/packages` | `crm:manage` | `Staff/PackagesController` | `Crm/CreatePackage/` | `Crm` (`CustomerPackage`), `Billing` |
+| GET | `/portal/packages` | portal | `Portal/PortalPackagesController` | `Crm/GetMyPackageBalance/` | `Crm` (อยู่ในตาราง Customer portal ด้วย) |
+| POST | `/staff/coupons` | `crm:manage` | `Staff/CouponsController` | `Crm/CreateCoupon/` | `Crm` (`Coupon`) |
+| GET | `/staff/loyalty/{customer_id}` | `crm:read` | `Staff/LoyaltyController` | `Crm/GetLoyaltyAccount/` | `Crm` (`LoyaltyEntry`) |
 
 ขายแพ็กเกจคือออกบิลหนึ่งใบในจังหวะเดียวกัน (ต้องส่ง `Idempotency-Key`) แพ็กเกจใช้ได้เมื่อบิลนั้นชำระครบ แล้วถูกตัดสิทธิ์เองเมื่อบิลมีบริการที่แพ็กเกจครอบ ส่วนนั้นลงบิลเป็นรายการราคา 0 คูปองและแต้มใช้ผ่าน `POST /staff/invoices/{id}/discounts` ด้วยช่อง `coupon_code` หรือ `points` แต้มได้ 1 แต้มต่อ ฿100 ที่จ่ายจริงเมื่อบิลชำระครบ และถูกหักคืนตามเงินที่คืน กลุ่มลูกค้าเก็บเป็นเงื่อนไข และใช้ส่งประกาศ LINE ด้วย `segment_id` การอ่านและปิดคูปอง การอ่านกลุ่มลูกค้าและแพ็กเกจ การปรับแต้มด้วยมือ และกติกาแต้มที่ตั้งได้ เป็นส่วนขยาย [contract-extensions.md § 25](./contract-extensions.md) รายละเอียดอยู่ใน [แพ็กเกจ คูปอง และแต้มสะสม](features/crm.md) และการตีความใน [assumptions.md § 43](./assumptions.md)
 
 ## Reminders and Automation
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| GET | `/staff/automations` | `automation:read` | `Staff/AutomationsController` | `Automation/ListAutomations/` | `Automation` | ✅ |
-| POST | `/staff/automations` | `automation:manage` | `Staff/AutomationsController` | `Automation/CreateAutomation/` | `Automation` | ✅ |
-| POST | `/staff/automations/{id}/simulate` | `automation:manage` | `Staff/AutomationSimulationController` | `Automation/SimulateAutomation/` | `Automation` | ✅ |
-| GET | `/staff/reminders/upcoming` | `automation:read` | `Staff/RemindersController` | `Automation/ListUpcomingReminders/` | `Automation` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| GET | `/staff/automations` | `automation:read` | `Staff/AutomationsController` | `Automation/ListAutomations/` | `Automation` |
+| POST | `/staff/automations` | `automation:manage` | `Staff/AutomationsController` | `Automation/CreateAutomation/` | `Automation` |
+| POST | `/staff/automations/{id}/simulate` | `automation:manage` | `Staff/AutomationSimulationController` | `Automation/SimulateAutomation/` | `Automation` |
+| GET | `/staff/reminders/upcoming` | `automation:read` | `Staff/RemindersController` | `Automation/ListUpcomingReminders/` | `Automation` |
 
 กฎ automation คือ `trigger + condition + action` ประเมินที่ฝั่ง server โดย hosted service ใน `Infrastructure/Jobs/` (`RecurringJobHost`, งาน `AutomationJob`) `simulate` และ `upcoming` ใช้ `AutomationEvaluator` ตัวเดียวกับการรันจริงในโหมด dry-run เป็นเส้นทางโค้ดเดียว ผลพรีวิวจึงไม่มีทางต่างจากการรันจริง ข้อความแต่ละฉบับถูกจองด้วย unique key ใน `automation_dispatches` ก่อนส่ง จึงไม่ส่งซ้ำแม้มี API หลาย instance การแก้ เปิดปิด และลบกติกา (`PATCH` และ `DELETE /staff/automations/{id}`) ไม่อยู่ใน contract ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) § 19 รายละเอียดอยู่ใน [เตือนอัตโนมัติ](features/automation.md)
 
@@ -435,12 +431,12 @@ analytics อ่านผ่าน SQL projection ที่เขียนมื
 
 ## Reports and Audit
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/reports/exports` | `report:export` | `Staff/ReportExportsController` | `Reporting/StartExport/` | `Reporting` | ✅ |
-| GET | `/staff/reports/exports/{id}` | `report:export` | `Staff/ReportExportsController` | `Reporting/GetExportStatus/` | `Reporting` | ✅ |
-| GET | `/staff/audit-logs` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` | `Auditing` | ✅ |
-| GET | `/staff/audit-logs/access` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` (ตัวกรอง access) | `Auditing` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/reports/exports` | `report:export` | `Staff/ReportExportsController` | `Reporting/StartExport/` | `Reporting` |
+| GET | `/staff/reports/exports/{id}` | `report:export` | `Staff/ReportExportsController` | `Reporting/GetExportStatus/` | `Reporting` |
+| GET | `/staff/audit-logs` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` | `Auditing` |
+| GET | `/staff/audit-logs/access` | `audit:read` | `Staff/AuditLogsController` | `Auditing/ListAuditLogs/` (ตัวกรอง access) | `Auditing` |
 
 handler ตัวเดียวรับทั้งสอง route แยกด้วยตัวกรอง สองเส้นต่างกันที่ action ที่เลือก ไม่ได้ต่างที่พฤติกรรม ถ้าแยก handler จะต้องดูแลการจำกัดสาขาสองที่ ซึ่งเป็นการซ้ำแบบที่ทำ audit log รั่วในการแก้ครั้งที่สอง
 
@@ -448,14 +444,14 @@ handler ตัวเดียวรับทั้งสอง route แยก�
 
 ## Webhooks and Integrations
 
-| Method | Endpoint | Scope | Controller | Use case | Domain | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/webhooks` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhooksController` | `Integrations/CreateWebhookSubscription/` | `Integrations` | ✅ |
-| GET | `/staff/webhooks/{id}/deliveries` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/ListWebhookDeliveries/` | `Integrations` | ✅ |
-| POST | `/staff/api-keys` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/ApiKeysController` | `Integrations/CreateApiKey/` | `Integrations` | ✅ |
-| PUT | `/staff/integrations/payment` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/PaymentIntegrationController` | `Integrations/ConfigurePaymentProvider/` | `Integrations` (ไม่มี gateway ภายนอก) | ✅ |
-| PUT | `/staff/integrations/lab` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/LabIntegrationController` | `Integrations/ConfigureLabProvider/` | `Integrations` (ไม่มีตัวเชื่อมแล็บ) | ✅ |
-| GET | `/staff/integrations/calendar/ics` | *(ไม่ระบุ)* พนักงานทุกคน หรือ token ในลิงก์ | `Staff/CalendarFeedController` | `Integrations/GetCalendarFeed/` | `Integrations` | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | Domain |
+|---|---|---|---|---|---|
+| POST | `/staff/webhooks` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhooksController` | `Integrations/CreateWebhookSubscription/` | `Integrations` |
+| GET | `/staff/webhooks/{id}/deliveries` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/ListWebhookDeliveries/` | `Integrations` |
+| POST | `/staff/api-keys` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/ApiKeysController` | `Integrations/CreateApiKey/` | `Integrations` |
+| PUT | `/staff/integrations/payment` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/PaymentIntegrationController` | `Integrations/ConfigurePaymentProvider/` | `Integrations` (ไม่มี gateway ภายนอก) |
+| PUT | `/staff/integrations/lab` | *(ไม่ระบุ)* ใช้ `integration:manage` | `Staff/LabIntegrationController` | `Integrations/ConfigureLabProvider/` | `Integrations` (ไม่มีตัวเชื่อมแล็บ) |
+| GET | `/staff/integrations/calendar/ics` | *(ไม่ระบุ)* พนักงานทุกคน หรือ token ในลิงก์ | `Staff/CalendarFeedController` | `Integrations/GetCalendarFeed/` | `Integrations` |
 
 scope ที่เลือกและเหตุผลอยู่ใน [assumptions.md § 2](./assumptions.md) รายละเอียดทั้งหมด (รูปร่างคำขอและคำตอบ และสิ่งที่ event แต่ละตัวพาไป) อยู่ใน [การเชื่อมต่อระบบ](features/integrations.md) รายการ แก้ ปิด ลบ หมุน secret ส่งซ้ำ ยกเลิก key และสร้างลิงก์ปฏิทินใหม่ เป็นส่วนขยาย อยู่ในตารางด้านล่างและ [contract-extensions.md § 22](./contract-extensions.md)
 
@@ -465,119 +461,123 @@ scope ที่เลือกและเหตุผลอยู่ใน [ass
 
 ## ส่วนขยาย contract
 
-endpoint 109 เส้นที่ **ไม่อยู่** ใน `API Reference.dc.html` ส่วนใหญ่ปิดช่องโหว่ที่เจอตอนสร้างตาม contract (§ 1 ถึง 7, 11 ถึง 14, 17 ถึง 20, 22 ถึง 25 และ 28 ถึง 32) ส่วนสองเส้นของบทความ สามเส้นของทีม สี่เส้นของช่องทางติดต่อ สองเส้นของผู้ช่วย AI แปดเส้นของการเขียนบทความ (§ 26) สองเส้นของการจองโดยยังไม่สมัคร (§ 27) สี่เส้นของการคาดการณ์ด้วยสถิติ (§ 33) หกเส้นของผู้ช่วย AI สำหรับพนักงาน (§ 34) หกเส้นของประกาศความเป็นส่วนตัวที่คลินิกเขียนเอง (§ 35) เก้าเส้นของรีวิว (§ 36) หนึ่งเส้นของเวลารอ walk-in (§ 37) และสามเส้นของการชวนเพื่อน (§ 39) เป็นฟีเจอร์ที่ขอเพิ่ม แต่ละเส้นได้รับอนุมัติก่อนสร้าง ไม่ได้ทำเอาเอง และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md)
+endpoint ที่ **ไม่อยู่** ใน `API Reference.dc.html` บางเส้นปิดช่องโหว่ที่เจอตอนสร้างตาม contract บางเส้นเป็นฟีเจอร์ที่เจ้าของงานขอเพิ่ม ช่องสุดท้ายบอกเลขข้อ เหตุผล ทางเลือกที่ไม่เลือก และสิ่งที่ตั้งใจไม่ทำ อยู่ใน [contract-extensions.md](./contract-extensions.md) และแต่ละเส้นมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง
 
-| Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ | |
-|---|---|---|---|---|---|---|
-| POST | `/staff/queue/{id}/priority` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/SetTicketPriority/` | § 1 | ✅ |
-| POST | `/staff/queue/{id}/leave` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/LeaveQueue/` | § 2 | ✅ |
-| GET | `/portal/consents` | portal | `Portal/PortalPrivacyController` | `Customers/GetConsents/` | § 4 | ✅ |
-| PUT | `/portal/consents` | portal | `Portal/PortalPrivacyController` | `Customers/RecordConsent/` | § 4 | ✅ |
-| GET | `/staff/customers/{id}/consents` | `customer:read` | `Staff/PrivacyController` | `Customers/GetConsents/` | § 4 | ✅ |
-| POST | `/staff/customers/{id}/consents` | `customer:write` | `Staff/PrivacyController` | `Customers/RecordConsent/` | § 4 | ✅ |
-| POST | `/portal/data-requests` | portal | `Portal/PortalPrivacyController` | `Customers/DataRequests/` | § 4 | ✅ |
-| GET | `/staff/data-requests` | `customer:read` | `Staff/PrivacyController` | `Customers/DataRequests/` | § 4 | ✅ |
-| POST | `/staff/data-requests/{id}/close` | `customer:write` | `Staff/PrivacyController` | `Customers/DataRequests/` | § 4 | ✅ |
-| POST | `/staff/invoices/{id}/void` | `invoice:write` | `Staff/InvoicesController` | `Billing/VoidInvoice/` | § 3 | ✅ |
-| GET | `/staff/invoices/{id}` | `invoice:write` | `Staff/InvoicesController` | `Billing/GetInvoice/` | § 7 | ✅ |
-| GET | `/staff/invoices` | `invoice:write` | `Staff/InvoicesController` | `Billing/ListInvoices/` | § 7 | ✅ |
-| GET | `/articles` | สาธารณะ | `Public/ArticlesController` | `Articles/ListPublishedArticles/` | § 9 | ✅ |
-| GET | `/articles/{slug}` | สาธารณะ | `Public/ArticlesController` | `Articles/GetArticle/` | § 9 | ✅ |
-| GET | `/team` | สาธารณะ | `Public/TeamController` | `Staff/ListTeam/` | § 10 | ✅ |
-| GET | `/staff/departments` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListDepartments/` | § 10 | ✅ |
-| PUT | `/staff/members/{id}/public-profile` | `staff:manage` | `Staff/StaffMembersController` | `Staff/ReplacePublicProfile/` | § 10 | ✅ |
-| POST | `/staff/lab-requests/{id}/review` | `lab:read` | `Staff/LabRequestsController` | `Laboratory/ReviewLabResults/` | § 11 | ✅ |
-| PUT | `/storage/uploads/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 | ✅ |
-| GET | `/storage/files/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 | ✅ |
-| POST | `/portal/notifications/read` | portal | `Portal/PortalNotificationsController` | `Notifications/ListMyNotifications/` (`MarkNotificationsReadHandler`) | § 13 | ✅ |
-| GET | `/staff/consultations/{id}` | `consult:read` | `Staff/ConsultationsController` | `Consultations/GetConsultation/` | § 14 | ✅ |
-| GET | `/clinic/contacts` | สาธารณะ | `Public/ClinicController` | `Clinics/ManageContacts/` (`ListContactsHandler`) | § 15 | ✅ |
-| POST | `/clinic/contacts` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`AddContactHandler`) | § 15 | ✅ |
-| PATCH | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`UpdateContactHandler`) | § 15 | ✅ |
-| DELETE | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`RemoveContactHandler`) | § 15 | ✅ |
-| GET | `/assistant` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`GetAssistantStatusHandler`) | § 16 | ✅ |
-| POST | `/assistant/chat` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`ChatHandler`) | § 16 | ✅ |
-| GET | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/ListServices/` | § 17 | ✅ |
-| PATCH | `/staff/services/{id}` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateService/` | § 17 | ✅ |
-| GET | `/staff/integrations/line/followers` | `customer:write` | `Staff/LineFollowersController` | `Integrations/ListLineFollowers/` | § 18 | ✅ |
-| PUT | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`LinkLineAddressHandler`) | § 18 | ✅ |
-| DELETE | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`UnlinkLineAddressHandler`) | § 18 | ✅ |
-| PATCH | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/UpdateAutomation/` | § 19 | ✅ |
-| DELETE | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/DeleteAutomation/` | § 19 | ✅ |
-| GET | `/staff/prescriptions/drug-options` | `rx:write` | `Staff/PrescriptionsController` | `Prescriptions/ListDrugOptions/` | § 20 | ✅ |
-| GET | `/staff/webhooks` | `integration:manage` | `Staff/WebhooksController` | `Integrations/ListWebhooks/` | § 22 | ✅ |
-| PATCH | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/UpdateWebhookSubscription/` | § 22 | ✅ |
-| DELETE | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/DeleteWebhookSubscription/` | § 22 | ✅ |
-| POST | `/staff/webhooks/{id}/rotate-secret` | `integration:manage` | `Staff/WebhooksController` | `Integrations/RotateWebhookSecret/` | § 22 | ✅ |
-| POST | `/staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` | `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/RedeliverWebhookDelivery/` | § 22 | ✅ |
-| GET | `/staff/api-keys` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/ListApiKeys/` | § 22 | ✅ |
-| DELETE | `/staff/api-keys/{id}` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/RevokeApiKey/` | § 22 | ✅ |
-| POST | `/staff/integrations/calendar/token` | พนักงานทุกคน ลิงก์ของตัวเองเท่านั้น | `Staff/CalendarTokenController` | `Integrations/RotateCalendarFeed/` | § 22 | ✅ |
-| GET | `/staff/policies/cancellation` | `settings:read` | `Staff/CancellationPolicyController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
-| GET | `/staff/appointment-types` | `appointment:read` | `Staff/AppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
-| GET | `/portal/appointment-types` | `portal` | `Portal/PortalAppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 | ✅ |
-| GET | `/staff/waiting-list` | `appointment:write` | `Staff/WaitingListController` | `Appointments/ListWaitingList/` | § 23 | ✅ |
-| DELETE | `/staff/waiting-list/{id}` | `appointment:write` | `Staff/WaitingListController` | `Appointments/RemoveFromWaitingList/` | § 23 | ✅ |
-| GET | `/portal/thread` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`GetMyThreadHandler`) | § 24 | ✅ |
-| POST | `/portal/thread/messages` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`WriteToClinicHandler`) | § 24 | ✅ |
-| GET | `/staff/coupons` | `crm:read` | `Staff/CouponsController` | `Crm/ListCoupons/` | § 25 | ✅ |
-| POST | `/staff/coupons/{id}/deactivate` | `crm:manage` | `Staff/CouponsController` | `Crm/DeactivateCoupon/` | § 25 | ✅ |
-| GET | `/staff/segments` | `crm:read` | `Staff/SegmentsController` | `Crm/ListSegments/` | § 25 | ✅ |
-| GET | `/staff/segments/{id}` | `crm:read` | `Staff/SegmentsController` | `Crm/GetSegment/` | § 25 | ✅ |
-| GET | `/staff/packages` | `crm:read` | `Staff/PackagesController` | `Crm/ListPackages/` | § 25 | ✅ |
-| POST | `/staff/loyalty/{customer_id}/adjustments` | `crm:manage` | `Staff/LoyaltyController` | `Crm/AdjustPoints/` | § 25 | ✅ |
-| GET | `/clinic/settings/loyalty` | `settings:read` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 | ✅ |
-| PUT | `/clinic/settings/loyalty` | `settings:write` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 | ✅ |
-| PATCH | `/staff/inventory/items/{id}` | `inventory:write` | `Staff/InventoryManagementController` | `Inventory/UpdateItem/` | § 25 | ✅ |
-| GET | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/ListPurchaseOrders/` | § 25 | ✅ |
-| POST | `/staff/inventory/purchase-orders/{id}/cancel` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/CancelPurchaseOrder/` | § 25 | ✅ |
-| GET | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/ListStaffArticlesHandler` | § 26 | ✅ |
-| GET | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/GetStaffArticleHandler` | § 26 | ✅ |
-| POST | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/CreateArticleHandler` | § 26 | ✅ |
-| PATCH | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UpdateArticleHandler` | § 26 | ✅ |
-| POST | `/staff/articles/{id}/publish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/PublishArticleHandler` | § 26 | ✅ |
-| POST | `/staff/articles/{id}/unpublish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UnpublishArticleHandler` | § 26 | ✅ |
-| DELETE | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/DeleteArticleHandler` | § 26 | ✅ |
-| POST | `/staff/articles/{id}/cover` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/RequestArticleCoverHandler` | § 26 | ✅ |
-| POST | `/booking/guest/start` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`StartGuestBookingHandler`) | § 27 | ✅ |
-| POST | `/booking/guest/verify` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`VerifyGuestBookingHandler`) | § 27 | ✅ |
-| PATCH | `/staff/pets/{id}` | `patient:write` | `Staff/PetsController` | `Patients/UpdatePet/` | § 28 | ✅ |
-| POST | `/staff/pets/{id}/deceased/undo` | `patient:write` | `Staff/PetsController` | `Patients/UndoPetDeceased/` | § 29 | ✅ |
-| POST | `/staff/queue/displays` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/CreateQueueDisplayHandler` | § 30 | ✅ |
-| GET | `/staff/queue/displays?branch=` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/ListQueueDisplaysHandler` | § 30 | ✅ |
-| DELETE | `/staff/queue/displays/{id}` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/RevokeQueueDisplayHandler` | § 30 | ✅ |
-| POST | `/queue/displays/claim` | สาธารณะ จำกัดต่อ IP | `Display/DisplayClaimController` | `Queueing/Displays/ClaimQueueDisplayHandler` | § 30 | ✅ |
-| GET | `/queue/display-board?branch=` | token ของจอเท่านั้น | `Display/DisplayBoardController` | `Queueing/Displays/GetDisplayBoardHandler` | § 30 | ✅ |
-| POST | `/staff/members/{id}/public-profile/photo` | `staff:manage` | `Staff/StaffMembersController` | `Staff/Photos/RequestStaffPhotoHandler` | § 32 | ✅ |
-| GET | `/staff/inventory/forecast?branch=&cover_days=` | `inventory:read` | `Staff/ForecastsController` | `Forecasting/Inventory/GetInventoryForecastHandler` | § 33 | ✅ |
-| GET | `/staff/stats/demand-forecast?branch=&from=&to=` | `stats:read` | `Staff/ForecastsController` | `Forecasting/Demand/GetDemandForecastHandler` | § 33 | ✅ |
-| GET | `/staff/appointments/attendance-risk?branch=&date=` | `appointment:read` | `Staff/ForecastsController` | `Forecasting/Attendance/GetAttendanceRiskHandler` | § 33 | ✅ |
-| GET | `/staff/customers/due-back?reason=&branch=&cursor=` | `crm:read` | `Staff/ForecastsController` | `Forecasting/DueBack/ListDueBackHandler` | § 33 | ✅ |
-| POST | `/staff/ai/pets/{id}/summary` | `record:read` + `ai:use` | `Staff/StaffAiController` | `StaffAi/PetSummary/SummarizePetHandler` | § 34 | ✅ |
-| POST | `/staff/ai/consultations/{id}/soap-draft` | `consult:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/SoapDraft/DraftSoapHandler` | § 34 | ✅ |
-| POST | `/staff/ai/drafts/owner-message` | `message:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/OwnerMessage/DraftOwnerMessageHandler` | § 34 | ✅ |
-| POST | `/staff/ai/ask` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Ask/AskHandler` | § 34 | ✅ |
-| GET | `/staff/ai/daily-brief?branch_id=` | `dashboard:read` | `Staff/StaffAiController` | `StaffAi/DailyBrief/GetDailyBriefHandler` | § 34 | ✅ |
-| GET | `/staff/ai/usage` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Usage/GetStaffAiUsageHandler` | § 34 | ✅ |
-| GET | `/privacy-policy` | สาธารณะ | `Public/PrivacyPolicyController` | `PrivacyPolicies/GetPublicPrivacyPolicyHandler` | § 35 | ✅ |
-| GET | `/privacy-policy/versions/{version}` | สาธารณะ | `Public/PrivacyPolicyController` | `PrivacyPolicies/GetPublicPrivacyPolicyHandler` | § 35 | ✅ |
-| GET | `/staff/privacy-policy/versions` | `settings:read` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/ListPrivacyPolicyVersionsHandler` | § 35 | ✅ |
-| POST | `/staff/privacy-policy/versions` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/CreatePrivacyPolicyDraftHandler` | § 35 | ✅ |
-| PATCH | `/staff/privacy-policy/versions/{id}` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/UpdatePrivacyPolicyDraftHandler` | § 35 | ✅ |
-| POST | `/staff/privacy-policy/versions/{id}/publish` | `settings:danger` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/PublishPrivacyPolicyHandler` | § 35 | ✅ |
-| GET | `/portal/reviews/pending` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/ListPendingReviewsHandler` | § 36 | ✅ |
-| POST | `/portal/reviews` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/SubmitPortalReviewHandler` | § 36 | ✅ |
-| GET | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว | `Public/ReviewInvitationsController` | `Reviews/Invitations/GetReviewInvitationHandler` | § 36 | ✅ |
-| POST | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว จำกัดต่อ IP | `Public/ReviewInvitationsController` | `Reviews/Invitations/SubmitInvitationReviewHandler` | § 36 | ✅ |
-| GET | `/staff/reviews?status=&cursor=` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ListStaffReviewsHandler` | § 36 | ✅ |
-| POST | `/staff/reviews/{id}/publish` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/PublishReviewHandler` | § 36 | ✅ |
-| POST | `/staff/reviews/{id}/reject` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/RejectReviewHandler` | § 36 | ✅ |
-| POST | `/staff/reviews/{id}/reply` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ReplyToReviewHandler` | § 36 | ✅ |
-| GET | `/reviews?cursor=&limit=` | สาธารณะ | `Public/ReviewsController` | `Reviews/Public/ListPublicReviewsHandler` | § 36 | ✅ |
-| GET | `/queue/wait-estimate?branch=` | สาธารณะ จำกัดต่อ IP | `Public/WaitEstimateController` | `Queueing/WaitEstimate/GetWaitEstimateHandler` | § 37 | ✅ |
-| GET | `/portal/referral` | `portal` | `Portal/PortalReferralController` | `Referrals/Portal/GetMyReferralHandler` | § 39 | ✅ |
-| GET | `/referrals/{code}` | สาธารณะ จำกัดต่อ IP | `Public/ReferralsController` | `Referrals/Public/CheckReferralCodeHandler` | § 39 | ✅ |
-| GET | `/staff/referrals?customer=&cursor=` | `crm:read` | `Staff/StaffReferralsController` | `Referrals/Staff/ListReferralsHandler` | § 39 | ✅ |
+| Method | Endpoint | Scope | Controller | Use case | ช่องโหว่ |
+|---|---|---|---|---|---|
+| POST | `/staff/queue/{id}/priority` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/SetTicketPriority/` | § 1 |
+| POST | `/staff/queue/{id}/leave` | `queue:write` | `Staff/QueueTicketActionsController` | `Queueing/LeaveQueue/` | § 2 |
+| GET | `/portal/consents` | portal | `Portal/PortalPrivacyController` | `Customers/GetConsents/` | § 4 |
+| PUT | `/portal/consents` | portal | `Portal/PortalPrivacyController` | `Customers/RecordConsent/` | § 4 |
+| GET | `/staff/customers/{id}/consents` | `customer:read` | `Staff/PrivacyController` | `Customers/GetConsents/` | § 4 |
+| POST | `/staff/customers/{id}/consents` | `customer:write` | `Staff/PrivacyController` | `Customers/RecordConsent/` | § 4 |
+| POST | `/portal/data-requests` | portal | `Portal/PortalPrivacyController` | `Customers/DataRequests/` | § 4 |
+| GET | `/staff/data-requests` | `customer:read` | `Staff/PrivacyController` | `Customers/DataRequests/` | § 4 |
+| POST | `/staff/data-requests/{id}/close` | `customer:write` | `Staff/PrivacyController` | `Customers/DataRequests/` | § 4 |
+| POST | `/staff/invoices/{id}/void` | `invoice:write` | `Staff/InvoicesController` | `Billing/VoidInvoice/` | § 3 |
+| GET | `/staff/invoices/{id}` | `invoice:write` | `Staff/InvoicesController` | `Billing/GetInvoice/` | § 7 |
+| GET | `/staff/invoices` | `invoice:write` | `Staff/InvoicesController` | `Billing/ListInvoices/` | § 7 |
+| GET | `/articles` | สาธารณะ | `Public/ArticlesController` | `Articles/ListPublishedArticles/` | § 9 |
+| GET | `/articles/{slug}` | สาธารณะ | `Public/ArticlesController` | `Articles/GetArticle/` | § 9 |
+| GET | `/team` | สาธารณะ | `Public/TeamController` | `Staff/ListTeam/` | § 10 |
+| GET | `/staff/departments` | `staff:read` | `Staff/StaffMembersController` | `Staff/ListDepartments/` | § 10 |
+| PUT | `/staff/members/{id}/public-profile` | `staff:manage` | `Staff/StaffMembersController` | `Staff/ReplacePublicProfile/` | § 10 |
+| POST | `/staff/lab-requests/{id}/review` | `lab:read` | `Staff/LabRequestsController` | `Laboratory/ReviewLabResults/` | § 11 |
+| PUT | `/storage/uploads/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 |
+| GET | `/storage/files/{token}` | token ที่ลงชื่อ | `Storage/StorageController` | `Patients/Documents/StoredFilesHandler` | § 12 |
+| POST | `/portal/notifications/read` | portal | `Portal/PortalNotificationsController` | `Notifications/ListMyNotifications/` (`MarkNotificationsReadHandler`) | § 13 |
+| GET | `/staff/consultations/{id}` | `consult:read` | `Staff/ConsultationsController` | `Consultations/GetConsultation/` | § 14 |
+| GET | `/clinic/contacts` | สาธารณะ | `Public/ClinicController` | `Clinics/ManageContacts/` (`ListContactsHandler`) | § 15 |
+| POST | `/clinic/contacts` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`AddContactHandler`) | § 15 |
+| PATCH | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`UpdateContactHandler`) | § 15 |
+| DELETE | `/clinic/contacts/{id}` | `settings:write` | `Staff/ClinicContactsController` | `Clinics/ManageContacts/` (`RemoveContactHandler`) | § 15 |
+| GET | `/assistant` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`GetAssistantStatusHandler`) | § 16 |
+| POST | `/assistant/chat` | สาธารณะ | `Public/AssistantController` | `Assistant/Chat/` (`ChatHandler`) | § 16 |
+| GET | `/staff/services` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/ListServices/` | § 17 |
+| PATCH | `/staff/services/{id}` | `service:manage` | `Staff/ServicesController` | `ServiceCatalog/UpdateService/` | § 17 |
+| GET | `/staff/integrations/line/followers` | `customer:write` | `Staff/LineFollowersController` | `Integrations/ListLineFollowers/` | § 18 |
+| PUT | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`LinkLineAddressHandler`) | § 18 |
+| DELETE | `/staff/customers/{id}/line` | `customer:write` | `Staff/CustomerLineController` | `Customers/LineAddress/` (`UnlinkLineAddressHandler`) | § 18 |
+| PATCH | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/UpdateAutomation/` | § 19 |
+| DELETE | `/staff/automations/{id}` | `automation:manage` | `Staff/AutomationsController` | `Automation/DeleteAutomation/` | § 19 |
+| GET | `/staff/prescriptions/drug-options` | `rx:write` | `Staff/PrescriptionsController` | `Prescriptions/ListDrugOptions/` | § 20 |
+| GET | `/staff/webhooks` | `integration:manage` | `Staff/WebhooksController` | `Integrations/ListWebhooks/` | § 22 |
+| PATCH | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/UpdateWebhookSubscription/` | § 22 |
+| DELETE | `/staff/webhooks/{id}` | `integration:manage` | `Staff/WebhooksController` | `Integrations/DeleteWebhookSubscription/` | § 22 |
+| POST | `/staff/webhooks/{id}/rotate-secret` | `integration:manage` | `Staff/WebhooksController` | `Integrations/RotateWebhookSecret/` | § 22 |
+| POST | `/staff/webhooks/{id}/deliveries/{deliveryId}/redeliver` | `integration:manage` | `Staff/WebhookDeliveriesController` | `Integrations/RedeliverWebhookDelivery/` | § 22 |
+| GET | `/staff/api-keys` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/ListApiKeys/` | § 22 |
+| DELETE | `/staff/api-keys/{id}` | `integration:manage` | `Staff/ApiKeysController` | `Integrations/RevokeApiKey/` | § 22 |
+| POST | `/staff/integrations/calendar/token` | พนักงานทุกคน ลิงก์ของตัวเองเท่านั้น | `Staff/CalendarTokenController` | `Integrations/RotateCalendarFeed/` | § 22 |
+| GET | `/staff/policies/cancellation` | `settings:read` | `Staff/CancellationPolicyController` | `Appointments/GetAppointmentRules/` | § 23 |
+| GET | `/staff/appointment-types` | `appointment:read` | `Staff/AppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 |
+| GET | `/portal/appointment-types` | `portal` | `Portal/PortalAppointmentTypesController` | `Appointments/GetAppointmentRules/` | § 23 |
+| GET | `/staff/waiting-list` | `appointment:write` | `Staff/WaitingListController` | `Appointments/ListWaitingList/` | § 23 |
+| DELETE | `/staff/waiting-list/{id}` | `appointment:write` | `Staff/WaitingListController` | `Appointments/RemoveFromWaitingList/` | § 23 |
+| GET | `/portal/thread` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`GetMyThreadHandler`) | § 24 |
+| POST | `/portal/thread/messages` | `portal` | `Portal/PortalThreadController` | `Messaging/Portal/` (`WriteToClinicHandler`) | § 24 |
+| GET | `/staff/coupons` | `crm:read` | `Staff/CouponsController` | `Crm/ListCoupons/` | § 25 |
+| POST | `/staff/coupons/{id}/deactivate` | `crm:manage` | `Staff/CouponsController` | `Crm/DeactivateCoupon/` | § 25 |
+| GET | `/staff/segments` | `crm:read` | `Staff/SegmentsController` | `Crm/ListSegments/` | § 25 |
+| GET | `/staff/segments/{id}` | `crm:read` | `Staff/SegmentsController` | `Crm/GetSegment/` | § 25 |
+| GET | `/staff/packages` | `crm:read` | `Staff/PackagesController` | `Crm/ListPackages/` | § 25 |
+| POST | `/staff/loyalty/{customer_id}/adjustments` | `crm:manage` | `Staff/LoyaltyController` | `Crm/AdjustPoints/` | § 25 |
+| GET | `/clinic/settings/loyalty` | `settings:read` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 |
+| PUT | `/clinic/settings/loyalty` | `settings:write` | `Staff/LoyaltySettingsController` | `Crm/ManageLoyaltySettings/` | § 25 |
+| PATCH | `/staff/inventory/items/{id}` | `inventory:write` | `Staff/InventoryManagementController` | `Inventory/UpdateItem/` | § 25 |
+| GET | `/staff/inventory/purchase-orders` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/ListPurchaseOrders/` | § 25 |
+| POST | `/staff/inventory/purchase-orders/{id}/cancel` | `inventory:purchase` | `Staff/InventoryManagementController` | `Inventory/CancelPurchaseOrder/` | § 25 |
+| GET | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/ListStaffArticlesHandler` | § 26 |
+| GET | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/GetStaffArticleHandler` | § 26 |
+| POST | `/staff/articles` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/CreateArticleHandler` | § 26 |
+| PATCH | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UpdateArticleHandler` | § 26 |
+| POST | `/staff/articles/{id}/publish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/PublishArticleHandler` | § 26 |
+| POST | `/staff/articles/{id}/unpublish` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/UnpublishArticleHandler` | § 26 |
+| DELETE | `/staff/articles/{id}` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/DeleteArticleHandler` | § 26 |
+| POST | `/staff/articles/{id}/cover` | `content:manage` | `Staff/StaffArticlesController` | `Articles/Manage/RequestArticleCoverHandler` | § 26 |
+| POST | `/booking/guest/start` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`StartGuestBookingHandler`) | § 27 |
+| POST | `/booking/guest/verify` | สาธารณะ | `Public/GuestBookingController` | `Appointments/GuestBooking/` (`VerifyGuestBookingHandler`) | § 27 |
+| PATCH | `/staff/pets/{id}` | `patient:write` | `Staff/PetsController` | `Patients/UpdatePet/` | § 28 |
+| POST | `/staff/pets/{id}/deceased/undo` | `patient:write` | `Staff/PetsController` | `Patients/UndoPetDeceased/` | § 29 |
+| POST | `/staff/queue/displays` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/CreateQueueDisplayHandler` | § 30 |
+| GET | `/staff/queue/displays?branch=` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/ListQueueDisplaysHandler` | § 30 |
+| DELETE | `/staff/queue/displays/{id}` | `queue:write` | `Staff/QueueDisplaysController` | `Queueing/Displays/RevokeQueueDisplayHandler` | § 30 |
+| POST | `/queue/displays/claim` | สาธารณะ จำกัดต่อ IP | `Display/DisplayClaimController` | `Queueing/Displays/ClaimQueueDisplayHandler` | § 30 |
+| GET | `/queue/display-board?branch=` | token ของจอเท่านั้น | `Display/DisplayBoardController` | `Queueing/Displays/GetDisplayBoardHandler` | § 30 |
+| POST | `/staff/members/{id}/public-profile/photo` | `staff:manage` | `Staff/StaffMembersController` | `Staff/Photos/RequestStaffPhotoHandler` | § 32 |
+| GET | `/staff/inventory/forecast?branch=&cover_days=` | `inventory:read` | `Staff/ForecastsController` | `Forecasting/Inventory/GetInventoryForecastHandler` | § 33 |
+| GET | `/staff/stats/demand-forecast?branch=&from=&to=` | `stats:read` | `Staff/ForecastsController` | `Forecasting/Demand/GetDemandForecastHandler` | § 33 |
+| GET | `/staff/appointments/attendance-risk?branch=&date=` | `appointment:read` | `Staff/ForecastsController` | `Forecasting/Attendance/GetAttendanceRiskHandler` | § 33 |
+| GET | `/staff/customers/due-back?reason=&branch=&cursor=` | `crm:read` | `Staff/ForecastsController` | `Forecasting/DueBack/ListDueBackHandler` | § 33 |
+| POST | `/staff/ai/pets/{id}/summary` | `record:read` + `ai:use` | `Staff/StaffAiController` | `StaffAi/PetSummary/SummarizePetHandler` | § 34 |
+| POST | `/staff/ai/consultations/{id}/soap-draft` | `consult:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/SoapDraft/DraftSoapHandler` | § 34 |
+| POST | `/staff/ai/drafts/owner-message` | `message:write` + `ai:use` | `Staff/StaffAiController` | `StaffAi/OwnerMessage/DraftOwnerMessageHandler` | § 34 |
+| POST | `/staff/ai/ask` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Ask/AskHandler` | § 34 |
+| GET | `/staff/ai/daily-brief?branch_id=` | `dashboard:read` | `Staff/StaffAiController` | `StaffAi/DailyBrief/GetDailyBriefHandler` | § 34 |
+| GET | `/staff/ai/usage` | `ai:use` | `Staff/StaffAiController` | `StaffAi/Usage/GetStaffAiUsageHandler` | § 34 |
+| GET | `/privacy-policy` | สาธารณะ | `Public/PrivacyPolicyController` | `PrivacyPolicies/GetPublicPrivacyPolicyHandler` | § 35 |
+| GET | `/privacy-policy/versions/{version}` | สาธารณะ | `Public/PrivacyPolicyController` | `PrivacyPolicies/GetPublicPrivacyPolicyHandler` | § 35 |
+| GET | `/staff/privacy-policy/versions` | `settings:read` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/ListPrivacyPolicyVersionsHandler` | § 35 |
+| POST | `/staff/privacy-policy/versions` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/CreatePrivacyPolicyDraftHandler` | § 35 |
+| PATCH | `/staff/privacy-policy/versions/{id}` | `settings:write` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/UpdatePrivacyPolicyDraftHandler` | § 35 |
+| POST | `/staff/privacy-policy/versions/{id}/publish` | `settings:danger` | `Staff/StaffPrivacyPolicyController` | `PrivacyPolicies/PublishPrivacyPolicyHandler` | § 35 |
+| GET | `/portal/reviews/pending` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/ListPendingReviewsHandler` | § 36 |
+| POST | `/portal/reviews` | `portal` | `Portal/PortalReviewsController` | `Reviews/Portal/SubmitPortalReviewHandler` | § 36 |
+| GET | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว | `Public/ReviewInvitationsController` | `Reviews/Invitations/GetReviewInvitationHandler` | § 36 |
+| POST | `/reviews/invitations/{token}` | สาธารณะ token ใช้ครั้งเดียว จำกัดต่อ IP | `Public/ReviewInvitationsController` | `Reviews/Invitations/SubmitInvitationReviewHandler` | § 36 |
+| GET | `/staff/reviews?status=&cursor=` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ListStaffReviewsHandler` | § 36 |
+| POST | `/staff/reviews/{id}/publish` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/PublishReviewHandler` | § 36 |
+| POST | `/staff/reviews/{id}/reject` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/RejectReviewHandler` | § 36 |
+| POST | `/staff/reviews/{id}/reply` | `content:manage` | `Staff/StaffReviewsController` | `Reviews/Staff/ReplyToReviewHandler` | § 36 |
+| GET | `/reviews?cursor=&limit=` | สาธารณะ | `Public/ReviewsController` | `Reviews/Public/ListPublicReviewsHandler` | § 36 |
+| GET | `/queue/wait-estimate?branch=` | สาธารณะ จำกัดต่อ IP | `Public/WaitEstimateController` | `Queueing/WaitEstimate/GetWaitEstimateHandler` | § 37 |
+| GET | `/portal/referral` | `portal` | `Portal/PortalReferralController` | `Referrals/Portal/GetMyReferralHandler` | § 39 |
+| GET | `/referrals/{code}` | สาธารณะ จำกัดต่อ IP | `Public/ReferralsController` | `Referrals/Public/CheckReferralCodeHandler` | § 39 |
+| GET | `/staff/referrals?customer=&cursor=` | `crm:read` | `Staff/StaffReferralsController` | `Referrals/Staff/ListReferralsHandler` | § 39 |
+| PATCH | `/staff/schedules/shifts/{id}` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/ChangeShift/` | § 47 |
+| DELETE | `/staff/schedules/shifts/{id}` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/RemoveShift/` | § 47 |
+| GET | `/staff/schedules/assignment-rules` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetAssignmentRules/` | § 48 |
+| POST | `/staff/schedules/shifts/copy-week` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/CopyWeek/` | § 49 |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -618,6 +618,8 @@ endpoint 109 เส้นที่ **ไม่อยู่** ใน `API Referen
 
 § 39 ไม่เพิ่ม scope เพิ่มช่องที่ไม่บังคับ `referral_code` ในคำขอ `POST /booking/guest/verify` และ `POST /auth/register` ซึ่งเป็นเส้นของ contract รหัสที่ใช้ไม่ได้ถูกข้ามโดยไม่มี error และคำตอบของทั้งสองเส้นไม่เปลี่ยน `GET` และ `PUT /clinic/settings/loyalty` มีสี่ช่องใหม่ `referral_enabled`, `referral_referrer_points`, `referral_friend_points`, `referral_monthly_cap` ใน `PUT` ไม่บังคับ ช่องที่ไม่ส่งคงค่าเดิม แถวประวัติของ `GET /staff/loyalty/{customer_id}` มีชนิดใหม่ `referral` `GET /referrals/{code}` ตอบ `200` พร้อม `valid` เท่านั้นเสมอ มี rate limit ต่อ IP ของตัวเอง (`referral-check`) audit ใหม่ `referral.rewarded` migration `ReferAFriend` รายละเอียดอยู่ใน [ชวนเพื่อน](features/referrals.md)
 
+§ 47 ถึง 49 ไม่เพิ่ม scope ใช้ `schedule:read` และ `schedule:write` เดิม เวรในคำตอบของ `GET /staff/schedules`, `POST /staff/schedules/shifts` และ `shifts_remaining` ของ `POST /staff/schedules/time-off` มีช่อง `version` เพิ่ม และรายการที่ชนใน `details` ของ `shift_overlap` และ `staff_on_time_off` มีช่อง `staff_id` เพิ่ม ทั้งสองเป็นช่องใหม่ ไม่ได้เปลี่ยนช่องเดิม รหัส error ใหม่สองตัวคือ `409 shift_ended` และ `409 shift_started` audit ใหม่ `schedule.shift_changed`, `schedule.shift_removed`, `schedule.week_copied` ไม่มี migration รายละเอียดอยู่ใน [ตารางเวร](features/schedules.md)
+
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 
 ส่วนขยายด้านบิลทั้งสามใช้ `invoice:write` เพราะรายการ scope ของ contract ปิดตาย `PUT /staff/roles/{id}/permissions` ถูกกำหนดให้ปฏิเสธ scope ที่ไม่รู้จัก ถ้าคิด `invoice:read` หรือ `invoice:void` ขึ้นมาเอง endpoint นั้นจะไม่มี role ใดใน reference เรียกได้เลย นี่คือทางที่ประดิษฐ์น้อยที่สุด ไม่ใช่ทางที่ดีที่สุด
@@ -631,25 +633,11 @@ endpoint 109 เส้นที่ **ไม่อยู่** ใน `API Referen
 
 ความยินยอมบังคับที่ notification port ไม่ใช่ในแต่ละ use case `ConsentAwareNotificationDispatcher` ครอบหน้าทุกช่องทาง และ `INotificationDispatcher` ซึ่งเป็นสิ่งเดียวที่ use case resolve ได้ *ก็คือ* decorator ตัวนั้น จึงไม่มีทางส่งข้อความโดยไม่ผ่านด่านนี้
 
-## ความครอบคลุม
+## ขอบเขต
 
-API reference มี **164 endpoint** ยืนยันโดยนับป้าย method ใน HTML ต้นฉบับ คือ 164 แถวในตาราง ไม่มีแถวซ้ำ คู่ `method + path` ไม่ซ้ำ 164 คู่ และไม่มี endpoint ที่พูดถึงในเนื้อความแต่ไม่อยู่ในตาราง รายละเอียดการนับอยู่ใน [assumptions.md § 1](./assumptions.md)
+`API Reference.dc.html` มี 164 endpoint ตารางด้านบนมีครบทุกเส้น ยกเว้นสี่เส้นที่ตั้งใจตัดออก เพราะใช้ LINE เป็นตัวตนของผู้ใช้ คือ `POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link` และ `GET /line/liff/booking-context` ดู [assumptions.md § A](./assumptions.md) `GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ
 
-| | |
-|---|---|
-| endpoint ใน reference | **164** |
-| มีที่อยู่ในตารางข้างบน | **160** |
-| ตัดออกโดยการตัดสินขอบเขต (LINE เป็นตัวตน) | **4** |
-| ทำแล้วและมีเทสต์ (✅) | **160** |
-| เพิ่มนอก contract | **80** ดู [ส่วนขยาย contract](#ส่วนขยาย-contract) |
-
-ตรวจเทียบกับ contract ด้วยโปรแกรมแล้ว ได้ 160 เส้นที่มีที่อยู่ ไม่มีเส้นที่แต่งขึ้น และ 4 เส้นที่ตั้งใจตัดออก (`GET /portal/invoices` และ `GET /portal/packages` อยู่ในตารางสองที่ คือใต้ Customer portal และใต้โมดูลเจ้าของ ตารางจึงมี 162 แถวสำหรับ 160 endpoint)
-
-สี่เส้นที่ตัดออกคือ `POST /auth/line/callback`, `POST /portal/line/link`, `DELETE /portal/line/link` และ `GET /line/liff/booking-context` ดู [assumptions.md § A](./assumptions.md)
-
-**ไม่มีอะไรในนี้ที่อนุมานขึ้นเอง** หัวของ reference บอกว่ามี **214 endpoint** แต่เอกสารไม่มีเส้นเหล่านั้น และไม่มีการแต่ง endpoint ขึ้นมาให้ครบจำนวน ความต่างนี้แจ้งเจ้าของ contract แล้ว ระหว่างที่ยังไม่มีคำตอบ ขอบเขตงานคือ 164 เส้น ถ้า endpoint ใดไม่อยู่ในตารางข้างบน แปลว่ายังไม่มี และต้องมาจาก contract ฉบับปรับปรุง ไม่ใช่มาจากการเดา
-
-109 เส้นใน [ส่วนขยาย contract](#ส่วนขยาย-contract) เป็นข้อยกเว้นเดียว และแยกไว้ให้เห็นชัดด้วยเหตุนั้น แต่ละเส้นรายงานเป็นช่องโหว่ก่อน ได้รับอนุมัติทีหลัง แล้วจึงสร้าง และมีหมายเหตุว่าเป็นส่วนขยายใน controller ของตัวเอง ไม่มีเส้นใดเปลี่ยนชื่อ path ที่มีในเอกสาร เปลี่ยน method หรือแก้ request หรือ response ที่เอกสารกำหนด ช่องที่เพิ่มบนเส้นเดิมของ contract (§ 10, § 18, § 19, § 20, § 25, § 27, § 28, § 31 และ § 39) เป็นช่องใหม่ที่ไม่บังคับทั้งหมด และ § 21 เพิ่มแค่ค่าใหม่ให้ช่องที่ไม่บังคับ
+จำนวนเส้นที่เพิ่มนอก contract นับไว้ที่ [contract-extensions.md](./contract-extensions.md) ที่เดียว
 
 ## โค้ด
 

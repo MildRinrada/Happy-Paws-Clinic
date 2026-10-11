@@ -1,16 +1,19 @@
 import { assignmentRulesText } from '../content/assignment-rules';
+import type { AssignmentRules } from '../types/schedule.types';
 import { AssignmentRulesForm } from './assignment-rules-form';
 
 interface AssignmentRulesSectionProps {
   people: { id: string; name: string }[];
   services: { id: string; name: string }[];
+  /** The stored rules (docs/contract-extensions.md § 48), or `null` when they could not be read. */
+  stored: AssignmentRules | null;
 }
 
 /**
  * The case-assignment rules, folded away under the roster: set rarely, and by the person who runs
- * the rota. Says up front how the rules act and that the current ones cannot be shown.
+ * the rota. Says up front how the rules act, then edits the set as it is stored.
  */
-export function AssignmentRulesSection({ people, services }: AssignmentRulesSectionProps) {
+export function AssignmentRulesSection({ people, services, stored }: AssignmentRulesSectionProps) {
   const text = assignmentRulesText;
 
   return (
@@ -31,10 +34,7 @@ export function AssignmentRulesSection({ people, services }: AssignmentRulesSect
             <li key={line}>{line}</li>
           ))}
         </ul>
-        <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
-          {text.cannotRead}
-        </p>
-        <AssignmentRulesForm people={people} services={services} />
+        <AssignmentRulesForm people={people} services={services} stored={stored} />
       </div>
     </details>
   );

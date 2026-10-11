@@ -74,7 +74,7 @@
 
 | เอกสาร | เนื้อหา |
 |---|---|
-| [แผนที่ API](docs/api-mapping.md) | ทุก endpoint อยู่ที่ controller ไหน use case ไหน และทำแล้วหรือยัง |
+| [ดัชนี API](docs/api-mapping.md) | แต่ละ endpoint อยู่ที่ controller ไหน และ use case ไหน |
 | [ข้อสมมติ](docs/assumptions.md) | จุดที่สัญญาเขียนไม่ชัด และเราตีความอย่างไร |
 | [ส่วนขยายของสัญญา](docs/contract-extensions.md) | endpoint 21 เส้นที่ไม่อยู่ในสัญญา และเหตุผลของแต่ละเส้น |
 

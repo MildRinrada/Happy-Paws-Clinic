@@ -15,6 +15,22 @@ public sealed record CreateShiftsRequest(
 /// <summary>A break inside the first shift; repeated with it.</summary>
 public sealed record ShiftBreakRequest(DateTimeOffset StartsAt, DateTimeOffset EndsAt);
 
+/// <summary>
+/// <c>PATCH /staff/schedules/shifts/{id}</c>: the block's new window, both ends. Not in the API
+/// reference (<c>docs/contract-extensions.md § 47</c>).
+/// </summary>
+public sealed record ChangeShiftRequest(DateTimeOffset? StartsAt, DateTimeOffset? EndsAt);
+
+/// <summary>
+/// <c>POST /staff/schedules/shifts/copy-week</c>: weeks by their Monday, <c>YYYY-MM-DD</c>. Not in
+/// the API reference (<c>docs/contract-extensions.md § 49</c>).
+/// </summary>
+public sealed record CopyWeekRequest(
+    string? BranchId,
+    DateOnly? FromWeek,
+    DateOnly? ToWeek,
+    IReadOnlyList<string>? StaffIds = null);
+
 /// <summary><c>POST /staff/schedules/time-off</c>.</summary>
 public sealed record RequestTimeOffRequest(string StaffId, DateTimeOffset StartsAt, DateTimeOffset EndsAt, string? Reason = null);
 

@@ -9,6 +9,9 @@ public interface IScheduleRepository
 
     void AddTimeOff(StaffTimeOff timeOff);
 
+    /// <summary>One shift by id, tracked, cancelled or not; null when there is none.</summary>
+    Task<StaffShift?> FindShiftForChangeAsync(string shiftId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// One person's active shifts overlapping a window, at any branch, tracked: time off cancels
     /// them, and a new shift is checked against them.

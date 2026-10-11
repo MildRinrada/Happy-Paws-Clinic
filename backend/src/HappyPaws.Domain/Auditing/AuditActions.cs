@@ -265,6 +265,15 @@ public static class AuditActions
     /// <summary>The rules that hand out cases automatically were replaced.</summary>
     public const string AssignmentRulesReplaced = "schedule.assignment_rules_replaced";
 
+    /// <summary>One block's times were changed (<c>docs/contract-extensions.md § 47</c>). Before and after are in the details.</summary>
+    public const string ShiftChanged = "schedule.shift_changed";
+
+    /// <summary>One block was taken off the roster (§ 47). The row stays, marked cancelled.</summary>
+    public const string ShiftRemoved = "schedule.shift_removed";
+
+    /// <summary>A week's shifts were copied to another week (§ 49). One row per person whose shifts were copied.</summary>
+    public const string WeekCopied = "schedule.week_copied";
+
     public const string RoleCreated = "role.created";
 
     /// <summary>
@@ -537,7 +546,7 @@ public static class AuditActions
         QueueDisplayCreated, QueueDisplayClaimed, QueueDisplayRevoked,
         InvoiceIssued, InvoiceVoided, InvoiceDiscounted,
         PaymentCollected, PaymentRefunded, ReceiptIssued, ServicePricingChanged,
-        ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced,
+        ShiftsCreated, TimeOffRecorded, AssignmentRulesReplaced, ShiftChanged, ShiftRemoved, WeekCopied,
         AccountProfileUpdated, TwoFactorEnrolled, RecoveryCodeUsed, UserStatusChanged,
         AutomationCreated, AutomationUpdated, AutomationDeleted, ReportExported,
         InvoiceLineAdded, InventoryItemCreated, InventoryAdjusted, PurchaseOrderRaised,

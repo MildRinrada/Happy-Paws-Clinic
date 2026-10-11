@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 109 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 ถึง 39 และ 46 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 113 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 ถึง 39 46 และ 47 ถึง 49 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -49,6 +49,9 @@
 | 38 | แพ็กเกจที่คลินิกขายมีแค่ในหน้าพนักงาน คนนอกไม่เห็น | ยังไม่มี endpoint ต้องมีรายการแพ็กเกจที่เปิดขายก่อน ดูหัวข้อ 38 | **รออนุมัติ** |
 | 39 | ลูกค้าเดิมชวนเพื่อนมาใช้บริการไม่ได้ และระบบไม่รู้ว่าลูกค้าใหม่มาเพราะใคร | `GET /portal/referral`, `GET /referrals/{code}`, `GET /staff/referrals`, ช่อง `referral_code` บน `POST /booking/guest/verify` และ `POST /auth/register` และค่าชวนเพื่อนสี่ค่าบน `/clinic/settings/loyalty` | **ทำแล้ว** |
 | 46 | สัตวแพทย์และพนักงานต้อนรับเปิดหน้าภาพรวมไม่ได้ เพราะบทบาทตั้งต้นในสัญญาไม่มี `dashboard:read` ทั้งที่หน้านี้ทำมาให้สองตำแหน่งนี้ใช้เริ่มงานทุกวัน | ไม่มี endpoint ใหม่ เพิ่ม `dashboard:read` ให้บทบาทตั้งต้น `veterinarian` และ `receptionist` พร้อม migration หนึ่งตัว | **ทำแล้ว** |
+| 47 | ลงเวรผิดแล้วแก้หรือลบไม่ได้ ต้องบันทึกวันลาทับช่วงนั้นแทน ประวัติวันลาจึงไม่ตรงกับความจริง | `PATCH` และ `DELETE /staff/schedules/shifts/{id}` และช่อง `version` ในเวรทุกเส้น | **ทำแล้ว** |
+| 48 | กติกาจ่ายเคสเขียนได้แต่อ่านกลับไม่ได้ หน้าจอจึงเริ่มจากตัวอย่างทุกครั้ง | `GET /staff/schedules/assignment-rules` | **ทำแล้ว** |
+| 49 | ตารางเวรที่ซ้ำทุกสัปดาห์ต้องลงใหม่ทีละคน | `POST /staff/schedules/shifts/copy-week` | **ทำแล้ว** |
 
 endpoint ใหม่ 109 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
@@ -2524,6 +2527,153 @@ If-Match: "4512"
 - ไม่ให้ `stats:read` หรือ `analytics:read` หน้ารายงาน (`/reports`) ยังเป็นของเจ้าของและผู้ดูแลระบบ
 - ไม่ให้ `vet_assistant` และ `cashier`
 
+## 47. ลงเวรผิดแล้วแก้หรือลบไม่ได้
+
+**ช่องโหว่** contract มีแค่การสร้างเวร (`POST /staff/schedules/shifts`) และการบันทึกวันลา ถ้าลงเวรผิดเวลาหรือผิดคน ทางเดียวที่มีคือบันทึกวันลาทับช่วงนั้น ซึ่งทำให้ประวัติวันลาไม่ตรงกับความจริง และหน้าจอต้องเขียนเตือนไว้ใต้ฟอร์มว่าลบเวรไม่ได้ เจ้าของงานขอให้แก้เวลาและลบเวรทีละเวรได้ ไม่มี migration อนุมัติแล้ว (2026-10-11)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**คำตอบ** สองเส้น ใช้ scope `schedule:write` เดิม ไม่มี scope ใหม่ ไม่มีตารางใหม่
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| PATCH | `/staff/schedules/shifts/{id}` | `schedule:write` | เปลี่ยนเวลาเริ่มและเลิกของเวรหนึ่งช่วง |
+| DELETE | `/staff/schedules/shifts/{id}` | `schedule:write` | เอาเวรหนึ่งช่วงออกจากตาราง |
+
+```http
+PATCH /v1/staff/schedules/shifts/shf_...                          schedule:write
+If-Match: "812"
+{ "starts_at": "2026-10-12T10:00:00+07:00", "ends_at": "2026-10-12T16:00:00+07:00" }
+
+200 { "shift": { "id": "shf_...", "staff_id": "stf_...", "branch_id": "brn_...",
+                 "starts_at": "...10:00...", "ends_at": "...16:00...", "version": 815 },
+      "conflicts": [ { "appointment_id": "apt_...", "branch_id": "brn_...", "service_id": "svc_...",
+                       "starts_at": "...", "ends_at": "...", "suggested_staff_ids": ["stf_..."] } ] }
+ETag: "815"
+
+DELETE /v1/staff/schedules/shifts/shf_...                         schedule:write
+If-Match: "812"
+
+200 { "shift_id": "shf_...", "conflicts": [ ... ] }
+
+404 { "error": { "code": "not_found", ... } }        ไม่มี ถูกยกเลิกไปแล้ว หรืออยู่สาขาที่ผู้เรียกไม่ได้ประจำ
+409 { "error": { "code": "shift_ended", ... } }      เวรจบไปแล้ว
+409 { "error": { "code": "shift_started", ... } }    ลบเวรที่เริ่มไปแล้ว
+409 { "error": { "code": "shift_overlap", "details": { "conflicts": [...] } } }
+409 { "error": { "code": "staff_on_time_off", "details": { "time_off": [...] } } }
+409 { "error": { "code": "version_conflict", ... } }
+422 { "error": { "code": "validation_failed", "field": "starts_at", ... } }
+```
+
+**กติกา**
+
+| เรื่อง | กติกา |
+|---|---|
+| เวลาที่ส่ง | `PATCH` ต้องส่งทั้ง `starts_at` และ `ends_at` คือช่วงใหม่ทั้งช่วง เวลาเลิกต้องอยู่หลังเวลาเริ่ม และยาวไม่เกิน 24 ชั่วโมง เหมือนตอนสร้าง |
+| ชนกับของเดิม | ช่วงใหม่ห้ามทับเวรอื่นของคนเดียวกัน (สาขาไหนก็ตาม) ได้ `409 shift_overlap` และห้ามทับวันลา ได้ `409 staff_on_time_off` คำตอบเหมือนเส้นสร้างเวร และแต่ละรายการมี `staff_id` เพิ่ม |
+| ประวัติ | เวรที่จบไปแล้วแก้หรือลบไม่ได้ ได้ `409 shift_ended` เวรที่เริ่มไปแล้วแต่ยังไม่จบ แก้ได้แค่เวลาเลิก ซึ่งต้องอยู่หลังตอนนี้ ถ้าเปลี่ยนเวลาเริ่มได้ `422` ที่ช่อง `starts_at` และลบไม่ได้ ได้ `409 shift_started` เพราะส่วนที่ทำงานไปแล้วต้องอยู่ในประวัติ ให้แก้เวลาเลิกหรือบันทึกวันลาแทน เวรที่ยังไม่เริ่มย้ายไปเริ่มก่อนตอนนี้ไม่ได้ |
+| นัดที่จองไว้ | ไม่ทำให้คำขอถูกปฏิเสธ คำตอบมี `conflicts` คือนัดที่อยู่ในเวลาที่ถูกตัดออก พร้อมคนที่รับแทนได้ รูปแบบและวิธีหาเหมือนวันลาทุกอย่าง (ใช้โค้ดชุดเดียวกัน) นัดไม่ถูกย้าย คนที่เคาน์เตอร์เป็นคนโทรคุย |
+| การลบ | เวรไม่ถูกลบออกจากตาราง แต่ถูกทำเครื่องหมายว่ายกเลิก (`cancelled_at`) แบบเดียวกับเวรที่วันลาตัด จึงหายจากการอ่านทุกเส้นและจองไม่ได้ ลบซ้ำได้ `404` |
+| การแก้ | แก้ในแถวเดิม id ไม่เปลี่ยน เวลาก่อนแก้อยู่ใน audit log |
+| version | ใช้ `If-Match` ได้ตามกติกาของระบบ ไม่ส่งก็ได้ ส่งแล้วไม่ตรงได้ `409 version_conflict` เวรในทุกคำตอบจึงมีช่อง `version` เพิ่ม ทั้ง `GET /staff/schedules`, `POST /staff/schedules/shifts` และ `shifts_remaining` ของวันลา เป็นช่องใหม่ ไม่ได้เปลี่ยนช่องเดิม |
+| สาขา | ผู้ที่ผูกกับสาขาแก้หรือลบได้เฉพาะเวรที่สาขาของตัวเอง เวรของสาขาอื่นได้ `404` เหมือนไม่มีอยู่ การแก้ต้องให้พนักงานคนนั้นยังทำงานอยู่ เหมือนตอนสร้าง |
+| audit | `schedule.shift_changed` (เวลาก่อนและหลังแก้) และ `schedule.shift_removed` |
+
+**เวรที่มีเวลาพัก** ถูกเก็บเป็นสองช่วงตั้งแต่ตอนสร้าง (ดู [ตารางเวร](features/schedules.md)) ทั้งสองเส้นทำกับช่วงที่ระบุช่วงเดียว ถ้าต้องการลบทั้งวันคือลบสองครั้ง หน้าจอแสดงสองช่วงนี้เป็นป้ายเดียว เช่น "09:00-18:00 พัก 12:00-13:00" เมื่อกดจะให้เลือกช่วงที่จะแก้ และมีปุ่ม "ลบทั้งเวร" ที่ลบทีละช่วง ถ้าช่วงที่สองถูกปฏิเสธ ช่วงแรกถูกลบไปแล้ว และหน้าจอบอกเหตุผล
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ลบแถวออกจริง | วันลาเก็บเวรที่ตัดไว้เป็นประวัติอยู่แล้ว ทำแบบเดียวกันจะตอบได้ว่าเคยลงเวรอะไรไว้ |
+| แก้โดยยกเลิกเวรเดิมแล้วสร้างใหม่ | id เปลี่ยนทุกครั้งที่แก้ คนที่ถือ id อยู่จะชี้ไปที่เวรที่ยกเลิกแล้ว ใช้ audit เก็บเวลาเดิมแทน |
+| ปฏิเสธเมื่อมีนัดอยู่ในช่วงที่ตัด | วันลาไม่ปฏิเสธ ถ้าการแก้เวรปฏิเสธ คนจะไปบันทึกวันลาแทน ซึ่งคือปัญหาเดิม |
+| ให้ `DELETE` ลบทั้งสองช่วงของเวรที่มีพัก | ระบบไม่ได้เก็บว่าสองช่วงมาจากคำขอเดียวกัน การเดาจากช่องว่างอาจลบเวรที่ตั้งใจลงแยกกัน |
+| ตอบ `204` ตอนลบ | รายการนัดที่ต้องโทรคือส่วนสำคัญของคำตอบ |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่ย้ายเวรไปสาขาอื่นหรือคนอื่น ทำได้แค่เปลี่ยนเวลา ถ้าผิดคนให้ลบแล้วลงใหม่
+- ไม่ยกเลิกวันลา ยังไม่มีเส้นนั้น
+- ไม่มีการลบหลายเวรในคำขอเดียว
+
+## 48. กติกาจ่ายเคสอ่านกลับไม่ได้
+
+**ช่องโหว่** contract มีแค่ `PUT /staff/schedules/assignment-rules` ([assumptions.md § 33](./assumptions.md)) กติกาที่บันทึกไว้จึงอ่านได้จากคำตอบของ `PUT` ครั้งล่าสุดเท่านั้น หน้าจอต้องเริ่มจากตัวอย่างทุกครั้งและเตือนว่าการบันทึกจะแทนที่ของเดิมทั้งชุด เจ้าของงานขอเส้นอ่าน ไม่มี migration อนุมัติแล้ว (2026-10-11)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| GET | `/staff/schedules/assignment-rules` | `schedule:read` | กติกาที่บันทึกไว้ ตามลำดับที่ใช้ พร้อม `version` |
+
+```http
+GET /v1/staff/schedules/assignment-rules                          schedule:read
+
+200 { "version": 7, "rules": [ { "species": "แมว", "staff_ids": ["stf_...", "stf_..."] },
+                                { "service_id": "svc_dental", "staff_ids": ["stf_..."] } ] }
+ETag: "7"
+```
+
+- รูปเดียวกับคำตอบของ `PUT` ทุกอย่าง
+- คลินิกที่ยังไม่เคยบันทึกได้ `rules: []` และ `version: 0` ซึ่ง `PUT` รับเป็น `If-Match` ก่อนบันทึกครั้งแรกด้วย
+- ใช้ `schedule:read` เพราะกติกาเป็นส่วนหนึ่งของตารางเวรและไม่มีข้อมูลลูกค้า แบบเดียวกับที่ § 23 ให้เส้นอ่านค่าตั้งใช้ scope ฝั่งอ่านของเส้นเขียน
+- ไม่เปลี่ยน `PUT` เดิม หน้าจอส่ง `version` ที่อ่านได้กลับมาใน `If-Match` ถ้ามีคนบันทึกก่อนได้ `409 version_conflict` แทนการทับของคนอื่นเงียบ ๆ
+
+## 49. ตารางเวรที่ซ้ำทุกสัปดาห์ต้องลงใหม่ทีละคน
+
+**ช่องโหว่** RRULE ของ `POST /staff/schedules/shifts` ลงเวรซ้ำได้ทีละคน คลินิกที่ตารางแต่ละสัปดาห์คล้ายกันแต่ไม่เหมือนกันทุกสัปดาห์ต้องลงใหม่ทุกคนทุกสัปดาห์ เจ้าของงานขอปุ่มคัดลอกเวรของสัปดาห์ก่อน ไม่มี migration อนุมัติแล้ว (2026-10-11)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| POST | `/staff/schedules/shifts/copy-week` | `schedule:write` | คัดลอกเวรทั้งสัปดาห์ของสาขาหนึ่งไปอีกสัปดาห์ ได้ทั้งหมดหรือไม่ได้เลย |
+
+```http
+POST /v1/staff/schedules/shifts/copy-week                         schedule:write
+{ "branch_id": "brn_...", "from_week": "2026-10-05", "to_week": "2026-10-12", "staff_ids": ["stf_..."] }
+
+201 { "data": [ { "id": "shf_...", "staff_id": "stf_...", "branch_id": "brn_...",
+                  "starts_at": "...", "ends_at": "...", "version": 901 } ],
+      "skipped_started": 0 }
+
+403 { "error": { "code": "forbidden", ... } }         สาขาที่ผู้เรียกไม่ได้ประจำ
+404 { "error": { "code": "not_found", ... } }         คนใน staff_ids ที่ผู้เรียกจัดเวรให้ไม่ได้
+409 { "error": { "code": "shift_overlap", "details": { "conflicts": [ { "shift_id": "...", "staff_id": "...", ... } ] } } }
+409 { "error": { "code": "staff_on_time_off", "details": { "time_off": [ { "time_off_id": "...", "staff_id": "...", ... } ] } } }
+422 { "error": { "code": "validation_failed", "field": "from_week", ... } }
+```
+
+**กติกา**
+
+| เรื่อง | กติกา |
+|---|---|
+| สัปดาห์ | ระบุด้วยวันจันทร์ (`YYYY-MM-DD`) ตามที่หน้าตารางเวรใช้ วันอื่นได้ `422` และสองสัปดาห์ต้องไม่ใช่สัปดาห์เดียวกัน |
+| เวรที่คัดลอก | เวรที่ยังไม่ถูกยกเลิกของสาขานั้นที่เริ่มในสัปดาห์ต้นทาง ทีละช่วง เวรที่มีพักจึงไปเป็นสองช่วงเหมือนเดิม เวลาตามนาฬิกาของคลินิก จันทร์ 09:00 ไปเป็นจันทร์ 09:00 |
+| ใคร | ไม่ส่ง `staff_ids` ได้ทุกคนที่มีเวรในสัปดาห์ต้นทาง ยกเว้นคนที่ไม่ได้ทำงานแล้วหรือไม่ได้ประจำสาขานั้นแล้ว ซึ่งถูกข้ามโดยไม่ปฏิเสธทั้งคำขอ ส่ง `staff_ids` (ไม่เกิน 100 คน) ได้เฉพาะคนเหล่านั้น และแต่ละคนต้องเป็นคนที่ผู้เรียกจัดเวรให้ได้ ไม่อย่างนั้นได้ `404` หรือ `422` ที่ `staff_ids` เหมือนตอนสร้าง |
+| ได้ทั้งหมดหรือไม่ได้เลย | ถ้าเวรที่คัดลอกช่วงใดทับเวรที่มีอยู่แล้วของคนเดียวกัน (สาขาไหนก็ตาม) หรือทับวันลา ไม่สร้างเลยสักช่วง และตอบรายการที่ชนทั้งหมดในรูปเดียวกับเส้นสร้างเวร แต่ละรายการมี `staff_id` |
+| เพดาน | ไม่เกิน 200 ช่วงต่อคำขอ เท่ากับเพดานของเส้นสร้างเวร เกินแล้วได้ `422` ที่ `staff_ids` คลินิกที่ใหญ่กว่านั้นคัดลอกทีละกลุ่มคน |
+| วันที่ผ่านไปแล้ว | ช่วงที่เวลาเริ่มผ่านไปแล้วไม่ถูกสร้าง นับไว้ใน `skipped_started` การคัดลอกเข้าสัปดาห์นี้จึงเติมเฉพาะวันที่ยังมาไม่ถึง |
+| ไม่มีอะไรให้คัดลอก | สัปดาห์ต้นทางไม่มีเวรได้ `422` ที่ `from_week` ทุกช่วงผ่านไปแล้วได้ `422` ที่ `to_week` |
+| audit | `schedule.week_copied` คนละหนึ่งแถว พร้อมสัปดาห์ต้นทาง ปลายทาง และจำนวนช่วง |
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| คัดลอกเฉพาะที่ไม่ชนแล้วข้ามที่ชน | ตารางที่คัดลอกได้ครึ่งเดียวแก้ยากกว่าตารางที่ถูกปฏิเสธ และเส้นสร้างเวรก็ทำแบบนี้อยู่แล้ว |
+| ให้หน้าเว็บเรียกเส้นสร้างเวรทีละช่วง | ไม่ใช่ทั้งหมดหรือไม่ได้เลย ถ้าหยุดกลางทางจะเหลือสัปดาห์ครึ่ง ๆ |
+| คัดลอกวันลาด้วย | วันลาไม่ได้ซ้ำทุกสัปดาห์ |
+| ใช้ RRULE แทน | RRULE ซ้ำของเดิมทุกสัปดาห์ ข้อนี้คัดลอกสัปดาห์ที่แก้แล้วไปสัปดาห์ถัดไป |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่คัดลอกข้ามสาขา และไม่คัดลอกหลายสัปดาห์ในคำขอเดียว
+- ไม่บังคับ `Idempotency-Key` คำขอที่ส่งซ้ำจะทับของที่เพิ่งสร้าง จึงได้ `409 shift_overlap` เหมือนเส้นสร้างเวร
+
+**หน้าจอของข้อ 47 ถึง 49** หน้าตารางเวรมีปุ่ม "+ ลงเวร" "บันทึกวันลา" และ "คัดลอกเวรสัปดาห์ก่อน" บนหัวหน้า แต่ละปุ่มเปิดฟอร์มในกล่อง กดช่องว่างในตารางเปิดฟอร์มลงเวรที่เลือกคนและวันไว้แล้ว กดป้ายเวรเปิดกล่อง "แก้หรือลบเวร" ซึ่งแสดงรายการนัดที่ต้องโทรเมื่อมี กล่องคัดลอกบอกว่าจะคัดลอกกี่เวรของกี่คนจากสัปดาห์ไหนก่อนกด และแสดงรายการที่ชนเมื่อถูกปฏิเสธ กติกาจ่ายเคสเริ่มจากกติกาที่บันทึกไว้ คนที่มีแค่ `schedule:read` ไม่เห็นปุ่มและกดอะไรในตารางไม่ได้ รายละเอียดอยู่ใน [ตารางเวร](features/schedules.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -2553,6 +2703,7 @@ If-Match: "4512"
 | รีวิวจากลูกค้า (§ 36) ควรเป็นส่วนหนึ่งของ contract ไหม และควรมีเส้นลบรีวิวหรือให้ลูกค้าแก้รีวิวเองได้ไหม | ทำงานอยู่ การนำออกคือไม่เผยแพร่ด้วยเหตุผล `customer_request` แถวยังอยู่ กติกาชวนรีวิวเริ่มต้นใส่ไว้แบบปิด |
 | การชวนเพื่อน (§ 39) ควรเป็นส่วนหนึ่งของ contract ไหม ช่อง `referral_code` บน `POST /auth/register` ซึ่งเป็นเส้นของ contract ได้รับรองไหม และการคืนเงินบิลแรกควรหักแต้มชวนเพื่อนคืนไหม | ทำงานอยู่ ปิดไว้เป็นค่าตั้งต้น คืนเงินไม่หักแต้มชวนเพื่อนคืน |
 | `dashboard:read` บนบทบาทตั้งต้น `veterinarian` และ `receptionist` (§ 46) ควรเข้าตาราง Role ตั้งต้นของ contract ไหม | ทำงานอยู่ คลินิกเดิมได้ผ่าน migration `StarterDashboardAccess` |
+| การแก้ ลบ และคัดลอกเวร (§ 47 และ § 49) และเส้นอ่านกติกาจ่ายเคส (§ 48) ควรเป็นส่วนหนึ่งของ contract ไหม และช่อง `version` ในเวรกับรหัส `shift_ended` และ `shift_started` ได้รับรองไหม | ทำงานอยู่ เวรที่ลบถูกเก็บไว้เป็นเวรที่ยกเลิก ไม่ได้ลบแถว |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -2597,3 +2748,4 @@ If-Match: "4512"
 | รีวิวจากลูกค้า | `backend/src/HappyPaws.Domain/Reviews/` (`CustomerReview.cs`, `ReviewInvitation.cs`, `ReviewText.cs`, `ReviewNames.cs`, `ReviewSummary.cs`, `ReviewRejectReason.cs`), `backend/src/HappyPaws.Application/Reviews/`, `backend/src/HappyPaws.Application/Automation/RunAutomations/RunAutomationsHandler.cs` (`RequestForAsync`), `backend/src/HappyPaws.Domain/Automation/AutomationTrigger.cs` (`VisitCompleted`), `AutomationRule.cs`, `backend/src/HappyPaws.Application/Customers/ConsentGate.cs` (`review.invitation`), `backend/src/HappyPaws.Application/Notifications/Templates/NotificationTemplateCatalogue.cs`, `NotificationText.cs`, `backend/src/HappyPaws.Api/Controllers/Portal/PortalReviewsController.cs`, `Public/ReviewsController.cs`, `Public/ReviewInvitationsController.cs`, `Staff/StaffReviewsController.cs`, `backend/src/HappyPaws.Api/Contracts/Reviews/`, `Extensions/RateLimitingExtensions.cs` (`ReviewSubmitPolicy`), `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Reviews/`, `Repositories/Reviews/` (`ReviewVisitSql.cs`), `Repositories/Automation/AutomationSubjectReader.cs`, `backend/src/HappyPaws.Infrastructure/Reviews/ReviewLinks.cs`, migration `CustomerReviews`, `frontend/src/features/reviews/`, `frontend/src/features/home/components/articles-and-reviews-row.tsx`, `testimonials/testimonial-list.tsx`, `frontend/src/features/automation/components/review-consent-note.tsx`, `frontend/src/app/(public)/reviews/`, `(public)/review/[token]/`, `(portal)/portal/reviews/`, `(staff)/settings/reviews/`, `backend/tests/HappyPaws.UnitTests/Domain/Reviews/`, `backend/tests/HappyPaws.IntegrationTests/Api/Reviews/` |
 | เวลารอ walk-in | `backend/src/HappyPaws.Application/Queueing/WaitEstimate/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/WaitEstimateQueries.cs`, `backend/src/HappyPaws.Api/Controllers/Public/WaitEstimateController.cs`, `Extensions/RateLimitingExtensions.cs` (`WaitEstimatePolicy`), `frontend/src/features/wait-estimate/`, `backend/tests/HappyPaws.UnitTests/Application/Queueing/WaitEstimateRulesTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/WaitEstimateTests.cs`, `Fixtures/WaitEstimateScenario.cs` |
 | ชวนเพื่อน | `backend/src/HappyPaws.Domain/Referrals/` (`ReferralCode.cs`, `Referral.cs`, `ReferralRules.cs`), `backend/src/HappyPaws.Domain/Crm/LoyaltyEntry.cs` (`Referral`), `LoyaltySettings.cs` (`ReplaceReferral`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`referral.rewarded`), `backend/src/HappyPaws.Application/Referrals/` (`ReferralRecorder.cs`, `ReferralRewarder.cs`, `Portal/`, `Public/`, `Staff/`), `backend/src/HappyPaws.Application/Crm/InvoiceRewards.cs` (`PaymentCollectedAsync`), `ManageLoyaltySettings/LoyaltySettingsHandlers.cs`, `backend/src/HappyPaws.Application/Appointments/GuestBooking/VerifyGuestBookingHandler.cs`, `backend/src/HappyPaws.Application/Identity/Register/RegisterCustomerHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Portal/PortalReferralController.cs`, `Public/ReferralsController.cs`, `Staff/StaffReferralsController.cs`, `Extensions/RateLimitingExtensions.cs` (`ReferralCheckPolicy`), `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Referrals/`, `Repositories/Referrals/`, `Configurations/Crm/CouponConfiguration.cs`, `backend/src/HappyPaws.Infrastructure/Referrals/ReferralLinks.cs`, migration `ReferAFriend`, `frontend/src/features/referrals/`, `frontend/src/app/(public)/r/[code]/`, `(public)/book/page.tsx`, `(portal)/portal/referral/`, `(staff)/crm/referrals/`, `frontend/src/features/booking/components/guest/guest-booking-wizard.tsx`, `frontend/src/features/crm/components/settings/referral-settings-fields.tsx`, `backend/tests/HappyPaws.UnitTests/Domain/Referrals/`, `backend/tests/HappyPaws.IntegrationTests/Api/Referrals/`, `Fixtures/ReferralScenario.cs` |
+| แก้ ลบ และคัดลอกเวร และอ่านกติกาจ่ายเคส | `backend/src/HappyPaws.Domain/Scheduling/StaffShift.cs` (`Reschedule`, `HasStarted`, `HasEnded`), `backend/src/HappyPaws.Application/Scheduling/ChangeShift/`, `RemoveShift/`, `CopyWeek/`, `GetAssignmentRules/`, `ShiftClashes.cs`, `ScheduleAccess.cs` (`ActiveShiftAsync`), `backend/src/HappyPaws.Application/Common/Errors/ErrorCodes.cs` (`shift_ended`, `shift_started`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`schedule.shift_changed`, `schedule.shift_removed`, `schedule.week_copied`), `backend/src/HappyPaws.Api/Controllers/Staff/SchedulesController.cs`, `frontend/src/features/schedules/components/dialogs/`, `edit-shift/`, `copy-week/`, `day-view/`, `backend/tests/HappyPaws.UnitTests/Domain/Scheduling/ShiftChangeTests.cs`, `backend/tests/HappyPaws.UnitTests/Application/Scheduling/ShiftEditRulesTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Scheduling/ShiftEditingTests.cs`, `AssignmentRulesReadTests.cs`, `CopyWeekTests.cs`, `Fixtures/RosterScenario.cs` |

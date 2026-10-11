@@ -24,21 +24,28 @@ import { AssignmentRuleRow } from './assignment-rule-row';
 interface AssignmentRulesFormProps {
   people: { id: string; name: string }[];
   services: { id: string; name: string }[];
+  /** The stored set and its version, or `null` when it could not be read. */
+  stored: AssignmentRules | null;
 }
 
 const SPECIES_LIST_ID = 'assignment-rule-species';
 
 /**
- * The whole rule set, written in one go. The stored rules cannot be read back, so the form starts
- * from the contract's example and says so; once saved, it shows the set the backend answered with,
- * which is the stored set until someone else saves.
+ * The whole rule set, written in one go. It starts from the stored rules
+ * (docs/contract-extensions.md § 48), or from the contract's example when there are none yet, and
+ * saves with the version it was read at, so a save over someone else's answers a conflict instead
+ * of quietly replacing their rules.
  */
-export function AssignmentRulesForm({ people, services }: AssignmentRulesFormProps) {
+export function AssignmentRulesForm({ people, services, stored: initial }: AssignmentRulesFormProps) {
   const text = assignmentRulesText;
-  const [rules, setRules] = useState<RuleDraft[]>(startingRules);
+  const [rules, setRules] = useState<RuleDraft[]>(() =>
+    initial && initial.rules.length > 0 ? draftsFrom(initial.rules) : startingRules(),
+  );
   const [checked, setChecked] = useState(false);
   const [understood, setUnderstood] = useState(false);
-  const [stored, setStored] = useState<AssignmentRules>();
+  const [stored, setStored] = useState<AssignmentRules | undefined>(initial ?? undefined);
+  const [answered, setAnswered] = useState(false);
+  const showsSample = !answered && (!initial || initial.rules.length === 0);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
   const problems = rules.map(ruleProblem);
   // Refusals here name a field (`staff_ids`, `service_id`) but not which rule; one line says it.
@@ -55,9 +62,10 @@ export function AssignmentRulesForm({ people, services }: AssignmentRulesFormPro
     if (problems.some(Boolean)) return;
 
     submit(
-      () => replaceAssignmentRulesAction({ rules: rules.map(toRequest) }),
+      () => replaceAssignmentRulesAction({ rules: rules.map(toRequest), version: stored?.version }),
       (answer) => {
         setStored(answer);
+        setAnswered(true);
         setRules(draftsFrom(answer.rules));
         setChecked(false);
         setUnderstood(false);
@@ -67,6 +75,11 @@ export function AssignmentRulesForm({ people, services }: AssignmentRulesFormPro
 
   return (
     <form onSubmit={save} className="space-y-4">
+      {showsSample && (
+        <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
+          {initial ? text.sample : text.readFailed}
+        </p>
+      )}
       {stored && saved && (
         <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-900">
           {stored.rules.length > 0 ? text.savedSet(stored.rules.length) : text.savedNone}

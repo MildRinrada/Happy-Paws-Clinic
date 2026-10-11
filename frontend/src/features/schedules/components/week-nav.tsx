@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { buttonClass } from '@/components/ui/button';
 import { addDays, dayChipParts } from '@/features/booking/lib/booking-dates';
 import { schedulePage } from '../content/schedule-page';
+import { WeekJump } from './week-jump';
 
-/** The week's dates, and links to the weeks either side and back to this one. */
+/** The week's dates, links to the weeks either side and back to this one, and a date box to jump to any week. */
 export function WeekNav({ days }: { days: string[] }) {
   const text = schedulePage.week;
   const first = days[0]!;
@@ -22,6 +23,7 @@ export function WeekNav({ days }: { days: string[] }) {
       <Link href="/schedules" className={buttonClass('ghost', 'sm')}>
         {text.thisWeek}
       </Link>
+      <WeekJump monday={first} />
     </div>
   );
 }

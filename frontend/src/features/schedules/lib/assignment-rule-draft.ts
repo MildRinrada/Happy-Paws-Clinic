@@ -22,7 +22,7 @@ export function emptyRule(species = ''): RuleDraft {
 }
 
 /**
- * Where the form starts, since the stored rules cannot be read: the contract's own example,
+ * Where the form starts when no rules are stored yet: the contract's own example,
  * "หมอแมวรับเคสแมวก่อน", with the vet still to be chosen.
  */
 export function startingRules(): RuleDraft[] {

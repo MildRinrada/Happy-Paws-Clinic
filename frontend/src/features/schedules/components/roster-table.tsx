@@ -1,63 +1,50 @@
 import { Card } from '@/components/ui/card';
-import { dayChipParts } from '@/features/booking/lib/booking-dates';
 import { schedulePage } from '../content/schedule-page';
-import type { StaffSchedule } from '../types/schedule.types';
-import { RosterCell } from './roster-cell';
+import type { RosterGroup } from '../lib/roster-rows';
+import type { DayCover } from '../lib/roster-summary';
+import { RosterDayHeader } from './roster-day-header';
+import { RosterGroupRows } from './roster-group-rows';
+import { RosterSummaryRow } from './roster-summary-row';
 
 interface RosterTableProps {
   days: string[];
-  staff: StaffSchedule[];
-  /** Today in clinic time, to mark its column. */
+  groups: RosterGroup[];
+  /** Today in clinic time, to shade its column. */
   today: string;
+  /** Now, in milliseconds, read once for the page. */
+  now: number;
+  cover: Record<string, DayCover>;
+  /** Days the demand forecast expects to be heavy. */
+  busy: Set<string>;
 }
 
-/** The week as a grid: one row per person, one column per day. Scrolls sideways on a narrow screen. */
-export function RosterTable({ days, staff, today }: RosterTableProps) {
+/**
+ * The week as a grid on a wide screen: one row per person in department groups, one column per
+ * day, each person's hours at the end and who is on at the bottom. Phones get the day view instead.
+ */
+export function RosterTable({ days, groups, today, now, cover, busy }: RosterTableProps) {
   const text = schedulePage;
 
-  if (staff.length === 0) {
-    return (
-      <Card>
-        <p className="px-5 py-6 text-sm text-ink-500">{text.empty}</p>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="overflow-x-auto">
-      <table className="w-full min-w-[46rem] text-left text-sm">
-        <thead className="border-b border-ink-100 bg-ink-50/60">
+    <Card className="hidden overflow-x-auto md:block">
+      <table className="w-full min-w-[58rem] text-left text-sm">
+        <thead className="bg-ink-50/60">
           <tr>
-            <th scope="col" className="px-3 py-2 font-medium text-ink-600">
+            <th scope="col" className="px-3 py-2 align-top font-medium text-ink-600">
               {text.person}
             </th>
-            {days.map((day) => {
-              const { weekday, date } = dayChipParts(day);
-
-              return (
-                <th
-                  key={day}
-                  scope="col"
-                  className={`border-l border-ink-100 px-2 py-2 font-medium ${day === today ? 'text-brand-700' : 'text-ink-600'}`}
-                >
-                  {weekday} {date}
-                </th>
-              );
-            })}
+            {days.map((day) => (
+              <RosterDayHeader key={day} day={day} isToday={day === today} cover={cover[day]!} busy={busy.has(day)} />
+            ))}
+            <th scope="col" title={text.hoursHint} className="border-l border-ink-100 px-3 py-2 text-right align-top font-medium text-ink-600">
+              {text.hours}
+            </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-ink-100">
-          {staff.map((person) => (
-            <tr key={person.staff_id}>
-              <th scope="row" className="px-3 py-2 align-top font-medium text-ink-900">
-                {person.display_name}
-              </th>
-              {days.map((day) => (
-                <RosterCell key={day} person={person} day={day} />
-              ))}
-            </tr>
-          ))}
-        </tbody>
+        {groups.map((group) => (
+          <RosterGroupRows key={group.key} group={group} days={days} today={today} now={now} />
+        ))}
+        <RosterSummaryRow days={days} today={today} cover={cover} />
       </table>
     </Card>
   );

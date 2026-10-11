@@ -40,7 +40,7 @@ public class AuthChainTests(ApiFixture fixture)
         Assert.Equal("usr_8fA2", body.GetProperty("user_id").GetString());
         Assert.Equal("stf_204", body.GetProperty("staff_id").GetString());
 
-        // Null members are omitted from responses, not sent as null — see docs/api-mapping.md.
+        // Null members are omitted from responses, not sent as null — see docs/development.md.
         // A staff-only token must not carry a customer membership at all.
         Assert.False(body.TryGetProperty("customer_id", out _));
 

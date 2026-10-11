@@ -11,6 +11,9 @@ internal sealed class ScheduleRepository(HappyPawsDbContext db) : IScheduleRepos
 
     public void AddTimeOff(StaffTimeOff timeOff) => db.Set<StaffTimeOff>().Add(timeOff);
 
+    public Task<StaffShift?> FindShiftForChangeAsync(string shiftId, CancellationToken cancellationToken = default) =>
+        db.Set<StaffShift>().FirstOrDefaultAsync(shift => shift.Id == shiftId, cancellationToken);
+
     public async Task<IReadOnlyList<StaffShift>> ActiveShiftsForStaffAsync(
         string staffId,
         DateTimeOffset from,

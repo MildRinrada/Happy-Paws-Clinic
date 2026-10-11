@@ -67,6 +67,18 @@ public static class ErrorCodes
     /// <summary>409 — a new shift falls in time off already recorded; <c>details.time_off</c> lists it.</summary>
     public const string StaffOnTimeOff = "staff_on_time_off";
 
+    /// <summary>
+    /// 409: the shift is over, so it is history and is neither changed nor removed
+    /// (<c>docs/contract-extensions.md § 47</c>).
+    /// </summary>
+    public const string ShiftEnded = "shift_ended";
+
+    /// <summary>
+    /// 409: the shift has begun, so removing it would erase time already worked; change its end
+    /// instead (<c>docs/contract-extensions.md § 47</c>).
+    /// </summary>
+    public const string ShiftStarted = "shift_started";
+
     /// <summary>409 — the email or phone number already belongs to another account.</summary>
     public const string ContactTaken = "contact_taken";
 
