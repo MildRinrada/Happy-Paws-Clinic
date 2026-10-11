@@ -1,8 +1,8 @@
 import Link from 'next/link';
+import { SiteContainer } from '@/components/layout/site-container';
+import { SectionHeading } from '@/components/site/section-heading';
 import { loadDepartmentMembers } from '@/features/team/lib/load-team';
 import { allTeamLink, homeVetCount, vetsHeading, vetsUnavailable } from '../../content/vets';
-import { SectionContainer } from '../shared/section-container';
-import { SectionHeading } from '../shared/section-heading';
 import { VetCard } from './vet-card';
 
 /**
@@ -18,7 +18,7 @@ export async function VetsSection() {
 
   return (
     <section id="vets" aria-labelledby="vets-heading" className="scroll-mt-6 pt-12">
-      <SectionContainer>
+      <SiteContainer>
         <div className="flex items-end justify-between gap-4">
           <SectionHeading id="vets-heading">{vetsHeading}</SectionHeading>
           <Link href={allTeamLink.href} className="whitespace-nowrap text-sm font-bold text-site-teal hover:underline">
@@ -35,7 +35,7 @@ export async function VetsSection() {
             ))}
           </ul>
         )}
-      </SectionContainer>
+      </SiteContainer>
     </section>
   );
 }

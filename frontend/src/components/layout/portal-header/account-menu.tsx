@@ -1,16 +1,19 @@
 import Link from 'next/link';
 import { signOut } from '@/features/authentication/actions/sign-in';
 import { portalHeader } from '@/features/portal/content/portal-navigation';
+import { firstNameOf } from '@/features/portal/lib/first-name';
 
 const item = 'block w-full rounded-lg px-3 py-2.5 text-left text-sm text-ink-800 hover:bg-ink-50';
 
 /**
- * The owner's name, opening a small menu: back to the clinic's site, and sign out.
+ * The owner's initial in a mint circle (and from 640px their name beside it), opening a small
+ * menu: their own pages, back to the clinic's site, and sign out. The initial is the first name's,
+ * so a title such as "คุณ" in the clinic's record does not become the letter shown.
  *
  * A <details> element, so it opens and closes with no script, like the public site's phone menu.
  */
 export function AccountMenu({ displayName }: { displayName: string }) {
-  const initial = displayName.trim().charAt(0) || '?';
+  const initial = firstNameOf(displayName).charAt(0) || '?';
 
   return (
     <details className="relative">
@@ -18,7 +21,7 @@ export function AccountMenu({ displayName }: { displayName: string }) {
         aria-label={portalHeader.accountMenuLabel}
         className="flex cursor-pointer list-none items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-ink-100 [&::-webkit-details-marker]:hidden"
       >
-        <span className="flex size-8 items-center justify-center rounded-full bg-site-teal text-sm font-bold text-white">
+        <span className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-[15px] font-semibold text-brand-800">
           {initial}
         </span>
         <span className="hidden max-w-[140px] truncate text-sm text-ink-800 sm:block">{displayName}</span>

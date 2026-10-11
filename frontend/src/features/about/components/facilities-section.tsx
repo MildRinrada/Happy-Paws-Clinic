@@ -1,5 +1,5 @@
 import { SiteContainer } from '@/components/layout/site-container';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
+import { SectionHeading } from '@/components/site/section-heading';
 import { aboutFacilities } from '../content/about-page';
 import { FacilityCard } from './facility-card';
 

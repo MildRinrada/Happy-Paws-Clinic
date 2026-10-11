@@ -1,8 +1,8 @@
-import { SiteContainer } from '@/components/layout/site-container';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
 import { BreadcrumbJsonLd } from '@/features/seo/components/breadcrumb-json-ld';
 import { sitePages } from '@/features/seo/content/seo';
 import { pageMetadata } from '@/features/seo/lib/page-metadata';
+import { loadPageBanner } from '@/features/site-banners/lib/load-page-banner';
+import { TeamBanner } from '@/features/team/components/team-banner';
 import { TeamDirectory } from '@/features/team/components/team-directory';
 import { teamPage } from '@/features/team/content/team-page';
 import { loadTeam } from '@/features/team/lib/load-team';
@@ -13,18 +13,18 @@ export const metadata = pageMetadata({
   path: sitePages.team.path,
 });
 
-/** Everyone the clinic lists on its website, grouped by department. */
+/**
+ * Everyone the clinic lists on its website (`GET /team`), grouped by department: a banner from
+ * `loadPageBanner('team')`, a bar of links to each department, then a portrait card per person.
+ * Each vet's card links to booking with that vet already chosen.
+ */
 export default async function TeamPage() {
-  const departments = await loadTeam();
+  const [banner, departments] = await Promise.all([loadPageBanner('team'), loadTeam()]);
 
   return (
-    <main className="py-12">
-      <SiteContainer>
-        <SectionHeading id="team-heading">{teamPage.title}</SectionHeading>
-        <p className="mt-2 text-[15px] text-site-muted">{teamPage.intro}</p>
-
-        <TeamDirectory departments={departments} />
-      </SiteContainer>
+    <main>
+      <TeamBanner banner={banner} />
+      <TeamDirectory departments={departments} />
 
       <BreadcrumbJsonLd trail={[sitePages.team]} />
     </main>

@@ -1,6 +1,6 @@
 import { SiteContainer } from '@/components/layout/site-container';
 import { ImageSlot } from '@/components/shared/image-slot';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
+import { SectionHeading } from '@/components/site/section-heading';
 import { aboutStory } from '../content/about-page';
 import { MilestoneItem } from './milestone-item';
 

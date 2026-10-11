@@ -32,15 +32,31 @@ interface TimeStepProps {
   onBack: () => void;
   /** The clinic day to open on (`YYYY-MM-DD`). Today when left out. */
   initialDay?: string;
+  /**
+   * A vet to start on (`?vet=`, already checked on the server): only their times show, and picking
+   * one holds it with them. It stays chosen from day to day, even on a day they are not in, until
+   * the visitor picks another vet or "any".
+   */
+  initialVet?: string;
 }
 
 type SlotState = { status: 'loading' } | { status: 'ready'; slots: Slot[] } | { status: 'error'; message: string };
 
 /** Step 2: a day, optionally a vet, and one of the free times. */
-export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refusal, onBack, initialDay }: TimeStepProps) {
+export function TimeStep({
+  serviceId,
+  branchId,
+  vetNames,
+  onPick,
+  holding,
+  refusal,
+  onBack,
+  initialDay,
+  initialVet,
+}: TimeStepProps) {
   const text = bookingPage.time;
   const [day, setDay] = useState(() => initialDay ?? nextClinicDays(1)[0]!);
-  const [vet, setVet] = useState('');
+  const [vet, setVet] = useState(initialVet ?? '');
   const [state, setState] = useState<SlotState>({ status: 'loading' });
 
   useEffect(() => {
@@ -61,6 +77,8 @@ export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refus
 
   const slots = state.status === 'ready' ? state.slots : [];
   const vets = vetsIn(slots);
+  // The chosen vet stays in the list on a day they have no free time, so the list shows who it is.
+  const vetChoices = vet && !vets.includes(vet) ? [vet, ...vets] : vets;
   const times = slotTimes(slots, vet || undefined);
 
   return (
@@ -71,12 +89,13 @@ export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refus
           value={day}
           onChange={(next) => {
             setDay(next);
-            setVet('');
+            // A vet picked from that day's list goes back to "any"; the one the page opened on stays.
+            setVet((current) => (current === initialVet ? current : ''));
           }}
         />
       </section>
 
-      {vets.length > 1 && <VetFilter vetIds={vets} names={vetNames} value={vet} onChange={setVet} />}
+      {(vetChoices.length > 1 || vet !== '') && <VetFilter vetIds={vetChoices} names={vetNames} value={vet} onChange={setVet} />}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-ink-900">{text.slots}</h2>
@@ -94,7 +113,9 @@ export function TimeStep({ serviceId, branchId, vetNames, onPick, holding, refus
 
         {state.status === 'loading' && <p className="text-sm text-site-muted">{text.loading}</p>}
         {state.status === 'error' && <Alert>{state.message}</Alert>}
-        {state.status === 'ready' && times.length === 0 && <p className="text-sm text-site-muted">{text.none}</p>}
+        {state.status === 'ready' && times.length === 0 && (
+          <p className="text-sm text-site-muted">{vet && slots.length > 0 ? text.noneForVet : text.none}</p>
+        )}
         {times.length > 0 && <SlotGrid times={times} disabled={holding} onPick={(time) => onPick(time.startsAt, vet || undefined, time.staffIds)} />}
         {holding && <p className="text-sm text-site-muted">{text.holding}</p>}
       </section>

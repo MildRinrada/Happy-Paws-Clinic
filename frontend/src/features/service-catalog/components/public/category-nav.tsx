@@ -1,24 +1,21 @@
-import { servicesPage } from '../../content/services-page';
+import { ChipNav } from '@/components/site/chip-nav';
+import { DotChip } from '@/components/site/dot-chip';
+import { categoryDots, servicesPage } from '../../content/services-page';
 import { categoryAnchor } from '../../lib/category-anchor';
 import type { MenuCategory } from '../../types/service-menu.types';
 
-/** A row of links, one per category, that jump down the page. Same chips as the team page. */
+/** The bar under the banner: one chip per category, each with its colour, that jumps down the page. */
 export function CategoryNav({ categories }: { categories: MenuCategory[] }) {
   return (
-    <nav aria-label={servicesPage.navLabel}>
-      <ul className="flex flex-wrap gap-2">
-        {categories.map((category) => (
-          <li key={category.code}>
-            <a
-              href={`#${categoryAnchor(category.code)}`}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-site-border bg-white px-4 text-sm hover:border-site-teal hover:text-site-teal"
-            >
-              {category.name}
-              <span className="text-site-muted">{category.services.length}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <ChipNav label={servicesPage.navLabel}>
+      {categories.map((category) => (
+        <DotChip
+          key={category.code}
+          href={`#${categoryAnchor(category.code)}`}
+          label={category.name}
+          dot={categoryDots[category.code] ?? 'brand'}
+        />
+      ))}
+    </ChipNav>
   );
 }

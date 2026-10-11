@@ -9,7 +9,7 @@ import { portalPaths } from '@/features/portal/content/portal-navigation';
 import { recordsHref } from '@/features/portal/lib/portal-links';
 import { authed } from '@/lib/auth/session';
 
-export const metadata: Metadata = { title: `${petDocuments.metaTitle} · Happy Paws Clinic` };
+export const metadata: Metadata = { title: `${petDocuments.metaTitle} | Happy Paws Clinic` };
 
 /**
  * An owner sending the clinic a file for one pet: a photo of a symptom, results from another
@@ -26,7 +26,7 @@ export default async function PetDocumentsPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-2">
-        <Link href={portalPaths.pets} className="text-sm font-medium text-site-teal hover:underline">
+        <Link href={portalPaths.pet(pet.id)} className="text-sm font-medium text-site-teal hover:underline">
           {petDocuments.back}
         </Link>
         <PageHeading title={petDocuments.title(pet.name)} intro={petDocuments.intro} />

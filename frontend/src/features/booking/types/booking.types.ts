@@ -58,13 +58,6 @@ export interface BookingOptions {
   vets: Record<string, string>;
 }
 
-/** A time picked on the guest booking page (`/book`), before anything is held. */
-export interface PickedTime {
-  startsAt: string;
-  /** Left out for "any vet": the backend then picks one who is free. */
-  staffId?: string;
-}
-
 /**
  * Where the guest booking form opens when the address names a time (`?date=&time=`). `startsAt` is
  * set when that time was still free on the server; `notice` when it was not.
@@ -101,3 +94,26 @@ export interface NewPet {
   name: string;
   species: string;
 }
+
+/**
+ * What the day and time step has chosen so far. `day` is empty until the visitor or the first
+ * read of the week settles on one; `vet` is empty for "any vet"; `startsAt` is the time picked,
+ * not yet held.
+ */
+export interface TimeChoice {
+  day: string;
+  vet: string;
+  startsAt?: string;
+}
+
+/** One day's free times, or the backend's refusal for that day alone. */
+export type DaySlots = { ok: true; slots: Slot[] } | { ok: false; message: string };
+
+/** Seven days of free times for the day chips, keyed by clinic day (`YYYY-MM-DD`). */
+export type WeekSlots =
+  | { status: 'loading' }
+  | { status: 'ready'; days: Record<string, DaySlots> }
+  | { status: 'error'; message: string };
+
+/** What a day chip says under the date. `unknown` while loading, or when that day could not be read. */
+export type DayStatus = 'free' | 'full' | 'unknown';

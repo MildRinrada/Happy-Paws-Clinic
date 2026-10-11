@@ -15,4 +15,9 @@ export interface PublicService {
   price_satang: number;
   price_tiers: PriceTier[];
   branch_ids: string[];
+  /**
+   * A line or two on what the service includes. Not in the API yet (a proposed extension that
+   * awaits approval); the card shows it when it arrives and simply leaves it out until then.
+   */
+  description?: string;
 }

@@ -1,6 +1,6 @@
 import { SiteContainer } from '@/components/layout/site-container';
+import { SectionHeading } from '@/components/site/section-heading';
 import { inWeekOrder } from '@/features/clinic/lib/weekdays';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
 import { aboutVisit } from '../content/about-page';
 import { clinicToday, type VisitInfo } from '../lib/load-visit-info';
 import { BranchCard } from './branch-card';

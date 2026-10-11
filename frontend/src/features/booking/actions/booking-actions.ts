@@ -6,9 +6,10 @@ import { runAction } from '@/lib/actions/action-result';
 import { bookAppointment } from '../api/bookAppointment';
 import { getAvailability } from '../api/getAvailability';
 import { holdSlot } from '../api/holdSlot';
+import { addDays, WEEK_DAYS } from '../lib/booking-dates';
 
 /**
- * The booking page's three calls. Whether a time is free, how far ahead the clinic books, and
+ * The booking page's calls. Whether a time is free, how far ahead the clinic books, and
  * whether a hold is still live are all the backend's to decide. These only check the shape of
  * what the form sent and hand the answer back.
  */
@@ -24,6 +25,27 @@ const slotsInput = z.object({
 export async function loadSlotsAction(input: z.infer<typeof slotsInput>) {
   const parsed = slotsInput.parse(input);
   return runAction(() => getAvailability(parsed.serviceId, parsed.date, parsed.branchId));
+}
+
+const weekInput = z.object({
+  serviceId: id,
+  branchId: id,
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+/**
+ * Seven days of free times in one trip from the browser: the server asks
+ * `GET /booking/availability` for each day at once, so the chips can say "ว่าง" or "เต็ม" and
+ * moving between them needs no further call. A day the backend refused comes back as that refusal,
+ * on its own, so one bad day does not blank the other six.
+ */
+export async function loadWeekSlotsAction(input: z.infer<typeof weekInput>) {
+  const parsed = weekInput.parse(input);
+  const days = Array.from({ length: WEEK_DAYS }, (_, index) => addDays(parsed.from, index));
+
+  return Promise.all(
+    days.map(async (date) => ({ date, result: await runAction(() => getAvailability(parsed.serviceId, date, parsed.branchId)) })),
+  );
 }
 
 const holdInput = z.object({

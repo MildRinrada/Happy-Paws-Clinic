@@ -1,6 +1,7 @@
 import { SiteContainer } from '@/components/layout/site-container';
-import { vaccinePage } from '../content/vaccine-schedule-page';
+import { SectionHeading } from '@/components/site/section-heading';
 import { vaccinePlans } from '../content/vaccine-plans';
+import { vaccinePage } from '../content/vaccine-schedule-page';
 import { GeneralPlanCard } from './general-plan-card';
 import { MedicalDisclaimer } from './medical-disclaimer';
 
@@ -15,9 +16,7 @@ export function VaccineScheduleIntro() {
     <section aria-labelledby="vaccine-intro-heading" className="bg-site-soft py-12 print:hidden">
       <SiteContainer>
         <article className="max-w-[720px]">
-          <h2 id="vaccine-intro-heading" className="text-2xl font-semibold leading-tight sm:text-[30px]">
-            {text.heading}
-          </h2>
+          <SectionHeading id="vaccine-intro-heading">{text.heading}</SectionHeading>
           <div className="mt-5 space-y-4 text-base leading-relaxed text-ink-800">
             {text.paragraphs.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>

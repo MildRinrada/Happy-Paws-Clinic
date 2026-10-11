@@ -4,6 +4,10 @@ import { Alert } from '@/components/ui/alert';
 import { formatLongDate, formatTime } from '@/lib/format/datetime';
 import { bookingPage } from '../content/booking-page';
 import type { SlotHold } from '../types/booking.types';
+import { StepActions } from './frame/step-actions';
+import { StepBackButton } from './frame/step-back-button';
+import { StepCard } from './frame/step-card';
+import { StepNextButton } from './frame/step-next-button';
 import { HoldCountdown } from './hold-countdown';
 import { SummaryRow } from './summary-row';
 
@@ -32,47 +36,42 @@ export function ConfirmStep({ hold, summary, expired, onExpire, submitting, erro
   const text = bookingPage.confirm;
 
   return (
-    <div className="space-y-5">
-      <h2 className="text-base font-semibold text-ink-900">{text.title}</h2>
+    <StepCard title={text.title}>
+      <div className="space-y-5">
+        {/* On a wide screen the summary card beside the step says all of this. */}
+        <dl className="divide-y divide-ink-100 rounded-xl bg-site-soft px-4 lg:hidden">
+          <SummaryRow label={text.pet} value={summary.pet} />
+          <SummaryRow label={text.service} value={summary.service} />
+          <SummaryRow label={text.type} value={summary.type} />
+          <SummaryRow label={text.when} value={`${formatLongDate(hold.starts_at)} ${formatTime(hold.starts_at)}`} />
+          <SummaryRow label={text.vet} value={summary.vet} />
+          <SummaryRow label={text.branch} value={summary.branch} />
+          <SummaryRow label={text.reason} value={summary.reason} />
+        </dl>
 
-      <dl className="divide-y divide-ink-100 rounded-xl bg-site-soft px-4">
-        <SummaryRow label={text.pet} value={summary.pet} />
-        <SummaryRow label={text.service} value={summary.service} />
-        <SummaryRow label={text.type} value={summary.type} />
-        <SummaryRow label={text.when} value={`${formatLongDate(hold.starts_at)} ${formatTime(hold.starts_at)}`} />
-        <SummaryRow label={text.vet} value={summary.vet} />
-        <SummaryRow label={text.branch} value={summary.branch} />
-        <SummaryRow label={text.reason} value={summary.reason} />
-      </dl>
+        {expired ? (
+          <Alert>{text.expired}</Alert>
+        ) : (
+          <p className="rounded-xl bg-site-soft px-4 py-3 text-sm text-ink-800">
+            {text.held(formatTime(hold.expires_at))} (<HoldCountdown expiresAt={hold.expires_at} onExpire={onExpire} />)
+          </p>
+        )}
 
-      {expired ? (
-        <Alert>{text.expired}</Alert>
-      ) : (
-        <p className="text-sm text-ink-700">
-          {text.held(formatTime(hold.expires_at))} (<HoldCountdown expiresAt={hold.expires_at} onExpire={onExpire} />)
-        </p>
-      )}
-
-      {error && <Alert>{error}</Alert>}
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={expired || submitting}
-          className="h-12 flex-1 rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? text.submitting : text.submit}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={submitting}
-          className="h-12 rounded-xl border border-ink-200 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50"
-        >
-          {text.back}
-        </button>
+        {error && <Alert>{error}</Alert>}
       </div>
-    </div>
+
+      <StepActions
+        back={
+          <StepBackButton onClick={onBack} disabled={submitting}>
+            {text.back}
+          </StepBackButton>
+        }
+        next={
+          <StepNextButton onClick={onConfirm} disabled={expired || submitting}>
+            {submitting ? text.submitting : text.submit}
+          </StepNextButton>
+        }
+      />
+    </StepCard>
   );
 }

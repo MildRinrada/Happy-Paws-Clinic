@@ -25,12 +25,23 @@ export const visitCard = {
   petPrefix: 'น้อง',
   vetFallback: 'สัตวแพทย์ที่ว่างในวันนั้น',
 
+  /** The two boxes under the service: "คิวของคุณ A12" and "เหลืออีก 2 คิว", or before check-in the time. */
   queueLabel: 'คิวของคุณ',
   noTicket: 'ยังไม่มี',
   aheadLabel: 'เหลืออีก',
-  aheadValue: (count: number) => (count === 0 ? 'คิวถัดไป' : `${count} คิว`),
+  aheadUnit: 'คิว',
+  aheadNext: 'คิวถัดไป',
+  timeLabel: 'เวลานัด',
+  /** In place of "เหลืออีก" once the pet has been called: how many are ahead no longer means anything. */
+  stageLabel: 'ตอนนี้',
+  stageValue: {
+    called: 'ถึงคิวแล้ว',
+    in_room: 'กำลังตรวจ',
+    done: 'ตรวจเสร็จ',
+  } as Partial<Record<VisitStage, string>>,
 
   steps: ['เช็กอิน', 'รอเรียก', 'ตรวจ', 'ชำระเงิน'],
+  stepsLabel: 'ขั้นตอนของการมาวันนี้',
 
   /** How long before the appointment the owner is asked to arrive. */
   arriveMinutesEarly: 15,
@@ -53,12 +64,14 @@ export const visitCard = {
   checkingIn: 'กำลังเช็กอิน',
   reschedule: { label: 'เลื่อนนัด', href: portalPaths.reschedule },
   chat: { label: 'แชทกับคลินิก', href: portalPaths.messages },
+  /** In place of "เลื่อนนัด" once the appointment can no longer be moved online. */
+  appointments: { label: 'ดูนัดหมาย', href: portalPaths.appointments },
 
   unreachable: 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่อีกครั้ง',
 
   empty: {
     title: 'วันนี้ยังไม่มีนัดหรือคิว',
     body: 'จองนัดล่วงหน้าแล้วติดตามคิวของน้องได้จากหน้านี้',
-    book: { label: 'จองนัด', href: '/portal/book' },
+    book: { label: 'จองนัด', href: portalPaths.book },
   },
 };

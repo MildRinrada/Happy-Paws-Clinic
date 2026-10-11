@@ -1,25 +1,23 @@
+import { SectionHeader } from '@/components/site/section-header';
 import { departmentBlurbs } from '../content/team-page';
 import type { TeamDepartment } from '../types/team.types';
 import { TeamMemberCard } from './team-member-card';
 
-/** One department: its name, how many people, one line on what it does, and a card per person. */
+/**
+ * One department: its name, one line on what it does, a dark rule, and a portrait card per person.
+ * Vets' cards are drawn in pale green and link to booking with that vet.
+ */
 export function DepartmentSection({ department }: { department: TeamDepartment }) {
   const headingId = `${department.department}-heading`;
-  const blurb = departmentBlurbs[department.department];
+  const isVets = department.department === 'veterinary';
 
   return (
     <section id={department.department} aria-labelledby={headingId} className="scroll-mt-6">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id={headingId} className="text-xl font-semibold sm:text-[22px]">
-          {department.name}
-        </h2>
-        <span className="text-sm text-site-muted">{department.members.length} คน</span>
-      </div>
-      {blurb && <p className="mt-1.5 text-[15px] text-site-muted">{blurb}</p>}
+      <SectionHeader id={headingId} title={department.name} blurb={departmentBlurbs[department.department]} />
 
-      <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-5">
         {department.members.map((member) => (
-          <TeamMemberCard key={member.id} member={member} />
+          <TeamMemberCard key={member.id} member={member} vet={isVets} />
         ))}
       </ul>
     </section>

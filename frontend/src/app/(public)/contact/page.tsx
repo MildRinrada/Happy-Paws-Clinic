@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { SiteContainer } from '@/components/layout/site-container';
-import { CtaLink } from '@/components/ui/cta-link';
 import { loadSiteInfo } from '@/features/clinic/lib/load-site-info';
+import { ContactCta } from '@/features/contact/components/contact-cta';
 import { ContactGroupSection } from '@/features/contact/components/contact-group-section';
 import { ContactHero } from '@/features/contact/components/contact-hero';
 import { ContactHours } from '@/features/contact/components/contact-hours';
@@ -53,19 +53,7 @@ export default async function ContactPage() {
         </div>
       </SiteContainer>
 
-      <section aria-labelledby="contact-cta-heading" className="bg-site-orange py-9 text-white">
-        <SiteContainer className="flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <h2 id="contact-cta-heading" className="text-2xl font-semibold">
-              {contactPage.cta.heading}
-            </h2>
-            <p className="mt-2 text-[15px] font-semibold">{contactPage.cta.lead}</p>
-          </div>
-          <CtaLink href={contactPage.cta.book.href} variant="violet" size="lg">
-            {contactPage.cta.book.label}
-          </CtaLink>
-        </SiteContainer>
-      </section>
+      <ContactCta />
 
       <ClinicJsonLd />
       <BreadcrumbJsonLd trail={[sitePages.contact]} />

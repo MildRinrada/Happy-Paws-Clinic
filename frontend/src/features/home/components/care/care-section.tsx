@@ -1,14 +1,14 @@
+import { SiteContainer } from '@/components/layout/site-container';
 import { ImageSlot } from '@/components/shared/image-slot';
+import { SectionHeading } from '@/components/site/section-heading';
 import { careHeading, careImage, carePromises } from '../../content/care';
-import { SectionContainer } from '../shared/section-container';
-import { SectionHeading } from '../shared/section-heading';
 import { CarePromiseCard } from './care-promise-card';
 
 /** How the clinic treats its patients, as four promises beside a picture. */
 export function CareSection() {
   return (
     <section id="about" aria-labelledby="care-heading" className="scroll-mt-6 bg-site-forest py-12 text-white">
-      <SectionContainer className="grid items-center gap-9 lg:grid-cols-[584fr_725fr] xl:gap-14">
+      <SiteContainer className="grid items-center gap-9 lg:grid-cols-[584fr_725fr] xl:gap-14">
         <ImageSlot
           src={careImage.src}
           alt={careImage.alt}
@@ -27,7 +27,7 @@ export function CareSection() {
             ))}
           </ol>
         </div>
-      </SectionContainer>
+      </SiteContainer>
     </section>
   );
 }

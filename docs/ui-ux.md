@@ -92,7 +92,25 @@
 - **เนื้อหาแยกจากหน้าตา** ข้อความ ลิงก์ และรูปอยู่ในไฟล์เนื้อหา component ทำหน้าที่วาดอย่างเดียว แตกไฟล์ละเอียด หนึ่งไฟล์หนึ่งชิ้น
 - **รูปที่ยังไม่มีเป็นช่องว่าง** `ImageSlot` วาดกรอบเส้นประพร้อมคำบอกว่ารูปอะไรควรอยู่ตรงนี้ ช่องว่างถูกซ่อนจาก screen reader (`aria-hidden`) เพราะไม่มีความหมาย ใช้ `tone="onDark"` เมื่อช่องอยู่บนพื้นสี
 - **ขนาดย่อจากดีไซน์** คอลัมน์เนื้อหา 992 px ผ่าน `SiteContainer` header 1120 px หัวเรื่อง Hero 48 px หัวข้อ section 30 px
-- **ปุ่มของหน้าสาธารณะ** ใช้ `CtaLink` แบบ `solid` (ส้ม ปุ่มหลัก) `violet` (ปุ่มหลักบนพื้นส้ม) `glass` (โปร่งบนพื้นสี) `dark` (ดำ) ไม่ใช้ `Button` ของหน้าจอพนักงาน
+- **ปุ่มของหน้าสาธารณะ** ใช้ `CtaLink` แบบ `solid` (ส้ม ปุ่มหลัก) `solidInk` (ส้ม ตัวอักษรเข้ม ตามดีไซน์ใหม่) `violet` (ปุ่มหลักบนพื้นส้ม) `glass` (โปร่งบนพื้นสี) `outline` (ขอบขาวโปร่งบนแถบเขียวเข้ม) `outlineForest` (ขอบและตัวอักษรเขียวเข้มบนพื้นขาว ปุ่มรองบนหน้าขาว เช่น บทความก่อนหน้านี้) `dark` (ดำ) `forest` (เขียวเข้ม ปุ่มในการ์ด) ไม่ใช้ `Button` ของหน้าจอพนักงาน ถ้าทั้งการ์ดเป็นลิงก์อยู่แล้ว ปุ่มในการ์ดเป็นแค่ป้ายหน้าตาเหมือนปุ่ม ใช้ `ctaLinkLook(variant, size)` วาด เพราะลิงก์ซ้อนในลิงก์ไม่ได้
+- **ชิ้นส่วนกลางของหน้าสาธารณะ** อยู่ใน `components/site/` หนึ่งไฟล์หนึ่งชิ้น เลือกหน้าตาด้วย prop ที่กำหนดชนิดไว้ (`tone`, `size`, `variant`, `look`) ส่วน `className` ใช้ปรับตำแหน่งหรือระยะเท่านั้น `SiteCard` (การ์ด) `CardDivider` (เส้นคั่นในการ์ด) `MetaPill` (ป้ายเล็ก) `PageBanner` (แถบหัวหน้า) `CtaBand` (แถบหรือกล่องสีส้มปิดหน้า) `SectionHeader` (หัวข้อ section พร้อมเส้นคั่น) `DotChip` และ `ChipNav` (แถบปุ่มไปที่ส่วนต่าง ๆ หรือปุ่มกรอง) ตอนนี้หน้า [บริการและราคา](features/services-page.md) หน้า [บทความ](features/articles.md) หน้า [ทีมของเรา](features/team.md) และหน้า [รีวิว](features/reviews.md#หน้า-reviews) ใช้ชุดนี้ หน้าอื่นจะย้ายมาใช้ในรอบถัดไป
+- **ข้อความของแถบหัวผ่านตัวอ่านกลาง** `loadPageBanner(page)` ใน `features/site-banners/lib/load-page-banner.ts` คืนคำนำ หัวข้อ คำอธิบาย ปุ่ม และรูปของแถบหัวแต่ละหน้า (ตอนนี้ `services` และ `team`) จากค่าตั้งต้นใน `content/page-banners.ts` เพื่อรอวันที่แก้แถบหัวจากหน้าจอพนักงานได้ ดู [หน้าบริการและราคา](features/services-page.md#ส่วนที่รอการอนุมัติ)
+- **แบบที่เพิ่มให้หน้าบทความ** แบบเดิมหน้าตาไม่เปลี่ยน
+  - `PageBanner` `tone="white"` หัวหน้าบนพื้นขาว ไม่มีแถบสี ตัวอักษรเขียวเข้ม คำนำสีเขียว คู่กับ `size="flush"` ที่เว้นด้านล่างน้อยกว่า เพราะเนื้อหาของหน้าต่อบนพื้นขาวเดียวกัน
+  - `PageBanner` prop `aside` วางของอื่นทางขวาแทนรูป เช่น ช่องค้นหา จอกว้างอยู่ระดับเดียวกับคำอธิบาย จอแคบย้ายลงไปใต้ข้อความ ถ้ามี `image` ด้วย ใช้ `image`
+  - `CtaBand` `variant="muted"` แถบเทาอ่อนเต็มความกว้าง ตัวอักษรเขียวเข้ม
+  - `SiteCard` `radius="xl"` มุมมน 20 px สำหรับการ์ดใหญ่ เช่น การ์ดบทความล่าสุดที่แบ่งรูปกับข้อความ
+  - `MetaPill` `tone="sun"` ป้ายเหลือง ตัวอักษรเข้มตัวหนา ใช้บนพื้นเขียวเข้ม
+  - `DotChip` prop `current` ปุ่มของสิ่งที่หน้ากำลังแสดง พื้นเขียวเข้ม ตัวอักษรขาว และบอก screen reader ด้วย `aria-current`
+- **แบบที่เพิ่มให้หน้าทีมของเรา** แบบเดิมหน้าตาไม่เปลี่ยน
+  - `PageBanner` `tone="soft"` แถบหัวพื้นเทาอ่อน (`site-soft`) ตัวอักษรเขียวเข้ม คำนำสีเขียว คำอธิบายสีเทาเข้ม กรอบรูปว่างบนแถบนี้ใช้แบบพื้นสว่าง (`BannerImage` รับ `tone` ตามสีของแถบ แถบเขียวเข้มและแดงยังเป็น `onDark` เหมือนเดิม)
+  - `MetaPill` `tone="softForest"` ป้ายเทาอ่อนตัวอักษรเขียวเข้ม ใช้บอกความเชี่ยวชาญใต้ชื่อคน
+  - `ImageSlot` `tone="mint"` (กรอบว่างพื้นเขียวอ่อน รูปของสัตวแพทย์) และ `tone="soft"` (พื้นเทาอ่อน รูปของแผนกอื่น) `MemberPhoto` ส่ง `tone` ต่อให้
+  - แถบไปที่แผนกใช้ `DotChip` แบบ `soft` ที่มีอยู่แล้ว โดยไม่ใส่จุดสีและจำนวน การ์ดของแต่ละคนไม่มีกรอบ จึงไม่ใช้ `SiteCard` และลิงก์ "จองนัดกับหมอท่านนี้" เป็นลิงก์ตัวอักษรขีดเส้นใต้ ไม่ใช่ `CtaLink`
+- **แบบที่เพิ่มให้หน้ารีวิว** แบบเดิมหน้าตาไม่เปลี่ยน
+  - `PageBanner` `size="wide"` แถบตัวอักษรอย่างเดียวแบบ `compact` แต่หัวข้อตัวหนา 40 px และคำอธิบายกว้างได้ถึง 680 px ให้ข้อความยาวสองบรรทัดพอดี บนแถบเขียวเข้มคำนำเป็นสีเหลือง (`site-sun`)
+  - `SiteCard` `tone="whiteFaint"` การ์ดขาว ขอบเทาอุ่นอ่อน (`ink-200`) สีเดียวกับขอบของ `DotChip` ใช้กับการ์ดรีวิวและการ์ด "เคยพาน้องมาที่คลินิก?"
+  - ปุ่มกรองใช้ `ChipNav` แบบ `inline` กับ `DotChip` ที่มี `current` ส่วนการ์ดคะแนนเฉลี่ยใช้ `SiteCard` `tone="muted"` และ `radius="xl"` ที่มีอยู่แล้ว
 - **เมนูมือถือใช้ `<details>`** เปิดได้ก่อน JavaScript โหลด
 - **ลิงก์ในหน้าเลื่อนนุ่ม** (`scroll-behavior: smooth`) ไปที่ anchor ของ section
 
@@ -132,4 +150,4 @@
 | โครงหน้าจอพนักงาน | `frontend/src/components/layout/staff-shell.tsx`, `nav-link.tsx`, `branch-switcher.tsx`, `frontend/src/app/(staff)/layout.tsx`, `frontend/src/app/(staff)/error.tsx` |
 | เช็ก scope ฝั่งหน้าจอ | `frontend/src/lib/auth/scopes.ts` |
 | วันเวลาและเงิน | `frontend/src/lib/format/datetime.ts`, `frontend/src/lib/format/money.ts` |
-| หน้าสาธารณะ | `frontend/src/components/layout/site-header/`, `site-footer/`, `site-container.tsx`, `frontend/src/components/shared/image-slot.tsx`, `frontend/src/features/home/` |
+| หน้าสาธารณะ | `frontend/src/components/layout/site-header/`, `site-footer/`, `site-container.tsx`, `frontend/src/components/shared/image-slot.tsx`, `frontend/src/components/site/`, `frontend/src/features/home/` |

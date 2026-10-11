@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { contactHref } from '@/features/clinic/lib/contact-links';
 import type { ClinicContact } from '@/features/clinic/types/contact.types';
 import { contactPage } from '../content/contact-page';
@@ -9,7 +10,7 @@ export function ContactCard({ contact }: { contact: ClinicContact }) {
   const external = href?.startsWith('http');
 
   return (
-    <li className="flex items-start gap-4 rounded-2xl border border-site-border/60 bg-white p-5">
+    <SiteCard as="li" tone="whiteSoft" className="flex items-start gap-4">
       <ContactKindIcon kind={contact.kind} className="size-10 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-site-muted">{contact.label}</p>
@@ -24,6 +25,6 @@ export function ContactCard({ contact }: { contact: ClinicContact }) {
           </a>
         )}
       </div>
-    </li>
+    </SiteCard>
   );
 }

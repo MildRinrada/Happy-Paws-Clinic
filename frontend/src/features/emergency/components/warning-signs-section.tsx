@@ -1,3 +1,4 @@
+import { SectionHeading } from '@/components/site/section-heading';
 import { warningSigns } from '../content/emergency-care';
 import { emergencyPage } from '../content/emergency-page';
 import { WarningSignItem } from './warning-sign-item';
@@ -9,9 +10,7 @@ export function WarningSignsSection() {
   return (
     <section aria-labelledby="warning-signs-heading" className="space-y-4">
       <div>
-        <h2 id="warning-signs-heading" className="text-2xl font-semibold leading-tight sm:text-[30px]">
-          {text.heading}
-        </h2>
+        <SectionHeading id="warning-signs-heading">{text.heading}</SectionHeading>
         <p className="mt-2 text-[15px] text-site-muted">{text.lead}</p>
       </div>
 

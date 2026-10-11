@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { SiteContainer } from '@/components/layout/site-container';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
+import { SectionHeading } from '@/components/site/section-heading';
 import { InvitationBody } from '@/features/reviews/components/invitation/invitation-body';
 import { invitationPage } from '@/features/reviews/content/invitation-page';
 import { loadInvitation } from '@/features/reviews/lib/load-invitation';

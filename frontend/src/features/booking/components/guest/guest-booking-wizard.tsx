@@ -4,23 +4,24 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useCooldown } from '@/features/authentication/hooks/use-cooldown';
 import { ReferredNote } from '@/features/referrals/components/guest/referred-note';
-import { clinicDay } from '@/lib/format/datetime';
 import { bookAction } from '../../actions/booking-actions';
 import { startGuestBookingAction, verifyGuestBookingAction } from '../../actions/guest-booking-actions';
+import { bookingFrame } from '../../content/booking-frame';
 import { bookingPage } from '../../content/booking-page';
 import { guestBookingPage } from '../../content/guest-booking-page';
+import { forgetWeekSlots } from '../../hooks/use-week-slots';
+import { detailsReady } from '../../lib/details-ready';
 import { suggestedTimes } from '../../lib/slot-times';
-import type {
-  BookingDetails,
-  BookingOptions,
-  GuestBookingStarted,
-  GuestVerified,
-  PickedTime,
-  TimePreselect,
-} from '../../types/booking.types';
-import { BookingSteps } from '../booking-steps';
+import type { BookingDetails, BookingOptions, GuestBookingStarted, GuestVerified, TimeChoice, TimePreselect } from '../../types/booking.types';
 import { DetailsStep } from '../details-step';
-import { TimeStep, type PickRefusal } from '../time-step';
+import { BookingFrame } from '../frame/booking-frame';
+import { BookingProgress } from '../frame/booking-progress';
+import { StepNextButton } from '../frame/step-next-button';
+import { BookingSummary } from '../summary/booking-summary';
+import { HoldNoteCard } from '../summary/hold-note-card';
+import { QuestionsCard } from '../summary/questions-card';
+import { BookingTimeStep } from '../time/booking-time-step';
+import type { PickRefusal } from '../time-step';
 import { GuestCodeStep, type GuestCodeErrors, type GuestCodeForm } from './guest-code-step';
 import { GuestPetStep, type PetChoice } from './guest-pet-step';
 import { GuestPhoneStep } from './guest-phone-step';
@@ -45,6 +46,9 @@ const GUEST_TYPE = 'regular';
  * Booking without signing up first (docs/contract-extensions.md § 27): details, a time, the phone,
  * the code, then which pet.
  *
+ * Drawn in the booking frame: the progress bar, the step's card, and the summary card beside it,
+ * which fills in as the visitor chooses. Picking a time only marks it; "next" moves on with it.
+ *
  * Nothing is held while the visitor browses times. Sending the phone holds the picked time for ten
  * minutes and texts a code; the code signs them in as a customer (new or returning, the backend
  * decides); the last step books through the same `POST /portal/appointments` as the portal, with an
@@ -54,6 +58,7 @@ export function GuestBookingWizard({
   options,
   initial,
   start,
+  vet,
   referralCode,
 }: {
   options: BookingOptions;
@@ -63,6 +68,11 @@ export function GuestBookingWizard({
    * the form on the phone step with it picked; one taken since opens that day's times with a note.
    */
   start?: TimePreselect;
+  /**
+   * A vet the address asked for (`?vet=`, from the team page), already checked on the server. The
+   * times open on that vet's, and a time from the address is held with them.
+   */
+  vet?: string;
   /**
    * A friend's referral code from `?ref=`, already checked on the server (docs/contract-extensions.md
    * § 39). Sent with the phone's proof; kept from the first render, so the page re-rendering inside
@@ -76,9 +86,8 @@ export function GuestBookingWizard({
   const [step, setStep] = useState<GuestStep>(start?.startsAt ? 'phone' : start ? 'time' : 'details');
   const [details, setDetails] = useState(initial);
 
-  const [day, setDay] = useState<string | undefined>(start?.day);
+  const [time, setTime] = useState<TimeChoice>({ day: start?.day ?? '', vet: vet ?? '', startsAt: start?.startsAt });
   const [refusal, setRefusal] = useState<PickRefusal | undefined>(start?.notice ? { message: start.notice, suggested: [] } : undefined);
-  const [picked, setPicked] = useState<PickedTime | undefined>(start?.startsAt ? { startsAt: start.startsAt } : undefined);
 
   const [phone, setPhone] = useState('');
   const [started, setStarted] = useState<GuestBookingStarted>();
@@ -95,16 +104,29 @@ export function GuestBookingWizard({
 
   const onExpire = useCallback(() => setExpired(true), []);
 
-  function pick(startsAt: string, staffId?: string) {
-    setPicked({ startsAt, staffId });
-    setDay(clinicDay(startsAt));
+  /** On from the times with the one picked. Nothing is held until the phone is sent. */
+  function leaveTime() {
+    if (!time.startsAt) return;
     setRefusal(undefined);
     setPhoneError(undefined);
     setStep('phone');
   }
 
+  /** A change of service or branch drops the time picked: it was free for the old one. */
+  function changeDetails(next: BookingDetails) {
+    if (next.serviceId !== details.serviceId || next.branchId !== details.branchId) {
+      setTime((current) => ({ ...current, startsAt: undefined }));
+    }
+    setDetails(next);
+  }
+
+  function leaveDetails() {
+    setRefusal(undefined);
+    setStep('time');
+  }
+
   async function sendCode(number: string, resend = false) {
-    if (!picked) return;
+    if (!time.startsAt) return;
     setSending(true);
     setPhoneError(undefined);
 
@@ -113,8 +135,8 @@ export function GuestBookingWizard({
         phone: number,
         serviceId: details.serviceId,
         branchId: details.branchId,
-        startsAt: picked.startsAt,
-        staffId: picked.staffId,
+        startsAt: time.startsAt,
+        staffId: time.vet || undefined,
       });
 
       if (result.ok) {
@@ -125,7 +147,9 @@ export function GuestBookingWizard({
         cooldown.start();
         setStep('code');
       } else if (result.error.code === 'slot_unavailable') {
-        // Taken while the visitor was typing: back to the times, with what the backend offered.
+        // Taken while the visitor was typing: back to the times, read afresh, with what the backend offered.
+        forgetWeekSlots();
+        setTime((current) => ({ ...current, startsAt: undefined }));
         setRefusal({ message: result.error.message, suggested: suggestedTimes(result.error.details) });
         setStep('time');
       } else if (resend) {
@@ -198,46 +222,75 @@ export function GuestBookingWizard({
   }
 
   const service = options.servicesByBranch[details.branchId]?.find((item) => item.id === details.serviceId);
-  const branch = options.branches.length > 1 ? options.branches.find((item) => item.id === details.branchId) : undefined;
-  const heldBy = started?.hold.staff_id ?? picked?.staffId;
-  const summary = picked && {
+  const branch = options.branches.find((item) => item.id === details.branchId);
+  // Once a hold is made (the code and pet steps), it is what is kept: its time and its vet.
+  const hold = (step === 'code' || step === 'pet') && started ? started.hold : undefined;
+  const startsAt = hold?.starts_at ?? time.startsAt;
+  const heldBy = hold?.staff_id ?? (time.vet || undefined);
+  const vetName = heldBy ? (options.vets[heldBy] ?? bookingPage.vetFallback) : undefined;
+  const summary = startsAt && {
     service: service?.name,
-    startsAt: started?.hold.starts_at ?? picked.startsAt,
-    vet: heldBy ? (options.vets[heldBy] ?? bookingPage.vetFallback) : bookingPage.vetFallback,
-    branch: branch?.name,
+    startsAt,
+    vet: vetName ?? bookingPage.vetFallback,
+    branch: options.branches.length > 1 ? branch?.name : undefined,
   };
-  const portalBooking = `/portal/book?${new URLSearchParams({ service: details.serviceId, branch: details.branchId })}`;
+  const portalBooking = `/portal/book?${new URLSearchParams({ service: details.serviceId, branch: details.branchId, ...(vet ? { vet } : {}) })}`;
+  // Once the number is proved the visitor is signed in and the hold is theirs: nothing behind can change.
+  const canEdit = step !== 'pet';
+
+  function goTo(index: number) {
+    const target = STEPS[index]!;
+    if (target === 'details') setRefusal(undefined);
+    setStep(target);
+  }
+
+  const action =
+    step === 'details' ? (
+      <StepNextButton onClick={leaveDetails} disabled={!detailsReady(options, details, false, false)} arrow={false} block>
+        {bookingFrame.next.time}
+      </StepNextButton>
+    ) : step === 'time' ? (
+      <StepNextButton onClick={leaveTime} disabled={!time.startsAt} arrow={false} block>
+        {bookingFrame.next.phone}
+      </StepNextButton>
+    ) : undefined;
 
   return (
-    <div className="space-y-6" data-booking-flow="guest" data-booking-step={step}>
-      <BookingSteps current={STEPS.indexOf(step)} labels={guestBookingPage.steps} />
-
-      {referral && step !== 'pet' && <ReferredNote />}
-
+    <BookingFrame
+      flow="guest"
+      step={step}
+      progress={<BookingProgress labels={guestBookingPage.steps} current={STEPS.indexOf(step)} onEdit={canEdit ? goTo : undefined} />}
+      note={referral && step !== 'pet' ? <ReferredNote /> : undefined}
+      aside={
+        <>
+          <BookingSummary
+            askPet={false}
+            values={{ service: service?.name, startsAt, day: time.day || undefined, vet: vetName, branch: branch?.name }}
+            onChangeService={canEdit && step !== 'details' ? () => goTo(0) : undefined}
+            action={action}
+          />
+          {(step === 'details' || step === 'time') && <HoldNoteCard>{bookingFrame.holdNote.guest}</HoldNoteCard>}
+          <QuestionsCard />
+        </>
+      }
+    >
       {step === 'details' && (
-        <DetailsStep
-          options={options}
-          value={details}
-          onChange={setDetails}
-          askPet={false}
-          askType={false}
-          onNext={() => {
-            setRefusal(undefined);
-            setStep('time');
-          }}
-        />
+        <DetailsStep options={options} value={details} onChange={changeDetails} askPet={false} askType={false} onNext={leaveDetails} />
       )}
 
       {step === 'time' && (
-        <TimeStep
+        <BookingTimeStep
           serviceId={details.serviceId}
           branchId={details.branchId}
           vetNames={options.vets}
-          onPick={pick}
-          holding={false}
+          value={time}
+          onChange={setTime}
+          initialVet={vet}
           refusal={refusal}
-          onBack={() => setStep('details')}
-          initialDay={day}
+          holding={false}
+          onBack={() => goTo(0)}
+          onNext={leaveTime}
+          nextLabel={bookingFrame.next.phone}
         />
       )}
 
@@ -280,6 +333,6 @@ export function GuestBookingWizard({
           pickAgainHref={bookError?.pickAgain ? portalBooking : undefined}
         />
       )}
-    </div>
+    </BookingFrame>
   );
 }

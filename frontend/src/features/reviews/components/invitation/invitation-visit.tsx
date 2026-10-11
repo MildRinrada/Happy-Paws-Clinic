@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { invitationPage } from '../../content/invitation-page';
 import { formatVisitDay } from '../../lib/review-dates';
 import type { ReviewInvitationView } from '../../types/review.types';
@@ -8,7 +9,7 @@ export function InvitationVisit({ invitation }: { invitation: ReviewInvitationVi
   const { visit } = invitation;
 
   return (
-    <div className="space-y-2 rounded-2xl bg-site-soft px-5 py-4 text-sm text-ink-800">
+    <SiteCard tone="muted" padding="none" className="space-y-2 px-5 py-4 text-sm text-ink-800">
       <p className="text-base font-semibold text-ink-900">{text.visitOn(formatVisitDay(visit.visit_on))}</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         {visit.pet_name && (
@@ -24,6 +25,6 @@ export function InvitationVisit({ invitation }: { invitation: ReviewInvitationVi
           </>
         )}
       </dl>
-    </div>
+    </SiteCard>
   );
 }

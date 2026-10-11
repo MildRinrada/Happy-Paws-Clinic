@@ -1,14 +1,14 @@
+import { SiteContainer } from '@/components/layout/site-container';
+import { SectionHeading } from '@/components/site/section-heading';
 import { CtaLink } from '@/components/ui/cta-link';
 import { line } from '../../content/line';
-import { SectionContainer } from '../shared/section-container';
-import { SectionHeading } from '../shared/section-heading';
 import { LineBenefit } from './line-benefit';
 
 /** The invitation to add the clinic on LINE, and what the owner gets for doing so. */
 export function LineSection() {
   return (
     <section aria-labelledby="line-heading" className="bg-line-green pb-14 pt-[58px] text-white">
-      <SectionContainer>
+      <SiteContainer>
         {/* Everything keeps to the left half; the right of the section is left open. */}
         <div className="max-w-[563px]">
           <p className="inline-flex min-h-10 items-center rounded-full bg-white/30 px-6 py-1.5 font-light">{line.pill}</p>
@@ -37,7 +37,7 @@ export function LineSection() {
             </CtaLink>
           </div>
         </div>
-      </SectionContainer>
+      </SiteContainer>
     </section>
   );
 }

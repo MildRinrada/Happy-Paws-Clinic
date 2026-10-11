@@ -24,6 +24,11 @@ export interface PublicReview {
   text?: string | null;
   display_name: string;
   pet_species?: string | null;
+  /**
+   * The service of the visit reviewed, such as "ตรวจสุขภาพประจำปี". Not sent by the API yet: it
+   * waits for the owner's approval (docs/features/reviews.md), and the card draws it only when present.
+   */
+  service_name?: string | null;
   created_at: string;
   reply?: ReviewReply | null;
 }

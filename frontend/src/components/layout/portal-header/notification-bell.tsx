@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { portalHeader } from '@/features/portal/content/portal-navigation';
 import { PortalIcon } from './portal-icon';
 
-/** The bell, with the number of unread messages on it when there are any. */
+/** The bell, with an orange dot on it while there are unread messages. The count is in its label. */
 export function NotificationBell({ unread }: { unread: number }) {
   const label = unread > 0 ? `${portalHeader.notifications.label} ${portalHeader.unread(unread)}` : portalHeader.notifications.label;
 
@@ -14,9 +14,7 @@ export function NotificationBell({ unread }: { unread: number }) {
     >
       <PortalIcon name="bell" />
       {unread > 0 && (
-        <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-site-alert px-1 text-[11px] font-bold leading-none text-white">
-          {unread > 99 ? '99+' : unread}
-        </span>
+        <span aria-hidden="true" className="absolute right-2 top-2 size-2 rounded-full bg-site-orange ring-2 ring-white" />
       )}
     </Link>
   );

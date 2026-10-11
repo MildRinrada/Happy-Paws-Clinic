@@ -9,6 +9,8 @@ interface CheckInButtonProps {
   appointmentId: string;
   /** Where a refusal is shown: the card puts it under the whole row of buttons. */
   onError: (message: string | undefined) => void;
+  /** Placement in the card's row of buttons, such as taking the whole row. */
+  className?: string;
 }
 
 /**
@@ -19,7 +21,7 @@ interface CheckInButtonProps {
  * ("ยังไม่ถึงเวลาเช็กอิน"), so that trying again later is a new request and not a replay of the
  * stored "no".
  */
-export function CheckInButton({ appointmentId, onError }: CheckInButtonProps) {
+export function CheckInButton({ appointmentId, onError, className = '' }: CheckInButtonProps) {
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const [pending, startTransition] = useTransition();
 
@@ -40,7 +42,7 @@ export function CheckInButton({ appointmentId, onError }: CheckInButtonProps) {
   }
 
   return (
-    <button type="button" onClick={checkIn} disabled={pending} className={solidButton}>
+    <button type="button" onClick={checkIn} disabled={pending} className={`${solidButton} ${className}`}>
       {pending ? visitCard.checkingIn : visitCard.checkIn}
     </button>
   );

@@ -5,9 +5,13 @@ import { listServiceCategories } from '../api/manage-services';
 import type { ServiceMenu } from '../types/service-menu.types';
 
 /**
- * The public menu (`GET /services`) grouped under the contract's categories, in their order, or
- * `null` when the services cannot be read. The category names and branch names are extras: if
- * they cannot be read, a category is headed by its code and branches are not named.
+ * The public menu (`GET /services`) under every one of the contract's categories
+ * (`GET /services/categories`), in their order, or `null` when the services cannot be read.
+ *
+ * A category with nothing open for online booking is kept, with no services, so the page can say
+ * to call about it. A service whose category is not in the list goes at the end under its code.
+ * If the categories cannot be read, only the categories the services name are shown, headed by
+ * their codes. Branch names are an extra too: unread, branches are not named.
  *
  * Cached per request: the page and its structured data both read it.
  */
@@ -22,13 +26,11 @@ export const loadServiceMenu = cache(async (): Promise<ServiceMenu | null> => {
     return null;
   }
 
-  const order = categories.map((category) => category.code);
-  const codes = [...new Set(services.map((service) => service.category_code))].sort(
-    (a, b) => (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1),
-  );
+  const listed = categories.map((category) => category.code);
+  const unlisted = [...new Set(services.map((service) => service.category_code))].filter((code) => !listed.includes(code));
 
   return {
-    categories: codes.map((code) => ({
+    categories: [...listed, ...unlisted].map((code) => ({
       code,
       name: categories.find((category) => category.code === code)?.name ?? code,
       // In the order the API lists them.

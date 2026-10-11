@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { SiteContainer } from '@/components/layout/site-container';
+import { SiteCard } from '@/components/site/site-card';
 import { contactHref } from '@/features/clinic/lib/contact-links';
 import { loadSiteInfo } from '@/features/clinic/lib/load-site-info';
 import { hoursRows } from '@/features/clinic/lib/weekdays';
 import { location } from '../../content/location';
 import type { ContactRow } from '../../types/home.types';
-import { SectionContainer } from '../shared/section-container';
 import { ContactTable } from './contact-table';
 import { LocationMap } from './location-map';
 
@@ -29,8 +30,8 @@ export async function LocationSection() {
 
   return (
     <section id="contact" aria-labelledby="location-heading" className="scroll-mt-6 py-9">
-      <SectionContainer>
-        <div className="grid overflow-hidden rounded-2xl border border-site-border lg:grid-cols-[623fr_585fr]">
+      <SiteContainer>
+        <SiteCard padding="none" className="grid overflow-hidden lg:grid-cols-[623fr_585fr]">
           <div className="px-5 pb-8 pt-7 sm:px-8 sm:pb-10 sm:pt-8">
             <h2 id="location-heading" className="text-2xl font-semibold sm:text-[30px] lg:pl-2">
               {location.name}
@@ -52,8 +53,8 @@ export async function LocationSection() {
           </div>
 
           <LocationMap embedUrl={info.map?.embed_url} />
-        </div>
-      </SectionContainer>
+        </SiteCard>
+      </SiteContainer>
     </section>
   );
 }

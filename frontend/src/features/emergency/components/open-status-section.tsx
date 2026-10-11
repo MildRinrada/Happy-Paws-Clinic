@@ -1,3 +1,4 @@
+import { SectionHeading } from '@/components/site/section-heading';
 import type { Branch, OpeningHours } from '@/features/clinic/types/clinic.types';
 import { emergencyPage } from '../content/emergency-page';
 import { clinicClock } from '../lib/clinic-clock';
@@ -20,9 +21,7 @@ export function OpenStatusSection({ hours, branches, now }: OpenStatusSectionPro
 
   return (
     <section aria-labelledby="open-status-heading" className="space-y-4">
-      <h2 id="open-status-heading" className="text-2xl font-semibold leading-tight sm:text-[30px]">
-        {text.heading}
-      </h2>
+      <SectionHeading id="open-status-heading">{text.heading}</SectionHeading>
 
       {statuses.length === 0 ? (
         <p className="text-[15px] text-site-muted">{text.unknown}</p>

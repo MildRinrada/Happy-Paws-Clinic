@@ -34,13 +34,13 @@ export function visitStage(ticket: PortalTicketStatus | undefined, appointment: 
 }
 
 /**
- * How full the progress bar is, as a fraction. The four labels under it (check-in, waiting, exam,
- * payment) sit at 0, 1/3, 2/3 and 1, and each stage fills to just past its own label.
+ * Which of the four steps under the card (check-in, waiting, exam, payment) the visit is at, from
+ * 0. The steps before it are done. Called counts as the exam step: the owner is on the way in.
  */
-export const stageProgress: Record<VisitStage, number> = {
-  before: 0.04,
-  waiting: 0.4,
-  called: 0.55,
-  in_room: 0.72,
-  done: 1,
+export const stageStep: Record<VisitStage, number> = {
+  before: 0,
+  waiting: 1,
+  called: 2,
+  in_room: 2,
+  done: 3,
 };

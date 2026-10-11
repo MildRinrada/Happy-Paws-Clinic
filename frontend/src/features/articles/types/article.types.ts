@@ -14,6 +14,12 @@ export interface ArticleSummary {
    */
   cover_image_url?: string;
   published_at: string;
+  /**
+   * The topics the article is filed under, such as "แมว" or "วัคซีน". The API does not send these
+   * yet (a proposed extension that awaits approval, docs/features/articles.md); until it does, the
+   * cards show no topic line.
+   */
+  tags?: string[];
 }
 
 /** One whole article, from `GET /articles/{slug}`. */

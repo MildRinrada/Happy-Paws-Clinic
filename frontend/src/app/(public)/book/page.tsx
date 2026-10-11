@@ -4,8 +4,10 @@ import { SiteContainer } from '@/components/layout/site-container';
 import { redirectIfSignedIn } from '@/features/authentication/lib/redirect-signed-in';
 import { GuestBookingWizard } from '@/features/booking/components/guest/guest-booking-wizard';
 import { SignInInstead } from '@/features/booking/components/guest/sign-in-instead';
+import { BookingPageHead } from '@/features/booking/components/page/booking-page-head';
 import { guestBookingPage } from '@/features/booking/content/guest-booking-page';
 import { loadGuestBookingOptions } from '@/features/booking/lib/load-guest-booking-options';
+import { preselectVet } from '@/features/booking/lib/preselect-booking';
 import { preselectTime } from '@/features/booking/lib/preselect-time';
 import { validReferralCode } from '@/features/referrals/lib/valid-referral-code';
 
@@ -23,9 +25,10 @@ export const dynamic = 'force-dynamic';
  *
  * `?service=` and `?branch=` preselect the form (the services page links here that way), and
  * `?date=` with `?time=` a time on top of them (the home page's "ว่างเร็วสุด" button), checked
- * against the day's free times before the form draws. Someone already signed in as a customer gets
- * the portal's own booking page with the same service, branch, day and time, and a member of staff
- * goes to the console, as from `/login`.
+ * against the day's free times before the form draws. `?vet=` (the team page's "จองนัดกับหมอท่านนี้")
+ * starts the times on that vet's, when it is a vet on the team page; anything else is ignored.
+ * Someone already signed in as a customer gets the portal's own booking page with the same service,
+ * branch, day, time and vet, and a member of staff goes to the console, as from `/login`.
  *
  * `?ref=` is a friend's referral code (docs/contract-extensions.md § 39), from `/r/{code}`. It is
  * checked again here, since the address can be typed; a code that can be used is sent with the
@@ -35,12 +38,13 @@ export const dynamic = 'force-dynamic';
 export default async function BookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string; branch?: string; date?: string; time?: string; ref?: string }>;
+  searchParams: Promise<{ service?: string; branch?: string; date?: string; time?: string; vet?: string; ref?: string }>;
 }) {
-  const { service, branch, date, time, ref } = await searchParams;
+  const { service, branch, date, time, vet, ref } = await searchParams;
   const query = new URLSearchParams();
   if (service) query.set('service', service);
   if (branch) query.set('branch', branch);
+  if (vet) query.set('vet', vet);
   // The time goes along too, so a signed-in owner sent to the portal keeps the one they tapped.
   if (date && time) {
     query.set('date', date);
@@ -59,22 +63,18 @@ export default async function BookPage({
     loadGuestBookingOptions(service, branch),
     validReferralCode(ref),
   ]);
-  const start = await preselectTime(initial, date, time);
+  const vetId = preselectVet(options, vet);
+  const start = await preselectTime(initial, date, time, vetId);
 
   return (
-    <main className="bg-site-soft py-10">
-      <SiteContainer>
-        <div className="mx-auto max-w-2xl space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-ink-900">{guestBookingPage.title}</h1>
-            <p className="text-[15px] text-site-muted">{guestBookingPage.intro}</p>
-            <SignInInstead next={portalBooking} />
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
-            <GuestBookingWizard options={options} initial={initial} start={start} referralCode={referralCode} />
-          </div>
-        </div>
+    <main className="bg-site-soft pb-16 pt-8 lg:pb-20 lg:pt-[30px]">
+      <SiteContainer className="space-y-8 lg:space-y-9">
+        <BookingPageHead
+          title={guestBookingPage.title}
+          lead={guestBookingPage.intro}
+          aside={<SignInInstead next={portalBooking} />}
+        />
+        <GuestBookingWizard options={options} initial={initial} start={start} vet={vetId} referralCode={referralCode} />
       </SiteContainer>
     </main>
   );

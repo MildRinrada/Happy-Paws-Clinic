@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { formatThaiDay } from '@/features/vaccine-schedule/lib/calendar-date';
 import { clinicalReview } from '../content/emergency-care';
 import { emergencyPage } from '../content/emergency-page';
@@ -11,7 +12,7 @@ export function ClinicalNote() {
   const { reviewedBy, reviewedOn } = clinicalReview;
 
   return (
-    <aside role="note" className="rounded-2xl border border-site-orange/60 bg-[#fff6e8] p-4 sm:p-5">
+    <SiteCard as="aside" role="note" tone="notice" padding="sm">
       <p className="font-bold text-ink-900">{text.heading}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-700">{text.body}</p>
       <p className="mt-2 text-xs text-site-muted">
@@ -19,6 +20,6 @@ export function ClinicalNote() {
           ? text.reviewed.replace('{name}', reviewedBy).replace('{date}', formatThaiDay(reviewedOn))
           : text.pendingReview}
       </p>
-    </aside>
+    </SiteCard>
   );
 }

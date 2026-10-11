@@ -1,6 +1,8 @@
 import type { PortalIcon as IconName } from '@/features/portal/content/portal-navigation';
 
-const paths: Record<IconName | 'bell', string> = {
+type Name = IconName | 'bell';
+
+const paths: Record<Name, string> = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
   // A pad and four toes, each toe a full ellipse drawn as two arcs.
   paw:
@@ -12,8 +14,27 @@ const paths: Record<IconName | 'bell', string> = {
   bell: 'M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
 };
 
+/**
+ * What is filled in when the icon is `solid`, for the bottom bar's current tab: the whole house and
+ * the whole paw, the calendar's top band, the page's folded corner. The outline is drawn over it.
+ */
+const solids: Partial<Record<Name, string>> = {
+  home: paths.home,
+  paw: paths.paw,
+  calendar: 'M5 5h14a1 1 0 0 1 1 1v3H4V6a1 1 0 0 1 1-1z',
+  records: 'M14 3v5h5z',
+};
+
+interface PortalIconProps {
+  name: Name;
+  className?: string;
+  solid?: boolean;
+}
+
 /** The portal's line icons, drawn in the current text colour. */
-export function PortalIcon({ name, className = 'size-6' }: { name: IconName | 'bell'; className?: string }) {
+export function PortalIcon({ name, className = 'size-6', solid = false }: PortalIconProps) {
+  const fill = solid ? solids[name] : undefined;
+
   return (
     <svg
       viewBox="0 0 24 24"
@@ -25,6 +46,7 @@ export function PortalIcon({ name, className = 'size-6' }: { name: IconName | 'b
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      {fill && <path d={fill} fill="currentColor" />}
       <path d={paths[name]} />
     </svg>
   );

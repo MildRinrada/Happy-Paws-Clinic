@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { emergencyPage } from '../content/emergency-page';
 import type { CallNumber } from '../types/emergency.types';
 
@@ -11,10 +12,12 @@ export function CallCard({ number }: { number: CallNumber }) {
 
   return (
     <li>
-      <a
+      <SiteCard
         href={number.href}
-        aria-label={text.callLabel(caption, number.value)}
-        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl bg-white px-5 py-4 text-site-alert shadow-lg transition hover:bg-white/90 sm:px-6"
+        tone="raised"
+        padding="none"
+        ariaLabel={text.callLabel(caption, number.value)}
+        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4 text-site-alert hover:bg-white/90 sm:px-6"
       >
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-ink-700">{caption}</span>
@@ -26,7 +29,7 @@ export function CallCard({ number }: { number: CallNumber }) {
           </svg>
           {text.action}
         </span>
-      </a>
+      </SiteCard>
     </li>
   );
 }

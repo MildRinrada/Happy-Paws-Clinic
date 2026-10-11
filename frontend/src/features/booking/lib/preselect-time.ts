@@ -26,12 +26,16 @@ function isRealDay(day: string): boolean {
  * - it is no longer free: the form opens on that day's times with a short note.
  * - the read fails: the form opens on that day's times, which load and report on their own.
  *
+ * With `vet` (already checked by `preselectVet`), the time counts as free only when that vet is
+ * free at it, since the form then holds it with that vet.
+ *
  * Anything else answers `undefined`, and the form opens on its first step as without these.
  */
 export async function preselectTime(
   initial: BookingDetails,
   date?: string,
   time?: string,
+  vet?: string,
   now: Date = new Date(),
 ): Promise<TimePreselect | undefined> {
   if (!date || !time || !initial.serviceId || !initial.branchId) return undefined;
@@ -42,7 +46,7 @@ export async function preselectTime(
 
   try {
     const { slots } = await getAvailability(initial.serviceId, date, initial.branchId);
-    const free = slots.find((slot) => Date.parse(slot.starts_at) === Date.parse(wanted));
+    const free = slots.find((slot) => Date.parse(slot.starts_at) === Date.parse(wanted) && (!vet || slot.staff_id === vet));
 
     return free ? { day: date, startsAt: free.starts_at } : { day: date, notice: guestBookingPage.timeTaken(time) };
   } catch {

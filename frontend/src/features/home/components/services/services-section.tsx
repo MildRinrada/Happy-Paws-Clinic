@@ -1,8 +1,8 @@
 import Link from 'next/link';
+import { SiteContainer } from '@/components/layout/site-container';
+import { SectionHeading } from '@/components/site/section-heading';
 import { VaccineScheduleTeaser } from '@/features/vaccine-schedule/components/vaccine-schedule-teaser';
 import { featuredServices, moreServices, servicesHeading, servicesMoreLink } from '../../content/services';
-import { SectionContainer } from '../shared/section-container';
-import { SectionHeading } from '../shared/section-heading';
 import { FeaturedServiceCard } from './featured-service-card';
 import { MoreServiceCard } from './more-service-card';
 
@@ -12,7 +12,7 @@ const grid = 'grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:gap-x-8';
 export function ServicesSection() {
   return (
     <section id="services" aria-labelledby="services-heading" className="scroll-mt-6 pb-10 pt-12">
-      <SectionContainer>
+      <SiteContainer>
         <SectionHeading id="services-heading">{servicesHeading}</SectionHeading>
 
         <ul className={`mt-7 ${grid}`}>
@@ -34,7 +34,7 @@ export function ServicesSection() {
             {servicesMoreLink.label} →
           </Link>
         </p>
-      </SectionContainer>
+      </SiteContainer>
     </section>
   );
 }

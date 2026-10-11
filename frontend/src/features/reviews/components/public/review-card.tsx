@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { reviewsPage } from '../../content/reviews-page';
 import { formatReviewDate } from '../../lib/review-dates';
 import type { PublicReview } from '../../types/review.types';
@@ -11,7 +12,7 @@ import { ReviewReply } from './review-reply';
  */
 export function ReviewCard({ review }: { review: PublicReview }) {
   return (
-    <li className="rounded-2xl bg-site-soft px-[22px] py-6 text-site-muted">
+    <SiteCard as="li" tone="muted" padding="none" className="px-[22px] py-6 text-site-muted">
       <figure>
         <div className="flex items-center justify-between gap-3">
           <StarRow rating={review.rating} />
@@ -33,6 +34,6 @@ export function ReviewCard({ review }: { review: PublicReview }) {
 
         {review.reply && <ReviewReply reply={review.reply} />}
       </figure>
-    </li>
+    </SiteCard>
   );
 }

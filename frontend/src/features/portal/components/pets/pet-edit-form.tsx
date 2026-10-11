@@ -65,7 +65,7 @@ export function PetEditForm({ pet }: { pet: MyPet }) {
       const result = await updatePetAction({ petId: pet.id, version: pet.version, nickname, diet, behaviour, photoDocumentId });
 
       if (result.ok) {
-        router.push(portalPaths.pets);
+        router.push(portalPaths.pet(pet.id));
         return;
       }
 
@@ -122,7 +122,7 @@ export function PetEditForm({ pet }: { pet: MyPet }) {
           {phase === 'uploading' ? petEdit.uploading : phase === 'saving' ? petEdit.saving : petEdit.save}
         </button>
         <Link
-          href={portalPaths.pets}
+          href={portalPaths.pet(pet.id)}
           className="inline-flex h-12 items-center justify-center rounded-xl border border-ink-200 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50"
         >
           {petEdit.cancel}

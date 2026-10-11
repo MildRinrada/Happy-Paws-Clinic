@@ -10,16 +10,25 @@ interface Props {
   className?: string;
   /** How the picture sits in the slot. Defaults to covering it. */
   imageClassName?: string;
-  /** `onDark` when the slot sits on a coloured section, so the empty outline stays visible. */
-  tone?: 'onLight' | 'onDark';
+  /**
+   * How the empty slot is drawn. `onDark` when it sits on a coloured section, so the outline stays
+   * visible. `mint` and `soft` fill it with pale green or light grey, as the team page's portraits.
+   */
+  tone?: ImageSlotTone;
   /** Passed to next/image so the browser downloads a file near the size it will paint. */
   sizes?: string;
   priority?: boolean;
 }
 
-const emptyTones = {
+export type ImageSlotTone = 'onLight' | 'onDark' | 'mint' | 'soft';
+
+const emptyTones: Record<ImageSlotTone, string> = {
   onLight: 'border-ink-300 bg-ink-100 text-ink-500',
   onDark: 'border-white/50 bg-white/10 text-white/80',
+  // A vet's portrait on the team page.
+  mint: 'border-ink-300 bg-brand-100 text-ink-600',
+  // Everyone else's portrait on the team page.
+  soft: 'border-ink-300 bg-site-soft text-ink-600',
 };
 
 /**

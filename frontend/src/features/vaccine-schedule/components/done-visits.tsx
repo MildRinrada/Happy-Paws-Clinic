@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { vaccinePage } from '../content/vaccine-schedule-page';
 import type { PlannedVisit } from '../types/vaccine-schedule.types';
 import { TimelineVisit } from './timeline-visit';
@@ -10,7 +11,7 @@ export function DoneVisits({ visits, birthDate }: { visits: PlannedVisit[]; birt
   const text = vaccinePage.result;
 
   return (
-    <details className="rounded-2xl border border-ink-200 bg-white p-4 sm:p-5 print:hidden">
+    <SiteCard as="details" tone="whiteFaint" padding="sm" className="print:hidden">
       <summary className="cursor-pointer text-[15px] font-semibold">{text.doneSummary.replace('{n}', String(visits.length))}</summary>
       <p className="mt-2 text-[13px] text-site-muted">{text.doneNote}</p>
       <ol className="ml-2 mt-4 border-l-2 border-ink-100">
@@ -18,6 +19,6 @@ export function DoneVisits({ visits, birthDate }: { visits: PlannedVisit[]; birt
           <TimelineVisit key={visit.key} visit={visit} birthDate={birthDate} />
         ))}
       </ol>
-    </details>
+    </SiteCard>
   );
 }

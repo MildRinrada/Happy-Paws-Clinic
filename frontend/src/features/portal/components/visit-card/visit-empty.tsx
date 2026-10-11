@@ -7,10 +7,10 @@ export function VisitEmpty() {
   const { title, body, book } = visitCard.empty;
 
   return (
-    <section className="max-w-[420px] space-y-3 rounded-2xl bg-site-teal p-5 text-white shadow-sm">
-      <h2 className="text-base font-semibold">{title}</h2>
-      <p className="text-sm text-white/90">{body}</p>
-      <Link href={book.href} className={`${solidButton} w-full`}>
+    <section className="rounded-2xl bg-brand-800 p-5">
+      <h2 className="font-display text-base font-semibold leading-6 text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-[22px] text-brand-100">{body}</p>
+      <Link href={book.href} className={`${solidButton} mt-4 w-full`}>
         {book.label}
       </Link>
     </section>

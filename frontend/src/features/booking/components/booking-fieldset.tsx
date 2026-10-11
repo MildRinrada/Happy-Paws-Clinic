@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export function BookingFieldset({ legend, children }: { legend: string; children: ReactNode }) {
   return (
     <fieldset className="space-y-2">
-      <legend className="mb-2 text-sm font-semibold text-ink-900">{legend}</legend>
+      <legend className="mb-2.5 text-[15px] font-semibold text-site-forest">{legend}</legend>
       {children}
     </fieldset>
   );

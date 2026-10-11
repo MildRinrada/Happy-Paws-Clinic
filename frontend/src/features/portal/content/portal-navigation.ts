@@ -17,10 +17,13 @@ export const PORTAL_HOME_HREF = '/portal';
 
 export const portalPaths = {
   book: '/portal/book',
+  /** The booking form with one pet already chosen. */
+  bookFor: (petId: string) => `/portal/book?pet=${encodeURIComponent(petId)}`,
   notifications: '/portal/notifications',
   messages: '/portal/messages',
   account: '/portal/account',
   pets: '/portal/pets',
+  pet: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}`,
   editPet: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/edit`,
   petDocuments: (petId: string) => `/portal/pets/${encodeURIComponent(petId)}/documents`,
   packages: '/portal/packages',

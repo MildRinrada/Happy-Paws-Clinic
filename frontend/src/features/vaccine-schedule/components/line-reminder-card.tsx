@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- the QR code is a data URL drawn on the server; next/image has nothing to optimise. */
 import { LineIcon } from '@/components/layout/site-footer/icons/line-icon';
+import { SiteCard } from '@/components/site/site-card';
 import { vaccinePage } from '../content/vaccine-schedule-page';
 import type { LineLink } from '../types/vaccine-schedule.types';
 
@@ -11,7 +12,7 @@ export function LineReminderCard({ line }: { line: LineLink }) {
   const text = vaccinePage.actions.line;
 
   return (
-    <li className="flex flex-col rounded-2xl bg-line-green p-5 text-white sm:p-6 lg:col-span-2 lg:flex-row lg:items-center lg:gap-8">
+    <SiteCard as="li" tone="line" padding="lg" className="flex flex-col lg:col-span-2 lg:flex-row lg:items-center lg:gap-8">
       <div className="flex-1">
         <h3 className="text-xl font-bold leading-tight">{text.title}</h3>
         <p className="mt-2 text-[15px] leading-relaxed text-white/95">{text.detail}</p>
@@ -39,6 +40,6 @@ export function LineReminderCard({ line }: { line: LineLink }) {
           <figcaption className="mt-2 text-[13px]">{text.qrCaption}</figcaption>
         </figure>
       )}
-    </li>
+    </SiteCard>
   );
 }

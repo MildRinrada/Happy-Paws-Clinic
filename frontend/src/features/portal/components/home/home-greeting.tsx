@@ -1,11 +1,12 @@
 import { portalHome } from '../../content/portal-home';
+import { firstNameOf } from '../../lib/first-name';
 
-/** "สวัสดี คุณ..." at the top of the portal's home. */
+/** "สวัสดี คุณสมใจ" at the top of the portal's home, by first name, and the line under it. */
 export function HomeGreeting({ name }: { name: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink-900">{portalHome.greeting(name)}</h1>
-      <p className="mt-1 text-sm text-site-muted">{portalHome.intro}</p>
+      <h1 className="font-display text-2xl font-semibold leading-[30px] text-ink-900">{portalHome.greeting(firstNameOf(name))}</h1>
+      <p className="mt-0.5 text-sm leading-[22px] text-ink-600">{portalHome.intro}</p>
     </div>
   );
 }

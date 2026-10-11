@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
+import { SiteContainer } from '@/components/layout/site-container';
 import { WalkInWait } from '@/features/wait-estimate/components/walk-in-wait';
 import { hero } from '../../content/hero';
 import { NextFreeTime } from '../next-free/next-free-time';
-import { SectionContainer } from '../shared/section-container';
 import { HeroActions } from './hero-actions';
 import { HeroHeading } from './hero-heading';
 import { HeroImage } from './hero-image';
@@ -17,7 +17,7 @@ import { SocialProof } from './social-proof';
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-site-teal text-white">
-      <SectionContainer>
+      <SiteContainer>
         {/* The text keeps to the left so the banner has the right of the section to itself. */}
         <div className="relative z-10 py-12 lg:w-[54%] lg:py-16 xl:w-[58%] xl:pb-[72px] xl:pt-[76px]">
           <HeroHeading />
@@ -44,7 +44,7 @@ export function HeroSection() {
             </Suspense>
           </div>
         </div>
-      </SectionContainer>
+      </SiteContainer>
 
       <HeroImage />
     </section>

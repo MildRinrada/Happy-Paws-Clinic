@@ -1,4 +1,5 @@
 import { useId, type FormEvent } from 'react';
+import { ctaLinkLook } from '@/components/ui/cta-link';
 import { speciesChoices, vaccinePage } from '../content/vaccine-schedule-page';
 import type { InputErrors } from '../lib/validate-input';
 import type { Species } from '../types/vaccine-schedule.types';
@@ -74,7 +75,7 @@ export function PlannerForm(props: Props) {
 
       <button
         type="submit"
-        className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-site-orange px-5 text-base font-bold text-white transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-teal"
+        className={`w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-teal ${ctaLinkLook('solidInk', 'lg')}`}
       >
         {text.submit}
       </button>

@@ -1,5 +1,6 @@
-import type { DayHours, Weekday } from '@/features/clinic/types/clinic.types';
+import { SiteCard } from '@/components/site/site-card';
 import { WEEKDAY_LABELS } from '@/features/clinic/lib/weekdays';
+import type { DayHours, Weekday } from '@/features/clinic/types/clinic.types';
 import { aboutVisit } from '../content/about-page';
 
 interface OpeningHoursTableProps {
@@ -11,7 +12,7 @@ interface OpeningHoursTableProps {
 /** The week, Monday first, one row per day. */
 export function OpeningHoursTable({ days, today }: OpeningHoursTableProps) {
   return (
-    <dl className="divide-y divide-site-border/50 overflow-hidden rounded-2xl border border-site-border/60 bg-white">
+    <SiteCard as="dl" tone="whiteSoft" padding="none" className="divide-y divide-site-border/50 overflow-hidden">
       {days.map((day) => {
         const isToday = day.day === today;
         const hours =
@@ -36,6 +37,6 @@ export function OpeningHoursTable({ days, today }: OpeningHoursTableProps) {
           </div>
         );
       })}
-    </dl>
+    </SiteCard>
   );
 }

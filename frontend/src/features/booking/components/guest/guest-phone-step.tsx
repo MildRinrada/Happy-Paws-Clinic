@@ -4,6 +4,10 @@ import { useId, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { SignInField } from '@/features/authentication/components/sign-in/sign-in-field';
 import { guestBookingPage } from '../../content/guest-booking-page';
+import { StepActions } from '../frame/step-actions';
+import { StepBackButton } from '../frame/step-back-button';
+import { StepCard } from '../frame/step-card';
+import { StepNextButton } from '../frame/step-next-button';
 import { PickedTimeSummary, type PickedSummary } from './picked-time-summary';
 
 interface GuestPhoneStepProps {
@@ -28,48 +32,40 @@ export function GuestPhoneStep({ summary, defaultPhone, onSubmit, sending, error
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5" noValidate>
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-ink-900">{text.title}</h2>
-        <p className="text-sm text-site-muted">{text.lead}</p>
-      </div>
+    <StepCard title={text.title} lead={text.lead}>
+      <form onSubmit={submit} className="space-y-5" noValidate>
+        <PickedTimeSummary summary={summary} />
 
-      <PickedTimeSummary summary={summary} />
+        {error && <Alert>{error}</Alert>}
 
-      {error && <Alert>{error}</Alert>}
+        <SignInField
+          id={phoneId}
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          label={text.label}
+          hint={text.hint}
+          placeholder={text.placeholder}
+          defaultValue={defaultPhone}
+          maxLength={32}
+          required
+          autoFocus
+        />
 
-      <SignInField
-        id={phoneId}
-        name="phone"
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        label={text.label}
-        hint={text.hint}
-        placeholder={text.placeholder}
-        defaultValue={defaultPhone}
-        maxLength={32}
-        required
-        autoFocus
-      />
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button
-          type="submit"
-          disabled={sending}
-          className="h-12 flex-1 rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {sending ? text.submitting : text.submit}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={sending}
-          className="h-12 rounded-xl border border-ink-200 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50"
-        >
-          {text.back}
-        </button>
-      </div>
-    </form>
+        <StepActions
+          back={
+            <StepBackButton onClick={onBack} disabled={sending}>
+              {text.back}
+            </StepBackButton>
+          }
+          next={
+            <StepNextButton type="submit" disabled={sending}>
+              {sending ? text.submitting : text.submit}
+            </StepNextButton>
+          }
+        />
+      </form>
+    </StepCard>
   );
 }

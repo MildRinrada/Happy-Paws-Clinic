@@ -1,4 +1,4 @@
-import type { HeroAction } from '@/features/home/types/home.types';
+import type { DotColor } from '@/components/site/dot-chip';
 
 /**
  * Everything the public "บริการและราคา" page says that does not come from the API. The services,
@@ -12,11 +12,11 @@ export const servicesMeta = {
     'ราคาและระยะเวลาของบริการตรวจสุขภาพ วัคซีน ทันตกรรม ผ่าตัด แล็บ และกรูมมิ่ง ดูราคาก่อนมา แล้วเลือกจองบริการที่ต้องการได้ทันที',
 };
 
-export const servicesHero = {
-  eyebrow: 'บริการและราคา',
-  heading: 'รู้ราคาก่อนมา เลือกบริการแล้วจองได้เลย',
-  lead: 'ทุกบริการที่จองออนไลน์ได้ พร้อมราคาและเวลาที่ใช้ กดจองที่บริการไหนก็ได้ ระบบจะเลือกบริการนั้นไว้ให้',
-};
+/**
+ * What the banner's empty picture slot says when the banner has no picture. The banner's words,
+ * buttons and picture are in `features/site-banners/content/page-banners.ts`, under `services`.
+ */
+export const servicesBannerSlotLabel = 'รูป banner (สัตวแพทย์ตรวจสุนัข)';
 
 export const servicesPage = {
   navLabel: 'ไปที่หมวด',
@@ -25,6 +25,12 @@ export const servicesPage = {
   /** The clinic has not opened any service for online booking. */
   empty: 'ยังไม่มีบริการที่เปิดให้จองออนไลน์ โทรสอบถามหรือนัดผ่านคลินิกได้',
   contactLink: { label: 'ดูช่องทางติดต่อ', href: '/contact' },
+  /** At the right of a category's heading. */
+  serviceCount: (count: number) => `${count} บริการ`,
+  /** At the right of a category with nothing to book online. */
+  askByPhone: 'โทรสอบถาม',
+  /** Read out after "โทรสอบถาม", so each category's link says what it is about. */
+  askAbout: (category: string) => `เรื่อง${category}`,
 };
 
 /** One line under a category's name. A category missing here simply shows no line. */
@@ -35,6 +41,16 @@ export const categoryBlurbs: Partial<Record<string, string>> = {
   surgery: 'การผ่าตัดและการทำหมัน',
   lab: 'ตรวจเลือด ตรวจปัสสาวะ และแล็บอื่น ๆ',
   grooming: 'อาบน้ำ ตัดขน และดูแลความสะอาด',
+};
+
+/** The dot on each category's chip in the bar under the banner. A category missing here gets `brand`. */
+export const categoryDots: Partial<Record<string, DotColor>> = {
+  checkup: 'teal',
+  vaccine: 'orange',
+  dental: 'violet',
+  surgery: 'alert',
+  lab: 'brand',
+  grooming: 'sun',
 };
 
 export const serviceCard = {
@@ -49,19 +65,16 @@ export const serviceCard = {
   branchesOnly: 'มีที่',
 };
 
-/** Under the menu: what the prices mean, and what to do about a service not listed. */
-export const servicesNote = {
-  heading: 'เรื่องราคา',
-  lines: [
-    'ราคาที่แสดงเป็นราคาตั้งของบริการ ค่าใช้จ่ายจริงขึ้นกับการตรวจ ยา และการรักษาที่น้องได้รับ',
-    'หน้านี้แสดงเฉพาะบริการที่จองออนไลน์ได้ บริการอื่นสอบถามหรือนัดผ่านคลินิกได้',
-  ],
-};
+/** One line under the last category: what the prices mean, and what is not listed. */
+export const servicesNote =
+  'ราคาที่แสดงเป็นราคาตั้งต้น ค่าใช้จ่ายจริงขึ้นกับการตรวจ ยา และการรักษาที่น้องได้รับ หน้านี้แสดงเฉพาะบริการที่จองออนไลน์ได้';
 
-/** The orange band that closes the page. */
+/** The orange box that closes the page. */
 export const servicesCta = {
-  heading: 'ไม่แน่ใจว่าน้องต้องใช้บริการไหน?',
-  lead: 'ติดต่อคลินิกให้ช่วยเลือก หรือจองนัดไว้ก่อนแล้วคุยกับสัตวแพทย์ที่คลินิก',
-  primaryAction: { label: 'จองนัดหมาย', href: '/book' } satisfies HeroAction,
-  secondaryAction: { label: 'ติดต่อคลินิก', href: '/contact' } satisfies HeroAction,
+  heading: 'ไม่แน่ใจว่าน้องต้องใช้บริการไหน',
+  lead: 'ทักแชทหรือโทรถามคลินิกได้ เราช่วยเลือกบริการและเวลาที่เหมาะให้',
+  line: 'ทักแชท LINE',
+  call: (number: string) => `โทร ${number}`,
+  /** When the clinic has set neither a phone nor a LINE account. */
+  fallback: { label: 'ดูช่องทางติดต่อ', href: '/contact' },
 };

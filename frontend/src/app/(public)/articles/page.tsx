@@ -1,29 +1,37 @@
 import { SiteContainer } from '@/components/layout/site-container';
-import { ArticleCardList } from '@/features/articles/components/article-card-list';
-import { loadArticles } from '@/features/articles/lib/load-articles';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
+import { ArticleListing } from '@/features/articles/components/list/article-listing';
+import { ArticlesCta } from '@/features/articles/components/list/articles-cta';
+import { ArticlesHeading } from '@/features/articles/components/list/articles-heading';
+import { articlesMeta } from '@/features/articles/content/articles-page';
+import { loadArticleList } from '@/features/articles/lib/load-article-list';
+import { readArticleListQuery } from '@/features/articles/lib/read-article-list-query';
 import { BreadcrumbJsonLd } from '@/features/seo/components/breadcrumb-json-ld';
 import { sitePages } from '@/features/seo/content/seo';
 import { pageMetadata } from '@/features/seo/lib/page-metadata';
 
-export const metadata = pageMetadata({
-  title: 'บทความจากทีมสัตวแพทย์ | Happy Paws Clinic',
-  description: 'บทความสุขภาพสุนัขและแมวจากทีมสัตวแพทย์ อ่านก่อนพาน้องมาคลินิก',
-  path: sitePages.articles.path,
-});
+export const metadata = pageMetadata({ ...articlesMeta, path: sitePages.articles.path });
 
-/** Every published article, newest first. The API caps a page at 50, which is plenty for now. */
-export default async function ArticlesPage() {
-  const articles = await loadArticles(50);
+interface Props {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/**
+ * Published articles, newest first: a heading with a search box, the newest article large, the
+ * rest in a grid, and a grey band to book or get in touch. `?q=` searches, and `?tag=` and
+ * `?cursor=` are ready for topics and paging. Everything is read through `loadArticleList`, on
+ * each request, so a new article shows at once.
+ */
+export default async function ArticlesPage({ searchParams }: Props) {
+  const query = readArticleListQuery(await searchParams);
+  const list = await loadArticleList(query);
 
   return (
-    <main className="py-12">
-      <SiteContainer>
-        <div className="max-w-[720px]">
-          <SectionHeading id="articles-heading">บทความจากทีมสัตวแพทย์</SectionHeading>
-          <ArticleCardList articles={articles} />
-        </div>
+    <main>
+      <ArticlesHeading q={query.q} tag={query.tag} />
+      <SiteContainer className="pb-16">
+        <ArticleListing list={list} query={query} />
       </SiteContainer>
+      <ArticlesCta />
 
       <BreadcrumbJsonLd trail={[sitePages.articles]} />
     </main>

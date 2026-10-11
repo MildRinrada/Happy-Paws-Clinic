@@ -5,7 +5,7 @@ import { hero } from '../../content/hero';
 export function HeroActions() {
   return (
     <div className="flex flex-wrap gap-4 xl:gap-7">
-      <CtaLink href={hero.primaryAction.href} size="lg">
+      <CtaLink href={hero.primaryAction.href} variant="solidInk" size="lg">
         {hero.primaryAction.label}
       </CtaLink>
       <CtaLink href={hero.secondaryAction.href} size="lg" variant="glass">

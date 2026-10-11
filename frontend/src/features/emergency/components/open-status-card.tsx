@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { emergencyPage } from '../content/emergency-page';
 import { openingDay } from '../lib/opening-day';
 import type { BranchOpenStatus } from '../types/emergency.types';
@@ -16,7 +17,7 @@ export function OpenStatusCard({ status }: { status: BranchOpenStatus }) {
         : text.noOpening;
 
   return (
-    <li className="rounded-2xl border border-site-border/60 bg-white p-5">
+    <SiteCard as="li" tone="whiteSoft">
       {status.branchName && <p className="mb-2 font-bold text-ink-900">{status.branchName}</p>}
       <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span
@@ -28,6 +29,6 @@ export function OpenStatusCard({ status }: { status: BranchOpenStatus }) {
         <span className="text-[15px] font-semibold text-ink-900">{detail}</span>
       </p>
       {status.holiday && <p className="mt-2 text-sm text-site-muted">{text.holiday(status.holiday)}</p>}
-    </li>
+    </SiteCard>
   );
 }

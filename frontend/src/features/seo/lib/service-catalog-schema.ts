@@ -28,7 +28,14 @@ function offer(service: PublicService, categoryName: string, provider: JsonLdObj
       priced && min !== max
         ? { '@type': 'PriceSpecification', priceCurrency: 'THB', minPrice: price(min), maxPrice: price(max) }
         : undefined,
-    itemOffered: { '@type': 'Service', name: service.name, category: categoryName, provider },
+    itemOffered: compact({
+      '@type': 'Service',
+      name: service.name,
+      // Not in the API yet; left out until it is.
+      description: service.description,
+      category: categoryName,
+      provider,
+    }),
   });
 }
 
@@ -44,10 +51,13 @@ export function serviceCatalogSchema(menu: ServiceMenu, clinicName: string): Jso
     '@type': 'OfferCatalog',
     name: sitePages.services.name,
     url: absoluteUrl(sitePages.services.path),
-    itemListElement: menu.categories.map((category) => ({
-      '@type': 'OfferCatalog',
-      name: category.name,
-      itemListElement: category.services.map((service) => offer(service, category.name, provider)),
-    })),
+    // A category with nothing to book online has no offers to list.
+    itemListElement: menu.categories
+      .filter((category) => category.services.length > 0)
+      .map((category) => ({
+        '@type': 'OfferCatalog',
+        name: category.name,
+        itemListElement: category.services.map((service) => offer(service, category.name, provider)),
+      })),
   };
 }

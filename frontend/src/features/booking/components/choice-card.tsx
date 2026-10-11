@@ -13,8 +13,8 @@ interface ChoiceCardProps {
 export function ChoiceCard({ name, value, checked, onChange, title, detail }: ChoiceCardProps) {
   return (
     <label
-      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition ${
-        checked ? 'border-site-teal bg-brand-50' : 'border-ink-200 bg-white hover:border-ink-300'
+      className={`flex cursor-pointer items-start gap-3 rounded-[11px] border p-3.5 transition ${
+        checked ? 'border-site-forest bg-site-soft ring-1 ring-site-forest' : 'border-ink-200 bg-white hover:border-site-forest'
       }`}
     >
       <input
@@ -23,10 +23,10 @@ export function ChoiceCard({ name, value, checked, onChange, title, detail }: Ch
         value={value}
         checked={checked}
         onChange={() => onChange(value)}
-        className="mt-1 accent-site-teal"
+        className="mt-1 accent-site-forest"
       />
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-ink-900">{title}</span>
+        <span className="block text-[15px] font-semibold text-ink-900">{title}</span>
         {detail && <span className="mt-0.5 block text-xs text-site-muted">{detail}</span>}
       </span>
     </label>

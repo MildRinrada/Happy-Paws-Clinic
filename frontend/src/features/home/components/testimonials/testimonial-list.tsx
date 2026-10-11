@@ -1,9 +1,9 @@
 import Link from 'next/link';
+import { SectionHeading } from '@/components/site/section-heading';
 import { ReviewCardList } from '@/features/reviews/components/public/review-card-list';
 import { reviewPaths } from '@/features/reviews/lib/review-paths';
 import type { PublicReview } from '@/features/reviews/types/review.types';
 import { testimonialsHeading, testimonialsMore } from '../../content/testimonials';
-import { SectionHeading } from '../shared/section-heading';
 
 /**
  * The reviews column: a heading, the newest published reviews in the owners' own words, and a link

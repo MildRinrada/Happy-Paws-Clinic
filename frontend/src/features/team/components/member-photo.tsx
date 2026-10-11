@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- photo_url is a short-lived signed link from the API, not a file next/image can optimise. */
 import { useState } from 'react';
-import { ImageSlot } from '@/components/shared/image-slot';
+import { ImageSlot, type ImageSlotTone } from '@/components/shared/image-slot';
 import type { TeamMember } from '../types/team.types';
 
 interface MemberPhotoProps {
@@ -12,6 +12,8 @@ interface MemberPhotoProps {
   sizes: string;
   /** Size and shape of the frame. It must give the frame a height. */
   className: string;
+  /** How the empty frame is filled. The site's light grey when left out. */
+  tone?: ImageSlotTone;
 }
 
 /**
@@ -20,7 +22,7 @@ interface MemberPhotoProps {
  * empty frame. A link that stops working, say on a page left open past the hour, falls back the
  * same way instead of showing a broken picture.
  */
-export function MemberPhoto({ member, label, sizes, className }: MemberPhotoProps) {
+export function MemberPhoto({ member, label, sizes, className, tone }: MemberPhotoProps) {
   const [failed, setFailed] = useState(false);
 
   if (member.photo_url && !failed) {
@@ -37,5 +39,7 @@ export function MemberPhoto({ member, label, sizes, className }: MemberPhotoProp
     );
   }
 
-  return <ImageSlot src={member.photo_path} alt={member.display_name} label={label} sizes={sizes} className={className} />;
+  return (
+    <ImageSlot src={member.photo_path} alt={member.display_name} label={label} sizes={sizes} tone={tone} className={className} />
+  );
 }

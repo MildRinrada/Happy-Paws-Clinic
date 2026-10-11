@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { vaccinePage } from '../content/vaccine-schedule-page';
 import type { SpeciesPlan } from '../types/vaccine-schedule.types';
 
@@ -9,7 +10,7 @@ export function GeneralPlanCard({ plan }: { plan: SpeciesPlan }) {
     ids.map((id) => plan.vaccines.find((vaccine) => vaccine.id === id)?.name).filter(Boolean).join(' และ ');
 
   return (
-    <section aria-labelledby={`general-${plan.species}`} className="rounded-2xl border border-site-border bg-white p-5 sm:p-6">
+    <SiteCard as="section" padding="lg" ariaLabelledBy={`general-${plan.species}`}>
       <h3 id={`general-${plan.species}`} className="text-lg font-bold">
         {text.generalHeading.replace('{pet}', plan.label)}
       </h3>
@@ -31,6 +32,6 @@ export function GeneralPlanCard({ plan }: { plan: SpeciesPlan }) {
           </li>
         ))}
       </ul>
-    </section>
+    </SiteCard>
   );
 }

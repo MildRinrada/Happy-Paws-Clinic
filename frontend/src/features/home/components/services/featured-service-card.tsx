@@ -1,4 +1,5 @@
 import { ImageSlot } from '@/components/shared/image-slot';
+import { SiteCard } from '@/components/site/site-card';
 import type { FeaturedService } from '../../types/home.types';
 import { ServiceTag } from './service-tag';
 
@@ -7,7 +8,7 @@ export function FeaturedServiceCard({ service }: { service: FeaturedService }) {
   return (
     // A column, so the tags sit on the card's bottom edge and line up across a row of cards
     // whatever the length of each description.
-    <li className="flex flex-col overflow-hidden rounded-2xl border border-site-border bg-white">
+    <SiteCard as="li" padding="none" className="flex flex-col overflow-hidden">
       <ImageSlot
         src={service.image.src}
         alt={service.image.alt}
@@ -36,6 +37,6 @@ export function FeaturedServiceCard({ service }: { service: FeaturedService }) {
           ))}
         </ul>
       </div>
-    </li>
+    </SiteCard>
   );
 }

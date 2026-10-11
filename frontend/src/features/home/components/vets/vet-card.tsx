@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SiteCard } from '@/components/site/site-card';
 import { MemberPhoto } from '@/features/team/components/member-photo';
 import { memberHref, memberSummary } from '@/features/team/lib/team-text';
 import type { TeamMember } from '@/features/team/types/team.types';
@@ -8,7 +9,7 @@ import { JobTitleBadge } from './job-title-badge';
 /** One vet: photo, name, field and years, their title, and a link to them on the team page. */
 export function VetCard({ vet }: { vet: TeamMember }) {
   return (
-    <li className="overflow-hidden rounded-2xl border border-site-border bg-white">
+    <SiteCard as="li" padding="none" className="overflow-hidden">
       <MemberPhoto
         member={vet}
         label="รูปสัตวแพทย์"
@@ -27,6 +28,6 @@ export function VetCard({ vet }: { vet: TeamMember }) {
           </Link>
         </div>
       </div>
-    </li>
+    </SiteCard>
   );
 }

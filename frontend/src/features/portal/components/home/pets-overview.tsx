@@ -1,39 +1,45 @@
 import { portalHome } from '../../content/portal-home';
-import { portalNavLinks } from '../../content/portal-navigation';
+import { portalPaths } from '../../content/portal-navigation';
+import { alivePetsFirst } from '../../lib/order-pets';
+import { toneOfPet } from '../../lib/pet-tone';
 import type { MyPet } from '../../types/portal.types';
 import { EmptyLine } from '../shared/empty-line';
-import { PetAvatar } from '../shared/pet-avatar';
-import { SectionCard } from '../shared/section-card';
+import { MoreLink } from '../shared/more-link';
+import { PetTile } from './pet-tile';
 
-const petsHref = portalNavLinks.find((link) => link.icon === 'paw')?.href ?? '/portal/pets';
+/** How many pets the home page shows. An account with more has them all one tap away on the pets page. */
+const SHOWN = 6;
 
-/** The owner's pets in one line each: photo, name, species and the latest weight. */
+/**
+ * The owner's pets, two to a row, living ones first, and the way to the pets page. The circles take
+ * turns in yellow and mint (`toneOfPet`), so two pets side by side are told apart at a glance, and
+ * each pet keeps its colour on its own page.
+ */
 export function PetsOverview({ pets }: { pets: MyPet[] }) {
   const text = portalHome.pets;
+  const ids = pets.map((pet) => pet.id);
+  const shown = alivePetsFirst(pets).slice(0, SHOWN);
 
   return (
-    <SectionCard title={text.title} more={pets.length > 0 ? { label: text.more, href: petsHref } : undefined}>
+    <section>
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <h2 className="font-display text-base font-semibold leading-6 text-ink-900">{text.title}</h2>
+        {pets.length > 0 && <MoreLink label={text.more} href={portalPaths.pets} />}
+      </div>
+
       {pets.length === 0 ? (
-        <EmptyLine>{text.empty}</EmptyLine>
+        <div className="rounded-2xl border border-ink-200 bg-white p-4">
+          <EmptyLine>{text.empty}</EmptyLine>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {pets.map((pet) => (
-            <li key={pet.id} className="flex items-center gap-3">
-              <PetAvatar name={pet.name} photoUrl={pet.photo_url} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink-900">{pet.name}</p>
-                <p className="truncate text-xs text-site-muted">
-                  {[pet.species, pet.breed].filter(Boolean).join(' ')}
-                  {pet.is_deceased && ` (${text.deceased})`}
-                </p>
-              </div>
-              {pet.latest_weight && (
-                <span className="shrink-0 text-sm text-ink-700">{text.weight(pet.latest_weight.weight_kg)}</span>
-              )}
+        <ul className="grid grid-cols-2 gap-2.5">
+          {shown.map((pet) => (
+            <li key={pet.id}>
+              <PetTile pet={pet} tone={toneOfPet(ids, pet.id)} />
             </li>
           ))}
         </ul>
       )}
-    </SectionCard>
+    </section>
   );
 }

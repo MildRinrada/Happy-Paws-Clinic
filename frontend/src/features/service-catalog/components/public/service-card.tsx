@@ -1,10 +1,12 @@
-import { CtaLink } from '@/components/ui/cta-link';
-import { ServiceTag } from '@/features/home/components/services/service-tag';
+import { CardDivider } from '@/components/site/card-divider';
+import { MetaPill } from '@/components/site/meta-pill';
+import { SiteCard } from '@/components/site/site-card';
 import { serviceCard } from '../../content/services-page';
 import { formatDuration } from '../../lib/service-price';
 import type { PublicService } from '../../types/service.types';
+import { BookServiceLink } from './book-service-link';
 import { PriceTierList } from './price-tier-list';
-import { ServicePriceLabel } from './service-price-label';
+import { ServicePrice } from './service-price';
 
 interface Props {
   service: PublicService;
@@ -12,35 +14,36 @@ interface Props {
 }
 
 /**
- * One service: name and price, how long it takes, which branches have it, prices by species and
- * weight when there are some, and a button that opens booking with this service already chosen.
+ * One service: name and how long it takes, what it includes when the clinic has said, prices by
+ * species and weight when there are some, which branches have it when not all do, then the price
+ * and a button that opens booking with this service already chosen.
  */
 export function ServiceCard({ service, branchNames }: Props) {
   const branches = service.branch_ids.map((id) => branchNames[id]).filter(Boolean);
 
   return (
-    // A column, so the buttons sit on the cards' bottom edge and line up across a row.
-    <li className="flex flex-col rounded-2xl border border-site-border bg-white p-5">
-      <div className="flex items-start justify-between gap-4">
-        <h3 className="text-lg font-bold leading-tight">{service.name}</h3>
-        <ServicePriceLabel service={service} />
+    // A column, so the price and button sit on the card's bottom edge and line up across a row.
+    <SiteCard as="li" tone="muted" className="flex flex-col">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-[17px] font-semibold leading-snug text-ink-900">{service.name}</h3>
+        <MetaPill className="shrink-0">{formatDuration(service.duration_minutes)}</MetaPill>
       </div>
 
-      <ul className="mt-3 flex flex-wrap gap-2">
-        <ServiceTag tag={{ label: formatDuration(service.duration_minutes), tone: 'neutral' }} />
-        {branches.length > 0 && (
-          <ServiceTag tag={{ label: `${serviceCard.branchesOnly} ${branches.join(', ')}`, tone: 'notice' }} />
-        )}
-      </ul>
-
+      {service.description && <p className="mt-3 text-[13px] leading-[22px] text-ink-700">{service.description}</p>}
       {service.price_tiers.length > 0 && <PriceTierList service={service} />}
+      {branches.length > 0 && (
+        <p className="mt-2 text-[13px] text-[#b57a14]">
+          {serviceCard.branchesOnly} {branches.join(', ')}
+        </p>
+      )}
 
-      <div className="mt-auto pt-5">
-        <CtaLink href={serviceCard.bookHref(service.id)} className="w-full">
-          {serviceCard.book}
-          <span className="sr-only"> {service.name}</span>
-        </CtaLink>
+      <div className="mt-auto pt-4">
+        <CardDivider />
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+          <ServicePrice service={service} />
+          <BookServiceLink service={service} />
+        </div>
       </div>
-    </li>
+    </SiteCard>
   );
 }

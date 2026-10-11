@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { visitCard } from '../../content/visit-card';
 import { CheckInButton } from './check-in-button';
-import { outlineButton } from './visit-button-styles';
+import { outlineButton, solidButton } from './visit-button-styles';
 
 interface VisitActionsProps {
   appointmentId?: string;
@@ -12,24 +12,38 @@ interface VisitActionsProps {
   canReschedule: boolean;
 }
 
-/** The row of buttons at the bottom of the card. Each shows only when it can be used. */
+/**
+ * The buttons at the bottom of the card, two to a row. The one to press now is solid white:
+ * check-in while it is open, otherwise the chat. Beside the chat goes "เลื่อนนัด" while the
+ * appointment can still be moved online, and "ดูนัดหมาย" after that. With an odd number of
+ * buttons the first takes the whole row.
+ */
 export function VisitActions({ appointmentId, canCheckIn, canReschedule }: VisitActionsProps) {
   const [error, setError] = useState<string>();
 
+  const checkIn = canCheckIn && appointmentId !== undefined;
+  const second = appointmentId
+    ? canReschedule
+      ? { label: visitCard.reschedule.label, href: visitCard.reschedule.href(appointmentId) }
+      : visitCard.appointments
+    : undefined;
+  const count = Number(checkIn) + 1 + Number(second !== undefined);
+  const wide = count % 2 === 1 ? 'col-span-2' : '';
+
   return (
     <div>
-      <div className="flex gap-3">
-        {canCheckIn && appointmentId && <CheckInButton appointmentId={appointmentId} onError={setError} />}
+      <div className="grid grid-cols-2 gap-3">
+        {checkIn && appointmentId && <CheckInButton appointmentId={appointmentId} onError={setError} className={wide} />}
 
-        {canReschedule && appointmentId && (
-          <Link href={visitCard.reschedule.href(appointmentId)} className={outlineButton}>
-            {visitCard.reschedule.label}
-          </Link>
-        )}
-
-        <Link href={visitCard.chat.href} className={outlineButton}>
+        <Link href={visitCard.chat.href} className={checkIn ? outlineButton : `${solidButton} ${wide}`}>
           {visitCard.chat.label}
         </Link>
+
+        {second && (
+          <Link href={second.href} className={outlineButton}>
+            {second.label}
+          </Link>
+        )}
       </div>
 
       {error && (

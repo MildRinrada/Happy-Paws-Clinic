@@ -1,10 +1,11 @@
+import { SiteCard } from '@/components/site/site-card';
 import type { ClinicContact } from '@/features/clinic/types/contact.types';
 import { contactPage } from '../content/contact-page';
 
 /** One map entry: the live map when it has an embed, the address, and the link out to Google Maps. */
 export function MapPanel({ map, title }: { map: ClinicContact; title?: string }) {
   return (
-    <figure className="overflow-hidden rounded-2xl border border-site-border/60 bg-white">
+    <SiteCard as="figure" tone="whiteSoft" padding="none" className="overflow-hidden">
       {map.embed_url && (
         <iframe
           src={map.embed_url}
@@ -23,6 +24,6 @@ export function MapPanel({ map, title }: { map: ClinicContact; title?: string })
           </a>
         )}
       </figcaption>
-    </figure>
+    </SiteCard>
   );
 }

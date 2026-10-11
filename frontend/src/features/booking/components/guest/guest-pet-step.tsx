@@ -6,6 +6,9 @@ import { Alert } from '@/components/ui/alert';
 import { guestBookingPage } from '../../content/guest-booking-page';
 import type { GuestPet, NewPet } from '../../types/booking.types';
 import { ChoiceCard } from '../choice-card';
+import { StepActions } from '../frame/step-actions';
+import { StepCard } from '../frame/step-card';
+import { StepNextButton } from '../frame/step-next-button';
 import { NewPetFields } from './new-pet-fields';
 import { PickedTimeSummary, type PickedSummary } from './picked-time-summary';
 
@@ -57,68 +60,64 @@ export function GuestPetStep({ summary, pets, onBook, submitting, error, pickAga
   }
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-ink-900">{text.title}</h2>
-        <p className="text-sm text-site-muted">{pets.length > 0 ? text.welcomeBack : text.welcomeNew}</p>
+    <StepCard title={text.title} lead={pets.length > 0 ? text.welcomeBack : text.welcomeNew}>
+      <div className="space-y-5">
+        <Alert tone="success">{text.signedIn}</Alert>
+
+        <PickedTimeSummary summary={summary} />
+
+        {pets.length > 0 && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {pets.map((pet) => (
+              <ChoiceCard
+                key={pet.id}
+                name={groupName}
+                value={pet.id}
+                checked={choice === pet.id}
+                onChange={setChoice}
+                title={pet.name}
+                detail={pet.species}
+              />
+            ))}
+            <ChoiceCard name={groupName} value={NEW} checked={choice === NEW} onChange={setChoice} title={text.newPet} detail={text.newPetDetail} />
+          </div>
+        )}
+
+        {choice === NEW && (
+          <NewPetFields
+            value={newPet}
+            speciesChoice={speciesChoice}
+            onChange={(value, species) => {
+              setNewPet(value);
+              setSpeciesChoice(species);
+            }}
+          />
+        )}
+
+        {missing && <Alert>{text.missingPet}</Alert>}
+
+        {error && (
+          <Alert>
+            {error}
+            {pickAgainHref && (
+              <>
+                {' '}
+                <Link href={pickAgainHref} className="font-semibold underline">
+                  {text.pickAgain}
+                </Link>
+              </>
+            )}
+          </Alert>
+        )}
       </div>
 
-      <Alert tone="success">{text.signedIn}</Alert>
-
-      <PickedTimeSummary summary={summary} />
-
-      {pets.length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {pets.map((pet) => (
-            <ChoiceCard
-              key={pet.id}
-              name={groupName}
-              value={pet.id}
-              checked={choice === pet.id}
-              onChange={setChoice}
-              title={pet.name}
-              detail={pet.species}
-            />
-          ))}
-          <ChoiceCard name={groupName} value={NEW} checked={choice === NEW} onChange={setChoice} title={text.newPet} detail={text.newPetDetail} />
-        </div>
-      )}
-
-      {choice === NEW && (
-        <NewPetFields
-          value={newPet}
-          speciesChoice={speciesChoice}
-          onChange={(value, species) => {
-            setNewPet(value);
-            setSpeciesChoice(species);
-          }}
-        />
-      )}
-
-      {missing && <Alert>{text.missingPet}</Alert>}
-
-      {error && (
-        <Alert>
-          {error}
-          {pickAgainHref && (
-            <>
-              {' '}
-              <Link href={pickAgainHref} className="font-semibold underline">
-                {text.pickAgain}
-              </Link>
-            </>
-          )}
-        </Alert>
-      )}
-
-      <button
-        type="button"
-        onClick={book}
-        disabled={submitting}
-        className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting ? text.submitting : text.submit}
-      </button>
-    </div>
+      <StepActions
+        next={
+          <StepNextButton onClick={book} disabled={submitting}>
+            {submitting ? text.submitting : text.submit}
+          </StepNextButton>
+        }
+      />
+    </StepCard>
   );
 }

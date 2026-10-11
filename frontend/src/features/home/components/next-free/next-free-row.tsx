@@ -32,6 +32,7 @@ export function NextFreeRow({ slot, serviceId, serviceName, now }: NextFreeRowPr
 
       <CtaLink
         href={bookTimeHref(serviceId, slot.branchId, slot.startsAt)}
+        variant="solidInk"
         ariaLabel={nextFreeTime.bookLabel(day, time, slot.branchName)}
       >
         {nextFreeTime.book}

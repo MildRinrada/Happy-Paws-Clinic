@@ -1,38 +1,44 @@
+import { useId } from 'react';
+import { SiteCard } from '@/components/site/site-card';
 import { reviewsPage } from '../../content/reviews-page';
 import type { ReviewSummary as Summary } from '../../types/review.types';
-import { StarRow } from '../shared/star-row';
+import { StarScore } from '../shared/star-score';
 import { RatingBar } from './rating-bar';
 
 /**
- * The average and how the scores spread, over published reviews only, as the API computes them.
- * Drawn only when something is published: an empty summary would say nothing honest.
+ * The grey card of figures: the average, its stars, how many reviews, and how the scores spread,
+ * over published reviews only, as the API computes them. Drawn only when something is published:
+ * an empty summary would say nothing honest.
  */
 export function ReviewSummary({ summary }: { summary: Summary }) {
+  const headingId = useId();
   const text = reviewsPage;
 
   if (summary.count === 0 || summary.average == null) {
     return null;
   }
 
-  return (
-    <section aria-label={text.average} className="grid gap-6 rounded-2xl bg-site-soft p-6 sm:grid-cols-[auto_1fr] sm:items-center">
-      <div className="text-center sm:pr-6">
-        <p className="text-sm text-site-muted">{text.average}</p>
-        <p className="mt-1 text-4xl font-semibold text-ink-900">
-          {summary.average.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-          <span className="ml-1 text-base font-normal text-site-muted">{text.outOf}</span>
-        </p>
-        <div className="mt-2 flex justify-center">
-          <StarRow rating={Math.round(summary.average)} size="lg" />
-        </div>
-        <p className="mt-1 text-sm text-site-muted">{text.count(summary.count)}</p>
-      </div>
+  const average = summary.average.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-      <ul className="space-y-2">
+  return (
+    <SiteCard as="section" tone="muted" radius="xl" padding="md" ariaLabelledBy={headingId}>
+      <h2 id={headingId} className="text-sm font-semibold text-ink-700">
+        {text.average}
+      </h2>
+      <p className="mt-3 flex items-baseline gap-2">
+        <span className="text-[48px] font-semibold leading-none tracking-tight text-site-forest">{average}</span>
+        <span className="text-[15px] text-ink-600">{text.outOf}</span>
+      </p>
+      <div className="mt-4">
+        <StarScore value={summary.average} label={text.averageLabel(average)} />
+      </div>
+      <p className="mt-2.5 text-sm text-ink-700">{text.count(summary.count)}</p>
+
+      <ul className="mt-4 space-y-2">
         {[5, 4, 3, 2, 1].map((stars) => (
           <RatingBar key={stars} stars={stars} count={summary.by_rating[String(stars)] ?? 0} total={summary.count} />
         ))}
       </ul>
-    </section>
+    </SiteCard>
   );
 }

@@ -17,7 +17,9 @@ export function HeaderActions() {
   if (signedIn) {
     return (
       <div className="hidden items-center sm:flex">
-        <CtaLink href={accountLink.href}>{accountLink.label}</CtaLink>
+        <CtaLink href={accountLink.href} variant="solidInk">
+          {accountLink.label}
+        </CtaLink>
       </div>
     );
   }
@@ -27,7 +29,9 @@ export function HeaderActions() {
       <Link href={signInLink.href} className="text-sm font-bold text-ink-800 hover:text-site-teal">
         {signInLink.label}
       </Link>
-      <CtaLink href={signUpLink.href}>{signUpLink.label}</CtaLink>
+      <CtaLink href={signUpLink.href} variant="solidInk">
+        {signUpLink.label}
+      </CtaLink>
     </div>
   );
 }

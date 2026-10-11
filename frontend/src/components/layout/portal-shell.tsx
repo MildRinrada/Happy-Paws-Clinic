@@ -15,13 +15,13 @@ interface PortalShellProps {
  */
 export function PortalShell({ displayName, unread, children }: PortalShellProps) {
   return (
-    <div className="min-h-dvh bg-site-soft font-display text-ink-900">
+    <div className="min-h-dvh bg-ink-50 font-display text-ink-900">
       <PortalHeader displayName={displayName} unread={unread} />
 
       <main className="mx-auto max-w-[1040px] px-4 py-6 sm:px-6 lg:py-10">{children}</main>
 
-      {/* The bottom bar covers the page's last 64px on a phone; this keeps the footer clear of it. */}
-      <div className="pb-16 lg:pb-0">
+      {/* The bottom bar covers the page's last 76px on a phone; this keeps the footer clear of it. */}
+      <div className="pb-[76px] lg:pb-0">
         <SiteFooter />
       </div>
 

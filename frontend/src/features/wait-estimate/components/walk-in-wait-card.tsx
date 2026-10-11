@@ -1,18 +1,18 @@
 import { useId } from 'react';
+import { SiteCard } from '@/components/site/site-card';
 import { waitEstimate } from '../content/wait-estimate';
 import type { WaitEstimates } from '../types/wait-estimate.types';
 import { WalkInWaitRow } from './walk-in-wait-row';
 
-const tones = {
-  // On the teal home hero, under the white "ว่างเร็วสุด" card: lighter, so the two do not compete.
-  hero: 'rounded-2xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/25 sm:px-5',
-  // On a white page, like the other cards there.
-  plain: 'rounded-2xl border border-site-border/60 bg-white p-5 text-ink-900',
-};
+/**
+ * On the teal home hero, under the white "ว่างเร็วสุด" card: see-through, so the two do not compete.
+ * On a white page it is a `SiteCard` like the other boxes there.
+ */
+const onHero = 'rounded-2xl bg-white/10 px-4 py-3 text-white ring-1 ring-white/25 sm:px-5';
 
 interface WalkInWaitCardProps {
   data: WaitEstimates;
-  tone: keyof typeof tones;
+  tone: 'hero' | 'plain';
   now: Date;
 }
 
@@ -21,8 +21,8 @@ export function WalkInWaitCard({ data, tone, now }: WalkInWaitCardProps) {
   const headingId = useId();
   const onDark = tone === 'hero';
 
-  return (
-    <section aria-labelledby={headingId} className={tones[tone]}>
+  const body = (
+    <>
       <h2 id={headingId} className={`text-sm font-semibold ${onDark ? 'text-white/85' : 'text-site-muted'}`}>
         {waitEstimate.heading}
       </h2>
@@ -32,6 +32,20 @@ export function WalkInWaitCard({ data, tone, now }: WalkInWaitCardProps) {
         ))}
       </ul>
       {!onDark && <p className="mt-3 text-sm text-site-muted">{waitEstimate.note}</p>}
-    </section>
+    </>
+  );
+
+  if (onDark) {
+    return (
+      <section aria-labelledby={headingId} className={onHero}>
+        {body}
+      </section>
+    );
+  }
+
+  return (
+    <SiteCard as="section" tone="whiteSoft" ariaLabelledBy={headingId} className="text-ink-900">
+      {body}
+    </SiteCard>
   );
 }

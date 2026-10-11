@@ -1,3 +1,4 @@
+import { SiteCard } from '@/components/site/site-card';
 import { contactHref } from '@/features/clinic/lib/contact-links';
 import type { ClinicContact } from '@/features/clinic/types/contact.types';
 import { contactPage } from '../content/contact-page';
@@ -7,7 +8,7 @@ export function EmergencyCard({ contact }: { contact: ClinicContact }) {
   const text = contactPage.emergency;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-site-alert px-6 py-5 text-white">
+    <SiteCard tone="alert" padding="none" className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
       <div className="min-w-0">
         <p className="text-sm font-semibold uppercase tracking-wide text-white/85">{text.title} / {contact.label}</p>
         <p className="text-3xl font-bold tabular-nums">{contact.value}</p>
@@ -16,6 +17,6 @@ export function EmergencyCard({ contact }: { contact: ClinicContact }) {
       <a href={contactHref(contact)} className="inline-flex h-12 items-center rounded-xl bg-white px-6 font-bold text-site-alert transition hover:bg-white/90">
         {text.call}
       </a>
-    </div>
+    </SiteCard>
   );
 }

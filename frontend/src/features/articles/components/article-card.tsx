@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { SiteCard } from '@/components/site/site-card';
 import { articleHref, articleMeta } from '../lib/article-text';
 import type { ArticleSummary } from '../types/article.types';
 import { ArticleCover } from './article-cover';
@@ -7,10 +7,7 @@ import { ArticleCover } from './article-cover';
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   return (
     <li>
-      <Link
-        href={articleHref(article.slug)}
-        className="flex items-center gap-5 rounded-2xl border border-site-border bg-white p-[18px] transition hover:border-site-teal"
-      >
+      <SiteCard href={articleHref(article.slug)} padding="none" className="flex items-center gap-5 p-[18px]">
         <ArticleCover
           article={article}
           label="รูป"
@@ -22,7 +19,7 @@ export function ArticleCard({ article }: { article: ArticleSummary }) {
           <h3 className="text-lg font-bold leading-snug">{article.title}</h3>
           <p className="mt-2.5 text-[13px] text-site-muted">{articleMeta(article)}</p>
         </div>
-      </Link>
+      </SiteCard>
     </li>
   );
 }

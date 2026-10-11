@@ -1,6 +1,9 @@
 import type { PublicService } from './service.types';
 
-/** One category on the public menu, with its services, in the order the contract lists categories. */
+/**
+ * One category on the public menu, with its services, in the order the contract lists categories.
+ * `services` is empty for a category with nothing open for online booking.
+ */
 export interface MenuCategory {
   code: string;
   name: string;

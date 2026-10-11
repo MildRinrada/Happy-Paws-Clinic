@@ -1,10 +1,16 @@
 'use client';
 
 import { formatBaht } from '@/lib/format/money';
+import { useId } from 'react';
+import { bookingFrame } from '../content/booking-frame';
 import { bookingPage } from '../content/booking-page';
+import { detailsReady } from '../lib/details-ready';
 import type { BookingDetails, BookingOptions } from '../types/booking.types';
 import { BookingFieldset } from './booking-fieldset';
 import { ChoiceCard } from './choice-card';
+import { StepActions } from './frame/step-actions';
+import { StepCard } from './frame/step-card';
+import { StepNextButton } from './frame/step-next-button';
 
 interface DetailsStepProps {
   options: BookingOptions;
@@ -21,117 +27,120 @@ interface DetailsStepProps {
   nextLabel?: string;
 }
 
+const fieldLook =
+  'w-full rounded-[10px] border border-site-border bg-white px-3.5 py-2.5 text-[15px] text-ink-900 placeholder:text-ink-400 focus:border-site-forest';
+
 /** Step 1: which pet, where, what service and what kind of visit, and anything for the vet. */
 export function DetailsStep({ options, value, onChange, onNext, askPet = true, askType = true, nextLabel }: DetailsStepProps) {
   const text = bookingPage.details;
   const services = options.servicesByBranch[value.branchId] ?? [];
   const set = (patch: Partial<BookingDetails>) => onChange({ ...value, ...patch });
-  const ready = Boolean(
-    (!askPet || value.petId) && value.branchId && value.serviceId && (!askType || options.types.some((type) => type.code === value.type)),
-  );
+  const ready = detailsReady(options, value, askPet, askType);
+  const reasonId = useId();
 
   return (
-    <div className="space-y-6">
-      {askPet && (
-        <BookingFieldset legend={text.pet}>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {options.pets.map((pet) => (
-              <ChoiceCard
-                key={pet.id}
-                name="pet"
-                value={pet.id}
-                checked={value.petId === pet.id}
-                onChange={(petId) => set({ petId })}
-                title={pet.name}
-                detail={pet.species}
-              />
-            ))}
-          </div>
-        </BookingFieldset>
-      )}
-
-      {options.branches.length > 1 && (
-        <BookingFieldset legend={text.branch}>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {options.branches.map((branch) => (
-              <ChoiceCard
-                key={branch.id}
-                name="branch"
-                value={branch.id}
-                checked={value.branchId === branch.id}
-                onChange={(branchId) => set({ branchId, serviceId: '' })}
-                title={branch.name}
-              />
-            ))}
-          </div>
-        </BookingFieldset>
-      )}
-
-      <BookingFieldset legend={text.service}>
-        {services.length === 0 ? (
-          <p className="text-sm text-site-muted">{text.noServices}</p>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {services.map((service) => (
-              <ChoiceCard
-                key={service.id}
-                name="service"
-                value={service.id}
-                checked={value.serviceId === service.id}
-                onChange={(serviceId) => set({ serviceId })}
-                title={service.name}
-                detail={`${text.minutes(service.duration_minutes)}  ${text.priceFrom(formatBaht(service.price_satang))}`}
-              />
-            ))}
-          </div>
+    <StepCard title={bookingFrame.details.title}>
+      <div className="space-y-6">
+        {askPet && (
+          <BookingFieldset legend={text.pet}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {options.pets.map((pet) => (
+                <ChoiceCard
+                  key={pet.id}
+                  name="pet"
+                  value={pet.id}
+                  checked={value.petId === pet.id}
+                  onChange={(petId) => set({ petId })}
+                  title={pet.name}
+                  detail={pet.species}
+                />
+              ))}
+            </div>
+          </BookingFieldset>
         )}
-      </BookingFieldset>
 
-      {askType && (
-        <BookingFieldset legend={text.type}>
-          {options.types.length === 0 ? (
-            <p className="text-sm text-site-muted">{text.noTypes}</p>
+        {options.branches.length > 1 && (
+          <BookingFieldset legend={text.branch}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {options.branches.map((branch) => (
+                <ChoiceCard
+                  key={branch.id}
+                  name="branch"
+                  value={branch.id}
+                  checked={value.branchId === branch.id}
+                  onChange={(branchId) => set({ branchId, serviceId: '' })}
+                  title={branch.name}
+                />
+              ))}
+            </div>
+          </BookingFieldset>
+        )}
+
+        <BookingFieldset legend={text.service}>
+          {services.length === 0 ? (
+            <p className="text-sm text-site-muted">{text.noServices}</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
-              {options.types.map((type) => (
+              {services.map((service) => (
                 <ChoiceCard
-                  key={type.code}
-                  name="type"
-                  value={type.code}
-                  checked={value.type === type.code}
-                  onChange={() => set({ type: type.code })}
-                  title={type.name}
-                  detail={text.typeHints[type.code] ?? (type.duration_minutes ? text.typeMinutes(type.duration_minutes) : undefined)}
+                  key={service.id}
+                  name="service"
+                  value={service.id}
+                  checked={value.serviceId === service.id}
+                  onChange={(serviceId) => set({ serviceId })}
+                  title={service.name}
+                  detail={`${text.minutes(service.duration_minutes)}  ${text.priceFrom(formatBaht(service.price_satang))}`}
                 />
               ))}
             </div>
           )}
         </BookingFieldset>
-      )}
 
-      <div className="space-y-2">
-        <label htmlFor="booking-reason" className="block text-sm font-semibold text-ink-900">
-          {text.reason}
-        </label>
-        <textarea
-          id="booking-reason"
-          value={value.reason}
-          onChange={(event) => set({ reason: event.target.value })}
-          maxLength={1000}
-          rows={3}
-          placeholder={text.reasonPlaceholder}
-          className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-site-teal"
-        />
+        {askType && (
+          <BookingFieldset legend={text.type}>
+            {options.types.length === 0 ? (
+              <p className="text-sm text-site-muted">{text.noTypes}</p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {options.types.map((type) => (
+                  <ChoiceCard
+                    key={type.code}
+                    name="type"
+                    value={type.code}
+                    checked={value.type === type.code}
+                    onChange={() => set({ type: type.code })}
+                    title={type.name}
+                    detail={text.typeHints[type.code] ?? (type.duration_minutes ? text.typeMinutes(type.duration_minutes) : undefined)}
+                  />
+                ))}
+              </div>
+            )}
+          </BookingFieldset>
+        )}
+
+        <div className="space-y-2">
+          <label htmlFor={reasonId} className="block text-[15px] font-semibold text-site-forest">
+            {text.reason}
+          </label>
+          <textarea
+            id={reasonId}
+            value={value.reason}
+            onChange={(event) => set({ reason: event.target.value })}
+            maxLength={1000}
+            rows={3}
+            placeholder={text.reasonPlaceholder}
+            className={fieldLook}
+          />
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={!ready}
-        className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {nextLabel ?? text.next}
-      </button>
-    </div>
+      <StepActions
+        next={
+          <StepNextButton onClick={onNext} disabled={!ready}>
+            {nextLabel ?? bookingFrame.next.time}
+          </StepNextButton>
+        }
+      />
+    </StepCard>
   );
 }

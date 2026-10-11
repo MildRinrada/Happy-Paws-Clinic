@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { SiteCard } from '@/components/site/site-card';
 import { pickNextFree } from '../../lib/pick-next-free';
 import type { NextFreeTimes } from '../../types/next-free-time.types';
 import { NextFreeFull } from './next-free-full';
@@ -31,7 +32,7 @@ export function NextFreeCard({ data, renderedAt }: NextFreeCardProps) {
   const slots = pickNextFree(data, now);
 
   return (
-    <div className="max-w-[520px] rounded-2xl bg-white px-4 py-4 text-ink-900 shadow-lg sm:px-5">
+    <SiteCard tone="raised" padding="none" className="max-w-[520px] px-4 py-4 text-ink-900 sm:px-5">
       {slots.length === 0 ? (
         <NextFreeFull serviceId={data.serviceId} />
       ) : (
@@ -41,6 +42,6 @@ export function NextFreeCard({ data, renderedAt }: NextFreeCardProps) {
           ))}
         </ul>
       )}
-    </div>
+    </SiteCard>
   );
 }

@@ -1,7 +1,7 @@
+import { SectionHeading } from '@/components/site/section-heading';
 import { ArticleCardList } from '@/features/articles/components/article-card-list';
 import { loadArticles } from '@/features/articles/lib/load-articles';
 import { articlesHeading, homeArticleCount } from '../../content/articles';
-import { SectionHeading } from '../shared/section-heading';
 
 /**
  * The articles column: a heading and the newest articles under it, read from `GET /articles`.

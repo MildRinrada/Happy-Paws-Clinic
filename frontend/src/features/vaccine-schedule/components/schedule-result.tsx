@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
-import { vaccinePage } from '../content/vaccine-schedule-page';
+import { SiteCard } from '@/components/site/site-card';
 import { vaccinePlans } from '../content/vaccine-plans';
+import { vaccinePage } from '../content/vaccine-schedule-page';
 import { ageText } from '../lib/age-text';
 import { formatThaiDay } from '../lib/calendar-date';
 import type { PetSchedule, ScheduleActions as Actions, ScheduleInput } from '../types/vaccine-schedule.types';
@@ -48,14 +49,14 @@ export function ScheduleResult({ input, today, schedule, actions, headingRef }: 
 
         {next && <NextVisitBanner visit={next} today={today} />}
 
-        <div className="rounded-2xl border border-site-border bg-white p-5 sm:p-6 print:border-0 print:p-0">
+        <SiteCard padding="lg" className="print:border-0 print:p-0">
           <h3 className="text-lg font-bold">{text.aheadHeading}</h3>
           <ol className="ml-2 mt-5 border-l-2 border-ink-100">
             {schedule.ahead.map((visit) => (
               <TimelineVisit key={visit.key} visit={visit} birthDate={input.birthDate} />
             ))}
           </ol>
-        </div>
+        </SiteCard>
 
         {schedule.done.length > 0 && <DoneVisits visits={schedule.done} birthDate={input.birthDate} />}
 

@@ -34,7 +34,7 @@
 | `/team` | `teamPage` ใน `features/team/content/team-page.ts` |
 | `/contact` | `contactPage.meta` ใน `features/contact/content/contact-page.ts` |
 | `/privacy` | `privacyMeta` ใน `features/privacy/content/privacy-policy.ts` |
-| `/articles` | ในไฟล์หน้า `app/(public)/articles/page.tsx` |
+| `/articles` | `articlesMeta` ใน `features/articles/content/articles-page.ts` หน้าผลการค้นหา (`?q=`) ใช้ชื่อเดียวกันและ canonical ชี้ไปที่ `/articles` |
 | `/articles/<slug>` | ชื่อและสรุปของบทความ ชนิด `article` พร้อมวันที่เผยแพร่ |
 
 `metadataBase` ตั้งใน `app/layout.tsx` จาก `NEXT_PUBLIC_SITE_URL` ลิงก์และรูปที่เขียนเป็น path จึงกลายเป็น URL เต็ม

@@ -17,3 +17,12 @@ export function preselect(options: BookingOptions, service?: string, branch?: st
     serviceId: chosen && offers(chosen.id) ? service! : '',
   };
 }
+
+/**
+ * The vet a booking form starts on, from `?vet=` in the address (the team page's "จองนัดกับหมอท่านนี้"
+ * links that way). Used only when it is one of the vets on the public team page, the same list the
+ * form names vets from; anything else is dropped without a word, and the form offers any vet.
+ */
+export function preselectVet(options: BookingOptions, vet?: string): string | undefined {
+  return vet && Object.hasOwn(options.vets, vet) ? vet : undefined;
+}

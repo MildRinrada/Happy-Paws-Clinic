@@ -14,7 +14,7 @@ export function VaccineScheduleTeaser() {
         <p className="text-lg font-bold leading-tight">{text.heading}</p>
         <p className="mt-1 text-[15px] text-site-muted">{text.lead}</p>
       </div>
-      <CtaLink href={text.action.href} size="lg" className="shrink-0">
+      <CtaLink href={text.action.href} variant="solidInk" size="lg" className="shrink-0">
         {text.action.label}
       </CtaLink>
     </aside>

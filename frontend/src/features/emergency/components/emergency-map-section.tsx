@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SectionHeading } from '@/components/site/section-heading';
 import { MapPanel } from '@/features/contact/components/map-panel';
 import { emergencyPage } from '../content/emergency-page';
 import type { MapEntry } from '../lib/map-entries';
@@ -15,9 +16,7 @@ export function EmergencyMapSection({ maps }: { maps: MapEntry[] }) {
 
   return (
     <section aria-labelledby="emergency-map-heading" className="space-y-4">
-      <h2 id="emergency-map-heading" className="text-2xl font-semibold leading-tight sm:text-[30px]">
-        {text.heading}
-      </h2>
+      <SectionHeading id="emergency-map-heading">{text.heading}</SectionHeading>
 
       <div className={`grid gap-4 ${maps.length > 1 ? 'lg:grid-cols-2' : ''}`}>
         {maps.map((entry) => (

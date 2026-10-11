@@ -7,7 +7,8 @@ import { useIsCurrent } from './use-current-section';
 
 /**
  * The portal's menu on a phone: a bar fixed to the bottom of the screen, within reach of a thumb.
- * Hidden from the width where the header has room for the menu itself.
+ * The current tab is green with its icon filled in. Hidden from the width where the header has
+ * room for the menu itself.
  */
 export function PortalTabBar() {
   const isCurrent = useIsCurrent();
@@ -17,7 +18,7 @@ export function PortalTabBar() {
       aria-label={portalHeader.navLabel}
       className="fixed inset-x-0 bottom-0 z-20 border-t border-ink-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-md grid-cols-4 px-2">
         {portalNavLinks.map((link) => {
           const current = isCurrent(link.href);
 
@@ -26,11 +27,11 @@ export function PortalTabBar() {
               <Link
                 href={link.href}
                 aria-current={current ? 'page' : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${
-                  current ? 'font-semibold text-site-teal' : 'text-ink-500'
+                className={`flex flex-col items-center gap-3 pb-3.5 pt-2 font-sans text-xs leading-[18px] ${
+                  current ? 'font-semibold text-brand-600' : 'text-ink-600'
                 }`}
               >
-                <PortalIcon name={link.icon} />
+                <PortalIcon name={link.icon} solid={current} />
                 {link.short}
               </Link>
             </li>

@@ -1,6 +1,7 @@
 import { SiteContainer } from '@/components/layout/site-container';
+import { SectionHeading } from '@/components/site/section-heading';
+import { SiteCard } from '@/components/site/site-card';
 import { footerLegal } from '@/config/site-footer';
-import { SectionHeading } from '@/features/home/components/shared/section-heading';
 import { aboutLicence } from '../content/about-page';
 
 /**
@@ -16,7 +17,7 @@ export function LicenceSection() {
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
           {footerLegal.details.map((detail) => (
-            <div key={detail.label} className="rounded-2xl border border-site-border/60 p-5">
+            <SiteCard key={detail.label} tone="whiteSoft">
               <dt className="text-sm text-site-muted">{detail.label}</dt>
               <dd className="mt-1 font-semibold text-ink-900">
                 {detail.lines.map((line) => (
@@ -25,7 +26,7 @@ export function LicenceSection() {
                   </span>
                 ))}
               </dd>
-            </div>
+            </SiteCard>
           ))}
         </dl>
       </SiteContainer>

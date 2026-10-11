@@ -7,6 +7,10 @@ import { SignInField } from '@/features/authentication/components/sign-in/sign-i
 import { ONE_TIME_CODE_MAX_LENGTH } from '@/lib/auth/one-time-code';
 import { formatTime } from '@/lib/format/datetime';
 import { guestBookingPage } from '../../content/guest-booking-page';
+import { StepActions } from '../frame/step-actions';
+import { StepBackButton } from '../frame/step-back-button';
+import { StepCard } from '../frame/step-card';
+import { StepNextButton } from '../frame/step-next-button';
 import { HoldCountdown } from '../hold-countdown';
 import { ConsentCheckbox } from './consent-checkbox';
 
@@ -62,86 +66,84 @@ export function GuestCodeStep(props: GuestCodeStepProps) {
 
   if (expired) {
     return (
-      <div className="space-y-4">
-        <Alert>{text.expired}</Alert>
-        <button type="button" onClick={props.onPickAgain} className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white">
-          {guestBookingPage.phone.back}
-        </button>
-      </div>
+      <StepCard title={text.title}>
+        <div className="space-y-5">
+          <Alert>{text.expired}</Alert>
+          <StepNextButton onClick={props.onPickAgain} block>
+            {guestBookingPage.phone.back}
+          </StepNextButton>
+        </div>
+      </StepCard>
     );
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5" noValidate>
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-ink-900">{text.title}</h2>
-        <p className="text-sm text-site-muted">
-          {text.sentTo(phone)} {text.codeExpires(formatTime(codeExpiresAt))}
-        </p>
-        <p className="text-sm text-ink-700">
+    <StepCard title={text.title} lead={`${text.sentTo(phone)} ${text.codeExpires(formatTime(codeExpiresAt))}`}>
+      <form onSubmit={submit} className="space-y-5" noValidate>
+        <p className="rounded-xl bg-site-soft px-4 py-3 text-sm text-ink-800">
           {text.held(formatTime(holdExpiresAt))} (<HoldCountdown expiresAt={holdExpiresAt} onExpire={onExpire} />)
         </p>
-      </div>
 
-      {errors.general && <Alert>{errors.general}</Alert>}
+        {errors.general && <Alert>{errors.general}</Alert>}
 
-      <div className="space-y-2">
-        <SignInField
-          id={codeId}
-          name="code"
-          label={text.codeLabel}
-          error={errors.code}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={ONE_TIME_CODE_MAX_LENGTH}
-          required
-          autoFocus
-          className="text-center font-mono text-lg tracking-[0.4em]"
-        />
-        <div className="flex flex-wrap gap-x-5 gap-y-1">
+        <div className="space-y-2">
+          <SignInField
+            id={codeId}
+            name="code"
+            label={text.codeLabel}
+            error={errors.code}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={ONE_TIME_CODE_MAX_LENGTH}
+            required
+            autoFocus
+            className="text-center font-mono text-lg tracking-[0.4em]"
+          />
           <button
             type="button"
             onClick={props.onResend}
             disabled={props.resendIn > 0 || props.resending}
-            className="text-sm font-bold text-site-teal hover:underline disabled:cursor-not-allowed disabled:font-normal disabled:text-site-muted disabled:no-underline"
+            className="text-sm font-bold text-site-forest underline underline-offset-2 hover:text-site-teal disabled:cursor-not-allowed disabled:font-normal disabled:text-site-muted disabled:no-underline"
           >
             {props.resending ? text.resending : props.resendIn > 0 ? text.resendIn(props.resendIn) : text.resend}
           </button>
-          <button type="button" onClick={props.onChangePhone} className="text-sm font-bold text-site-teal hover:underline">
-            {text.changePhone}
-          </button>
         </div>
-      </div>
 
-      <SignInField
-        id={nameId}
-        name="display_name"
-        label={text.nameLabel}
-        hint={text.nameHint}
-        placeholder={text.namePlaceholder}
-        error={errors.display_name}
-        autoComplete="name"
-        maxLength={200}
-        required
-      />
+        <SignInField
+          id={nameId}
+          name="display_name"
+          label={text.nameLabel}
+          hint={text.nameHint}
+          placeholder={text.namePlaceholder}
+          error={errors.display_name}
+          autoComplete="name"
+          maxLength={200}
+          required
+        />
 
-      <ConsentCheckbox name="accept_privacy_notice" error={errors.accept_privacy_notice}>
-        {text.privacyBefore}{' '}
-        <Link href="/privacy" target="_blank" className="font-semibold text-site-teal underline">
-          {text.privacyLink}
-        </Link>{' '}
-        {text.privacyAfter}
-      </ConsentCheckbox>
+        <ConsentCheckbox name="accept_privacy_notice" error={errors.accept_privacy_notice}>
+          {text.privacyBefore}{' '}
+          <Link href="/privacy" target="_blank" className="font-semibold text-site-forest underline">
+            {text.privacyLink}
+          </Link>{' '}
+          {text.privacyAfter}
+        </ConsentCheckbox>
 
-      <ConsentCheckbox name="marketing_consent">{text.marketing}</ConsentCheckbox>
+        <ConsentCheckbox name="marketing_consent">{text.marketing}</ConsentCheckbox>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="h-12 w-full rounded-xl bg-site-orange text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting ? text.submitting : text.submit}
-      </button>
-    </form>
+        <StepActions
+          back={
+            <StepBackButton onClick={props.onChangePhone} disabled={submitting}>
+              {text.changePhone}
+            </StepBackButton>
+          }
+          next={
+            <StepNextButton type="submit" disabled={submitting}>
+              {submitting ? text.submitting : text.submit}
+            </StepNextButton>
+          }
+        />
+      </form>
+    </StepCard>
   );
 }

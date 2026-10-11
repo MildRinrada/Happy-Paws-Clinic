@@ -7,7 +7,7 @@ import { PageHeading } from '@/features/portal/components/shared/page-heading';
 import { petEdit } from '@/features/portal/content/pet-edit';
 import { authed } from '@/lib/auth/session';
 
-export const metadata: Metadata = { title: 'แก้ไขข้อมูลสัตว์เลี้ยง · Happy Paws Clinic' };
+export const metadata: Metadata = { title: 'แก้ไขข้อมูลสัตว์เลี้ยง | Happy Paws Clinic' };
 
 /**
  * Editing the owner's side of one pet. A pet that is not on this account is a 404, the same answer

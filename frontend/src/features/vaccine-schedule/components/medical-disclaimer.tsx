@@ -1,5 +1,6 @@
-import { vaccinePage } from '../content/vaccine-schedule-page';
+import { SiteCard } from '@/components/site/site-card';
 import { scheduleReview } from '../content/vaccine-plans';
+import { vaccinePage } from '../content/vaccine-schedule-page';
 import { formatThaiDay } from '../lib/calendar-date';
 
 /**
@@ -11,7 +12,7 @@ export function MedicalDisclaimer() {
   const { reviewedBy, reviewedOn } = scheduleReview;
 
   return (
-    <aside role="note" className="rounded-2xl border border-site-orange/60 bg-[#fff6e8] p-4 sm:p-5">
+    <SiteCard as="aside" role="note" tone="notice" padding="sm">
       <p className="font-bold text-ink-900">{text.heading}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-700">{text.body}</p>
       <p className="mt-2 text-xs text-site-muted">
@@ -19,6 +20,6 @@ export function MedicalDisclaimer() {
           ? text.reviewed.replace('{name}', reviewedBy).replace('{date}', formatThaiDay(reviewedOn))
           : text.pendingReview}
       </p>
-    </aside>
+    </SiteCard>
   );
 }

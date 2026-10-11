@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { SiteCard } from '@/components/site/site-card';
 import type { CareStep } from '../types/emergency.types';
 
 interface CareStepsCardProps {
@@ -22,7 +23,7 @@ export function CareStepsCard({ heading, steps, tone }: CareStepsCardProps) {
   const mark = marks[tone];
 
   return (
-    <section aria-labelledby={headingId} className="rounded-2xl border border-site-border/60 bg-white p-5 sm:p-6">
+    <SiteCard as="section" tone="whiteSoft" padding="lg" ariaLabelledBy={headingId}>
       <h3 id={headingId} className="text-lg font-bold text-ink-900">
         {heading}
       </h3>
@@ -42,6 +43,6 @@ export function CareStepsCard({ heading, steps, tone }: CareStepsCardProps) {
           </li>
         ))}
       </ul>
-    </section>
+    </SiteCard>
   );
 }
