@@ -114,6 +114,7 @@ export const config = {
     '/billing/:path*',
     '/lab/:path*',
     '/dashboard/:path*',
+    '/reports/:path*',
     '/inventory/:path*',
     '/notifications/:path*',
     '/messages/:path*',

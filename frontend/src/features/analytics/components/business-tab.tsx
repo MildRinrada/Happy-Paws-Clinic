@@ -1,6 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { businessReport } from '../content/business-report';
-import { dashboardPage } from '../content/dashboard-page';
+import { reportsPage } from '../content/reports-page';
 import type { BusinessReports } from '../lib/load-reports';
 import { RetentionReport } from './retention-report';
 import { RevenueReport } from './revenue-report';
@@ -16,9 +16,9 @@ export function BusinessTab({ reports, canRead }: { reports: BusinessReports; ca
     <div className="space-y-4">
       {canRead && (
         <>
-          {reports.revenue ? <RevenueReport revenue={reports.revenue} /> : <Alert>{dashboardPage.refused}</Alert>}
-          {reports.services ? <ServiceReport report={reports.services} /> : <Alert>{dashboardPage.refused}</Alert>}
-          {reports.retention ? <RetentionReport retention={reports.retention} /> : <Alert>{dashboardPage.refused}</Alert>}
+          {reports.revenue ? <RevenueReport revenue={reports.revenue} /> : <Alert>{reportsPage.refused}</Alert>}
+          {reports.services ? <ServiceReport report={reports.services} /> : <Alert>{reportsPage.refused}</Alert>}
+          {reports.retention ? <RetentionReport retention={reports.retention} /> : <Alert>{reportsPage.refused}</Alert>}
         </>
       )}
       {reports.staff === undefined ? (
@@ -26,7 +26,7 @@ export function BusinessTab({ reports, canRead }: { reports: BusinessReports; ca
       ) : reports.staff ? (
         <StaffPerformanceReport performance={reports.staff} />
       ) : (
-        <Alert>{dashboardPage.refused}</Alert>
+        <Alert>{reportsPage.refused}</Alert>
       )}
     </div>
   );

@@ -18,7 +18,7 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  { href: '/dashboard', label: 'ภาพรวม', scopes: [Scope.DashboardRead, Scope.StatsRead, Scope.AnalyticsRead] },
+  { href: '/dashboard', label: 'ภาพรวม', scopes: [Scope.DashboardRead] },
   { href: '/queue', label: 'คิววันนี้', scopes: [Scope.QueueRead] },
   { href: '/appointments', label: 'ปฏิทินนัด', scopes: [Scope.AppointmentRead] },
   { href: '/customers', label: 'ลูกค้าและสัตว์', scopes: [Scope.CustomerRead] },
@@ -30,6 +30,7 @@ const navigation: NavItem[] = [
   { href: '/crm', label: 'แพ็กเกจและโปรโมชัน', scopes: [Scope.CrmRead, Scope.CrmManage] },
   { href: '/notifications', label: 'แจ้งเตือนลูกค้า', scopes: [Scope.NotifyRead, Scope.NotifySend, Scope.AutomationRead] },
   { href: '/schedules', label: 'ตารางเวร', scopes: [Scope.ScheduleRead] },
+  { href: '/reports', label: 'รายงาน', scopes: [Scope.StatsRead, Scope.AnalyticsRead, Scope.AnalyticsHr] },
   { href: '/ai', label: 'ผู้ช่วย AI', scopes: [Scope.AiUse], ai: true },
   { href: '/settings', label: 'ตั้งค่า', scopes: [Scope.SettingsWrite, Scope.ServiceManage, Scope.StaffRead, Scope.ContentManage] },
 ];

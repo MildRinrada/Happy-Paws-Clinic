@@ -1,4 +1,4 @@
-import { dashboardPage } from '../content/dashboard-page';
+import { reportsPage } from '../content/reports-page';
 import type { Granularity } from '../types/analytics.types';
 
 /**
@@ -26,7 +26,7 @@ export function formatPercent(rate: number | null | undefined): string {
 export function formatMinutes(minutes: number | null | undefined): string {
   return minutes == null
     ? NO_VALUE
-    : `${minutes.toLocaleString('th-TH', { maximumFractionDigits: 1 })} ${dashboardPage.minutes}`;
+    : `${minutes.toLocaleString('th-TH', { maximumFractionDigits: 1 })} ${reportsPage.minutes}`;
 }
 
 /** A clinic day `YYYY-MM-DD` as "4 ต.ค.". The date is a calendar day, so it is drawn in UTC. */

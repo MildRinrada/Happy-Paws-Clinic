@@ -148,8 +148,8 @@ component แตกละเอียดตั้งใจ หนึ่งไฟ
 
 - คอลัมน์เนื้อหากว้าง 992 px คือ `SiteContainer` (`max-w-[1040px]` รวม padding ข้างละ 24 px) ใน `components/layout/site-container.tsx` ทุก section และ footer ใช้ตัวนี้ ขอบซ้ายขวาจึงตรงกัน
 - header กว้างกว่า (`max-w-[1120px]`)
-- หัวเรื่อง Hero สูงสุด 48 px หัวข้อ section 30 px ผ่าน `SectionHeading`
-- section ใหม่ให้วัดความกว้างคอลัมน์เนื้อหาในดีไซน์ แล้วคูณทุกระยะด้วย 992 หารด้วยความกว้างนั้น และใช้ `SectionContainer` กับ `SectionHeading` เพื่อให้ได้ขนาดเดียวกัน
+- หัวเรื่อง Hero สูงสุด 48 px หัวข้อ section 30 px ผ่าน `SectionHeading` (`components/site/section-heading.tsx` หน้าอื่นของเว็บสาธารณะใช้ตัวเดียวกัน)
+- section ใหม่ให้วัดความกว้างคอลัมน์เนื้อหาในดีไซน์ แล้วคูณทุกระยะด้วย 992 หารด้วยความกว้างนั้น และใช้ `SiteContainer` กับ `SectionHeading` เพื่อให้ได้ขนาดเดียวกัน การ์ดและแถบส้มของหน้านี้ใช้ชิ้นส่วนกลางใน `components/site/` ดู [การออกแบบ UI/UX](../ui-ux.md#หน้าไหนใช้ชิ้นไหน)
 
 ## จอเล็ก
 

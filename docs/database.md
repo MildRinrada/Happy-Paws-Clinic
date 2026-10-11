@@ -21,7 +21,7 @@ backend/src/HappyPaws.Infrastructure/Persistence/
   HappyPawsDbContext.cs        เปิด pg_trgm และสแกน configuration ทั้ง assembly
   Configurations/<โมดูล>/      mapping ต่อ aggregate (สืบจาก EntityConfiguration)
   Repositories/<โมดูล>/        ที่เดียวที่ query
-  Migrations/                  31 migration และ model snapshot
+  Migrations/                  32 migration และ model snapshot
   Converters/                  UtcDateTimeOffsetConverter, JsonListColumn
   Interceptors/                TimestampInterceptor ใส่ created_at และ updated_at
   Idempotency/                 ตาราง idempotency_records
@@ -206,6 +206,7 @@ customers ─┬─ pet_ownerships ─── pets ─┬─ pet_allergies
 | 29 | `ClinicPrivacyPolicy` | ตาราง `privacy_policy_versions` (ประกาศความเป็นส่วนตัวของคลินิก หนึ่งแถวต่อฉบับ หัวข้อเป็น `jsonb` เลขฉบับ วันที่มีผล เวลาและผู้เผยแพร่ `legal_review_done` ที่มาของร่างและรุ่น template unique `label` check ว่าเผยแพร่แล้วต้องมีเลขฉบับ วันที่มีผล และเวลาเผยแพร่ครบ ร่างต้องไม่มีทั้งสาม index `published_at`) ใส่ template ที่มากับระบบเป็นร่างหนึ่งแถว (`ppv_seed_template`) ไม่เผยแพร่ ไม่แตะข้อมูลเดิม ความยินยอมเก่าที่มี `policy_version` เป็น `2026-10` ไม่ถูกเปลี่ยน ดู [contract-extensions.md § 35](./contract-extensions.md) |
 | 30 | `CustomerReviews` | ตาราง `customer_reviews` (รีวิวของลูกค้า หนึ่งแถวต่อการมาใช้บริการ unique `(customer_id, branch_id, visit_on)` check คะแนน 1 ถึง 5 check ว่ารีวิวที่ไม่เผยแพร่ต้องมีเหตุผลจากรายการและรีวิวอื่นต้องไม่มี check ว่าที่เผยแพร่แล้วต้องมีเวลาเผยแพร่ index `(status, created_at, id)` foreign key ไปลูกค้าและสาขาแบบ restrict) และ `review_invitations` (คำเชิญให้รีวิว หนึ่งแถวต่อการมา unique `(customer_id, branch_id, visit_on)` เก็บ SHA-256 ของ token ไม่มีคอลัมน์ที่เก็บค่าจริง unique เมื่อมีค่า วันหมดอายุ เวลาที่ใช้ และรีวิวที่เขียนผ่านคำเชิญ) ใส่กติกาเตือนเริ่มต้น `atm_starter_review_2d` แบบปิด ไม่แตะข้อมูลเดิม Down ลบกติกา `VisitCompleted` และบันทึกส่งแล้วของกติกานั้น ดู [contract-extensions.md § 36](./contract-extensions.md) |
 | 31 | `ReferAFriend` | ตาราง `referral_codes` (รหัสชวนเพื่อน หนึ่งแถวต่อลูกค้า unique `customer_id` และ `code`) และ `referrals` (ใครชวนใคร สถานะ เหตุผล แต้มของแต่ละฝั่ง เกินเพดานหรือไม่ และบิลที่ให้แต้ม unique `friend_customer_id` unique `reward_invoice_id` เมื่อมีค่า check ว่าสถานะ เหตุผล และเวลาตรงกัน foreign key ไปลูกค้าและบิลแบบ restrict) บน `loyalty_entries` เพิ่ม `referral_id` กับ unique `(referral_id, customer_id)` เฉพาะแถวชนิด `Referral` บน `loyalty_settings` เพิ่ม `referral_enabled` (ค่าตั้งต้น `false`) `referral_referrer_points` และ `referral_friend_points` (100) และ `referral_monthly_cap` (5) ไม่แตะข้อมูลเดิม Down เปลี่ยนแถว `Referral` ในสมุดแต้มเป็น `Adjust` ดู [contract-extensions.md § 39](./contract-extensions.md) |
+| 32 | `StarterDashboardAccess` | ไม่มีตารางหรือคอลัมน์ใหม่ บน `roles` เติม `dashboard:read` ให้ role ตั้งต้น `veterinarian` และ `receptionist` ที่เป็น role ของระบบ ไม่เพิ่มซ้ำถ้ามีอยู่แล้ว ย้อนกลับแล้วเอาออกจากสอง role นี้ ดู [contract-extensions.md § 46](./contract-extensions.md) |
 
 **นำ migration ขึ้นฐานข้อมูล** ใช้คำสั่ง operator ไม่ใช่ `dotnet ef database update`
 

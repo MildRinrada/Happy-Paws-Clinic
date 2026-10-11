@@ -46,6 +46,13 @@ public static class DefaultRoles
     /// approved it for vets, the counter and the owner only, so <c>clinic_admin</c> leaves it out
     /// too; an admin who wants it can add it to a role.
     /// </para>
+    /// <para>
+    /// <c>dashboard:read</c> on the same two roles is not from the contract's table either: the
+    /// overview page is the vet's and the counter's start of the day, so the owner approved it
+    /// for them (<c>docs/contract-extensions.md § 46</c>), and the migration
+    /// <c>StarterDashboardAccess</c> grants the same to clinics seeded before it. Takings stay off
+    /// the page for them, since the today dashboard adds money only for a money scope.
+    /// </para>
     /// </summary>
     public static IReadOnlyList<KeyValuePair<string, IReadOnlyList<string>>> StarterScopes { get; } =
     [
@@ -56,8 +63,12 @@ public static class DefaultRoles
                 scope is not (Scopes.Payment.Payout or Scopes.Settings.Danger or Scopes.Ai.Use)),
         ]),
         new(Veterinarian,
-            ["consult:*", Scopes.Record.Write, "lab:*", Scopes.Prescription.Write, Scopes.Queue.Call, Scopes.Ai.Use]),
-        new(Receptionist, ["appointment:*", "queue:*", "customer:*", Scopes.Invoice.Collect, Scopes.Ai.Use]),
+            [
+                "consult:*", Scopes.Record.Write, "lab:*", Scopes.Prescription.Write, Scopes.Queue.Call, Scopes.Ai.Use,
+                Scopes.Dashboard.Read,
+            ]),
+        new(Receptionist,
+            ["appointment:*", "queue:*", "customer:*", Scopes.Invoice.Collect, Scopes.Ai.Use, Scopes.Dashboard.Read]),
         new(VetAssistant, [Scopes.Queue.Read, Scopes.Patient.Read, Scopes.Vitals.Write]),
         new(Cashier, ["invoice:*", "payment:*", Scopes.Receipt.Issue]),
         new(Customer, [Scopes.Portal]),

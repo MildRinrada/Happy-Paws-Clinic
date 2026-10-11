@@ -31,6 +31,7 @@ const PRIVATE_PATHS = [
   '/pets',
   '/prescriptions',
   '/queue',
+  '/reports',
   '/schedules',
   '/settings',
   // the waiting-room screen that runs on its own token (docs/contract-extensions.md § 30)

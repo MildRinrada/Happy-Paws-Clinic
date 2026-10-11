@@ -103,6 +103,23 @@ public class DefaultRolesTests
     }
 
     [Fact]
+    public void Vets_and_receptionists_start_with_the_overview_page_but_no_money()
+    {
+        // dashboard:read is added beyond the contract's table (docs/contract-extensions.md § 46).
+        // It is not a money scope, so the takings card stays off for them.
+        var vet = new ScopeSet(ScopesOf(DefaultRoles.Veterinarian));
+        var receptionist = new ScopeSet(ScopesOf(DefaultRoles.Receptionist));
+
+        Assert.True(vet.Allows(Scopes.Dashboard.Read));
+        Assert.True(receptionist.Allows(Scopes.Dashboard.Read));
+        Assert.False(vet.Allows(Scopes.Analytics.Read));
+        Assert.False(receptionist.Allows(Scopes.Analytics.Read));
+
+        Assert.False(new ScopeSet(ScopesOf(DefaultRoles.VetAssistant)).Allows(Scopes.Dashboard.Read));
+        Assert.False(new ScopeSet(ScopesOf(DefaultRoles.Cashier)).Allows(Scopes.Dashboard.Read));
+    }
+
+    [Fact]
     public void The_owner_holds_everything_and_nothing_else_does()
     {
         Assert.Equal([Scopes.Wildcard], ScopesOf(DefaultRoles.ClinicOwner));

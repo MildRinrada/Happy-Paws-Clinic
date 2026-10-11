@@ -1,24 +1,32 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { Alert } from '@/components/ui/alert';
 import { PageHeader } from '@/components/ui/page-header';
 import { loadStaffContext } from '@/features/account/lib/staff-context';
 import { getTodayDashboard } from '@/features/analytics/api/getTodayDashboard';
-import { BusinessTab } from '@/features/analytics/components/business-tab';
-import { OperationsTab } from '@/features/analytics/components/operations-tab';
-import { RangePicker } from '@/features/analytics/components/range-picker';
-import { ReportTabs } from '@/features/analytics/components/report-tabs';
-import { TodayOverview } from '@/features/analytics/components/today-overview';
+import { AttentionBox } from '@/features/analytics/components/today/attention-box';
+import { AutoRefresh } from '@/features/analytics/components/today/auto-refresh';
+import { DueBackPreview } from '@/features/analytics/components/today/due-back-preview';
+import { HeadlineTiles } from '@/features/analytics/components/today/headline-tiles';
+import { MineStrip } from '@/features/analytics/components/today/mine-strip';
+import { QuickActions } from '@/features/analytics/components/today/quick-actions';
+import { TodayDetails } from '@/features/analytics/components/today/today-details';
+import { TodaySection } from '@/features/analytics/components/today/today-section';
+import { UpcomingVisits } from '@/features/analytics/components/today/upcoming-visits';
 import { dashboardPage } from '@/features/analytics/content/dashboard-page';
-import { loadBusinessReports, loadOperationsReports } from '@/features/analytics/lib/load-reports';
+import { loadAttention } from '@/features/analytics/lib/load-attention';
+import { loadDueBackPreview } from '@/features/analytics/lib/load-due-back-preview';
+import { loadLastWeek } from '@/features/analytics/lib/load-last-week';
+import { loadUpcoming } from '@/features/analytics/lib/load-upcoming';
+import { movedReportHref, REPORTS_PATH, type ReportSearchParams } from '@/features/analytics/lib/report-range';
+import { todayLinks } from '@/features/analytics/lib/today-links';
+import { REFRESH_SECONDS } from '@/features/analytics/lib/today-settings';
+import { tolerant } from '@/features/analytics/lib/tolerant-read';
+import { getAttendanceRisk } from '@/features/appointments/api/getAttendanceRisk';
 import { PrivacyPolicyMissingNotice } from '@/features/privacy/components/staff/privacy-policy-missing-notice';
-import { readReportRange, type ReportSearchParams, type ReportTab } from '@/features/analytics/lib/report-range';
-import { ReportExportControl } from '@/features/reporting/components/report-export-control';
-import { exportableReports } from '@/features/reporting/lib/exportable-reports';
 import { getDailyBrief } from '@/features/staff-ai/api/getDailyBrief';
 import { DailyBriefCard } from '@/features/staff-ai/components/brief/daily-brief-card';
-import { optional } from '@/lib/api/api-error';
 import { Scope } from '@/lib/auth/scopes';
-import { authed } from '@/lib/auth/session';
 import { clinicDay } from '@/lib/format/datetime';
 
 export const metadata: Metadata = { title: dashboardPage.metaTitle };
@@ -28,20 +36,30 @@ interface DashboardPageProps {
 }
 
 /**
- * Today's cards on top, then the reports for a chosen range: operational statistics on
- * `stats:read`, the business dashboard on `analytics:read` and `analytics:hr`. Each part is drawn
- * only for a session holding its scope, and the API checks the scope again on every read.
+ * Today at the branch in view, for whoever opens the console first thing: what is waiting to be
+ * done, who is due in the next two hours, the day's main numbers, the AI's morning brief, every
+ * count folded away, and customers to call. The ranged reports are on `/reports`.
+ *
+ * The page needs `dashboard:read`. Every box past the day's numbers reads with the scope of its own
+ * page and is left out when the session lacks it, or when its read fails: one box that cannot be
+ * read never takes the page down. The page reads itself again every minute while it is on screen.
+ * The brief is safe to read that often: `GET /staff/ai/daily-brief` returns the stored brief and
+ * never calls the model or counts a use.
  */
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  // The reports used to live here, as `/dashboard?tab=&from=...`; those links still work.
+  const moved = movedReportHref(await searchParams);
+  if (moved) {
+    redirect(moved);
+  }
+
   const context = await loadStaffContext();
   const can = (scope: string) => context?.can(scope) ?? false;
 
-  const canToday = can(Scope.DashboardRead);
-  const canStats = can(Scope.StatsRead);
-  const canAnalytics = can(Scope.AnalyticsRead);
-  const canHr = can(Scope.AnalyticsHr);
-
-  if (!context || !(canToday || canStats || canAnalytics || canHr)) {
+  if (!context || !can(Scope.DashboardRead)) {
+    if (can(Scope.StatsRead) || can(Scope.AnalyticsRead) || can(Scope.AnalyticsHr)) {
+      redirect(REPORTS_PATH);
+    }
     return <Alert tone="info">{dashboardPage.noAccess}</Alert>;
   }
   if (!context.branch) {
@@ -49,49 +67,68 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const branch = context.branch;
-  const today = clinicDay(new Date());
-  const tabs: ReportTab[] = [
-    ...(canStats ? (['operations'] as const) : []),
-    ...(canAnalytics || canHr ? (['business'] as const) : []),
-  ];
+  const now = new Date();
+  const today = clinicDay(now);
+  const canAppointments = can(Scope.AppointmentRead);
+  const canCustomers = can(Scope.CustomerRead);
 
-  const asked = readReportRange(await searchParams, today);
-  const range = tabs.includes(asked.tab) || tabs.length === 0 ? asked : { ...asked, tab: tabs[0]! };
-  const showTab = tabs.includes(range.tab);
+  // Read once and shared: the to-do box counts the risky bookings, and the upcoming list takes
+  // owner and pet names from it.
+  const risk = canAppointments ? tolerant(() => getAttendanceRisk(today, branch.id)) : Promise.resolve(null);
 
-  // "ส่งออกรายงาน": only with report:export, and only the reports whose screen this session may read.
-  const exportable = exportableReports(can);
-
-  const [todayView, operations, business, brief] = await Promise.all([
-    canToday ? authed(() => optional(getTodayDashboard(branch.id))) : Promise.resolve(null),
-    showTab && range.tab === 'operations' ? authed(() => loadOperationsReports(range, branch.id)) : Promise.resolve(null),
-    showTab && range.tab === 'business'
-      ? authed(() => loadBusinessReports(range, branch.id, { read: canAnalytics, hr: canHr }))
+  const [todayView, brief, attention, upcoming, lastWeek, dueBack] = await Promise.all([
+    tolerant(() => getTodayDashboard(branch.id)),
+    tolerant(() => getDailyBrief(branch.id)),
+    loadAttention({ can, branchId: branch.id, today, now, risk }),
+    canAppointments
+      ? tolerant(() => loadUpcoming(branch.id, today, now, risk, { customers: canCustomers, patients: can(Scope.PatientRead) }))
       : Promise.resolve(null),
-    // The AI morning brief (docs/contract-extensions.md § 34). Always answers, "disabled" when the AI is off.
-    canToday ? authed(() => optional(getDailyBrief(branch.id))) : Promise.resolve(null),
+    loadLastWeek(branch.id, today, { appointments: can(Scope.StatsRead), revenue: can(Scope.AnalyticsRead) }),
+    can(Scope.CrmRead) ? tolerant(() => loadDueBackPreview(branch.id, canCustomers)) : Promise.resolve(null),
   ]);
+
+  const links = todayLinks(can, today);
 
   return (
     <div className="max-w-6xl space-y-6">
-      <PageHeader title={dashboardPage.title} subtitle={dashboardPage.subtitle(branch.name)} />
+      <AutoRefresh seconds={REFRESH_SECONDS} />
+      <PageHeader
+        title={dashboardPage.title}
+        subtitle={dashboardPage.subtitle(branch.name)}
+        actions={<QuickActions can={can} />}
+      />
 
       {/* Owner only, while no privacy notice is published (docs/contract-extensions.md § 35). */}
       <PrivacyPolicyMissingNotice />
 
+      {(attention || upcoming) && (
+        <div className={`grid gap-4 ${attention && upcoming ? 'lg:grid-cols-5' : ''}`}>
+          {attention && (
+            <div className={upcoming ? 'lg:col-span-3' : ''}>
+              <AttentionBox view={attention} />
+            </div>
+          )}
+          {upcoming && (
+            <div className={attention ? 'lg:col-span-2' : ''}>
+              <UpcomingVisits view={upcoming} calendarHref={links.calendar ?? '/appointments'} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {todayView && (
+        <TodaySection generatedAt={todayView.generated_at}>
+          {todayView.mine && <MineStrip mine={todayView.mine} links={links} />}
+          <HeadlineTiles today={todayView} lastWeek={lastWeek} links={links} />
+        </TodaySection>
+      )}
+
+      {/* The AI morning brief (docs/contract-extensions.md § 34), hidden while the assistant is off. */}
       {brief && brief.status !== 'disabled' && <DailyBriefCard brief={brief} />}
 
-      {todayView && <TodayOverview today={todayView} />}
+      {todayView && <TodayDetails today={todayView} />}
 
-      {showTab && (
-        <section className="space-y-4">
-          <ReportTabs range={range} tabs={tabs} />
-          <RangePicker range={range} today={today} />
-          {exportable.length > 0 && <ReportExportControl reports={exportable} from={range.from} to={range.to} branchId={branch.id} />}
-          {operations && <OperationsTab reports={operations} />}
-          {business && <BusinessTab reports={business} canRead={canAnalytics} />}
-        </section>
-      )}
+      {dueBack && <DueBackPreview view={dueBack} canOpenCustomer={canCustomers} />}
     </div>
   );
 }

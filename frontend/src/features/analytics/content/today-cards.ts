@@ -1,7 +1,7 @@
-/** The cards for today at the top of the overview page. */
+/** Every count of today, folded away under "รายละเอียดวันนี้" on the overview page. */
 export const todayCards = {
-  heading: 'วันนี้',
-  updatedAt: (time: string) => `อัปเดตเมื่อ ${time}`,
+  heading: 'รายละเอียดวันนี้',
+  hint: 'นัด คิว เคสตรวจ และรายรับ แยกตามสถานะ',
 
   appointments: {
     title: 'นัดวันนี้',

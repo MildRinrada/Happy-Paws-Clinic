@@ -1,10 +1,13 @@
 import { clinicDay } from '@/lib/format/datetime';
 import type { Granularity } from '../types/analytics.types';
 
-/** The two report tabs under today's cards. */
+/** The two tabs of the reports page. */
 export type ReportTab = 'operations' | 'business';
 
-/** What the page reads from its address: `/dashboard?tab=&from=&to=&granularity=`. */
+/** Where the ranged reports live. They were on `/dashboard` until the overview became today's page. */
+export const REPORTS_PATH = '/reports';
+
+/** What the page reads from its address: `/reports?tab=&from=&to=&granularity=`. */
 export interface ReportRange {
   tab: ReportTab;
   from: string;
@@ -64,7 +67,26 @@ export function reportHref(range: ReportRange, change: Partial<ReportRange> = {}
   const next = { ...range, ...change };
   const query = new URLSearchParams({ tab: next.tab, from: next.from, to: next.to, granularity: next.granularity });
 
-  return `/dashboard?${query.toString()}`;
+  return `${REPORTS_PATH}?${query.toString()}`;
+}
+
+const REPORT_KEYS = ['tab', 'from', 'to', 'granularity'] as const;
+
+/**
+ * Where an old report link lands: `/dashboard?tab=&from=...` opened the reports before they moved,
+ * and bookmarks of it still exist. The same query on the reports page, or `undefined` when the
+ * address carries none of the report keys and the overview itself was asked for.
+ */
+export function movedReportHref(params: ReportSearchParams): string | undefined {
+  const query = new URLSearchParams();
+
+  for (const key of REPORT_KEYS) {
+    const value = params[key];
+    if (typeof value === 'string') query.set(key, value);
+  }
+
+  const search = query.toString();
+  return search ? `${REPORTS_PATH}?${search}` : undefined;
 }
 
 /** Quick spans that end today. */

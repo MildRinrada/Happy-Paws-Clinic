@@ -9,12 +9,15 @@ export interface MoneyRow {
   net_satang: number;
 }
 
-/** Collected, refunded and net for a handful of rows: tenders, or branches. */
+/**
+ * Collected, refunded and net for a handful of rows: tenders, or branches. `min-w-0` lets the table
+ * scroll inside its own box on a phone instead of widening the grid it sits in.
+ */
 export function MoneyBreakdownTable({ heading, nameColumn, rows }: { heading: string; nameColumn: string; rows: MoneyRow[] }) {
   const columns = businessReport.revenue.columns;
 
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <h4 className="text-xs font-semibold text-ink-700">{heading}</h4>
       <div className="overflow-x-auto rounded-lg border border-ink-100">
         <table className="w-full text-sm">

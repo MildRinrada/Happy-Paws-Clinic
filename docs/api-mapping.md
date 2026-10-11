@@ -45,13 +45,13 @@ response เป็น snake_case และ **สมาชิกที่เป�
 | Prescription | `Prescriptions` | `prescriptions` | `(staff)/prescriptions` |
 | Notifications & Messaging | `Notifications`, `Messaging` | `notifications`, `messaging` | `(staff)/notifications` (ประวัติ ส่ง ประกาศ เทมเพลต), `(staff)/messages`, `(portal)/notifications` |
 | LINE integration *(ส่งออกอย่างเดียว)* | `Integrations` | `integrations` | `(staff)/settings/line`, `(staff)/notifications/broadcast` |
-| Operational stats | `Analytics` | `analytics` | `(staff)/dashboard` |
-| Business dashboard | `Analytics` | `analytics` | `(staff)/dashboard` (แท็บธุรกิจ) |
+| Operational stats | `Analytics` | `analytics` | `(staff)/dashboard` (การ์ดวันนี้), `(staff)/reports` |
+| Business dashboard | `Analytics` | `analytics` | `(staff)/reports` (แท็บธุรกิจ) |
 | Billing & Payments | `Billing` | `billing` | `(staff)/billing`, `(portal)/invoices` |
 | Inventory | `Inventory` | `inventory` | `(staff)/inventory` (แท็บรายการ แจ้งเตือน รับเข้า จ่ายออก ปรับยอด สั่งซื้อ) |
 | Loyalty & Promotions | `Crm` | `crm` | `(staff)/crm` (ขายแพ็กเกจ สร้างคูปอง กลุ่มลูกค้า แต้มและสมาชิก), `(portal)/packages` |
 | Reminders & Automation | `Automation` | `automation` | `(staff)/notifications/automations`, `(staff)/notifications/reminders` |
-| Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/dashboard` (ส่งออกรายงาน), `(staff)/audit` |
+| Reports & Audit | `Reporting`, `Auditing` | `reporting`, `audit` | `(staff)/reports` (ส่งออกรายงาน), `(staff)/audit` |
 | Webhooks & Integrations | `Integrations` | `integrations` | `(staff)/settings/integrations` |
 
 ## Authentication

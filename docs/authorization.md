@@ -143,8 +143,8 @@ role คือชุด scope ที่เก็บเป็นข้อมู�
 |---|---|
 | `clinic_owner` | `*` |
 | `clinic_admin` | ทุก scope ในแคตตาล็อก ยกเว้น `billing:payout`, `settings:danger` และ `ai:use` รวม `content:manage` |
-| `veterinarian` | `consult:*`, `record:write`, `lab:*`, `rx:write`, `queue:call` และ `ai:use` (§ 34) |
-| `receptionist` | `appointment:*`, `queue:*`, `customer:*`, `invoice:collect` และ `ai:use` (§ 34) |
+| `veterinarian` | `consult:*`, `record:write`, `lab:*`, `rx:write`, `queue:call`, `ai:use` (§ 34) และ `dashboard:read` (§ 46) |
+| `receptionist` | `appointment:*`, `queue:*`, `customer:*`, `invoice:collect`, `ai:use` (§ 34) และ `dashboard:read` (§ 46) |
 | `vet_assistant` | `queue:read`, `patient:read`, `vitals:write` |
 | `cashier` | `invoice:*`, `payment:*`, `receipt:issue` |
 | `customer` | `portal` |

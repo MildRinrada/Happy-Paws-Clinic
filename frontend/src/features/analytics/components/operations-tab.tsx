@@ -1,5 +1,5 @@
 import { Alert } from '@/components/ui/alert';
-import { dashboardPage } from '../content/dashboard-page';
+import { reportsPage } from '../content/reports-page';
 import type { OperationsReports } from '../lib/load-reports';
 import { AppointmentStatsReport } from './appointment-stats-report';
 import { QueueStatsReport } from './queue-stats-report';
@@ -9,9 +9,9 @@ import { WorkloadReport } from './workload-report';
 export function OperationsTab({ reports }: { reports: OperationsReports }) {
   return (
     <div className="space-y-4">
-      {reports.appointments ? <AppointmentStatsReport stats={reports.appointments} /> : <Alert>{dashboardPage.refused}</Alert>}
-      {reports.queue ? <QueueStatsReport stats={reports.queue} /> : <Alert>{dashboardPage.refused}</Alert>}
-      {reports.workload ? <WorkloadReport stats={reports.workload} /> : <Alert>{dashboardPage.refused}</Alert>}
+      {reports.appointments ? <AppointmentStatsReport stats={reports.appointments} /> : <Alert>{reportsPage.refused}</Alert>}
+      {reports.queue ? <QueueStatsReport stats={reports.queue} /> : <Alert>{reportsPage.refused}</Alert>}
+      {reports.workload ? <WorkloadReport stats={reports.workload} /> : <Alert>{reportsPage.refused}</Alert>}
     </div>
   );
 }
