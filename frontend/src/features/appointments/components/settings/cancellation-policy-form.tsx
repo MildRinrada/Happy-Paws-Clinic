@@ -1,9 +1,9 @@
 'use client';
 
 import { useId, useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
-import { FormStatus } from '@/components/ui/form-status';
+import { SectionFooter } from '@/features/settings/components/section-footer';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceCancellationPolicyAction } from '../../actions/appointment-settings-actions';
 import { appointmentSettingsText } from '../../content/appointment-settings';
@@ -17,8 +17,10 @@ const FIELDS: { field: PolicyField; api: string; label: 'cutoffHours' | 'fee' | 
   { field: 'windowDays', api: 'window_days', label: 'windowDays' },
 ];
 
+const FORM_ID = 'cancellation-policy-form';
+
 /**
- * The four values, written together. The form starts from the stored policy, and the version it was
+ * The four values, written together by the settings save bar. The form starts from the stored policy, and the version it was
  * read at goes out as `If-Match`, so a colleague's change in between is refused rather than silently
  * replaced. After a save it shows what the backend answered with, and that version is sent next.
  */
@@ -28,7 +30,19 @@ export function CancellationPolicyForm({ policy }: { policy: CancellationPolicy 
   const [draft, setDraft] = useState<PolicyDraft>(() => draftFrom(policy));
   const [version, setVersion] = useState(policy.version);
   const [bad, setBad] = useState<PolicyField[]>([]);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(appointmentSettingsText.messages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(appointmentSettingsText.messages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: draft,
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0 || bad.length > 0,
+    onReset: (stored) => {
+      clear();
+      setBad([]);
+      setDraft(stored);
+    },
+  });
 
   function set(field: PolicyField, value: string) {
     touch();
@@ -44,14 +58,16 @@ export function CancellationPolicyForm({ policy }: { policy: CancellationPolicy 
     submit(
       () => replaceCancellationPolicyAction({ version, values: input }),
       (stored) => {
+        const next = draftFrom(stored);
         setVersion(stored.version);
-        setDraft(draftFrom(stored));
+        setDraft(next);
+        changes.markSaved(next);
       },
     );
   }
 
   return (
-    <form onSubmit={save} noValidate className="space-y-4">
+    <form id={FORM_ID} onSubmit={save} noValidate className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         {FIELDS.map(({ field, api, label }) => (
           <Field
@@ -75,14 +91,7 @@ export function CancellationPolicyForm({ policy }: { policy: CancellationPolicy 
 
       {saved && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-900">{text.stored}</p>}
 
-      <div className="border-t border-ink-100 pt-4">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <FormStatus message={message} savedText="" />
-          <Button type="submit" disabled={pending}>
-            {pending ? appointmentSettingsText.submitting : text.submit}
-          </Button>
-        </div>
-      </div>
+      <SectionFooter pending={pending} message={message} inBar={changes.inBar} submitLabel={text.submit} />
     </form>
   );
 }

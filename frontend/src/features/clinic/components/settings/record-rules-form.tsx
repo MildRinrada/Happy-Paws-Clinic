@@ -1,20 +1,25 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { Field, Textarea } from '@/components/ui/field';
-import { FormStatus } from '@/components/ui/form-status';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { updateMedicalRecordSettingsAction } from '../../actions/clinic-rules-actions';
 import { rulesSettings } from '../../content/rules-settings';
 import { parseLineList } from '../../lib/parse-list';
 import type { MedicalRecordSettings } from '../../types/settings.types';
 
-/** What a case must hold before it closes, the examination form, what owners see, and who signs. */
+const FORM_ID = 'record-rules-form';
+
+/**
+ * What a case must hold before it closes, the examination form, what owners see, and who signs.
+ * Saved by the save bar.
+ */
 export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings }) {
   const text = rulesSettings.record;
   const [required, setRequired] = useState(settings.required_fields);
@@ -22,7 +27,21 @@ export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings 
   const [visible, setVisible] = useState(settings.owner_visible_sections);
   const [caseVetSigns, setCaseVetSigns] = useState(settings.signer_must_be_case_vet);
   const [version, setVersion] = useState(settings.version);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: { required, systems, visible, caseVetSigns },
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0,
+    onReset: (stored) => {
+      clear();
+      setRequired(stored.required);
+      setSystems(stored.systems);
+      setVisible(stored.visible);
+      setCaseVetSigns(stored.caseVetSigns);
+    },
+  });
 
   const changed = <T,>(set: (value: T) => void) => (value: T) => {
     touch();
@@ -31,6 +50,8 @@ export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings 
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const sent = { required, systems, visible, caseVetSigns };
+
     submit(
       () =>
         updateMedicalRecordSettingsAction({
@@ -42,7 +63,10 @@ export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings 
             signer_must_be_case_vet: caseVetSigns,
           },
         }),
-      (stored) => setVersion(stored.version),
+      (stored) => {
+        setVersion(stored.version);
+        changes.markSaved(sent);
+      },
     );
   }
 
@@ -50,7 +74,7 @@ export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings 
     <Card>
       <CardHeader title={text.heading} aside={<span className="text-xs text-ink-500">{text.auditNote}</span>} />
       <CardBody>
-        <form onSubmit={save} className="space-y-6">
+        <form id={FORM_ID} onSubmit={save} className="space-y-6">
           <CheckboxGroup
             legend={text.requiredFields}
             hint={text.requiredFieldsHint}
@@ -74,12 +98,7 @@ export function RecordRulesForm({ settings }: { settings: MedicalRecordSettings 
 
           <Checkbox label={text.signerMustBeCaseVet} checked={caseVetSigns} onChange={(event) => changed(setCaseVetSigns)(event.target.checked)} />
 
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <FormStatus message={message} saved={saved} savedText={formMessages.saved} />
-            <Button type="submit" disabled={pending}>
-              {pending ? formMessages.saving : formMessages.save}
-            </Button>
-          </div>
+          <SectionFooter pending={pending} message={message} saved={saved} inBar={changes.inBar} />
         </form>
       </CardBody>
     </Card>

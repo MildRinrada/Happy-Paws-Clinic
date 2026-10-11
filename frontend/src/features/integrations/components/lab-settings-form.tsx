@@ -4,8 +4,9 @@ import { useId, useState, type FormEvent } from 'react';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, Input } from '@/components/ui/field';
-import { FormFooter } from '@/features/settings/components/form-footer';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { configureLabAction } from '../actions/integration-actions';
 import { labSettingsPage, providerShared } from '../content/provider-settings';
@@ -13,7 +14,12 @@ import { emptySecret, secretChange } from '../lib/secret-change';
 import type { LabSettings } from '../types/integration.types';
 import { SecretInput } from './secret-input';
 
-/** The outside lab: which one, the clinic's account there, its API address, and the write-only key. */
+const FORM_ID = 'lab-settings-form';
+
+/**
+ * The outside lab: which one, the clinic's account there, its API address, and the write-only key.
+ * Saved by the save bar.
+ */
 export function LabSettingsForm({ settings: initial }: { settings: LabSettings }) {
   const text = labSettingsPage;
   const id = useId();
@@ -23,10 +29,27 @@ export function LabSettingsForm({ settings: initial }: { settings: LabSettings }
   const [baseUrl, setBaseUrl] = useState(initial.base_url ?? '');
   const [enabled, setEnabled] = useState(initial.enabled);
   const [apiKey, setApiKey] = useState(emptySecret);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: { provider, accountId, baseUrl, enabled, apiKey },
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0,
+    onReset: (stored) => {
+      clear();
+      setProvider(stored.provider);
+      setAccountId(stored.accountId);
+      setBaseUrl(stored.baseUrl);
+      setEnabled(stored.enabled);
+      setApiKey(stored.apiKey);
+    },
+  });
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const sent = { provider, accountId, baseUrl, enabled, apiKey: emptySecret };
+
     submit(
       () =>
         configureLabAction({
@@ -36,6 +59,8 @@ export function LabSettingsForm({ settings: initial }: { settings: LabSettings }
       (stored) => {
         setSettings(stored);
         setApiKey(emptySecret);
+        // The key is write-only: once saved, the box is empty again and that is "saved".
+        changes.markSaved(sent);
       },
     );
   }
@@ -46,7 +71,7 @@ export function LabSettingsForm({ settings: initial }: { settings: LabSettings }
   };
 
   return (
-    <form onSubmit={save}>
+    <form id={FORM_ID} onSubmit={save}>
       <Card>
         <CardHeader title={text.heading} />
         <CardBody className="space-y-5">
@@ -65,7 +90,7 @@ export function LabSettingsForm({ settings: initial }: { settings: LabSettings }
 
           <Checkbox label={text.enabled} hint={text.enabledHint} checked={enabled} onChange={(event) => change(setEnabled)(event.target.checked)} />
 
-          <FormFooter pending={pending} message={message} saved={saved} />
+          <SectionFooter pending={pending} message={message} saved={saved} inBar={changes.inBar} />
         </CardBody>
       </Card>
     </form>

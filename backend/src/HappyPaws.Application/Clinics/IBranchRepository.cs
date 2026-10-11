@@ -12,6 +12,19 @@ public interface IBranchRepository
 
     Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default);
 
+    /// <summary>An open branch, tracked for modification (§ 51). Null when there is none or it is closed.</summary>
+    Task<Branch?> FindOpenTrackedAsync(string branchId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Tickets at the branch, still on a queue dated <paramref name="from"/> or later, that sit in
+    /// one of <paramref name="roomIds"/> — what stops a room being taken away (§ 51).
+    /// </summary>
+    Task<IReadOnlyList<ExamRoomUse>> ExamRoomUsesAsync(
+        string branchId,
+        IReadOnlyCollection<string> roomIds,
+        DateOnly from,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// The ids in <paramref name="branchIds"/> that are not an open branch of this clinic. Empty
     /// when all of them are — which is how staff, invitations and services check what they were
@@ -21,6 +34,13 @@ public interface IBranchRepository
         IReadOnlyCollection<string> branchIds,
         CancellationToken cancellationToken = default);
 }
+
+/// <summary>A ticket still on the queue in a room an edit would remove (§ 51).</summary>
+/// <param name="TicketId">The ticket — <c>tkt_...</c>.</param>
+/// <param name="Number">As printed — <c>A014</c>.</param>
+/// <param name="RoomId">The room it is assigned to.</param>
+/// <param name="ServiceDate">The queue's day.</param>
+public sealed record ExamRoomUse(string TicketId, string Number, string RoomId, DateOnly ServiceDate);
 
 /// <summary>Persistence port for the days the clinic is shut.</summary>
 public interface IHolidayRepository

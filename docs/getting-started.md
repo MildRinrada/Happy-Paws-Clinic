@@ -98,6 +98,8 @@ npm run dev
 dotnet run --project backend/src/HappyPaws.Api -- reset-credentials --email owner@example.test
 ```
 
+อีเมลต้องเป็นอีเมลเดียวกับที่ใส่ใน `--owner-email` ตอน `bootstrap` ถ้าใช้อีเมลอื่นตอนนั้น ให้เปลี่ยนในคำสั่งนี้ด้วย ไม่อย่างนั้นจะได้ `not_found` (account)
+
 ## ครั้งต่อไป
 
 ไม่ต้องทำขั้น 1 และ 3 ซ้ำ เปิด Docker Desktop แล้ว

@@ -348,8 +348,10 @@ internal sealed class PetTimelineReader(HappyPawsDbContext db) : IPetTimelineRea
                 lab.RequestedByStaffId,
                 lab.Status,
                 lab.Tests,
+                // A voided value (docs/contract-extensions.md § 52) counts towards nothing.
                 Abnormal = lab.Results.Count(result =>
-                    result.Flag == LabFlag.Low || result.Flag == LabFlag.High || result.Flag == LabFlag.Abnormal),
+                    result.VoidedAt == null
+                    && (result.Flag == LabFlag.Low || result.Flag == LabFlag.High || result.Flag == LabFlag.Abnormal)),
             })
             .ToListAsync(cancellationToken);
 

@@ -25,8 +25,24 @@ public sealed partial class ClinicProfile : Entity
 
     public string Name { get; private set; } = "Happy Paws Clinic";
 
-    /// <summary>Absolute <c>http(s)</c> address of the logo. Storage of the image itself is not this module's.</summary>
+    /// <summary>
+    /// The clinic's logo: an absolute <c>http(s)</c> address of an image hosted elsewhere, or an
+    /// uploaded logo written as <c>storage:clinic-brand/logo-…</c> (<see cref="ClinicBrandImage"/>,
+    /// <c>docs/contract-extensions.md § 50</c>). Null means the website draws its stand-in paw.
+    /// </summary>
     public string? LogoUrl { get; private set; }
+
+    /// <summary>
+    /// The square icon for the browser tab, uploaded only (<c>storage:clinic-brand/tab-icon-…</c>,
+    /// § 50). Null means the tab shows the logo, or the stand-in paw when there is no logo either.
+    /// </summary>
+    public string? TabIconUrl { get; private set; }
+
+    /// <summary>
+    /// Whether the clinic's name is written beside its logo (§ 50). Off for a logo that already
+    /// spells the name. It only matters while there is a logo: the stand-in paw always has the name.
+    /// </summary>
+    public bool ShowNameWithLogo { get; private set; } = true;
 
     /// <summary>The brand colour as <c>#RRGGBB</c>.</summary>
     public string? BrandColor { get; private set; }
@@ -48,7 +64,9 @@ public sealed partial class ClinicProfile : Entity
         string? logoUrl = null,
         string? brandColor = null,
         string? licenseNo = null,
-        string? operatorName = null)
+        string? operatorName = null,
+        string? tabIconUrl = null,
+        bool? showNameWithLogo = null)
     {
         if (name is not null)
         {
@@ -62,8 +80,17 @@ public sealed partial class ClinicProfile : Entity
 
         if (logoUrl is not null)
         {
-            LogoUrl = Cleared(logoUrl) is { } url ? WebAddress(url) : null;
+            LogoUrl = Cleared(logoUrl) is { } url
+                ? (ClinicBrandImage.IsUploaded(url) ? Uploaded(ClinicBrandImageKind.Logo, url) : WebAddress(url))
+                : null;
         }
+
+        if (tabIconUrl is not null)
+        {
+            TabIconUrl = Cleared(tabIconUrl) is { } icon ? Uploaded(ClinicBrandImageKind.TabIcon, icon) : null;
+        }
+
+        ShowNameWithLogo = showNameWithLogo ?? ShowNameWithLogo;
 
         if (brandColor is not null)
         {
@@ -83,6 +110,20 @@ public sealed partial class ClinicProfile : Entity
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
             ? uri.ToString()
             : throw new DomainException("invalid_clinic_profile", "ที่อยู่โลโก้ต้องเป็น URL แบบ http หรือ https");
+
+    /// <summary>
+    /// An uploaded picture, only in the exact shape <see cref="ClinicBrandImage"/> makes for that
+    /// kind. Whether its file has arrived is the handler's question, because only the storage can
+    /// answer it.
+    /// </summary>
+    private static string Uploaded(ClinicBrandImageKind kind, string value) =>
+        ClinicBrandImage.StorageKeyOf(kind, value) is not null
+            ? value
+            : throw new DomainException(
+                "invalid_clinic_profile",
+                kind == ClinicBrandImageKind.Logo
+                    ? "โลโก้ต้องเป็น URL แบบ http หรือ https หรือรูปที่อัปโหลดผ่านหน้าตั้งค่า"
+                    : "ไอคอนบนแท็บต้องเป็นรูปที่อัปโหลดผ่านหน้าตั้งค่า");
 
     private static string HexColor(string value) =>
         HexColorPattern().IsMatch(value)

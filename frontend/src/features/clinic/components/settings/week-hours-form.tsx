@@ -4,8 +4,9 @@ import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
-import { FormStatus } from '@/components/ui/form-status';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceOpeningHoursAction } from '../../actions/clinic-setup-actions';
 import { hoursSettings } from '../../content/hours-settings';
@@ -14,14 +15,27 @@ import type { OpeningHours } from '../../types/clinic.types';
 import type { DayHoursInput } from '../../types/settings.types';
 import { DayHoursRow } from './day-hours-row';
 
-/** The whole week, saved in one go: the API replaces all seven days together. */
+const FORM_ID = 'week-hours-form';
+
+/** The whole week, saved in one go by the settings save bar: the API replaces all seven days together. */
 export function WeekHoursForm({ hours }: { hours: OpeningHours }) {
   const text = hoursSettings.week;
   const [days, setDays] = useState(() => weekHoursInput(hours));
   const [version, setVersion] = useState(hours.version);
   const [configured, setConfigured] = useState(hours.configured);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
   const perDay = dayErrors(errors);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: days,
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0,
+    onReset: (stored) => {
+      clear();
+      setDays(stored);
+    },
+  });
 
   function change(index: number, day: DayHoursInput) {
     touch();
@@ -38,11 +52,14 @@ export function WeekHoursForm({ hours }: { hours: OpeningHours }) {
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const sent = days;
+
     submit(
-      () => replaceOpeningHoursAction({ version, days: weekHoursPayload(days) }),
+      () => replaceOpeningHoursAction({ version, days: weekHoursPayload(sent) }),
       (stored) => {
         setVersion(stored.version);
         setConfigured(true);
+        changes.markSaved(sent);
       },
     );
   }
@@ -57,7 +74,7 @@ export function WeekHoursForm({ hours }: { hours: OpeningHours }) {
           </Button>
         }
       />
-      <form onSubmit={save}>
+      <form id={FORM_ID} onSubmit={save}>
         {!configured && (
           <div className="px-5 pt-4">
             <Alert tone="info">{text.notConfigured}</Alert>
@@ -72,12 +89,7 @@ export function WeekHoursForm({ hours }: { hours: OpeningHours }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 px-5 py-3">
           <p className="text-xs text-ink-500">{text.note}</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <FormStatus message={message ?? errors.days} saved={saved} savedText={formMessages.saved} />
-            <Button type="submit" disabled={pending}>
-              {pending ? formMessages.saving : formMessages.save}
-            </Button>
-          </div>
+          <SectionFooter pending={pending} message={message ?? errors.days} saved={saved} inBar={changes.inBar} />
         </div>
       </form>
     </Card>

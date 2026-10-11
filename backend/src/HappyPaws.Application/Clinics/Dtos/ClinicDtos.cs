@@ -9,7 +9,9 @@ public sealed record ClinicProfileDto(
     string? LogoUrl,
     string? BrandColor,
     string? LicenseNo,
-    string? OperatorName)
+    string? OperatorName,
+    string? TabIconUrl,
+    bool ShowNameWithLogo)
 {
     public static ClinicProfileDto From(ClinicProfile profile) =>
         new(
@@ -18,7 +20,9 @@ public sealed record ClinicProfileDto(
             profile.LogoUrl,
             profile.BrandColor,
             profile.LicenseNo,
-            profile.OperatorName);
+            profile.OperatorName,
+            profile.TabIconUrl,
+            profile.ShowNameWithLogo);
 }
 
 /// <summary>One site — <c>GET /clinic/branches</c>, "สาขา ที่อยู่ พิกัด ห้องตรวจ".</summary>

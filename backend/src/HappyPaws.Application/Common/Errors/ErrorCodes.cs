@@ -142,4 +142,11 @@ public static class ErrorCodes
 
     /// <summary>409: the review invitation link is past its 30 days (<c>docs/contract-extensions.md § 36</c>).</summary>
     public const string ReviewInvitationExpired = "review_invitation_expired";
+
+    /// <summary>
+    /// 409: a branch edit takes away an exam room that a ticket still on the queue is assigned to;
+    /// <c>details.rooms</c> names the rooms and <c>details.tickets</c> the tickets
+    /// (<c>docs/contract-extensions.md § 51</c>).
+    /// </summary>
+    public const string ExamRoomInUse = "exam_room_in_use";
 }

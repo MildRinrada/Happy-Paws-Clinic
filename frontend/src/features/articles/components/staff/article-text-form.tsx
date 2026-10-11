@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Field, Input, Textarea } from '@/components/ui/field';
 import { FormStatus } from '@/components/ui/form-status';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useLeaveWarning } from '@/features/settings/hooks/use-leave-warning';
+import { sameValue } from '@/features/settings/lib/same-value';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { createArticleAction, updateArticleAction } from '../../actions/manage-article-actions';
 import { articleEditorText } from '../../content/article-editor';
@@ -32,6 +34,9 @@ export function ArticleTextForm({ article, onSaved }: ArticleTextFormProps) {
   const id = useId();
   const router = useRouter();
   const [draft, setDraft] = useState<ArticleDraft>(() => (article ? draftFromArticle(article) : emptyDraft));
+  const [savedDraft, setSavedDraft] = useState(draft);
+  // Keeps its own save beside publishing and the cover, so it is not in the save bar; leaving still asks.
+  useLeaveWarning('article-text-form', !sameValue(draft, savedDraft));
   const [minutesBad, setMinutesBad] = useState(false);
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
 
@@ -58,7 +63,9 @@ export function ArticleTextForm({ article, onSaved }: ArticleTextFormProps) {
     submit(
       () => updateArticleAction({ id: article.id, version: article.version, changes: article.slug_locked ? rest : { ...rest, slug } }),
       (stored) => {
-        setDraft(draftFromArticle(stored));
+        const next = draftFromArticle(stored);
+        setDraft(next);
+        setSavedDraft(next);
         onSaved?.(stored);
       },
     );

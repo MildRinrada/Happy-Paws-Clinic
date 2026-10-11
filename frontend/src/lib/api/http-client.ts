@@ -25,6 +25,8 @@ export interface RequestOptions {
    * anonymous reads (`publicApi()`): a cached answer is shared by every visitor.
    */
   revalidate?: number;
+  /** Cache tags for a `revalidate` read, so a save can drop it at once with `revalidateTag`. */
+  tags?: string[];
 }
 
 export interface HttpClientConfig {
@@ -77,7 +79,7 @@ export function createHttpClient({ baseUrl, authHeaders }: HttpClientConfig) {
       signal: options.signal,
       ...(options.revalidate === undefined
         ? { cache: options.cache ?? 'no-store' }
-        : { next: { revalidate: options.revalidate } }),
+        : { next: { revalidate: options.revalidate, ...(options.tags ? { tags: options.tags } : {}) } }),
     });
 
     // A refusal is the usual JSON error envelope whatever was asked for.

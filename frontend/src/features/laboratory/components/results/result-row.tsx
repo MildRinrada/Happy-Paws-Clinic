@@ -14,60 +14,92 @@ interface ResultRowProps {
   onRemove?: () => void;
 }
 
-const label = 'block text-xs font-medium text-ink-600';
+/** The grid every row and the header share: name, value, unit, range, abnormal, remove. */
+export const resultGrid =
+  'grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_5.5rem_minmax(0,1.3fr)_4.5rem_4.5rem] sm:items-center';
 
-/** One measured value: what, how much, in what unit, and the range printed beside it. */
+const small = 'h-9';
+
+/**
+ * One measured value on one line. A row filled from a panel keeps its name, unit and range out of
+ * the Tab order (still editable by click or tap), so Tab goes from value to value down a blood
+ * count. Each box has its own label for a screen reader, naming the value it belongs to.
+ */
 export function ResultRow({ idPrefix, index, draft, error, onChange, onRemove }: ResultRowProps) {
   const text = labPage.resultForm;
   const id = (field: string) => `${idPrefix}-${index}-${field}`;
+  const label = (field: string) => text.rowLabel(field, draft.analyte, index + 1);
+  const skip = draft.panel ? -1 : undefined;
   const set = (field: keyof ResultDraft) => (event: { target: { value: string } }) => onChange({ ...draft, [field]: event.target.value });
 
   return (
-    <fieldset className="space-y-2 rounded-lg border border-ink-100 p-3">
-      <legend className="px-1 text-xs text-ink-500">{text.row(index + 1)}</legend>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_5rem_5.5rem_5.5rem]">
-        <div className="space-y-1">
-          <label htmlFor={id('analyte')} className={label}>{text.analyte}</label>
-          <Input id={id('analyte')} value={draft.analyte} maxLength={100} placeholder={text.analytePlaceholder} onChange={set('analyte')} />
+    <div role="group" aria-label={draft.analyte || text.row(index + 1)} className="rounded-lg border border-ink-100 p-2 sm:border-0 sm:p-0">
+      <div className={resultGrid}>
+        <div>
+          <label htmlFor={id('analyte')} className="sr-only">{label(text.analyte)}</label>
+          <Input
+            id={id('analyte')}
+            className={`${small} ${draft.panel ? 'border-transparent bg-ink-50 font-medium' : ''}`}
+            value={draft.analyte}
+            maxLength={100}
+            placeholder={text.analytePlaceholder}
+            tabIndex={skip}
+            onChange={set('analyte')}
+          />
         </div>
-        <div className="space-y-1">
-          <label htmlFor={id('value')} className={label}>{text.value}</label>
-          <Input id={id('value')} value={draft.value} maxLength={500} placeholder={text.valuePlaceholder} onChange={set('value')} />
+        <div>
+          <label htmlFor={id('value')} className="sr-only">{label(text.value)}</label>
+          <Input
+            id={id('value')}
+            className={`${small} tabular-nums`}
+            value={draft.value}
+            maxLength={500}
+            placeholder={text.valuePlaceholder}
+            aria-invalid={Boolean(error)}
+            onChange={set('value')}
+          />
         </div>
-        <div className="space-y-1">
-          <label htmlFor={id('unit')} className={label}>{text.unit}</label>
-          <Input id={id('unit')} value={draft.unit} maxLength={30} onChange={set('unit')} />
+        <div>
+          <label htmlFor={id('unit')} className="sr-only">{label(text.unit)}</label>
+          <Input id={id('unit')} className={small} value={draft.unit} maxLength={30} tabIndex={skip} onChange={set('unit')} />
         </div>
-        <div className="space-y-1">
-          <label htmlFor={id('low')} className={label}>{text.low}</label>
-          <Input id={id('low')} inputMode="decimal" value={draft.low} onChange={set('low')} />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor={id('high')} className={label}>{text.high}</label>
-          <Input id={id('high')} inputMode="decimal" value={draft.high} onChange={set('high')} />
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-sm text-ink-700">
+        {draft.rangeKind === 'text' ? (
+          <div>
+            <label htmlFor={id('range-text')} className="sr-only">{label(text.rangeText)}</label>
+            <Input id={id('range-text')} className={small} value={draft.rangeText} maxLength={200} tabIndex={skip} onChange={set('rangeText')} />
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <label htmlFor={id('low')} className="sr-only">{label(text.low)}</label>
+            <Input id={id('low')} className={`${small} tabular-nums`} inputMode="decimal" value={draft.low} tabIndex={skip} onChange={set('low')} />
+            <span aria-hidden className="text-ink-400">-</span>
+            <label htmlFor={id('high')} className="sr-only">{label(text.high)}</label>
+            <Input id={id('high')} className={`${small} tabular-nums`} inputMode="decimal" value={draft.high} tabIndex={skip} onChange={set('high')} />
+          </div>
+        )}
+        <label className="flex items-center gap-2 text-sm text-ink-700 sm:justify-center">
           <input
             type="checkbox"
             checked={draft.abnormal}
+            tabIndex={skip}
             onChange={(event) => onChange({ ...draft, abnormal: event.target.checked })}
             className="size-4 accent-brand-600"
           />
-          {text.abnormal}
+          <span className="sm:sr-only">{text.abnormal}</span>
         </label>
-        {onRemove && (
-          <Button variant="ghost" size="sm" onClick={onRemove}>
-            {text.removeRow}
-          </Button>
-        )}
+        <div className="text-right">
+          {onRemove && (
+            <Button variant="ghost" size="sm" tabIndex={skip} aria-label={label(text.removeRow)} onClick={onRemove}>
+              {text.removeRow}
+            </Button>
+          )}
+        </div>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="mt-1 text-sm text-red-700">
           {error}
         </p>
       )}
-    </fieldset>
+    </div>
   );
 }

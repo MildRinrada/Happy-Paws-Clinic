@@ -16,6 +16,12 @@ internal sealed class ClinicProfileConfiguration : EntityConfiguration<ClinicPro
 
         builder.Property(profile => profile.Name).HasMaxLength(200).IsRequired();
         builder.Property(profile => profile.LogoUrl).HasMaxLength(1000);
+
+        // docs/contract-extensions.md § 50. The column for the "show the name" switch has no
+        // default in the model: a default of true would make EF leave a false out of the first
+        // insert. The migration fills existing rows with true instead.
+        builder.Property(profile => profile.TabIconUrl).HasMaxLength(1000);
+        builder.Property(profile => profile.ShowNameWithLogo);
         builder.Property(profile => profile.BrandColor).HasMaxLength(7);
         builder.Property(profile => profile.LicenseNo).HasMaxLength(64);
         builder.Property(profile => profile.OperatorName).HasMaxLength(200);

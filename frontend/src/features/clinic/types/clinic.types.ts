@@ -2,10 +2,18 @@
 export interface ClinicProfile {
   version: number;
   name: string;
+  /**
+   * The logo: an `https://` address, or an uploaded logo as `storage:clinic-brand/logo-…`
+   * (docs/contract-extensions.md § 50). Read it through `logoSrcOf`, never as an image address.
+   */
   logo_url?: string;
   brand_color?: string;
   license_no?: string;
   operator_name?: string;
+  /** The optional square browser-tab icon, uploaded only (§ 50). */
+  tab_icon_url?: string;
+  /** Whether the name is written beside the logo (§ 50). Absent from an older API: treat as on. */
+  show_name_with_logo?: boolean;
 }
 
 export type Weekday = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';

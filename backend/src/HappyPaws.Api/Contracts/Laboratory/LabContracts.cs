@@ -39,3 +39,37 @@ public sealed record LabResultRequest(
     decimal? ReferenceHigh = null,
     string? ReferenceText = null,
     bool? Abnormal = null);
+
+/// <summary>
+/// <c>POST /staff/lab-requests/{id}/review</c> — the optional body (<c>docs/contract-extensions.md § 53</c>).
+/// No body reads the results with no note, as before.
+/// </summary>
+public sealed record ReviewLabResultsRequest(string? Note = null);
+
+/// <summary>
+/// <c>POST /staff/lab-requests/{id}/results/{resultId}/amend</c> (<c>docs/contract-extensions.md § 52</c>).
+/// The whole value as it should have been, in the shape of one row of <c>POST .../results</c>, and
+/// why. Fields left out are cleared, except <c>analyte</c>, which keeps the name it has.
+/// </summary>
+public sealed record AmendLabResultRequest(
+    string? Reason = null,
+    string? Analyte = null,
+    decimal? Value = null,
+    string? ValueText = null,
+    string? Unit = null,
+    decimal? ReferenceLow = null,
+    decimal? ReferenceHigh = null,
+    string? ReferenceText = null,
+    bool? Abnormal = null);
+
+/// <summary><c>POST /staff/lab-requests/{id}/results/{resultId}/void</c> (§ 52).</summary>
+public sealed record VoidLabResultRequest(string? Reason = null);
+
+/// <summary><c>POST /staff/lab-requests/{id}/attachments/uploads</c> (§ 54): the file's type and size.</summary>
+public sealed record LabFileUploadRequest(string? ContentType = null, long SizeBytes = 0);
+
+/// <summary>
+/// <c>POST /staff/lab-requests/{id}/attachments</c> (§ 54): the <c>value</c> the upload request
+/// answered, the file's name to show, and its size.
+/// </summary>
+public sealed record AttachLabFileRequest(string? File = null, string? FileName = null, long? SizeBytes = null);

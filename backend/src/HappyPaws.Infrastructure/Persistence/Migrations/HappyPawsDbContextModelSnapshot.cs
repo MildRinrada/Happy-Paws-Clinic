@@ -1565,6 +1565,15 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("operator_name");
 
+                    b.Property<bool>("ShowNameWithLogo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_name_with_logo");
+
+                    b.Property<string>("TabIconUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("tab_icon_url");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
@@ -4358,6 +4367,60 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                     b.ToTable("stock_movements", (string)null);
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabAttachment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AttachedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("attached_at");
+
+                    b.Property<string>("AttachedByStaffId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("attached_by_staff_id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("LabRequestId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("lab_request_id");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lab_attachments");
+
+                    b.HasIndex("LabRequestId")
+                        .HasDatabaseName("ix_lab_attachments_lab_request_id");
+
+                    b.ToTable("lab_attachments", (string)null);
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>
                 {
                     b.Property<string>("Id")
@@ -4422,6 +4485,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("resulted_at");
 
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("review_note");
+
                     b.Property<DateTimeOffset?>("ReviewedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reviewed_at");
@@ -4471,6 +4539,20 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("id");
 
+                    b.Property<string>("AmendReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("amend_reason");
+
+                    b.Property<DateTimeOffset?>("AmendedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("amended_at");
+
+                    b.Property<string>("AmendedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("amended_by_staff_id");
+
                     b.Property<string>("Analyte")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -4487,6 +4569,11 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("lab_request_id");
+
+                    b.Property<string>("PreviousValues")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("previous_values");
 
                     b.Property<DateTimeOffset>("RecordedAt")
                         .HasColumnType("timestamptz")
@@ -4527,6 +4614,20 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("value_text");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("void_reason");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("voided_at");
+
+                    b.Property<string>("VoidedByStaffId")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("voided_by_staff_id");
 
                     b.HasKey("Id")
                         .HasName("pk_lab_results");
@@ -7584,6 +7685,16 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_stock_movements_purchase_orders_purchase_order_id");
                 });
 
+            modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabAttachment", b =>
+                {
+                    b.HasOne("HappyPaws.Domain.Laboratory.LabRequest", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("LabRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lab_attachments_lab_request_lab_request_id");
+                });
+
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>
                 {
                     b.HasOne("HappyPaws.Domain.Clinics.Branch", null)
@@ -7951,6 +8062,8 @@ namespace HappyPaws.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HappyPaws.Domain.Laboratory.LabRequest", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Results");
                 });
 

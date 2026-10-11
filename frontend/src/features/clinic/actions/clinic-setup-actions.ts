@@ -1,9 +1,11 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
-import { runAction } from '@/lib/actions/action-result';
-import { addHoliday, createBranch, replaceOpeningHours, updateClinicProfile } from '../api/clinic-setup';
+import { runAction, type ActionResult } from '@/lib/actions/action-result';
+import { addHoliday, createBranch, replaceOpeningHours, requestBrandImage, updateBranch, updateClinicProfile } from '../api/clinic-setup';
+import { CLINIC_PROFILE_TAG } from '../api/getCachedClinicProfile';
+import type { BrandImageUpload } from '../types/settings.types';
 
 /**
  * The clinic and hours settings pages' changes. The backend decides what is valid; these check the
@@ -19,6 +21,11 @@ function refresh(settingsPath: string) {
   revalidatePath('/', 'layout');
 }
 
+/** The logo and tab icon every page reads from a shared, cached profile (§ 50): dropped at once on save. */
+function refreshClinicMark() {
+  revalidateTag(CLINIC_PROFILE_TAG);
+}
+
 const version = z.number().int().nonnegative();
 const time = z.string().regex(/^\d{2}:\d{2}$/);
 
@@ -30,6 +37,8 @@ const profile = z.object({
     brand_color: z.string().trim().max(7),
     license_no: z.string().trim().max(64),
     operator_name: z.string().trim().max(200),
+    tab_icon_url: z.string().trim().max(1000),
+    show_name_with_logo: z.boolean(),
   }),
 });
 
@@ -38,7 +47,25 @@ export async function updateClinicProfileAction(payload: z.infer<typeof profile>
   const result = await runAction(() => updateClinicProfile(parsed.version, parsed.values));
 
   refresh('/settings/clinic');
+  refreshClinicMark();
   return result;
+}
+
+const brandImage = z.object({
+  kind: z.enum(['logo', 'tab-icon']),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']),
+  sizeBytes: z.number().int().positive().max(5 * 1024 * 1024),
+});
+
+/**
+ * Asks for the signed URL of a new logo or tab icon (docs/contract-extensions.md § 50); the browser
+ * then sends the file there itself. The website does not change until the profile is saved with the
+ * value this answers.
+ */
+export async function requestBrandImageAction(values: z.infer<typeof brandImage>): Promise<ActionResult<BrandImageUpload>> {
+  const input = brandImage.parse(values);
+
+  return runAction(() => requestBrandImage(input.kind, { content_type: input.contentType, size_bytes: input.sizeBytes }));
 }
 
 const branch = z.object({
@@ -53,6 +80,27 @@ const branch = z.object({
 export async function createBranchAction(values: z.infer<typeof branch>) {
   const parsed = branch.parse(values);
   const result = await runAction(() => createBranch(parsed));
+
+  refresh('/settings/clinic');
+  return result.ok ? { ok: true as const, data: undefined } : result;
+}
+
+const branchUpdate = z.object({
+  id: z.string().trim().min(1).max(40),
+  version,
+  values: z.object({
+    name: z.string().trim().max(200),
+    address: z.string().trim().max(500),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    exam_rooms: z.array(z.string().trim().min(1).max(60)).max(50),
+  }),
+});
+
+/** Changes a branch (docs/contract-extensions.md § 51). Its name and address are on public pages. */
+export async function updateBranchAction(payload: z.infer<typeof branchUpdate>) {
+  const parsed = branchUpdate.parse(payload);
+  const result = await runAction(() => updateBranch(parsed.id, parsed.version, parsed.values));
 
   refresh('/settings/clinic');
   return result.ok ? { ok: true as const, data: undefined } : result;

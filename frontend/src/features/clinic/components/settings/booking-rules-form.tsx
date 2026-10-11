@@ -1,24 +1,37 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Field, Select } from '@/components/ui/field';
-import { FormStatus } from '@/components/ui/form-status';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { updateBookingSettingsAction } from '../../actions/clinic-rules-actions';
 import { rulesSettings, SLOT_CHOICES } from '../../content/rules-settings';
 import type { BookingSettings, BookingSettingsInput } from '../../types/settings.types';
 import { NumberField } from './number-field';
 
-/** Slot length, lead time, cancellation cutoff and how far ahead booking opens. */
+const FORM_ID = 'booking-rules-form';
+
+/** Slot length, lead time, cancellation cutoff and how far ahead booking opens. Saved by the save bar. */
 export function BookingRulesForm({ settings }: { settings: BookingSettings }) {
   const text = rulesSettings.booking;
   const { version: initialVersion, ...initial } = settings;
   const [values, setValues] = useState<BookingSettingsInput>(initial);
   const [version, setVersion] = useState(initialVersion);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: values,
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0,
+    onReset: (stored) => {
+      clear();
+      setValues(stored);
+    },
+  });
 
   const set = (field: keyof BookingSettingsInput) => (value: number) => {
     touch();
@@ -30,14 +43,22 @@ export function BookingRulesForm({ settings }: { settings: BookingSettings }) {
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    submit(() => updateBookingSettingsAction({ version, values }), (stored) => setVersion(stored.version));
+    const sent = values;
+
+    submit(
+      () => updateBookingSettingsAction({ version, values: sent }),
+      (stored) => {
+        setVersion(stored.version);
+        changes.markSaved(sent);
+      },
+    );
   }
 
   return (
     <Card>
       <CardHeader title={text.heading} />
       <CardBody>
-        <form onSubmit={save} className="space-y-4">
+        <form id={FORM_ID} onSubmit={save} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={text.slotMinutes} htmlFor="rules-slot" hint={text.slotMinutesHint} error={errors.slot_minutes}>
               <Select id="rules-slot" value={values.slot_minutes} className="max-w-40" onChange={(event) => set('slot_minutes')(Number(event.target.value))}>
@@ -93,12 +114,7 @@ export function BookingRulesForm({ settings }: { settings: BookingSettings }) {
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <FormStatus message={message} saved={saved} savedText={formMessages.saved} />
-            <Button type="submit" disabled={pending}>
-              {pending ? formMessages.saving : formMessages.save}
-            </Button>
-          </div>
+          <SectionFooter pending={pending} message={message} saved={saved} inBar={changes.inBar} />
         </form>
       </CardBody>
     </Card>

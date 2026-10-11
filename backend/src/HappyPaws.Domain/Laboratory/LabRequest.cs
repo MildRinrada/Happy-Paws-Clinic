@@ -22,8 +22,12 @@ public sealed class LabRequest : Entity
     public const int MaxResultsPerPost = 100;
     public const int MaxResults = 300;
 
+    /// <summary>The longest note a vet may leave when reading the results (§ 53).</summary>
+    public const int MaxReviewNoteLength = 1_000;
+
     private readonly List<LabTest> _tests = [];
     private readonly List<LabResult> _results = [];
+    private readonly List<LabAttachment> _attachments = [];
 
     private LabRequest()
     {
@@ -63,6 +67,17 @@ public sealed class LabRequest : Entity
 
     public string? ReviewedByStaffId { get; private set; }
 
+    /// <summary>
+    /// What the vet wrote when reading the results — "ค่าไตสูงเล็กน้อย นัดตรวจซ้ำ 2 สัปดาห์"
+    /// (<c>docs/contract-extensions.md § 53</c>). Belongs to that reading: results that put the
+    /// request back in front of a vet clear it with the rest of the review.
+    /// </summary>
+    public string? ReviewNote { get; private set; }
+
+    /// <summary>Files from the lab, oldest first (<c>docs/contract-extensions.md § 54</c>).</summary>
+    public IReadOnlyList<LabAttachment> Attachments => _attachments;
+
+    /// <summary>Values outside their range, not counting voided ones.</summary>
     public int AbnormalCount => _results.Count(result => result.IsAbnormal);
 
     public static LabRequest Create(
@@ -142,17 +157,17 @@ public sealed class LabRequest : Entity
         _results.AddRange(added);
         Status = LabRequestStatus.Resulted;
         ResultedAt = recordedAt;
-        ReviewedAt = null;
-        ReviewedByStaffId = null;
+        ClearReview();
 
         return added;
     }
 
     /// <summary>
     /// A vet has read the results, which takes the request off "ผลที่ยังไม่มีคนอ่าน". Reading it
-    /// twice is not an error; reading results that do not exist yet is.
+    /// twice is not an error, and the second reading changes nothing, its note included; reading
+    /// results that do not exist yet is an error. The note is optional (§ 53).
     /// </summary>
-    public void Review(string reviewedByStaffId, DateTimeOffset at)
+    public void Review(string reviewedByStaffId, DateTimeOffset at, string? note = null)
     {
         if (Status == LabRequestStatus.Reviewed)
         {
@@ -164,9 +179,117 @@ public sealed class LabRequest : Entity
             throw new StateConflictException(nameof(LabRequest), Status.ToString(), nameof(Review));
         }
 
+        var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        if (cleanNote is { Length: > MaxReviewNoteLength })
+        {
+            throw Invalid($"บันทึกของสัตวแพทย์ยาวได้ไม่เกิน {MaxReviewNoteLength} ตัวอักษร");
+        }
+
         Status = LabRequestStatus.Reviewed;
         ReviewedAt = at;
         ReviewedByStaffId = reviewedByStaffId;
+        ReviewNote = cleanNote;
+    }
+
+    /// <summary>
+    /// Corrects one value (<c>docs/contract-extensions.md § 52</c>). The value it replaces stays on
+    /// the result. Results a vet has already read go back in front of a vet, the way new results
+    /// do: the value they read is no longer the value on file.
+    /// </summary>
+    /// <returns>The value as it was before, for the audit trail.</returns>
+    public LabResultRevision AmendResult(
+        LabResult result,
+        LabResultInput corrected,
+        string reason,
+        string staffId,
+        DateTimeOffset at)
+    {
+        EnsureOwn(result);
+        result.Amend(corrected, reason, staffId, at);
+        ReopenAfterCorrection(at);
+
+        return result.PreviousValues[^1];
+    }
+
+    /// <summary>
+    /// Strikes one value out (§ 52). It stays on the request, marked, and counts towards nothing.
+    /// Reopens read results the same way a correction does.
+    /// </summary>
+    public void VoidResult(LabResult result, string reason, string staffId, DateTimeOffset at)
+    {
+        EnsureOwn(result);
+        result.Void(reason, staffId, at);
+        ReopenAfterCorrection(at);
+    }
+
+    /// <summary>
+    /// Attaches a file that has already been uploaded under a key made for this request (§ 54).
+    /// A file does not change whether the results have been read: it is the paper behind values
+    /// that are entered, and read, as values.
+    /// </summary>
+    public LabAttachment Attach(string storageKey, string fileName, long? sizeBytes, string staffId, DateTimeOffset at)
+    {
+        if (_attachments.Count >= LabFile.MaxPerRequest)
+        {
+            throw LabAttachment.Invalid($"คำขอตรวจหนึ่งรายการแนบไฟล์ได้ไม่เกิน {LabFile.MaxPerRequest} ไฟล์");
+        }
+
+        if (_attachments.Any(attachment => attachment.StorageKey == storageKey))
+        {
+            throw LabAttachment.Invalid("แนบไฟล์นี้ไว้แล้ว");
+        }
+
+        var attachment = LabAttachment.Create(Id, storageKey, fileName, sizeBytes, staffId, at);
+        _attachments.Add(attachment);
+        UpdatedAt = at;
+
+        return attachment;
+    }
+
+    /// <summary>Takes a file off the request. Null when the request has no such file.</summary>
+    public LabAttachment? RemoveAttachment(string attachmentId, DateTimeOffset at)
+    {
+        var attachment = _attachments.FirstOrDefault(item => item.Id == attachmentId);
+        if (attachment is null)
+        {
+            return null;
+        }
+
+        _attachments.Remove(attachment);
+        UpdatedAt = at;
+
+        return attachment;
+    }
+
+    private void EnsureOwn(LabResult result)
+    {
+        if (!_results.Contains(result))
+        {
+            throw new InvalidOperationException($"Result {result.Id} is not on lab request {Id}.");
+        }
+    }
+
+    /// <summary>
+    /// A correction changes the row of the result, not of the request; touching the request is
+    /// what moves its <c>version</c>, so a stale <c>If-Match</c> on the next correction conflicts.
+    /// </summary>
+    private void ReopenAfterCorrection(DateTimeOffset at)
+    {
+        UpdatedAt = at;
+
+        if (Status == LabRequestStatus.Reviewed)
+        {
+            Status = LabRequestStatus.Resulted;
+            ResultedAt = at;
+            ClearReview();
+        }
+    }
+
+    private void ClearReview()
+    {
+        ReviewedAt = null;
+        ReviewedByStaffId = null;
+        ReviewNote = null;
     }
 
     private static DomainException Invalid(string message) => new("invalid_lab_request", message);

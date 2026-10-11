@@ -1,6 +1,7 @@
 using HappyPaws.Application.Clinics;
 using HappyPaws.Domain.Clinics;
 using HappyPaws.Domain.Common;
+using HappyPaws.Domain.Queueing;
 using Microsoft.EntityFrameworkCore;
 
 namespace HappyPaws.Infrastructure.Persistence.Repositories.Clinics;
@@ -58,6 +59,31 @@ internal sealed class BranchRepository(HappyPawsDbContext db) : IBranchRepositor
 
     public Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default) =>
         db.Set<Branch>().AnyAsync(branch => branch.Code == code, cancellationToken);
+
+    public Task<Branch?> FindOpenTrackedAsync(string branchId, CancellationToken cancellationToken = default) =>
+        db.Set<Branch>().FirstOrDefaultAsync(branch => branch.Id == branchId && branch.IsActive, cancellationToken);
+
+    public async Task<IReadOnlyList<ExamRoomUse>> ExamRoomUsesAsync(
+        string branchId,
+        IReadOnlyCollection<string> roomIds,
+        DateOnly from,
+        CancellationToken cancellationToken = default)
+    {
+        var rooms = roomIds.ToArray();
+        var live = QueueTicketTransitions.LiveStatuses;
+
+        // "Still on a queue" is the board's own definition, so a room is held exactly as long as
+        // the waiting room can still be sent to it.
+        return await db.Set<QueueTicket>().AsNoTracking()
+            .Where(ticket => ticket.BranchId == branchId
+                && ticket.ServiceDate >= from
+                && ticket.RoomId != null
+                && rooms.Contains(ticket.RoomId)
+                && live.Contains(ticket.Status))
+            .OrderBy(ticket => ticket.ServiceDate).ThenBy(ticket => ticket.Sequence)
+            .Select(ticket => new ExamRoomUse(ticket.Id, ticket.Number, ticket.RoomId!, ticket.ServiceDate))
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<string>> MissingAsync(
         IReadOnlyCollection<string> branchIds,

@@ -36,7 +36,13 @@ public interface IFileStorage
     UploadTicket CreateUpload(string key, string contentType, long maxBytes, TimeSpan lifetime);
 
     /// <summary>A URL that serves the file at this key until it expires.</summary>
-    string CreateDownloadUrl(string key, TimeSpan lifetime);
+    /// <param name="key">The file.</param>
+    /// <param name="lifetime">How long the URL works.</param>
+    /// <param name="saveAs">
+    /// When given, the file is served as a download under this name (<c>Content-Disposition:
+    /// attachment</c>) instead of in the browser. A lab's PDF is (<c>docs/contract-extensions.md § 54</c>).
+    /// </param>
+    string CreateDownloadUrl(string key, TimeSpan lifetime, string? saveAs = null);
 
     /// <summary>
     /// Stores a file sent to an upload URL. Returns null when the token is not a valid, unexpired

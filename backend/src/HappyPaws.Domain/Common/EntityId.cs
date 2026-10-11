@@ -67,6 +67,9 @@ public static class EntityId
     /// <summary>The contract's own example: <c>lab_338</c>.</summary>
     public const string LabRequest = "lab";
     public const string LabResult = "lbr";
+
+    /// <summary>A file on a lab request (<c>docs/contract-extensions.md § 54</c>).</summary>
+    public const string LabAttachment = "lbf";
     public const string TreatmentTemplate = "tpl";
     public const string WaitingList = "wtl";
     public const string TreatmentPlan = "tpn";

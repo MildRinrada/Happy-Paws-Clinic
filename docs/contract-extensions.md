@@ -1,6 +1,6 @@
 # ส่วนขยาย contract
 
-`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 113 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 ถึง 39 46 และ 47 ถึง 49 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
+`API Reference.dc.html` คือ contract และกติกาหลักของโปรเจกต์คือ ห้ามเปลี่ยนชื่อ path ห้ามเปลี่ยน method ห้ามแต่ง endpoint เอกสารนี้คือทะเบียนข้อยกเว้น คือ **endpoint 118 เส้นและกฎพฤติกรรมสองข้อที่ไม่อยู่ใน reference** ข้อ 1 ถึง 7, 11 ถึง 14 และ 17 ถึง 20 ปิดช่องโหว่ที่เจอตอนสร้างระบบตาม contract ส่วนข้อ 9 10 15 16 21 33 ถึง 39 46 47 ถึง 49 50 และ 51 เป็นฟีเจอร์ที่เจ้าของงานขอเพิ่มเอง
 
 ทุกข้อมีอยู่เพราะเจ้าของ contract อนุมัติหลังได้รับรายงานช่องโหว่ และทุกข้อมีหมายเหตุในโค้ด คือ comment ของ controller, domain type หรือ handler เขียนว่า *"not in the API reference"* หรือชี้กลับมาที่หัวข้อในหน้านี้ (เช่น `docs/contract-extensions.md § 7`) คนที่อ่านทีหลังจึงแยกได้ทันทีว่าส่วนไหนของ API คือ contract และส่วนไหนคือคำตอบของโปรเจกต์นี้ต่อช่องโหว่
 
@@ -52,8 +52,10 @@
 | 47 | ลงเวรผิดแล้วแก้หรือลบไม่ได้ ต้องบันทึกวันลาทับช่วงนั้นแทน ประวัติวันลาจึงไม่ตรงกับความจริง | `PATCH` และ `DELETE /staff/schedules/shifts/{id}` และช่อง `version` ในเวรทุกเส้น | **ทำแล้ว** |
 | 48 | กติกาจ่ายเคสเขียนได้แต่อ่านกลับไม่ได้ หน้าจอจึงเริ่มจากตัวอย่างทุกครั้ง | `GET /staff/schedules/assignment-rules` | **ทำแล้ว** |
 | 49 | ตารางเวรที่ซ้ำทุกสัปดาห์ต้องลงใหม่ทีละคน | `POST /staff/schedules/shifts/copy-week` | **ทำแล้ว** |
+| 50 | ทุกหน้าวาดรูปอุ้งเท้าตายตัวแทนโลโก้ และไอคอนบนแท็บเป็นไฟล์ตายตัว คลินิกใส่โลโก้ของตัวเองไม่ได้ | `POST` และ `GET /clinic/logo`, `POST` และ `GET /clinic/tab-icon`, ค่า `storage:` ใน `logo_url` เดิม และช่องใหม่ `tab_icon_url` กับ `show_name_with_logo` บน `/clinic` พร้อม migration หนึ่งตัว | **ทำแล้ว** |
+| 51 | สาขาที่เปิดแล้วแก้ชื่อ ที่อยู่ พิกัด หรือห้องตรวจไม่ได้ ต้องแก้ฐานข้อมูลตรง | `PATCH /clinic/branches/{id}` ที่ไม่ยอมเอาห้องที่คิวยังใช้อยู่ออก | **ทำแล้ว** |
 
-endpoint ใหม่ 109 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีสี่ข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม และ § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
+endpoint ใหม่ 118 เส้น เทียบกับ endpoint ของ contract ที่ทำแล้ว 160 เส้น มีห้าข้อที่ไม่ต้องมี endpoint ใหม่เลย คือ § 5 เป็นรายชื่อ § 6 เป็นกฎ § 21 เป็นค่าใหม่ของช่องเดิม § 31 เป็นช่องและตัวกรองใหม่บนเส้นเดิม และ § 46 เป็นสิทธิ์ของบทบาทตั้งต้น ซึ่งควรสังเกต เพราะสิ่งที่ขาดส่วนใหญ่ไม่ใช่ endpoint
 
 ## 1. คิวไม่มีทางบอกว่า "คนนี้ก่อน"
 
@@ -2674,6 +2676,170 @@ POST /v1/staff/schedules/shifts/copy-week                         schedule:write
 
 **หน้าจอของข้อ 47 ถึง 49** หน้าตารางเวรมีปุ่ม "+ ลงเวร" "บันทึกวันลา" และ "คัดลอกเวรสัปดาห์ก่อน" บนหัวหน้า แต่ละปุ่มเปิดฟอร์มในกล่อง กดช่องว่างในตารางเปิดฟอร์มลงเวรที่เลือกคนและวันไว้แล้ว กดป้ายเวรเปิดกล่อง "แก้หรือลบเวร" ซึ่งแสดงรายการนัดที่ต้องโทรเมื่อมี กล่องคัดลอกบอกว่าจะคัดลอกกี่เวรของกี่คนจากสัปดาห์ไหนก่อนกด และแสดงรายการที่ชนเมื่อถูกปฏิเสธ กติกาจ่ายเคสเริ่มจากกติกาที่บันทึกไว้ คนที่มีแค่ `schedule:read` ไม่เห็นปุ่มและกดอะไรในตารางไม่ได้ รายละเอียดอยู่ใน [ตารางเวร](features/schedules.md)
 
+## 50. โลโก้ของคลินิก
+
+**ช่องโหว่** ทุกหน้าวาดรูปอุ้งเท้าที่เขียนไว้ในโค้ดแทนโลโก้ ทั้งหัวและท้ายหน้าเว็บ หัวหน้าลูกค้า หน้าเข้าสู่ระบบ และเมนูของพนักงาน ส่วนไอคอนบนแท็บเป็นไฟล์ `icon.svg` ตายตัว ช่อง `logo_url` ของ `PATCH /clinic` รับได้แค่ลิงก์รูปที่อยู่เว็บอื่น และมีแค่เมนูของพนักงานที่ใช้ คลินิกที่มีโลโก้ของตัวเองจึงต้องหาที่ฝากรูปเอง และหน้าเว็บส่วนใหญ่ก็ยังไม่แสดง เจ้าของงานขอให้อัปโหลดโลโก้จากหน้าตั้งค่าได้ ใช้แทนรูปอุ้งเท้าทุกที่และเป็นไอคอนบนแท็บ อนุมัติแล้ว (2026-10-11)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**คำตอบ** สี่เส้น ใช้ที่เก็บไฟล์และ URL ที่ลงชื่อแล้วชุดเดียวกับข้อ 12 และข้อ 32 ใช้ scope `settings:write` เดิมของ `PATCH /clinic` ไม่มี scope ใหม่ มี migration หนึ่งตัวเพิ่มสองคอลัมน์
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| POST | `/clinic/logo` | `settings:write` | ขอ URL ที่ลงชื่อแล้วสำหรับส่งโลโก้ และค่า `logo_url` ที่ใช้เรียกรูปนั้น |
+| POST | `/clinic/tab-icon` | `settings:write` | แบบเดียวกันสำหรับไอคอนบนแท็บ ค่าไปอยู่ที่ `tab_icon_url` |
+| GET | `/clinic/logo` | สาธารณะ | ส่งต่อ (`302`) ไปที่ลิงก์ที่ลงชื่อแล้วของโลโก้ที่อัปโหลด |
+| GET | `/clinic/tab-icon` | สาธารณะ | แบบเดียวกันสำหรับไอคอนบนแท็บ |
+
+```http
+POST /v1/clinic/logo                                              settings:write
+{ "content_type": "image/png", "size_bytes": 48211 }
+
+200 { "value": "storage:clinic-brand/logo-3f2a...c9.png",
+      "upload": { "url": "...", "method": "PUT", "headers": { "Content-Type": "image/png" }, "expires_at": "..." } }
+
+401                                                    ไม่ได้เข้าสู่ระบบ
+403 { "error": { "code": "forbidden", ... } }          ไม่มี settings:write
+422 { "error": { "code": "validation_failed", ... } }  ไม่ใช่ PNG, JPEG หรือ WebP หรือขนาด 0 หรือเกิน 5 MB
+
+PATCH /v1/clinic                                                  settings:write
+{ "logo_url": "storage:clinic-brand/logo-3f2a...c9.png", "show_name_with_logo": false }
+
+200 { "version": 8, "name": "...", "logo_url": "storage:clinic-brand/logo-3f2a...c9.png",
+      "show_name_with_logo": false, ... }
+
+GET /v1/clinic/logo?v=logo-3f2a...c9.png                          สาธารณะ
+302 Location: <ลิงก์ที่ลงชื่อแล้ว อายุหนึ่งชั่วโมง>   Cache-Control: public, max-age=300
+404 { "error": { "code": "not_found", ... } }          ไม่มีโลโก้ที่อัปโหลด
+```
+
+**ขั้นตอน**
+
+1. `POST /clinic/logo` (หรือ `/clinic/tab-icon`) รับ `image/png`, `image/jpeg` หรือ `image/webp` ไม่เกิน 5 MB ตอบ URL อายุ 15 นาทีที่รับไฟล์ชนิดและขนาดนั้นเท่านั้น ที่ key `clinic-brand/logo-{สุ่ม 32 ตัว}.{นามสกุล}` (หรือ `tab-icon-...`) ที่ระบบสร้าง ชื่อไฟล์ของผู้ใช้ไม่อยู่ใน key
+2. หน้าเว็บส่งไฟล์ไปที่ URL นั้นตรง ๆ จากเบราว์เซอร์ (`uploadToSignedUrl`)
+3. หน้าเว็บใส่ค่า `value` ลงในฟอร์ม แล้ว `PATCH /clinic` ตอนกดบันทึก โลโก้ขึ้นเว็บตอนนี้ ไม่ใช่ตอนที่ไฟล์มาถึง การขอ URL ไม่เปลี่ยนโปรไฟล์และไม่เปลี่ยน `version` รูปที่เลือกแล้วไม่บันทึกจึงไม่ขึ้นเว็บ เหมือนรูปพนักงานในข้อ 32
+
+**สิ่งที่เก็บ**
+
+| ช่องใน `GET` และ `PATCH /clinic` | เก็บที่ | ค่า |
+|---|---|---|
+| `logo_url` | คอลัมน์เดิม | ลิงก์ `https://` แบบเดิม หรือ `storage:clinic-brand/logo-...` ว่างคือกลับไปใช้รูปอุ้งเท้า |
+| `tab_icon_url` | คอลัมน์ใหม่ `tab_icon_url` | `storage:clinic-brand/tab-icon-...` เท่านั้น ว่างคือไม่มีไอคอนแท็บแยก |
+| `show_name_with_logo` | คอลัมน์ใหม่ `show_name_with_logo` | `true` หรือ `false` เริ่มต้นเป็น `true` ไม่ส่งคือไม่เปลี่ยน |
+
+- migration `ClinicLogo` เพิ่มสองคอลัมน์ในตาราง `clinic_profile` แถวที่มีอยู่แล้วได้ `show_name_with_logo = true` จึงแสดงเหมือนเดิมทุกอย่าง ย้อน migration แล้วสองคอลัมน์หายไป
+- ค่าแบบ `storage:` ต้องตรงรูปที่ระบบสร้างทุกตัวอักษร (`ClinicBrandImage` ใน domain) และต้องตรงชนิด โลโก้ใช้ key ของไอคอนแท็บไม่ได้ และกลับกัน key ของที่อื่น เช่นรูปพนักงานหรือรูปปกบทความ หรือ key ที่ผิดรูป ตอบ `422` ที่ช่องนั้น
+- ตอน `PATCH` ที่ค่าเปลี่ยนเป็นรูปที่อัปโหลด ระบบถามที่เก็บไฟล์ก่อนว่าไฟล์มาถึงแล้ว (`IFileStorage.ExistsAsync` ตัวเดียวกับข้อ 32) ไฟล์ที่ยังไม่มาตอบ `409 invalid_clinic_profile` ส่งค่าเดิมที่เก็บไว้ซ้ำไม่ถูกตรวจซ้ำ
+- ลิงก์ `https://` ที่คลินิกใส่ไว้ก่อนหน้ายังใช้ได้เหมือนเดิม
+
+**คนนอกเห็นรูปผ่านที่อยู่ที่ไม่เปลี่ยน** `GET /clinic/logo` และ `GET /clinic/tab-icon` ไม่ต้องเข้าสู่ระบบ ทุกครั้งที่เรียกจะสร้างลิงก์ที่ลงชื่อแล้วอายุหนึ่งชั่วโมงแล้วส่งต่อไปที่นั่น เบราว์เซอร์เก็บการส่งต่อไว้ได้ห้านาที ต่างจากรูปพนักงานในข้อ 32 ที่สร้างลิงก์ตอนอ่านรายการ เพราะโลโก้ไม่ใช่ความลับ เป็นสิ่งที่คลินิกพิมพ์บนป้ายหน้าร้านอยู่แล้ว สิ่งที่โลโก้ต้องการคือที่อยู่ที่ไม่หมดอายุ เพราะแท็บของเบราว์เซอร์ หน้าจอโทรศัพท์ และเครื่องมือค้นหาเก็บที่อยู่ไว้นานกว่าหน้าที่เขียนมันมาก API ยังไม่ส่งไฟล์เอง แค่ส่งต่อไปที่ที่เก็บไฟล์ เหมือนเดิม
+- หน้าเว็บต่อ `?v=ชื่อไฟล์` ท้ายที่อยู่ ไฟล์ใหม่จึงเป็นที่อยู่ใหม่ เบราว์เซอร์ไม่แสดงรูปเก่าค้าง
+- สองเส้นนี้ส่งเฉพาะรูปที่อัปโหลด โลโก้ที่เป็นลิงก์เว็บอื่นตอบ `404` หน้าเว็บใช้ลิงก์นั้นตรง ๆ อยู่แล้ว และถ้าส่งต่อไปที่ลิงก์ที่พิมพ์ไว้ เส้นนี้จะกลายเป็นทางพาคนไปที่ไหนก็ได้
+- `GET /clinic/tab-icon` ไม่ใช้โลโก้แทน การย่อโลโก้ลงกรอบสี่เหลี่ยมเป็นงานของหน้าเว็บ
+
+**SVG ไม่รับ** เพราะ SVG คือเอกสารที่ฝัง script ได้ และรูปนี้อยู่ทุกหน้าสาธารณะ ไฟล์ถูกส่งกลับด้วยชนิดที่ประกาศตอนขอ URL พร้อม `X-Content-Type-Options: nosniff` เหตุผลเดียวกับข้อ 26 และข้อ 32
+
+**การแสดงผลบนหน้าเว็บ**
+
+- รูปอุ้งเท้าทุกที่ใช้คอมโพเนนต์เดียวคือ `ClinicLogo` ไม่มีโลโก้ก็วาดรูปอุ้งเท้าแบบเดิมทุกพิกเซล โลโก้ทุกรูปทรงสูงเท่ารูปอุ้งเท้าเดิมของที่นั้น ความกว้างตามรูป มีเพดานความกว้างแต่ละที่ และไม่ถูกตัด (`object-contain`) หัวหน้าเว็บบนโทรศัพท์กว้าง 390 px ไม่ล้น
+- ปิด `show_name_with_logo` แล้วชื่อข้างโลโก้หายทุกที่ และโลโก้มีชื่อคลินิกเป็นข้อความแทนรูปให้โปรแกรมอ่านหน้าจอ สวิตช์นี้มีผลเฉพาะตอนมีโลโก้ รูปอุ้งเท้ามีชื่อข้าง ๆ เสมอ
+- root layout อ่าน `GET /clinic` ครั้งเดียวต่อคำขอ แคชร่วมกันห้านาที และส่งให้ทุกจุดผ่าน context การบันทึกในหน้าตั้งค่าล้างแคชนี้ทันที API ล่มเมื่อไรทุกหน้ากลับไปใช้รูปอุ้งเท้า โลโก้ที่โหลดไม่ขึ้นก็กลับไปใช้รูปอุ้งเท้า
+
+**ไอคอนบนแท็บ** ลำดับคือไอคอนแท็บที่ตั้งแยก แล้วโลโก้ที่ย่อลงกรอบสี่เหลี่ยม แล้ว `icon.svg` รูปอุ้งเท้าเดิม
+
+- ไม่มีทั้งโลโก้และไอคอนแท็บ หน้าเว็บอ้าง `/icon.svg` เหมือนเดิม (ย้ายจาก `src/app/` ไปที่ `public/` เพราะไฟล์ไอคอนใน `src/app/` ทับค่าที่ตั้งจากโค้ด)
+- มีอย่างใดอย่างหนึ่ง หน้าเว็บอ้าง `/brand/tab-icon` (64 px) และ `apple-touch-icon` ที่ `/brand/touch-icon` (180 px พื้นขาว) ซึ่งเป็น route ของหน้าเว็บเอง ไม่ใช่ endpoint ของ API ไอคอนแท็บส่งต่อไปที่ `GET /clinic/tab-icon` ส่วนโลโก้ถูกวาดลงกลางกรอบสี่เหลี่ยมเป็น PNG เพราะโลโก้แนวนอนที่ส่งให้เบราว์เซอร์ตรง ๆ จะถูกบีบลง 16 px
+- โลโก้ WebP วาดลงกรอบไม่ได้ (ตัววาดรูปอ่าน WebP ไม่ได้) จึงส่งต่อไปที่โลโก้ตรง ๆ อะไรผิดพลาดก็จบที่รูปอุ้งเท้า ไม่ใช่ไม่มีไอคอน
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ลิงก์ที่ลงชื่อแล้วในคำตอบของ `GET /clinic` แบบข้อ 32 | ลิงก์หมดอายุในหนึ่งชั่วโมง แต่แท็บ หน้าจอโทรศัพท์ ข้อมูลโครงสร้างสำหรับเครื่องมือค้นหา และหน้าที่แคชไว้เก็บที่อยู่นานกว่านั้น |
+| ให้ API ส่งไฟล์รูปเอง | ข้อ 12 วางไว้ว่า API ไม่ส่งไฟล์ผ่าน use case การส่งต่อไปที่ที่เก็บไฟล์ใช้ได้กับ S3 ด้วย |
+| เก็บสวิตช์ชื่อและไอคอนแท็บใน `logo_url` หรือช่องอื่นที่มีอยู่ | ไม่มีช่องไหนเก็บได้โดยไม่ปนความหมาย migration หนึ่งตัวที่เพิ่มสองคอลัมน์ชัดกว่า |
+| เส้นเดียวที่มีช่อง `kind` | สองเส้นที่ชื่อบอกตรง ๆ อ่านง่ายกว่า และใช้ชื่อเดียวกับเส้นอ่าน |
+| เตือนเมื่อโลโก้ไม่ใช่สี่เหลี่ยมจัตุรัส | โลโก้แนวนอนที่มีชื่อคลินิกเป็นเรื่องปกติ จึงเตือนแค่เมื่อรูปเล็กกว่า 512 px ด้านยาว ส่วนไอคอนแท็บเตือนเมื่อไม่เป็นสี่เหลี่ยมจัตุรัส |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่ลบไฟล์เก่าออกจากที่เก็บ `IFileStorage` ยังไม่มีคำสั่งลบ เหมือนข้อ 26 และข้อ 32
+- ไม่ตรวจเนื้อไฟล์ว่าเป็นรูปจริง ไม่ย่อหรือครอปรูปที่เก็บ
+- ไม่ทำสีของแบรนด์ (`brand_color` ยังไม่ถูกใช้กับหน้าเว็บ) และไม่มีโลโก้แยกสำหรับพื้นเข้ม ท้ายหน้าเว็บพื้นสีเข้ม โลโก้สีเข้มบนพื้นใสจึงอาจอ่านยาก แนะนำโลโก้ที่มีพื้นหรือขอบสีอ่อน
+- จอเรียกคิวในห้องรอ อีเมล รูปตอนแชร์ลิงก์ (`opengraph-image`) และไอคอนอุ้งเท้าในเมนู ยังเป็นแบบเดิม
+- ไม่มี audit การแก้โปรไฟล์คลินิกไม่เคยถูกบันทึก audit การขอ URL ก็ไม่ถูกบันทึกเช่นกัน
+- ไม่มี scope ใหม่
+
+**หน้าจอ** ใน **ตั้งค่า > คลินิกและสาขา** ส่วน "โลโก้ของคลินิก" อยู่ในฟอร์มข้อมูลคลินิก มีกล่องลากไฟล์มาวางหรือกดเลือกไฟล์ ตรวจชนิดและขนาดก่อนส่ง บอกเมื่อรูปเล็กกว่าที่แนะนำ ปุ่ม "ใช้โลโก้รูปอุ้งเท้าเดิม" ช่อง "แสดงชื่อคลินิกข้างโลโก้" ลิงก์รูปแบบเดิมใต้ "ขั้นสูง" และส่วนพับ "ตั้งไอคอนแท็บแยก (ไม่บังคับ)" ด้านข้างมีตัวอย่างหัวหน้าเว็บแบบแสดงชื่อและไม่แสดงชื่อ เมนูของพนักงาน และแท็บของเบราว์เซอร์ ทุกอย่างมีผลเมื่อกดบันทึก รายละเอียดอยู่ใน [ตั้งค่าคลินิก](features/clinic-setup.md)
+
+## 51. แก้สาขาที่เปิดแล้วไม่ได้
+
+**ช่องโหว่** contract มีแค่ `GET` และ `POST /clinic/branches` สาขาที่เปิดแล้วแก้ชื่อ ที่อยู่ พิกัด หรือห้องตรวจไม่ได้เลย ถ้าพิมพ์ชื่อผิด ย้ายที่อยู่ หรือเพิ่มห้องตรวจ ต้องแก้ฐานข้อมูลตรง หน้าตั้งค่าจึงต้องเขียนบอกไว้ใต้รายการสาขาว่ายังแก้ไม่ได้ เจ้าของงานขอให้แก้สาขาจากหน้าตั้งค่าได้ ไม่มี migration อนุมัติแล้ว (2026-10-11)
+
+ข้อนี้เป็นฟีเจอร์ที่ขอเพิ่ม ไม่ใช่ช่องโหว่ที่เจอตอนทำตาม contract
+
+**คำตอบ** หนึ่งเส้น ใช้ scope `settings:write` เดียวกับการเปิดสาขา ไม่มี scope ใหม่ ไม่มีตารางใหม่
+
+| Method | Endpoint | Scope | ทำอะไร |
+|---|---|---|---|
+| PATCH | `/clinic/branches/{id}` | `settings:write` | แก้ชื่อ ที่อยู่ พิกัด และห้องตรวจของสาขา |
+
+```http
+PATCH /v1/clinic/branches/brn_sukhumvit39                         settings:write
+If-Match: "412"
+{ "name": "สาขาสุขุมวิท 39", "address": "", "latitude": 13.7325, "longitude": 100.5786,
+  "exam_rooms": ["room_1", "room_2", "room_3"] }
+
+200 { "id": "brn_sukhumvit39", "version": 415, "code": "sukhumvit39", "name": "สาขาสุขุมวิท 39",
+      "latitude": 13.7325, "longitude": 100.5786, "exam_rooms": ["room_1", "room_2", "room_3"] }
+ETag: "415"
+
+401                                                    ไม่ได้เข้าสู่ระบบ
+403 { "error": { "code": "insufficient_scope", ... } } ไม่มี settings:write
+403 { "error": { "code": "forbidden", ... } }          ผู้เรียกประจำบางสาขาและสาขานี้ไม่ใช่สาขาของตัวเอง
+404 { "error": { "code": "not_found", ... } }          ไม่มีสาขานี้ หรือปิดไปแล้ว
+409 { "error": { "code": "exam_room_in_use", "field": "exam_rooms",
+                 "details": { "rooms": ["room_2"],
+                              "tickets": [ { "id": "tkt_...", "number": "A014", "room_id": "room_2",
+                                             "service_date": "2026-10-11" } ] } } }
+409 { "error": { "code": "version_conflict", ... } }   มีคนแก้สาขานี้ไปก่อน
+422 { "error": { "code": "validation_failed", "field": "latitude", ... } }
+```
+
+**กติกา**
+
+| เรื่อง | กติกา |
+|---|---|
+| ช่องที่ไม่ส่ง | ไม่เปลี่ยน ทุกช่องไม่บังคับ คำขอที่ไม่มีช่องไหนเลยตอบ `200` พร้อมสาขาเดิม |
+| `name` | ส่งแล้วต้องไม่ว่าง ไม่เกิน 200 ตัว |
+| `address` | ไม่เกิน 500 ตัว ส่งค่าว่างคือล้างที่อยู่ แบบเดียวกับ `PATCH /clinic` |
+| `latitude` และ `longitude` | ส่งคู่กันหรือไม่ส่งทั้งคู่ ช่วงเดียวกับตอนเปิดสาขา ส่งครึ่งเดียวได้ `422` ที่ `latitude` ไม่ส่งทั้งคู่คือใช้พิกัดเดิม |
+| `exam_rooms` | ส่งแล้วคือรายการทั้งหมดหลังแก้ แต่ละห้องไม่ว่างและไม่เกิน 60 ตัว ชื่อซ้ำและช่องว่างหน้าหลังถูกตัดแบบเดียวกับตอนเปิดสาขา |
+| `code` | ไม่มีช่องนี้ รหัสเป็นครึ่งหนึ่งของ id ที่พิมพ์อยู่บนบัตรคิว token และลิงก์ จึงแก้ไม่ได้ |
+| ห้องที่ยังใช้อยู่ | ห้องตรวจถูกอ้างจากบัตรคิวเท่านั้น (`queue_tickets.room_id` นัดไม่มีห้อง) ถ้าการแก้ทำให้ห้องหายไป และมีบัตรคิวของสาขานี้ที่ยังอยู่บนกระดาน (รอ ถูกเรียก ข้ามไว้ หรืออยู่ในห้อง) ของวันนี้หรือหลังจากนี้ (เวลาของคลินิก) อยู่ในห้องนั้น ไม่เปลี่ยนอะไรเลยแม้แต่ช่องอื่นในคำขอ และตอบ `409 exam_room_in_use` พร้อมห้องและบัตรคิวที่ค้าง ข้อความบอกเลขคิวห้าใบแรก การเพิ่มห้องไม่ถูกกันเลย |
+| ใคร | `settings:write` เหมือนการเปิดสาขา ผู้เรียกที่ประจำบางสาขาแก้ได้เฉพาะสาขาของตัวเอง (`BranchGuard` ตามการอ่านแบบระวังของ [assumptions.md § 9](./assumptions.md)) เจ้าของที่ถือ `*` หรือ token ที่ไม่มีรายการสาขาแก้ได้ทุกสาขา |
+| version | `If-Match` ถูกตรวจเมื่อส่งมา แต่ไม่บังคับ แบบเดียวกับการเขียนอื่นของหมวดตั้งค่าคลินิก ไม่ตรงได้ `409 version_conflict` คำตอบมี `ETag` |
+| audit | `branch.updated` หนึ่งแถว เฉพาะเมื่อมีอะไรเปลี่ยน details มีค่าก่อนและหลังของแต่ละส่วนที่เปลี่ยน (`name`, `address`, `coordinates`, `exam_rooms`) |
+
+**ทางเลือกที่ไม่เลือก**
+
+| ทางเลือก | ทำไมไม่เลือก |
+|---|---|
+| ให้แก้รหัสสาขาได้ | รหัสอยู่ใน id ที่ระบบอื่นและกระดาษที่พิมพ์ไปแล้วอ้างถึง เปลี่ยนแล้วตามแก้ไม่ครบ |
+| ยอมให้เอาห้องออก แล้วล้างห้องในบัตรคิวที่ค้าง | เจ้าของสัตว์ที่นั่งรอถูกบอกห้องไปแล้ว การล้างเงียบ ๆ ทำให้กระดานบอกคนละอย่างกับที่คนรอได้ยิน |
+| นับบัตรคิวของวันก่อนที่ยังไม่ปิดด้วย | บัตรเก่าที่ไม่มีใครปิดจะกันห้องไว้ตลอดไป ทั้งที่ไม่อยู่บนกระดานของวันไหนแล้ว |
+| เส้นแยกสำหรับห้องตรวจ | ห้องเป็นแค่รายการชื่อในสาขา (คอลัมน์ `text[]`) แก้ทั้งรายการในเส้นเดียวกับข้อมูลอื่นของสาขาตรงกว่า |
+| ช่องล้างพิกัด | ไม่มีใครขอ คลินิกที่ต้องการลบพิกัดเปลี่ยนเป็นพิกัดที่ถูกได้ ถ้าต้องการจริงเพิ่มช่องได้โดยไม่กระทบของเดิม |
+
+**สิ่งที่ตั้งใจไม่ทำ**
+
+- ไม่ปิดหรือลบสาขา (`Branch.Deactivate` มีอยู่แต่ไม่มีเส้น)
+- ไม่ย้ายบัตรคิวไปห้องอื่นให้เอง และไม่แจ้งใคร
+- การเปิดสาขา (`POST /clinic/branches`) ยังไม่มี audit เหมือนเดิม
+- ไม่มี migration ไม่มี scope ใหม่ ไม่มี webhook event
+
+**หน้าจอ** ใน **ตั้งค่า > คลินิกและสาขา** แต่ละสาขามีปุ่ม **แก้ไข** เปิดกล่องที่มีรหัสสาขาแบบแก้ไม่ได้ ช่องชื่อ ที่อยู่ พิกัด และห้องตรวจที่คั่นด้วยจุลภาค ข้อความ `exam_room_in_use` ขึ้นใต้ช่องห้องตรวจ หมายเหตุ "ยังแก้ไม่ได้" ใต้รายการสาขาถูกเอาออก ห้องตรวจแสดงเป็นป้ายเล็ก ๆ และพิกัดเป็นลิงก์ **เปิดในแผนที่** รายละเอียดอยู่ใน [ตั้งค่าคลินิก](features/clinic-setup.md)
+
 ## สิ่งที่ยังต้องถามเจ้าของ contract
 
 | คำถาม | สิ่งที่รอคำตอบ |
@@ -2704,6 +2870,7 @@ POST /v1/staff/schedules/shifts/copy-week                         schedule:write
 | การชวนเพื่อน (§ 39) ควรเป็นส่วนหนึ่งของ contract ไหม ช่อง `referral_code` บน `POST /auth/register` ซึ่งเป็นเส้นของ contract ได้รับรองไหม และการคืนเงินบิลแรกควรหักแต้มชวนเพื่อนคืนไหม | ทำงานอยู่ ปิดไว้เป็นค่าตั้งต้น คืนเงินไม่หักแต้มชวนเพื่อนคืน |
 | `dashboard:read` บนบทบาทตั้งต้น `veterinarian` และ `receptionist` (§ 46) ควรเข้าตาราง Role ตั้งต้นของ contract ไหม | ทำงานอยู่ คลินิกเดิมได้ผ่าน migration `StarterDashboardAccess` |
 | การแก้ ลบ และคัดลอกเวร (§ 47 และ § 49) และเส้นอ่านกติกาจ่ายเคส (§ 48) ควรเป็นส่วนหนึ่งของ contract ไหม และช่อง `version` ในเวรกับรหัส `shift_ended` และ `shift_started` ได้รับรองไหม | ทำงานอยู่ เวรที่ลบถูกเก็บไว้เป็นเวรที่ยกเลิก ไม่ได้ลบแถว |
+| การแก้สาขา (§ 51) ควรเป็นส่วนหนึ่งของ contract ไหม และรหัส `exam_room_in_use` ได้รับรองไหม | ทำงานอยู่ ห้องที่บัตรคิวของวันนี้หรือหลังจากนี้ยังใช้อยู่เอาออกไม่ได้ |
 
 ทุกอย่างอื่นในหน้านี้ทำงานอยู่ มีเทสต์ และย้อนกลับได้
 
@@ -2749,3 +2916,5 @@ POST /v1/staff/schedules/shifts/copy-week                         schedule:write
 | เวลารอ walk-in | `backend/src/HappyPaws.Application/Queueing/WaitEstimate/`, `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Queueing/WaitEstimateQueries.cs`, `backend/src/HappyPaws.Api/Controllers/Public/WaitEstimateController.cs`, `Extensions/RateLimitingExtensions.cs` (`WaitEstimatePolicy`), `frontend/src/features/wait-estimate/`, `backend/tests/HappyPaws.UnitTests/Application/Queueing/WaitEstimateRulesTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Queueing/WaitEstimateTests.cs`, `Fixtures/WaitEstimateScenario.cs` |
 | ชวนเพื่อน | `backend/src/HappyPaws.Domain/Referrals/` (`ReferralCode.cs`, `Referral.cs`, `ReferralRules.cs`), `backend/src/HappyPaws.Domain/Crm/LoyaltyEntry.cs` (`Referral`), `LoyaltySettings.cs` (`ReplaceReferral`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`referral.rewarded`), `backend/src/HappyPaws.Application/Referrals/` (`ReferralRecorder.cs`, `ReferralRewarder.cs`, `Portal/`, `Public/`, `Staff/`), `backend/src/HappyPaws.Application/Crm/InvoiceRewards.cs` (`PaymentCollectedAsync`), `ManageLoyaltySettings/LoyaltySettingsHandlers.cs`, `backend/src/HappyPaws.Application/Appointments/GuestBooking/VerifyGuestBookingHandler.cs`, `backend/src/HappyPaws.Application/Identity/Register/RegisterCustomerHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Portal/PortalReferralController.cs`, `Public/ReferralsController.cs`, `Staff/StaffReferralsController.cs`, `Extensions/RateLimitingExtensions.cs` (`ReferralCheckPolicy`), `backend/src/HappyPaws.Infrastructure/Persistence/Configurations/Referrals/`, `Repositories/Referrals/`, `Configurations/Crm/CouponConfiguration.cs`, `backend/src/HappyPaws.Infrastructure/Referrals/ReferralLinks.cs`, migration `ReferAFriend`, `frontend/src/features/referrals/`, `frontend/src/app/(public)/r/[code]/`, `(public)/book/page.tsx`, `(portal)/portal/referral/`, `(staff)/crm/referrals/`, `frontend/src/features/booking/components/guest/guest-booking-wizard.tsx`, `frontend/src/features/crm/components/settings/referral-settings-fields.tsx`, `backend/tests/HappyPaws.UnitTests/Domain/Referrals/`, `backend/tests/HappyPaws.IntegrationTests/Api/Referrals/`, `Fixtures/ReferralScenario.cs` |
 | แก้ ลบ และคัดลอกเวร และอ่านกติกาจ่ายเคส | `backend/src/HappyPaws.Domain/Scheduling/StaffShift.cs` (`Reschedule`, `HasStarted`, `HasEnded`), `backend/src/HappyPaws.Application/Scheduling/ChangeShift/`, `RemoveShift/`, `CopyWeek/`, `GetAssignmentRules/`, `ShiftClashes.cs`, `ScheduleAccess.cs` (`ActiveShiftAsync`), `backend/src/HappyPaws.Application/Common/Errors/ErrorCodes.cs` (`shift_ended`, `shift_started`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`schedule.shift_changed`, `schedule.shift_removed`, `schedule.week_copied`), `backend/src/HappyPaws.Api/Controllers/Staff/SchedulesController.cs`, `frontend/src/features/schedules/components/dialogs/`, `edit-shift/`, `copy-week/`, `day-view/`, `backend/tests/HappyPaws.UnitTests/Domain/Scheduling/ShiftChangeTests.cs`, `backend/tests/HappyPaws.UnitTests/Application/Scheduling/ShiftEditRulesTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Scheduling/ShiftEditingTests.cs`, `AssignmentRulesReadTests.cs`, `CopyWeekTests.cs`, `Fixtures/RosterScenario.cs` |
+| โลโก้ของคลินิก | `backend/src/HappyPaws.Domain/Clinics/ClinicBrandImage.cs`, `ClinicProfile.cs`, `backend/src/HappyPaws.Application/Clinics/BrandImages/`, `UpdateClinicProfile/UpdateClinicProfileHandler.cs`, `backend/src/HappyPaws.Api/Controllers/Public/ClinicController.cs`, `Staff/ClinicSetupController.cs`, migration `20261011130000_ClinicLogo`, `frontend/src/components/layout/clinic-logo/`, `frontend/src/features/clinic/components/settings/logo/`, `frontend/src/features/clinic/lib/` (`brand-image-src.ts`, `load-clinic-identity.ts`, `brand-icon-response.tsx`), `frontend/src/app/brand/`, `backend/tests/HappyPaws.IntegrationTests/Api/Clinics/ClinicLogoTests.cs`, `backend/tests/HappyPaws.UnitTests/Domain/Clinics/ClinicBrandImageTests.cs` |
+| แก้สาขา | `backend/src/HappyPaws.Domain/Clinics/Branch.cs` (`Revise`, `RoomsRemovedBy`), `backend/src/HappyPaws.Application/Clinics/UpdateBranch/UpdateBranchHandler.cs`, `IBranchRepository.cs` (`FindOpenTrackedAsync`, `ExamRoomUsesAsync`), `backend/src/HappyPaws.Infrastructure/Persistence/Repositories/Clinics/ClinicSetupRepositories.cs`, `backend/src/HappyPaws.Application/Common/Errors/ErrorCodes.cs` (`exam_room_in_use`), `backend/src/HappyPaws.Domain/Auditing/AuditActions.cs` (`branch.updated`), `backend/src/HappyPaws.Api/Controllers/Staff/ClinicSetupController.cs`, `backend/src/HappyPaws.Api/Contracts/Clinics/ClinicContracts.cs` (`UpdateBranchRequest`), `frontend/src/features/clinic/components/settings/edit-branch-form.tsx`, `edit-branch-button.tsx`, `branch-fields.tsx`, `lib/branch-draft.ts`, `backend/tests/HappyPaws.UnitTests/Domain/Clinics/BranchRevisionTests.cs`, `backend/tests/HappyPaws.UnitTests/Application/Clinics/UpdateBranchValidationTests.cs`, `backend/tests/HappyPaws.IntegrationTests/Api/Clinics/BranchEditTests.cs` |

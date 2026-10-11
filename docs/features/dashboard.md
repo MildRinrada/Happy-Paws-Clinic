@@ -182,7 +182,7 @@ contract ให้รายงานนี้ตอบว่าบริกา�
 
 หน้า `/dashboard` เป็นหน้าแรกของวันสำหรับคนที่เปิดระบบตอนเช้า เรียงจากบนลงล่างดังนี้
 
-1. **หัวหน้า** ชื่อหน้า สาขา และปุ่มลัดสี่ปุ่ม ออกบัตรคิว สร้างนัด ลงทะเบียนลูกค้าใหม่ และรับชำระ
+1. **หัวหน้า** ชื่อหน้าและสาขา ปุ่มลัดอย่างออกบัตรคิวหรือสร้างนัดอยู่ในเมนู **+ สร้าง** บนแถบด้านบน ซึ่งใช้ได้จากทุกหน้า หน้านี้จึงไม่มีปุ่มซ้ำ
 2. **ต้องจัดการตอนนี้** คู่กับ **นัดถัดไป 2 ชม.** สองกล่องเคียงกันบนจอกว้าง และซ้อนกันบนมือถือ
 3. **วันนี้** ตัวเลขหลักสี่ช่อง และแถบ **งานของฉัน** อยู่บนสุดเมื่อมี
 4. **สรุปเช้านี้** ของผู้ช่วย AI เมื่อเปิด AI ไว้ ([ผู้ช่วย AI สำหรับพนักงาน](staff-ai.md#สรุปเช้า))
@@ -218,7 +218,9 @@ contract ให้รายงานนี้ตอบว่าบริกา�
 - ระบบไม่มีหน้าของนัดเดี่ยว ทุกแถวจึงลิงก์ไปปฏิทินนัดของวันนี้ ซึ่งเป็นที่ที่จัดการนัด
 - ไม่มีนัดในช่วงนั้น กล่องเขียนว่า "ไม่มีนัดใน 2 ชั่วโมงข้างหน้า"
 
-### ปุ่มลัด
+### ปุ่มลัด (เมนู + สร้าง)
+
+หน้าภาพรวมไม่มีปุ่มลัดของตัวเองแล้ว รายการด้านล่างแสดงในเมนู **+ สร้าง** บนแถบด้านบนของทุกหน้า และใช้รายการกับกติกาสิทธิ์ชุดเดียวกัน
 
 | ปุ่ม | ไปหน้า | ขึ้นเมื่อถือ |
 |---|---|---|
@@ -351,7 +353,7 @@ POST /v1/staff/reports/exports
 | controller | `backend/src/HappyPaws.Api/Controllers/Staff/DashboardController.cs`, `StatsController.cs`, `AnalyticsController.cs` |
 | เทสต์ | `backend/tests/HappyPaws.IntegrationTests/Api/Analytics/`, `backend/tests/HappyPaws.UnitTests/Domain/Analytics/` |
 | หน้าเว็บ | `frontend/src/app/(staff)/dashboard/page.tsx`, `frontend/src/app/(staff)/reports/page.tsx`, `frontend/src/features/analytics/` |
-| กล่องของหน้าภาพรวม | `frontend/src/features/analytics/components/today/`, `lib/load-attention.ts`, `lib/attention-probes.ts`, `lib/load-upcoming.ts`, `lib/load-last-week.ts`, `lib/load-due-back-preview.ts`, `lib/quick-actions.ts`, `lib/today-links.ts`, `lib/today-settings.ts` (ค่าคงที่ของหน้า), `lib/tolerant-read.ts` |
+| กล่องของหน้าภาพรวม | `frontend/src/features/analytics/components/today/`, `lib/load-attention.ts`, `lib/attention-probes.ts`, `lib/load-upcoming.ts`, `lib/load-last-week.ts`, `lib/load-due-back-preview.ts`, `lib/quick-actions.ts`, `lib/today-links.ts`, `lib/today-settings.ts` (ค่าคงที่ของหน้า), `lib/tolerant-read.ts` ส่วน `attention-probes.ts`, `quick-actions.ts` และ `tolerant-read.ts` ใช้ร่วมกับตัวเลขบนเมนูและเมนู + สร้าง ของ [โครงหน้าจอพนักงาน](../ui-ux.md#โครงหน้าจอพนักงาน) ด้วย |
 | ส่งออกรายงาน | `backend/src/HappyPaws.Domain/Reporting/`, `backend/src/HappyPaws.Application/Reporting/` (`StartExport/`, `GetExportStatus/`, `RunExports/`, `Tables/`, `Files/`, `Csv/`), `backend/src/HappyPaws.Infrastructure/Reporting/` (ตัวเขียน Excel และ PDF), `backend/src/HappyPaws.Api/Controllers/Staff/ReportExportsController.cs`, `frontend/src/features/reporting/` |
 | เทสต์ส่งออก | `backend/tests/HappyPaws.IntegrationTests/Api/Reporting/`, `backend/tests/HappyPaws.IntegrationTests/Reporting/` (ตัวเขียน Excel และ PDF), `backend/tests/HappyPaws.UnitTests/Domain/Reporting/`, `backend/tests/HappyPaws.UnitTests/Application/Reporting/` |
 | ข้อความบนหน้าเว็บ | `frontend/src/features/analytics/content/` |

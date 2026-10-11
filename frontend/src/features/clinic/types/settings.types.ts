@@ -7,6 +7,20 @@ export interface ClinicProfileInput {
   brand_color: string;
   license_no: string;
   operator_name: string;
+  tab_icon_url: string;
+  show_name_with_logo: boolean;
+}
+
+/** Which uploaded picture (docs/contract-extensions.md § 50): its upload and read routes share the name. */
+export type BrandImageKind = 'logo' | 'tab-icon';
+
+/** The accepted file types for both pictures. No SVG. */
+export type BrandImageType = 'image/png' | 'image/jpeg' | 'image/webp';
+
+/** `POST /clinic/logo` or `/clinic/tab-icon`: the value to save, and where to send the file first. */
+export interface BrandImageUpload {
+  value: string;
+  upload: { url: string; method: 'PUT'; headers: Record<string, string>; expires_at: string };
 }
 
 /** `POST /clinic/branches`. The code becomes the id: `sukhumvit39` is `brn_sukhumvit39`. */
@@ -14,6 +28,18 @@ export interface BranchInput {
   code: string;
   name: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
+  exam_rooms: string[];
+}
+
+/**
+ * `PATCH /clinic/branches/{id}` (docs/contract-extensions.md § 51). An absent field is left alone,
+ * an empty `address` clears it, the pin goes as a pair, and `exam_rooms` is the whole list.
+ */
+export interface BranchUpdateInput {
+  name: string;
+  address: string;
   latitude?: number;
   longitude?: number;
   exam_rooms: string[];

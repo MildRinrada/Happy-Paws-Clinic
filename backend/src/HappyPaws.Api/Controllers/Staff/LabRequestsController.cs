@@ -9,6 +9,7 @@ using HappyPaws.Application.Laboratory.ReviewLabResults;
 using HappyPaws.Domain.Access;
 using HappyPaws.Domain.Laboratory;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HappyPaws.Api.Controllers.Staff;
 
@@ -92,8 +93,11 @@ public sealed class LabRequestsController : ControllerBase
     /// <summary>
     /// <c>POST /staff/lab-requests/{id}/review</c> — <b>contract extension</b>
     /// (<c>docs/contract-extensions.md § 11</c>). Takes the results off "ผลที่ยังไม่มีคนอ่าน".
+    /// The body is optional; its <c>note</c> (§ 53, at most 1,000 characters) is kept as
+    /// <c>review_note</c>.
     /// </summary>
     /// <param name="id">Lab request id.</param>
+    /// <param name="request">The vet's note, or no body.</param>
     /// <param name="handler">Resolved per request.</param>
     /// <param name="cancellationToken">Aborts with the request.</param>
     [HttpPost("{id}/review")]
@@ -101,9 +105,17 @@ public sealed class LabRequestsController : ControllerBase
     [ProducesResponseType<LabRequestDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<LabRequestDto> Review(
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<LabRequestDto>> Review(
         string id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ReviewLabResultsRequest? request,
         [FromServices] ReviewLabResultsHandler handler,
-        CancellationToken cancellationToken) =>
-        handler.HandleAsync(new ReviewLabResultsCommand(id), cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var reviewed = await handler.HandleAsync(new ReviewLabResultsCommand(id, request?.Note), cancellationToken);
+
+        Response.Headers.ETag = IfMatch.ToETag(reviewed.Version);
+
+        return Ok(reviewed);
+    }
 }

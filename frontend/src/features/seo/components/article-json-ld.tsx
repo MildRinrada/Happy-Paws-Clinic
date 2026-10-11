@@ -1,4 +1,5 @@
 import type { ArticleSummary } from '@/features/articles/types/article.types';
+import { logoSrcOf } from '@/features/clinic/lib/brand-image-src';
 import { ogImage, seoSite, sitePages } from '../content/seo';
 import { absoluteUrl } from '../lib/absolute-url';
 import { articlePath, articlePreviewImage } from '../lib/article-metadata';
@@ -15,7 +16,9 @@ import { JsonLd } from './json-ld';
 export async function ArticleJsonLd({ article }: { article: ArticleSummary }) {
   const profile = await loadClinicProfile();
   const path = articlePath(article.slug);
-  const logo = profile?.logo_url ? absoluteUrl(profile.logo_url) : undefined;
+  // An uploaded logo is a `storage:` name; its address is the API's fixed public one (§ 50).
+  const logoSrc = logoSrcOf(profile?.logo_url);
+  const logo = logoSrc ? absoluteUrl(logoSrc) : undefined;
 
   return (
     <>

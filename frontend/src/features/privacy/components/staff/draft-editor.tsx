@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormStatus } from '@/components/ui/form-status';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useLeaveWarning } from '@/features/settings/hooks/use-leave-warning';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { updatePolicyDraftAction } from '../../actions/manage-privacy-policy-actions';
 import { editorText, publishText } from '../../content/staff-privacy-policy';
@@ -31,6 +32,8 @@ export function DraftEditor({ draft, canPublish }: DraftEditorProps) {
   const [sections, setSections] = useState<SectionDraft[]>(() => toDrafts(draft.sections));
   const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
   const unsaved = changed(sections, stored.sections);
+  // Keeps its own save beside "publish", so it is not in the save bar; leaving still asks.
+  useLeaveWarning('privacy-draft-editor', unsaved);
 
   function update(index: number, changes: Partial<SectionDraft>) {
     touch();

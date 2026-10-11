@@ -12,6 +12,8 @@ internal sealed class LabRequestRepository(HappyPawsDbContext db) : ILabRequestR
     public Task<LabRequest?> FindTrackedByIdAsync(string labRequestId, CancellationToken cancellationToken = default) =>
         db.Set<LabRequest>()
             .Include(request => request.Results)
+            .Include(request => request.Attachments)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(request => request.Id == labRequestId, cancellationToken);
 
     public async Task<CursorPage<LabRequest>> ListAsync(
@@ -19,7 +21,10 @@ internal sealed class LabRequestRepository(HappyPawsDbContext db) : ILabRequestR
         CursorPageRequest page,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Set<LabRequest>().AsNoTracking().Include(request => request.Results).AsQueryable();
+        var query = db.Set<LabRequest>().AsNoTracking()
+            .Include(request => request.Results)
+            .Include(request => request.Attachments)
+            .AsQueryable();
 
         if (filter.BranchIds is { } visible)
         {

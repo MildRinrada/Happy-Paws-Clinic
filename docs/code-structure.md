@@ -124,7 +124,7 @@ frontend/
       (public)/         หน้าแรก เกี่ยวกับคลินิก ติดต่อเรา ทีม บทความ
       (auth)/           เข้าสู่ระบบ และรับคำเชิญพนักงาน
       (staff)/          queue, appointments, customers, pets, consultations, billing, schedules
-                        และ settings/ (clinic, hours, rules, services, contacts, line ใต้ layout แท็บเดียวกัน)
+                        และ settings/ (ทุกหน้าตั้งค่าใต้ layout เดียวกัน ที่มีรายการหน้าแบ่งกลุ่มและแถบบันทึก)
                         notifications/ (log, send, broadcast, templates ใต้ layout แท็บเดียวกัน)
                         inventory/ (รายการ, alerts, movements, adjustments, purchase-orders ใต้ layout แท็บเดียวกัน)
       (portal)/         portal ลูกค้า
@@ -132,10 +132,11 @@ frontend/
     features/<ชื่อ>/    หนึ่งโฟลเดอร์ต่อหนึ่งเรื่อง
     components/
       ui/               ปุ่ม การ์ด ช่องกรอก checkbox alert และสถานะการบันทึกของฟอร์ม
-      layout/           staff-shell, site-header/, site-footer/, site-container
+      layout/           staff-shell/ (โครงหน้าจอพนักงาน หนึ่งไฟล์หนึ่งชิ้น), site-header/, site-footer/, site-container
       shared/           image-slot.tsx
       site/             ชิ้นส่วนกลางของหน้าสาธารณะ การ์ด แถบหัว แถบส้มปิดหน้า หัวข้อ section ปุ่มหมวด ป้ายเล็ก
     hooks/              hook ที่หลาย feature ใช้ร่วม เช่น use-form-submit.ts ของฟอร์มตั้งค่า
+                        (แถบบันทึกและการถามก่อนออกอยู่ใน features/settings/hooks/)
     lib/
       api/              http-client, server-client, auth-transport, event-stream, api-error
       auth/             คุกกี้เซสชัน, refresh, scope
@@ -201,5 +202,5 @@ feature ที่มีโค้ด: `about`, `account`, `appointments`, `articl
 2. ถ้ามีการแก้ข้อมูล เพิ่ม server action ใน `features/<ชื่อ>/actions/` ใช้ `runAction` และ `revalidatePath`
 3. สร้าง `src/app/(staff)/<path>/page.tsx` เป็น server component ใช้ `loadStaffContext()` และ `authed(...)`
 4. เพิ่ม path ใน `matcher` ของ `src/middleware.ts` ไม่อย่างนั้นหน้านั้นจะไม่ได้ต่ออายุเซสชัน
-5. เพิ่มเมนูใน `src/components/layout/staff-shell.tsx`
+5. เพิ่มเมนูใน `src/features/staff-shell/content/staff-navigation.ts` ใส่ในกลุ่มที่ตรงกับงาน พร้อมไอคอนและ scope ของหน้า ถ้าเป็นไอคอนใหม่ให้วาดเพิ่มใน `src/components/layout/staff-shell/staff-icon.tsx`
 6. ตรวจด้วย `npm run typecheck` และ `npm run lint`

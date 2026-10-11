@@ -53,5 +53,12 @@ export function useFormSubmit(messages: FormSubmitMessages) {
   /** Clears "saved" once the person starts changing the form again. */
   const touch = () => setSaved(false);
 
-  return { errors, message, saved, pending, submit, touch };
+  /** Forgets the last save's outcome, for a form put back to what was last saved. */
+  const clear = () => {
+    setErrors({});
+    setMessage(undefined);
+    setSaved(false);
+  };
+
+  return { errors, message, saved, pending, submit, touch, clear };
 }

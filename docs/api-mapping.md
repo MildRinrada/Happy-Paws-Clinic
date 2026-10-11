@@ -578,6 +578,11 @@ endpoint ที่ **ไม่อยู่** ใน `API Reference.dc.html` บ�
 | DELETE | `/staff/schedules/shifts/{id}` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/RemoveShift/` | § 47 |
 | GET | `/staff/schedules/assignment-rules` | `schedule:read` | `Staff/SchedulesController` | `Scheduling/GetAssignmentRules/` | § 48 |
 | POST | `/staff/schedules/shifts/copy-week` | `schedule:write` | `Staff/SchedulesController` | `Scheduling/CopyWeek/` | § 49 |
+| POST | `/clinic/logo` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/BrandImages/RequestBrandImageHandler` | § 50 |
+| POST | `/clinic/tab-icon` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/BrandImages/RequestBrandImageHandler` | § 50 |
+| GET | `/clinic/logo` | สาธารณะ | `Public/ClinicController` | `Clinics/BrandImages/GetBrandImageHandler` | § 50 |
+| GET | `/clinic/tab-icon` | สาธารณะ | `Public/ClinicController` | `Clinics/BrandImages/GetBrandImageHandler` | § 50 |
+| PATCH | `/clinic/branches/{id}` | `settings:write` | `Staff/ClinicSetupController` | `Clinics/UpdateBranch/` | § 51 |
 
 § 18 เพิ่มช่อง `line` ในคำตอบของ `GET /staff/customers/{id}` และ § 19 เพิ่มช่อง `version` ในกติกาที่ `GET` และ `POST /staff/automations` ตอบ ทั้งสองเป็นการเพิ่มช่อง ไม่ได้เปลี่ยนหรือเอาช่องเดิมออก
 
@@ -619,6 +624,8 @@ endpoint ที่ **ไม่อยู่** ใน `API Reference.dc.html` บ�
 § 39 ไม่เพิ่ม scope เพิ่มช่องที่ไม่บังคับ `referral_code` ในคำขอ `POST /booking/guest/verify` และ `POST /auth/register` ซึ่งเป็นเส้นของ contract รหัสที่ใช้ไม่ได้ถูกข้ามโดยไม่มี error และคำตอบของทั้งสองเส้นไม่เปลี่ยน `GET` และ `PUT /clinic/settings/loyalty` มีสี่ช่องใหม่ `referral_enabled`, `referral_referrer_points`, `referral_friend_points`, `referral_monthly_cap` ใน `PUT` ไม่บังคับ ช่องที่ไม่ส่งคงค่าเดิม แถวประวัติของ `GET /staff/loyalty/{customer_id}` มีชนิดใหม่ `referral` `GET /referrals/{code}` ตอบ `200` พร้อม `valid` เท่านั้นเสมอ มี rate limit ต่อ IP ของตัวเอง (`referral-check`) audit ใหม่ `referral.rewarded` migration `ReferAFriend` รายละเอียดอยู่ใน [ชวนเพื่อน](features/referrals.md)
 
 § 47 ถึง 49 ไม่เพิ่ม scope ใช้ `schedule:read` และ `schedule:write` เดิม เวรในคำตอบของ `GET /staff/schedules`, `POST /staff/schedules/shifts` และ `shifts_remaining` ของ `POST /staff/schedules/time-off` มีช่อง `version` เพิ่ม และรายการที่ชนใน `details` ของ `shift_overlap` และ `staff_on_time_off` มีช่อง `staff_id` เพิ่ม ทั้งสองเป็นช่องใหม่ ไม่ได้เปลี่ยนช่องเดิม รหัส error ใหม่สองตัวคือ `409 shift_ended` และ `409 shift_started` audit ใหม่ `schedule.shift_changed`, `schedule.shift_removed`, `schedule.week_copied` ไม่มี migration รายละเอียดอยู่ใน [ตารางเวร](features/schedules.md)
+
+§ 50 ไม่เพิ่ม scope ใช้ `settings:write` เดิมของ `PATCH /clinic` `logo_url` เดิมรับค่าแบบใหม่ที่ขึ้นต้นด้วย `storage:clinic-brand/logo-` สำหรับโลโก้ที่อัปโหลด ส่วนลิงก์ `https://` ทำงานเหมือนเดิม `GET` และ `PATCH /clinic` มีสองช่องใหม่ `tab_icon_url` และ `show_name_with_logo` ใน `PATCH` ไม่บังคับ ช่องที่ไม่ส่งคงค่าเดิม `GET /clinic/logo` และ `GET /clinic/tab-icon` ตอบ `302` ไปที่ลิงก์ที่ลงชื่อแล้ว หรือ `404` เมื่อไม่มีรูปที่อัปโหลด ไม่มี audit ใหม่ migration `ClinicLogo` รายละเอียดอยู่ใน [ตั้งค่าคลินิก](features/clinic-setup.md)
 
 § 10 ยังเพิ่มของบน endpoint เดิมของ contract โดยไม่เปลี่ยนของเดิม คือ `GET /staff/members` รับ `?department=` และ `?role=` และทุกแถวมี `department` กับ `public_profile` ส่วน `PATCH /staff/members/{id}` รับ `department` contract ระบุแค่ scope และคำอธิบายบรรทัดเดียวของสองเส้นนี้ ไม่ได้กำหนดรูปของ request หรือ response จึงไม่มีอะไรที่เอกสารกำหนดถูกแก้
 

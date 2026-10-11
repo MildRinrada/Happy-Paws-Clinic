@@ -9,7 +9,6 @@ import { AutoRefresh } from '@/features/analytics/components/today/auto-refresh'
 import { DueBackPreview } from '@/features/analytics/components/today/due-back-preview';
 import { HeadlineTiles } from '@/features/analytics/components/today/headline-tiles';
 import { MineStrip } from '@/features/analytics/components/today/mine-strip';
-import { QuickActions } from '@/features/analytics/components/today/quick-actions';
 import { TodayDetails } from '@/features/analytics/components/today/today-details';
 import { TodaySection } from '@/features/analytics/components/today/today-section';
 import { UpcomingVisits } from '@/features/analytics/components/today/upcoming-visits';
@@ -92,11 +91,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <div className="max-w-6xl space-y-6">
       <AutoRefresh seconds={REFRESH_SECONDS} />
-      <PageHeader
-        title={dashboardPage.title}
-        subtitle={dashboardPage.subtitle(branch.name)}
-        actions={<QuickActions can={can} />}
-      />
+      <PageHeader title={dashboardPage.title} subtitle={dashboardPage.subtitle(branch.name)} />
 
       {/* Owner only, while no privacy notice is published (docs/contract-extensions.md § 35). */}
       <PrivacyPolicyMissingNotice />

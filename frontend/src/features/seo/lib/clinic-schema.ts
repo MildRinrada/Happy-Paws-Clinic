@@ -1,4 +1,5 @@
 import type { SiteInfo } from '@/features/clinic/lib/load-site-info';
+import { logoSrcOf } from '@/features/clinic/lib/brand-image-src';
 import type { Branch, ClinicProfile } from '@/features/clinic/types/clinic.types';
 import type { ClinicContact } from '@/features/clinic/types/contact.types';
 import { ogImage, seoSite } from '../content/seo';
@@ -59,7 +60,9 @@ export function clinicSchema(profile: ClinicProfile | null, site: SiteInfo): Jso
   const name = profile?.name || seoSite.name;
   const single = site.branches.length === 1 ? site.branches[0] : undefined;
   const clinicWideMap = site.contacts.find((contact) => contact.kind === 'map' && !contact.branch_id);
-  const logo = profile?.logo_url ? absoluteUrl(profile.logo_url) : undefined;
+  // An uploaded logo is a `storage:` name; its address is the API's fixed public one (§ 50).
+  const logoSrc = logoSrcOf(profile?.logo_url);
+  const logo = logoSrc ? absoluteUrl(logoSrc) : undefined;
 
   return compact({
     '@context': 'https://schema.org',

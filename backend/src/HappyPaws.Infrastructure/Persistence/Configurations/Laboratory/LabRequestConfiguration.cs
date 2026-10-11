@@ -25,6 +25,7 @@ internal sealed class LabRequestConfiguration : EntityConfiguration<LabRequest>
         builder.Property(request => request.ClinicalNotes).HasMaxLength(2_000);
         builder.Property(request => request.RequestedByStaffId).HasMaxLength(40).IsRequired();
         builder.Property(request => request.ReviewedByStaffId).HasMaxLength(40);
+        builder.Property(request => request.ReviewNote).HasMaxLength(LabRequest.MaxReviewNoteLength);
 
         builder.Property(request => request.Destination).HasConversion<string>().HasMaxLength(16).IsRequired();
         builder.Property(request => request.Priority).HasConversion<string>().HasMaxLength(16).IsRequired();
@@ -46,6 +47,15 @@ internal sealed class LabRequestConfiguration : EntityConfiguration<LabRequest>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(request => request.Results).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Files from the lab (docs/contract-extensions.md § 54): rows, one per file, gone with
+        // their request.
+        builder.HasMany(request => request.Attachments)
+            .WithOne()
+            .HasForeignKey(attachment => attachment.LabRequestId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(request => request.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasOne<Pet>().WithMany()
             .HasForeignKey(request => request.PetId).OnDelete(DeleteBehavior.Restrict);
@@ -75,5 +85,34 @@ internal sealed class LabResultConfiguration : IEntityTypeConfiguration<LabResul
         builder.Property(result => result.ReferenceHigh).HasPrecision(18, 6);
 
         builder.Property(result => result.Flag).HasConversion<string>().HasMaxLength(16);
+
+        // Corrections (docs/contract-extensions.md § 52). The values a correction replaced are one
+        // jsonb list on the row: read with it, written whole, never queried into.
+        builder.Property(result => result.AmendedByStaffId).HasMaxLength(40);
+        builder.Property(result => result.AmendReason).HasMaxLength(LabResult.MaxReasonLength);
+        builder.Property(result => result.VoidedByStaffId).HasMaxLength(40);
+        builder.Property(result => result.VoidReason).HasMaxLength(LabResult.MaxReasonLength);
+
+        builder.Property(result => result.PreviousValues)
+            .HasField("_previousValues")
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .HasJsonListConversion()
+            .IsRequired();
+    }
+}
+
+internal sealed class LabAttachmentConfiguration : IEntityTypeConfiguration<LabAttachment>
+{
+    public void Configure(EntityTypeBuilder<LabAttachment> builder)
+    {
+        builder.ToTable("lab_attachments");
+        builder.HasKey(attachment => attachment.Id);
+
+        builder.Property(attachment => attachment.Id).HasMaxLength(40);
+        builder.Property(attachment => attachment.LabRequestId).HasMaxLength(40).IsRequired();
+        builder.Property(attachment => attachment.StorageKey).HasMaxLength(300).IsRequired();
+        builder.Property(attachment => attachment.FileName).HasMaxLength(LabFile.MaxFileNameLength).IsRequired();
+        builder.Property(attachment => attachment.ContentType).HasMaxLength(100).IsRequired();
+        builder.Property(attachment => attachment.AttachedByStaffId).HasMaxLength(40).IsRequired();
     }
 }

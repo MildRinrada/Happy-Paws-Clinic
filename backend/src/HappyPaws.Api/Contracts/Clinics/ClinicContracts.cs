@@ -2,14 +2,25 @@ namespace HappyPaws.Api.Contracts.Clinics;
 
 /// <summary>
 /// <c>PATCH /clinic</c> — "โปรไฟล์และ branding ของคลินิก". An absent field is left alone; an empty
-/// string clears it, except <c>name</c>.
+/// string clears it, except <c>name</c>. <c>tab_icon_url</c> and <c>show_name_with_logo</c> are
+/// <b>not in the API reference</b>; see <c>docs/contract-extensions.md § 50</c>, which also lets
+/// <c>logo_url</c> hold an uploaded logo.
 /// </summary>
 public sealed record UpdateClinicProfileRequest(
     string? Name = null,
     string? LogoUrl = null,
     string? BrandColor = null,
     string? LicenseNo = null,
-    string? OperatorName = null);
+    string? OperatorName = null,
+    string? TabIconUrl = null,
+    bool? ShowNameWithLogo = null);
+
+/// <summary>
+/// <c>POST /clinic/logo</c> and <c>POST /clinic/tab-icon</c> — the picture about to be sent.
+/// <b>Not in the API reference</b>; see <c>docs/contract-extensions.md § 50</c>.
+/// <code>{ "content_type": "image/png", "size_bytes": 48211 }</code>
+/// </summary>
+public sealed record BrandImageRequest(string? ContentType = null, long SizeBytes = 0);
 
 /// <summary>
 /// <c>POST /clinic/branches</c> — "เปิดสาขาใหม่ในคลินิกเดียวกัน". <c>code</c> becomes the readable
@@ -18,6 +29,19 @@ public sealed record UpdateClinicProfileRequest(
 public sealed record CreateBranchRequest(
     string Code,
     string Name,
+    string? Address = null,
+    double? Latitude = null,
+    double? Longitude = null,
+    IReadOnlyList<string>? ExamRooms = null);
+
+/// <summary>
+/// <c>PATCH /clinic/branches/{id}</c> — <b>not in the API reference</b>; see
+/// <c>docs/contract-extensions.md § 51</c>. An absent field is left alone and an empty
+/// <c>address</c> clears it; <c>latitude</c> and <c>longitude</c> come together or not at all;
+/// <c>exam_rooms</c> is the whole list. There is no <c>code</c>: it never changes.
+/// </summary>
+public sealed record UpdateBranchRequest(
+    string? Name = null,
     string? Address = null,
     double? Latitude = null,
     double? Longitude = null,

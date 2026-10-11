@@ -1,4 +1,6 @@
+using HappyPaws.Application.Laboratory.CorrectLabResults;
 using HappyPaws.Application.Laboratory.CreateLabRequest;
+using HappyPaws.Application.Laboratory.Files;
 using HappyPaws.Application.Laboratory.ListLabRequests;
 using HappyPaws.Application.Laboratory.RecordLabResults;
 using HappyPaws.Application.Laboratory.ReviewLabResults;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyPaws.Application.Laboratory;
 
-/// <summary>Registers lab requests, their results and the worklist.</summary>
+/// <summary>Registers lab requests, their results, corrections and files, and the worklist.</summary>
 public static class LaboratoryModule
 {
     public static IServiceCollection AddLaboratoryModule(this IServiceCollection services)
@@ -16,6 +18,14 @@ public static class LaboratoryModule
         services.AddScoped<RecordLabResultsHandler>();
         services.AddScoped<ListLabRequestsHandler>();
         services.AddScoped<ReviewLabResultsHandler>();
+
+        // docs/contract-extensions.md § 52 and § 54.
+        services.AddScoped<AmendLabResultHandler>();
+        services.AddScoped<VoidLabResultHandler>();
+        services.AddScoped<RequestLabFileUploadHandler>();
+        services.AddScoped<AttachLabFileHandler>();
+        services.AddScoped<RemoveLabFileHandler>();
+        services.AddScoped<OpenLabFileHandler>();
 
         return services;
     }

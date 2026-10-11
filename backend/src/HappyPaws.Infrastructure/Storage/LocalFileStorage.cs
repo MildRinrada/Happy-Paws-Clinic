@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using HappyPaws.Application.Common.Abstractions;
 using HappyPaws.Infrastructure.Identity;
@@ -62,9 +63,10 @@ internal sealed partial class LocalFileStorage : IFileStorage
             expiresAt);
     }
 
-    public string CreateDownloadUrl(string key, TimeSpan lifetime)
+    public string CreateDownloadUrl(string key, TimeSpan lifetime, string? saveAs = null)
     {
-        var token = Sign(new Grant(Download, SafeKey(key), null, 0, (_clock.UtcNow + lifetime).ToUnixTimeSeconds()));
+        var token = Sign(new Grant(
+            Download, SafeKey(key), null, 0, (_clock.UtcNow + lifetime).ToUnixTimeSeconds(), string.IsNullOrWhiteSpace(saveAs) ? null : saveAs));
 
         return $"{_baseUrl}/storage/files/{token}";
     }
@@ -145,9 +147,10 @@ internal sealed partial class LocalFileStorage : IFileStorage
             ? await File.ReadAllTextAsync(path + ContentTypeSuffix, cancellationToken)
             : "application/octet-stream";
 
-        var fileName = File.Exists(path + FileNameSuffix)
-            ? await File.ReadAllTextAsync(path + FileNameSuffix, cancellationToken)
-            : null;
+        // A name signed into the URL wins over one stored with the file: it is how a use case asks
+        // for this one link to download rather than open in the browser.
+        var fileName = grant.Name
+            ?? (File.Exists(path + FileNameSuffix) ? await File.ReadAllTextAsync(path + FileNameSuffix, cancellationToken) : null);
 
         return new StoredFile(File.OpenRead(path), contentType) { FileName = fileName };
     }
@@ -266,6 +269,15 @@ internal sealed partial class LocalFileStorage : IFileStorage
     [GeneratedRegex("^[A-Za-z0-9_][A-Za-z0-9_./-]{0,250}$")]
     private static partial Regex KeyPattern();
 
-    /// <summary>What a URL allows. Short names: this is inside every URL.</summary>
-    private sealed record Grant(string Op, string Key, string? ContentType, long MaxBytes, long Exp);
+    /// <summary>
+    /// What a URL allows. Short names: this is inside every URL. <c>Name</c> is a download's
+    /// save-as name, left out of URLs that have none so they stay as they were.
+    /// </summary>
+    private sealed record Grant(
+        string Op,
+        string Key,
+        string? ContentType,
+        long MaxBytes,
+        long Exp,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Name = null);
 }

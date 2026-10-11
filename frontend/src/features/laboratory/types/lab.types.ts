@@ -18,9 +18,8 @@ export interface LabTest {
   code?: string;
 }
 
-/** One measured value with the range printed next to it. */
-export interface LabResult {
-  id: string;
+/** The part of a value that a correction replaces: what was measured, how much, and against what. */
+export interface LabValue {
   analyte: string;
   value_numeric?: number;
   value_text?: string;
@@ -29,8 +28,65 @@ export interface LabResult {
   reference_high?: number;
   reference_text?: string;
   flag?: LabFlag;
+}
+
+/** A value a correction replaced, with who replaced it, when and why (docs/contract-extensions.md § 52). */
+export interface LabResultRevision extends LabValue {
+  replaced_at: string;
+  replaced_by_staff_id: string;
+  reason: string;
+}
+
+/**
+ * One measured value with the range printed next to it. A corrected value says so and keeps every
+ * value it replaced; a voided one stays listed with `voided` set (§ 52).
+ */
+export interface LabResult extends LabValue {
+  id: string;
   recorded_at: string;
   recorded_by_staff_id: string;
+  amended: boolean;
+  amended_at?: string;
+  amended_by_staff_id?: string;
+  amend_reason?: string;
+  /** Oldest first. Empty for a value as first entered. */
+  previous_values: LabResultRevision[];
+  voided: boolean;
+  voided_at?: string;
+  voided_by_staff_id?: string;
+  void_reason?: string;
+}
+
+/** A file from the lab on a request (§ 54). No address: opening one asks for a short-lived link. */
+export interface LabAttachment {
+  id: string;
+  file_name: string;
+  content_type: string;
+  size_bytes?: number;
+  attached_at: string;
+  attached_by_staff_id: string;
+}
+
+/** The media types a lab file may be (§ 54). */
+export type LabFileType = 'application/pdf' | 'image/jpeg' | 'image/png' | 'image/webp';
+
+/** `POST /staff/lab-requests/{id}/attachments/uploads`: where to send the file, and the value that names it. */
+export interface LabFileUpload {
+  /** Send this as `file` to `POST .../attachments` once the file is in. */
+  value: string;
+  upload: { url: string; method: string; headers: Record<string, string>; expires_at: string };
+}
+
+/** `GET /staff/lab-requests/{id}/attachments/{attachmentId}/link`: good for five minutes. */
+export interface LabFileLink {
+  url: string;
+  expires_at: string;
+}
+
+/** `POST .../results/{resultId}/amend`: the whole value as it should have been, and why. */
+export interface LabCorrection extends Omit<LabResultInput, 'analyte'> {
+  analyte?: string;
+  reason: string;
 }
 
 /** A lab request (`lab_…`) and every result it has so far. */
@@ -51,8 +107,12 @@ export interface LabRequest {
   resulted_at?: string;
   reviewed_at?: string;
   reviewed_by_staff_id?: string;
+  /** What the vet wrote when reading the results (§ 53). Cleared when the request goes back to `resulted`. */
+  review_note?: string;
+  /** Not counting voided values. */
   abnormal_count: number;
   results: LabResult[];
+  attachments: LabAttachment[];
 }
 
 /** `POST /staff/lab-requests`. The branch comes from the consultation when one is named. */

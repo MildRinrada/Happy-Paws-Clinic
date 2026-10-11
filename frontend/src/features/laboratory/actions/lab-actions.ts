@@ -1,21 +1,14 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { runAction } from '@/lib/actions/action-result';
 import { createLabRequest, recordLabResults, reviewLabResults } from '../api/lab-requests';
-import { LAB_PATH } from '../lib/lab-filters';
+import { revalidateLab } from '../lib/revalidate-lab';
 
 /**
- * The lab's three writes. What a request may hold and who may read it are the backend's rules;
- * these check the shape, make one call, and re-read the worklist and any open case page, since a
- * case shows its own requests.
+ * The lab's three everyday writes. What a request may hold and who may read it are the backend's
+ * rules; these check the shape, make one call, and re-read the worklist and any open case page.
  */
-
-function refresh() {
-  revalidatePath(LAB_PATH);
-  revalidatePath('/consultations/[id]', 'page');
-}
 
 const id = z.string().min(1).max(64);
 const text = (max: number) => z.string().trim().max(max);
@@ -44,7 +37,7 @@ export async function createLabRequestAction(input: z.input<typeof order>) {
     }),
   );
 
-  refresh();
+  revalidateLab();
   return result.ok ? { ok: true as const, data: undefined } : result;
 }
 
@@ -61,6 +54,7 @@ const results = z.object({
         unit: optionalText(30),
         reference_low: optionalNumber,
         reference_high: optionalNumber,
+        reference_text: optionalText(200),
         abnormal: z.boolean().optional(),
       }),
     )
@@ -68,22 +62,22 @@ const results = z.object({
     .max(100),
 });
 
-/** Adds results. Each call adds to what is there; a value cannot be taken back. */
+/** Adds results. Each call adds to what is there; a value is corrected one at a time, with a reason. */
 export async function recordLabResultsAction(input: z.input<typeof results>) {
   const parsed = results.parse(input);
   const result = await runAction(() => recordLabResults(parsed.labRequestId, parsed.results));
 
-  refresh();
+  revalidateLab();
   return result.ok ? { ok: true as const, data: undefined } : result;
 }
 
-const review = z.object({ labRequestId: id });
+const review = z.object({ labRequestId: id, note: optionalText(1000) });
 
-/** Marks the results as read. Reading twice is fine; reading before results exist is `409`. */
-export async function reviewLabResultsAction(input: z.infer<typeof review>) {
+/** Marks the results as read, with the vet's note (§ 53). Reading twice is fine; before results exist it is `409`. */
+export async function reviewLabResultsAction(input: z.input<typeof review>) {
   const parsed = review.parse(input);
-  const result = await runAction(() => reviewLabResults(parsed.labRequestId));
+  const result = await runAction(() => reviewLabResults(parsed.labRequestId, parsed.note));
 
-  refresh();
+  revalidateLab();
   return result.ok ? { ok: true as const, data: undefined } : result;
 }

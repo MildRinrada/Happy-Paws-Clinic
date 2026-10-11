@@ -97,7 +97,8 @@ public sealed class GetOwnerVisibleRecordsHandler(
                 request.RequestedAt,
                 request.ReviewedAt,
                 [.. request.Tests.Select(test => test.Name)],
-                [.. request.Results.Select(value => new OwnerLabValueDto(
+                // A voided value (docs/contract-extensions.md § 52) was never the pet's result.
+                [.. request.Results.Where(value => !value.IsVoided).Select(value => new OwnerLabValueDto(
                     value.Analyte,
                     value.ValueNumeric,
                     value.ValueText,

@@ -1,10 +1,10 @@
 'use client';
 
 import { useId, useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
-import { FormStatus } from '@/components/ui/form-status';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { replaceLoyaltySettingsAction } from '../../actions/crm-manage-actions';
 import { loyaltySettingsText } from '../../content/loyalty-settings';
@@ -27,8 +27,10 @@ const FIELDS: {
   { field: 'months', api: 'points_expire_after_months', label: 'expiry', hint: 'expiryHint' },
 ];
 
+const FORM_ID = 'loyalty-settings-form';
+
 /**
- * The points programme, written as a whole. Starts from the stored values; the version read goes
+ * The points programme, written as a whole by the settings save bar. Starts from the stored values; the version read goes
  * out as `If-Match`, so a colleague's change in between is refused, not silently replaced.
  */
 export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings }) {
@@ -39,7 +41,21 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
   const [bad, setBad] = useState<LoyaltySettingsField[]>([]);
   const [referral, setReferral] = useState<ReferralDraft>(() => referralDraftFrom(settings));
   const [badReferral, setBadReferral] = useState<ReferralNumberField[]>([]);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.heading,
+    value: { draft, referral },
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0 || bad.length > 0 || badReferral.length > 0,
+    onReset: (stored) => {
+      clear();
+      setBad([]);
+      setBadReferral([]);
+      setDraft(stored.draft);
+      setReferral(stored.referral);
+    },
+  });
 
   function set(field: LoyaltySettingsField, value: string) {
     touch();
@@ -68,15 +84,17 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
     submit(
       () => replaceLoyaltySettingsAction({ version, values: { ...input, ...referralInput } }),
       (stored) => {
+        const next = { draft: draftFromSettings(stored), referral: referralDraftFrom(stored) };
         setVersion(stored.version);
-        setDraft(draftFromSettings(stored));
-        setReferral(referralDraftFrom(stored));
+        setDraft(next.draft);
+        setReferral(next.referral);
+        changes.markSaved(next);
       },
     );
   }
 
   return (
-    <form onSubmit={save} noValidate className="space-y-4">
+    <form id={FORM_ID} onSubmit={save} noValidate className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         {FIELDS.map(({ field, api, label, hint, money }) => (
           <Field
@@ -106,12 +124,7 @@ export function LoyaltySettingsForm({ settings }: { settings: LoyaltySettings })
         </p>
       )}
 
-      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-ink-100 pt-4">
-        <FormStatus message={message} savedText="" />
-        <Button type="submit" disabled={pending}>
-          {pending ? text.submitting : text.submit}
-        </Button>
-      </div>
+      <SectionFooter pending={pending} message={message} inBar={changes.inBar} submitLabel={text.submit} />
     </form>
   );
 }

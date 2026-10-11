@@ -35,7 +35,7 @@ export default async function OpenGraphImage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          {/* The same paw as the browser tab icon (src/app/icon.svg). */}
+          {/* The same paw as the browser tab icon (public/icon.svg). */}
           <svg width="88" height="88" viewBox="0 0 32 32">
             <rect width="32" height="32" rx="7" fill="#217a71" />
             <g fill="#ffffff">

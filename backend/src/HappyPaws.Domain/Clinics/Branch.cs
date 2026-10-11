@@ -10,8 +10,9 @@ namespace HappyPaws.Domain.Clinics;
 /// branches, and availability is computed per branch.
 /// </para>
 /// <para>
-/// Owned by the Clinic-setup module — <c>GET /clinic/branches</c> reads it and
-/// <c>POST /clinic/branches</c> opens a new one. It was defined before that module existed because
+/// Owned by the Clinic-setup module — <c>GET /clinic/branches</c> reads it,
+/// <c>POST /clinic/branches</c> opens a new one and <c>PATCH /clinic/branches/{id}</c> (§ 51)
+/// changes one. It was defined before that module existed because
 /// booking cannot be modelled without it: every appointment happens somewhere.
 /// </para>
 /// </summary>
@@ -93,15 +94,67 @@ public sealed class Branch : Entity
 
     public void ReplaceExamRooms(IEnumerable<string> examRooms)
     {
-        var rooms = examRooms
-            .Where(room => !string.IsNullOrWhiteSpace(room))
-            .Select(room => room.Trim())
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+        var rooms = CleanRooms(examRooms);
 
         _examRooms.Clear();
         _examRooms.AddRange(rooms);
     }
+
+    /// <summary>
+    /// The rooms here today that <paramref name="examRooms"/> would no longer have, read the way
+    /// <see cref="ReplaceExamRooms"/> would store the list.
+    /// </summary>
+    public IReadOnlyList<string> RoomsRemovedBy(IEnumerable<string> examRooms)
+    {
+        var kept = CleanRooms(examRooms);
+
+        return [.. _examRooms.Where(room => !kept.Contains(room, StringComparer.Ordinal))];
+    }
+
+    /// <summary>
+    /// <c>PATCH /clinic/branches/{id}</c> (<c>docs/contract-extensions.md § 51</c>). A null argument
+    /// leaves that part alone; an empty address clears it. The code is not here: it is half of the
+    /// id, printed on tickets and in tokens, so it never changes.
+    /// </summary>
+    public void Revise(
+        string? name = null,
+        string? address = null,
+        double? latitude = null,
+        double? longitude = null,
+        IEnumerable<string>? examRooms = null)
+    {
+        if (name is not null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new DomainException("invalid_branch", "ชื่อสาขาต้องไม่ว่าง");
+            }
+
+            Name = name.Trim();
+        }
+
+        if (address is not null)
+        {
+            Address = string.IsNullOrWhiteSpace(address) ? null : address.Trim();
+        }
+
+        // Both halves or neither, as on creation: neither means "keep the pin where it is".
+        if (latitude is not null || longitude is not null)
+        {
+            SetCoordinates(latitude, longitude);
+        }
+
+        if (examRooms is not null)
+        {
+            ReplaceExamRooms(examRooms);
+        }
+    }
+
+    private static List<string> CleanRooms(IEnumerable<string> examRooms) =>
+        [.. examRooms
+            .Where(room => !string.IsNullOrWhiteSpace(room))
+            .Select(room => room.Trim())
+            .Distinct(StringComparer.Ordinal)];
 
     public void Deactivate() => IsActive = false;
 

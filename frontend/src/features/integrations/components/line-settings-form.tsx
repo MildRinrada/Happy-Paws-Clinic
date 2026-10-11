@@ -4,8 +4,9 @@ import { useState, type FormEvent } from 'react';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, Input } from '@/components/ui/field';
-import { FormFooter } from '@/features/settings/components/form-footer';
+import { SectionFooter } from '@/features/settings/components/section-footer';
 import { formMessages } from '@/features/settings/content/form-messages';
+import { useUnsavedChanges } from '@/features/settings/hooks/use-unsaved-changes';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { configureLineAction } from '../actions/line-actions';
 import { lineSettingsPage } from '../content/line-settings';
@@ -14,7 +15,12 @@ import type { LineSettings } from '../types/line.types';
 import { LineCredentialFields, type CredentialDraft } from './line-credential-fields';
 import { LineTypeSwitches } from './line-type-switches';
 
-/** The LINE channel's credentials, the master switch, the broadcast quota and the per-type switches. */
+const FORM_ID = 'line-settings-form';
+
+/**
+ * The LINE channel's credentials, the master switch, the broadcast quota and the per-type switches:
+ * two cards, one form, saved together by the settings save bar.
+ */
 export function LineSettingsForm({ settings: initial }: { settings: LineSettings }) {
   const text = lineSettingsPage;
   const [settings, setSettings] = useState(initial);
@@ -27,22 +33,45 @@ export function LineSettingsForm({ settings: initial }: { settings: LineSettings
   const [enabled, setEnabled] = useState(initial.enabled);
   const [limit, setLimit] = useState(initial.broadcast_monthly_limit);
   const [types, setTypes] = useState(initial.notification_types);
-  const { errors, message, saved, pending, submit, touch } = useFormSubmit(formMessages);
+  const { errors, message, saved, pending, submit, touch, clear } = useFormSubmit(formMessages);
+  const changes = useUnsavedChanges({
+    formId: FORM_ID,
+    section: text.title,
+    value: { credentials, enabled, limit, types },
+    pending,
+    failed: Boolean(message) || Object.keys(errors).length > 0,
+    onReset: (stored) => {
+      clear();
+      setCredentials(stored.credentials);
+      setEnabled(stored.enabled);
+      setLimit(stored.limit);
+      setTypes(stored.types);
+    },
+  });
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     submit(
       () => configureLineAction({ version: settings.version, values: lineSettingsChanges(settings, credentials, enabled, limit, types) }),
       (stored) => {
+        const next = {
+          credentials: { channelId: stored.channel_id ?? '', channelSecret: '', channelAccessToken: '', clearStored: false },
+          enabled: stored.enabled,
+          limit: stored.broadcast_monthly_limit,
+          types: stored.notification_types,
+        };
         setSettings(stored);
-        setCredentials({ channelId: stored.channel_id ?? '', channelSecret: '', channelAccessToken: '', clearStored: false });
-        setTypes(stored.notification_types);
+        setCredentials(next.credentials);
+        setEnabled(next.enabled);
+        setLimit(next.limit);
+        setTypes(next.types);
+        changes.markSaved(next);
       },
     );
   }
 
   return (
-    <form onSubmit={save} className="space-y-6">
+    <form id={FORM_ID} onSubmit={save} className="space-y-6">
       <Card>
         <CardHeader title={text.credentials.heading} />
         <CardBody>
@@ -97,7 +126,7 @@ export function LineSettingsForm({ settings: initial }: { settings: LineSettings
         </CardBody>
       </Card>
 
-      <FormFooter pending={pending} message={message} saved={saved} />
+      <SectionFooter pending={pending} message={message} saved={saved} inBar={changes.inBar} />
     </form>
   );
 }

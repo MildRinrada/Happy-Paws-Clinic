@@ -3,10 +3,12 @@ using HappyPaws.Application.Clinics.Bootstrap;
 using HappyPaws.Application.Clinics.CreateBranch;
 using HappyPaws.Application.Clinics.GetClinicProfile;
 using HappyPaws.Application.Clinics.GetOpeningHours;
+using HappyPaws.Application.Clinics.BrandImages;
 using HappyPaws.Application.Clinics.ListBranches;
 using HappyPaws.Application.Clinics.ManageBookingSettings;
 using HappyPaws.Application.Clinics.ManageContacts;
 using HappyPaws.Application.Clinics.SeedContacts;
+using HappyPaws.Application.Clinics.UpdateBranch;
 using HappyPaws.Application.Clinics.ReplaceOpeningHours;
 using HappyPaws.Application.Clinics.UpdateClinicProfile;
 using HappyPaws.Application.Clinics.UpdateMedicalRecordSettings;
@@ -23,8 +25,15 @@ public static class ClinicsModule
         services.AddScoped<GetClinicProfileHandler>();
         services.AddScoped<UpdateClinicProfileHandler>();
 
+        // The uploaded logo and tab icon: a contract extension, docs/contract-extensions.md § 50.
+        services.AddScoped<RequestBrandImageHandler>();
+        services.AddScoped<GetBrandImageHandler>();
+
         services.AddScoped<ListBranchesHandler>();
         services.AddScoped<CreateBranchHandler>();
+
+        // Editing a branch: a contract extension, docs/contract-extensions.md § 51.
+        services.AddScoped<UpdateBranchHandler>();
 
         services.AddScoped<GetOpeningHoursHandler>();
         services.AddScoped<ReplaceOpeningHoursHandler>();

@@ -118,9 +118,9 @@ internal sealed class StaffAiReader(HappyPawsDbContext db, IClock clock) : IStaf
                 lab.Id,
                 Day(lab.ResultedAt ?? lab.RequestedAt),
                 [.. lab.Tests.Select(test => test.Name)],
-                lab.Results.Count,
+                lab.Results.Count(result => !result.IsVoided),
                 [.. lab.Results
-                    .Where(result => result.Flag is LabFlag.Low or LabFlag.High or LabFlag.Abnormal)
+                    .Where(result => result.IsAbnormal)
                     .Select(result => new LabValueFact(
                         result.Analyte,
                         result.ValueNumeric?.ToString("0.###", CultureInfo.InvariantCulture) ?? result.ValueText ?? string.Empty,

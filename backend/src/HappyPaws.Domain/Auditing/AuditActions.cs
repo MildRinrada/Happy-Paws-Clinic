@@ -51,6 +51,12 @@ public static class AuditActions
     public const string LabResultsViewed = "pet.lab_results_viewed";
 
     /// <summary>
+    /// A file from the lab was opened (<c>docs/contract-extensions.md § 54</c>). Each opening asks
+    /// for its own short-lived link, so the log knows who looked at the report itself.
+    /// </summary>
+    public const string LabFileOpened = "pet.lab_file_opened";
+
+    /// <summary>
     /// A certificate, referral letter or vaccination book was printed from a patient's file. A copy
     /// of health data left the system on paper, which is why it is in the access log.
     /// </summary>
@@ -102,6 +108,18 @@ public static class AuditActions
 
     /// <summary>A vet read a set of results. "Who saw the abnormal value, and when" is the question it answers.</summary>
     public const string LabResultsReviewed = "lab.results_reviewed";
+
+    /// <summary>A value was corrected (§ 52). Details carry the value before and after, and why.</summary>
+    public const string LabResultAmended = "lab.result_amended";
+
+    /// <summary>A value was struck out (§ 52). Details carry the value and why.</summary>
+    public const string LabResultVoided = "lab.result_voided";
+
+    /// <summary>A file from the lab was put on a request (§ 54).</summary>
+    public const string LabFileAttached = "lab.file_attached";
+
+    /// <summary>A file was taken off a request (§ 54). The file stays in storage; the row says which.</summary>
+    public const string LabFileRemoved = "lab.file_removed";
 
     /// <summary>A prescription left the pharmacy. The written drug became a drug in the owner's hand.</summary>
     public const string PrescriptionDispensed = "prescription.dispensed";
@@ -287,6 +305,13 @@ public static class AuditActions
     /// it moves the line between a record that could be signed yesterday and one that cannot today.
     /// </summary>
     public const string MedicalRecordSettingsChanged = "settings.medical_record_changed";
+
+    /// <summary>
+    /// A branch's name, address, pin or exam rooms changed (<c>docs/contract-extensions.md § 51</c>).
+    /// Audited because the rooms are what the queue sends people to, and the address is where the
+    /// website sends them; the details carry each changed part before and after.
+    /// </summary>
+    public const string BranchUpdated = "branch.updated";
 
     // ---- Clinical operations with a money or duty-of-care consequence -------------------------
 
@@ -516,6 +541,7 @@ public static class AuditActions
         ConsultationViewed,
         PrescriptionsViewed,
         LabResultsViewed,
+        LabFileOpened,
         DocumentGenerated,
         AiPetSummary,
     ];
@@ -531,6 +557,7 @@ public static class AuditActions
         AllergyRecorded, PetMarkedDeceased, PetCreated, VaccinationRecorded, TreatmentPlanCreated, DocumentAdded,
         PetUpdated, PetDeceasedUndone,
         LabRequested, LabResultsRecorded, LabResultsReviewed, PrescriptionDispensed,
+        LabResultAmended, LabResultVoided, LabFileAttached, LabFileRemoved, LabFileOpened,
         CustomerCreated, CustomerMerged, CustomerLineLinked, CustomerLineUnlinked,
         ConsentRecorded, ConsentWithdrawn, DataRequestRaised, DataRequestClosed,
         NotificationBroadcast, LineIntegrationConfigured,
@@ -541,7 +568,7 @@ public static class AuditActions
         ClinicBootstrapped, CredentialsReset,
         StaffInvited, StaffInvitationAccepted, StaffUpdated, StaffDeactivated,
         StaffPublicProfileUpdated, StaffSeeded,
-        RoleCreated, RolePermissionsReplaced, MedicalRecordSettingsChanged,
+        RoleCreated, RolePermissionsReplaced, MedicalRecordSettingsChanged, BranchUpdated,
         AppointmentCancelled, AppointmentNoShow, CancellationPolicyChanged, WaitingListEntryRemoved, QueuePriorityChanged,
         QueueDisplayCreated, QueueDisplayClaimed, QueueDisplayRevoked,
         InvoiceIssued, InvoiceVoided, InvoiceDiscounted,
@@ -584,6 +611,9 @@ public static class AuditResources
     public const string Role = "role";
     public const string Service = "service";
     public const string Settings = "settings";
+
+    /// <summary>A site of the clinic (<c>docs/contract-extensions.md § 51</c>).</summary>
+    public const string Branch = "branch";
     public const string Shift = "shift";
     public const string TimeOff = "time_off";
     public const string Vaccination = "vaccination";

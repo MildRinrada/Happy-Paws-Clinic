@@ -4,8 +4,12 @@ import { labPage } from '../content/lab-page';
 import type { LabRequest } from '../types/lab.types';
 import { LabStatusBadge } from './lab-status-badge';
 
-/** What was asked for, where it went, and when: the top of a request wherever it is shown. */
-export function LabRequestSummary({ request }: { request: LabRequest }) {
+/**
+ * What was asked for, where it went, and when: the top of a request wherever it is shown. Server
+ * only: the times are written in Thai by the server, so the browser never formats them again.
+ * `compact` leaves out the status line, for the worklist row that already shows it.
+ */
+export function LabRequestSummary({ request, compact = false }: { request: LabRequest; compact?: boolean }) {
   const text = labPage.request;
   const times = [
     text.requestedAt(formatDateTime(request.requested_at)),
@@ -15,14 +19,16 @@ export function LabRequestSummary({ request }: { request: LabRequest }) {
 
   return (
     <div className="space-y-1.5 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <LabStatusBadge status={request.status} />
-        {request.priority === 'urgent' && <Badge tone="red">{text.urgent}</Badge>}
-        {request.abnormal_count > 0 && <Badge tone="red">{text.abnormal(request.abnormal_count)}</Badge>}
-        <p className="font-medium text-ink-900">
-          {request.tests.map((test) => (test.code ? `${test.name} (${test.code})` : test.name)).join(', ')}
-        </p>
-      </div>
+      {!compact && (
+        <div className="flex flex-wrap items-center gap-2">
+          <LabStatusBadge status={request.status} />
+          {request.priority === 'urgent' && <Badge tone="red">{text.urgent}</Badge>}
+          {request.abnormal_count > 0 && <Badge tone="red">{text.abnormal(request.abnormal_count)}</Badge>}
+          <p className="font-medium text-ink-900">
+            {request.tests.map((test) => (test.code ? `${test.name} (${test.code})` : test.name)).join(', ')}
+          </p>
+        </div>
+      )}
       <p className="text-ink-600">
         {request.destination === 'external' ? text.external(request.external_lab_name ?? '') : text.inHouse}
         {' / '}
