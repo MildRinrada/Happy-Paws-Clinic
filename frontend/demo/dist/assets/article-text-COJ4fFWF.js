@@ -1,0 +1,1 @@
+function n(r){return`อ่าน ${r.reading_minutes} นาที | โดย ${r.author_name}`}function t(r){return r.split(/\r?\n\s*\r?\n/).map(a=>a.trim()).filter(Boolean)}function e(r){return`/articles/${r}`}export{n as a,t as b,e as c};

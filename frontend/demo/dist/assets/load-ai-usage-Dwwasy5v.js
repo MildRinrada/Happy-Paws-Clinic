@@ -1,0 +1,1 @@
+import{s as a,r as e,e as r,o as s,x as o}from"./index-BP0NbZfQ.js";import{l as n,S as c}from"./staff-context-CmPmc0Yt.js";function l(){return a().get("/staff/ai/usage")}const p=e.cache(async()=>{if(!(await n())?.can(c.AiUse))return null;try{const t=await r(()=>s(l()));return t?.enabled?t:null}catch(t){return o(t),null}});export{p as l};

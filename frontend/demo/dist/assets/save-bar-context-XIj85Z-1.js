@@ -1,0 +1,1 @@
+import{r as e}from"./index-BP0NbZfQ.js";const a=e.createContext({available:!1,register:()=>{},unregister:()=>{},confirmLeave:()=>!0}),r=e.createContext([]),o=e.createContext(()=>{});export{a as S,r as a,o as b};

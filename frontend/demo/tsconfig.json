@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "plugins": [],
+    "incremental": false,
+    "paths": {
+      "@/*": ["../src/*"],
+      "@demo/*": ["./src/*"],
+      "next/link": ["./src/shims/next-link.tsx"],
+      "next/navigation": ["./src/shims/next-navigation.ts"],
+      "next/headers": ["./src/shims/next-headers.ts"],
+      "next/cache": ["./src/shims/next-cache.ts"],
+      "next/image": ["./src/shims/next-image.tsx"],
+      "next/font/google": ["./src/shims/next-font.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "plugins/**/*.ts", "vite.config.mts", "scripts/**/*.mjs"],
+  "exclude": ["dist", "node_modules"]
+}

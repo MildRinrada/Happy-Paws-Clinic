@@ -32,10 +32,11 @@ export default async function LabPage({ searchParams }: { searchParams: Promise<
   const branch = context.branch;
   const canRecord = context.can(Scope.LabWrite);
   const filters = parseLabFilters(params, canRecord);
+  const access = { canReadCustomers: context.can(Scope.CustomerRead), canReadStaff: context.can(Scope.StaffRead) };
 
   let view: LabWorklistView;
   try {
-    view = await authed(() => loadLabWorklist(filters, branch.id));
+    view = await authed(() => loadLabWorklist(filters, branch.id, access));
   } catch (error) {
     if (error instanceof ApiError && (error.status === 403 || error.status === 422)) {
       return <Alert>{error.message}</Alert>;

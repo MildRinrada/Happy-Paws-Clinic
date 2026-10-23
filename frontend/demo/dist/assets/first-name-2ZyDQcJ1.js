@@ -1,0 +1,1 @@
+const i=["นางสาว","ด.ช.","ด.ญ.","น.ส.","นาง","นาย","คุณ","ดร."],n=/^(mrs\.?|miss|mr\.?|ms\.?|dr\.?)\s+/i,e=/^[ก-ฮเ-ไ]/;function o(t){for(const s of i){if(!t.startsWith(s))continue;const r=t.slice(s.length);if(r.startsWith(" ")||e.test(r))return r.trimStart()}return t.replace(n,"")}function c(t){const s=t.trim().replace(/\s+/g," ");return o(s).split(" ")[0]||s}export{c as f};

@@ -1,0 +1,1 @@
+import{c as t}from"./datetime-DKE9IA0H.js";const e=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}),n=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];function o(a){return{day:t(a),time:e.format(a)}}function r(a){return n[new Date(`${a}T00:00:00Z`).getUTCDay()]}export{o as c,r as w};

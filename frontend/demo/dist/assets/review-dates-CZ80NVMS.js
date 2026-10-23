@@ -1,0 +1,1 @@
+const e=new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",day:"numeric",month:"long",year:"numeric"}),a=new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",day:"numeric",month:"short",year:"numeric"});function n(t){return e.format(new Date(`${t}T12:00:00+07:00`))}function o(t){return a.format(new Date(t))}export{o as a,n as f};

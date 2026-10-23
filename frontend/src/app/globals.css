@@ -89,6 +89,47 @@ body {
   @apply outline-2 outline-offset-2 outline-brand-600;
 }
 
+/* A scroll area whose bar shows only while the pointer is over it, or a key has moved focus into
+   it: a thin bar with no arrow buttons. The bar keeps its width while hidden, so nothing inside
+   shifts when it appears. Used by the console's sidebar, which is long enough to scroll on a
+   laptop but is read far more than it is scrolled. */
+.scrollbar-on-hover::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-on-hover::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+}
+.scrollbar-on-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-on-hover::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: transparent;
+  background-clip: padding-box;
+}
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb {
+  background-color: var(--color-ink-300);
+}
+.scrollbar-on-hover::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-ink-400);
+}
+
+/* Firefox has no scrollbar pseudo-elements, only these two properties. Kept to Firefox: in Chrome
+   they would switch the pseudo-elements above off. */
+@supports (-moz-appearance: none) {
+  .scrollbar-on-hover {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .scrollbar-on-hover:hover,
+  .scrollbar-on-hover:has(:focus-visible) {
+    scrollbar-color: var(--color-ink-300) transparent;
+  }
+}
+
 @media print {
   /* A receipt prints on its own: the console's chrome is not part of the document. */
   .no-print {

@@ -1,0 +1,1 @@
+import{s as e}from"./index-BP0NbZfQ.js";async function o(){const{data:t}=await e().get("/portal/pets");return t}function a(t){return e().post("/portal/documents",{body:{pet_id:t.petId,file_name:t.fileName,content_type:t.contentType,size_bytes:t.sizeBytes,kind:t.kind,title:t.title||void 0}})}export{a as c,o as l};

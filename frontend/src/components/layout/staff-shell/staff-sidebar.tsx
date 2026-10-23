@@ -37,7 +37,7 @@ export function StaffSidebar({ groups, brand, initialCollapsed }: StaffSidebarPr
     >
       <div className="px-4 pb-4 pt-5 group-data-[collapsed=true]/sidebar:px-0">{brand}</div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 group-data-[collapsed=true]/sidebar:px-2">
+      <div className="scrollbar-on-hover min-h-0 flex-1 overflow-y-auto px-3 pb-4 group-data-[collapsed=true]/sidebar:px-2">
         <NavMenu groups={groups} />
       </div>
 

@@ -1,0 +1,1 @@
+import{s as a}from"./index-BP0NbZfQ.js";async function i(t={}){const{data:s}=await a().get("/staff/inventory/items",{query:{q:t.q||void 0,status:t.status||void 0,branch:t.branch||void 0}});return s}export{i as l};

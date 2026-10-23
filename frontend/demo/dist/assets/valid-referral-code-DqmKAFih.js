@@ -1,0 +1,1 @@
+import{p as t}from"./index-BP0NbZfQ.js";const o=/^[2-9A-HJKMNP-Z]{8}$/;function n(e){if(typeof e!="string"||e.length>32)return;const r=e.replace(/[\s-]/g,"").toUpperCase();return o.test(r)?r:void 0}function i(e){return t().get(`/referrals/${encodeURIComponent(e)}`)}async function a(e){const r=n(e);if(r)try{return(await i(r)).valid?r:void 0}catch{return}}export{n as r,a as v};

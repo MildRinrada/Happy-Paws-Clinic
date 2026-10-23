@@ -1,0 +1,1 @@
+function l(e){const s={},f=e.details?.errors;if(f&&typeof f=="object")for(const[t,i]of Object.entries(f))Array.isArray(i)&&typeof i[0]=="string"&&(s[t]=i[0]);return e.field&&!s[e.field]&&(s[e.field]=e.message),s}export{l as f};

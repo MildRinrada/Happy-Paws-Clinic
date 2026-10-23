@@ -1,0 +1,1 @@
+const n=new Intl.NumberFormat("th-TH",{style:"currency",currency:"THB",minimumFractionDigits:2});function e(t){return n.format(t/100)}function a(t){const r=t.replace(/[,\s฿]/g,"");return/^\d+(\.\d{1,2})?$/.test(r)?Math.round(Number(r)*100):null}export{e as f,a as p};

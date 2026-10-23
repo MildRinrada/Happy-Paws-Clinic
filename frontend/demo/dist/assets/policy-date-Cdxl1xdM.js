@@ -1,0 +1,1 @@
+const n=new Intl.DateTimeFormat("th-TH",{timeZone:"UTC",day:"numeric",month:"long",year:"numeric"});function a(e){const t=new Date(`${e}T00:00:00Z`);return Number.isNaN(t.getTime())?e:n.format(t)}export{a as f};

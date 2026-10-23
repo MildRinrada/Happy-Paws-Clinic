@@ -1,0 +1,1 @@
+import{s as i}from"./index-BP0NbZfQ.js";function n(t,o){return i().get("/portal/notifications",{query:{unread:t,cursor:o,limit:20}})}function r(t){return i().post("/portal/notifications/read",{body:t?{ids:t}:{}})}export{n as l,r as m};

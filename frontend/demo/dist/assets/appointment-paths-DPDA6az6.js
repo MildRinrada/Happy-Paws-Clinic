@@ -1,0 +1,1 @@
+const i={calendar:t=>t?`/appointments?date=${t}`:"/appointments",book:t=>t?`/appointments/new?date=${t}`:"/appointments/new",waitingList:"/appointments/waiting-list",waitingListOf:(t,n)=>`/appointments/waiting-list?status=${t}${n?`&cursor=${encodeURIComponent(n)}`:""}`};export{i as a};

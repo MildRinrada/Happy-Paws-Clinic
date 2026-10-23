@@ -1,0 +1,126 @@
+# Every page of the demo, per role: node demo/scripts/route-check.mjs --list demo/scripts/all-pages.txt
+# none
+/
+/about
+/articles
+/articles>>a[href^="/articles/"]
+/book
+/contact
+/emergency
+/privacy
+/privacy>>a[href^="/privacy/versions/"]
+/r/NAPAJ268
+/review/hprv_demo-usable-7Kq2mXw9
+/reviews
+/services
+/team
+/vaccine-schedule
+/login
+/register
+/forgot-password
+/reset-password
+/display/setup
+# customer
+/portal
+/portal/account
+/portal/appointments
+/portal/appointments>>a[href$="/reschedule"]
+/portal/book
+/portal/invoices
+/portal/messages
+/portal/notifications
+/portal/packages
+/portal/pets
+/portal/pets>>a[href^="/portal/pets/"]
+/portal/pets/7a1d0011-0000-4000-8000-000000000001/documents
+/portal/pets/7a1d0011-0000-4000-8000-000000000001/edit
+/portal/records
+/portal/referral
+/portal/reviews
+# owner
+/dashboard
+/ai
+/account
+/appointments
+/appointments/new
+/appointments/waiting-list
+/billing
+/billing>>a[href^="/billing/"]:not([href="/billing/new"])
+/billing/new
+/crm/coupons
+/crm/customer-packages
+/crm/due-back
+/crm/loyalty
+/crm/packages
+/crm/referrals
+/crm/segments
+/crm/segments>>a[href^="/crm/segments/"]
+/customers
+/customers/new
+/customers/7a1d0010-0000-4000-8000-000000000001
+/pets/7a1d0011-0000-4000-8000-000000000001
+/inventory
+/inventory/adjustments
+/inventory/alerts
+/inventory/forecast
+/inventory/movements
+/inventory/purchase-orders
+/lab
+/messages
+/notifications/automations
+/notifications/broadcast
+/notifications/log
+/notifications/reminders
+/notifications/send
+/notifications/templates
+/prescriptions
+/queue
+/queue/displays
+/queue/history
+/queue/display
+/reports
+/schedules
+/schedules/forecast
+/settings
+/settings/appointments
+/settings/articles
+/settings/articles>>a[href^="/settings/articles/"]:not([href="/settings/articles/new"])
+/settings/articles/new
+/settings/clinic
+/settings/contacts
+/settings/hours
+/settings/integrations/api-keys
+/settings/integrations/calendar
+/settings/integrations/lab
+/settings/integrations/payment
+/settings/integrations/webhooks
+/settings/integrations/webhooks>>a[href^="/settings/integrations/webhooks/"]
+/settings/line
+/settings/loyalty
+/settings/privacy-policy
+/settings/privacy-policy>>a[href^="/settings/privacy-policy/"]
+/settings/reviews
+/settings/rules
+/settings/services
+/settings/staff
+# vet
+/dashboard
+/queue
+/lab
+/prescriptions
+/pets/7a1d0011-0000-4000-8000-000000000001
+/appointments
+/ai
+# reception
+/dashboard
+/queue
+/appointments
+/appointments/new
+/customers
+/customers/7a1d0010-0000-4000-8000-000000000001
+/billing
+# owner
+/queue>>js:'/consultations/' + JSON.parse(localStorage.getItem('hp-demo-db')).tables.consultations.find(c => c.status !== 'closed').id
+/queue>>js:'/consultations/' + JSON.parse(localStorage.getItem('hp-demo-db')).tables.consultations.find(c => c.status === 'closed').id
+# vet
+/queue>>js:'/consultations/' + JSON.parse(localStorage.getItem('hp-demo-db')).tables.consultations.find(c => c.status !== 'closed').id

@@ -1,0 +1,1 @@
+import{j as r}from"./index-BP0NbZfQ.js";function m({src:i,fill:e,priority:t,quality:d,placeholder:s,blurDataURL:u,unoptimized:p,loader:g,style:l,...o}){const a=typeof i=="string"?i:i.src,n=e?{position:"absolute",inset:0,width:"100%",height:"100%"}:void 0;return r.jsx("img",{...o,src:a,loading:t?"eager":o.loading??"lazy",decoding:"async",style:{...n,...l}})}export{m as I};

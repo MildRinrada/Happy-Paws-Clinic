@@ -1,0 +1,1 @@
+import{A as e,b as a,S as s}from"./index-BP0NbZfQ.js";async function i(t){try{return{ok:!0,data:await t()}}catch(r){if(!(r instanceof e))throw r;return r.status===401&&a(s),{ok:!1,error:{code:r.code,message:r.message,field:r.field,status:r.status,details:r.details}}}}export{i as r};

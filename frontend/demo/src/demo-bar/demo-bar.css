@@ -1,0 +1,342 @@
+/* The demo strip: amber with black type, a colour the clinic's site never uses, so it reads as a
+   notice laid over the product and not as part of it. The dialogs use the product's own palette. */
+.demobar {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.3125rem 1rem;
+  background: #ffd23f;
+  color: #111111;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.demobar__what {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+}
+.demobar__tag {
+  flex: none;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffd23f;
+  font-weight: 700;
+}
+.demobar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+.demobar__label {
+  margin-inline-end: 0.25rem;
+}
+.demobar__divider {
+  width: 1px;
+  height: 1.125rem;
+  margin: 0 0.25rem;
+  background: rgba(17, 17, 17, 0.35);
+}
+.demobar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(17, 17, 17, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  cursor: pointer;
+}
+.demobar button:hover {
+  background: rgba(17, 17, 17, 0.1);
+}
+.demobar button:active {
+  background: rgba(17, 17, 17, 0.18);
+}
+.demobar button[aria-pressed='true'] {
+  border-color: #111111;
+  background: #111111;
+  color: #ffd23f;
+}
+.demobar button:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+.demobar__mail b {
+  display: grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffd23f;
+  font-size: 0.6875rem;
+}
+/* On a phone the strip is one row that scrolls sideways inside itself, so the site starts near the top. */
+@media (max-width: 64em) {
+  .demobar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .demobar__note,
+  .demobar__label {
+    display: none;
+  }
+  .demobar > * {
+    flex: none;
+  }
+  .demobar__actions {
+    flex-wrap: nowrap;
+  }
+  .demobar button {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+/* A message the clinic "sent": a one-time code arrives here so it can be typed straight in. */
+.demo-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 70;
+  display: grid;
+  gap: 0.25rem;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.875rem 1rem;
+  border: 2px solid #111111;
+  border-radius: 0.75rem;
+  background: #ffd23f;
+  color: #111111;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.25);
+}
+.demo-toast__meta {
+  font-size: 0.75rem;
+}
+.demo-toast__code strong {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+}
+.demo-toast__body {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.demo-toast__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.demo-toast__actions button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(17, 17, 17, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.demo-toast__actions button:hover {
+  background: rgba(17, 17, 17, 0.1);
+}
+
+.demo-dialog {
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 1rem;
+  background: #ffffff;
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  box-shadow: 0 24px 60px rgba(28, 26, 23, 0.3);
+}
+.demo-dialog::backdrop {
+  background: rgba(28, 26, 23, 0.45);
+}
+.demo-dialog__head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--color-ink-100);
+  background: #ffffff;
+}
+.demo-dialog__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.demo-dialog__close {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-ink-600);
+  cursor: pointer;
+}
+.demo-dialog__close:hover {
+  background: var(--color-ink-100);
+}
+.demo-dialog__body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.demo-dialog__body p {
+  margin: 0;
+}
+.demo-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.demo-muted {
+  color: var(--color-ink-600);
+  font-size: 0.875rem;
+}
+.demo-mono {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+.demo-link {
+  color: var(--color-brand-700);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.demo-guide {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  list-style: decimal;
+}
+.demo-guide em {
+  font-style: normal;
+  font-weight: 600;
+}
+.demo-box {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--color-ink-50);
+  font-size: 0.875rem;
+}
+.demo-accounts {
+  border-collapse: collapse;
+}
+.demo-accounts th,
+.demo-accounts td {
+  padding: 0.125rem 1rem 0.125rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+.demo-accounts th {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.demo-accounts td {
+  word-break: break-all;
+}
+
+.demo-button {
+  min-height: 2.5rem;
+  padding: 0 1.125rem;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.demo-button--primary {
+  background: var(--color-brand-600);
+  color: #ffffff;
+}
+.demo-button--primary:hover {
+  background: var(--color-brand-700);
+}
+.demo-button--quiet {
+  border-color: var(--color-ink-200);
+  background: transparent;
+  color: #b42318;
+}
+.demo-button--quiet:hover {
+  background: #fef3f2;
+}
+
+.demo-messages {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-messages li {
+  display: grid;
+  gap: 0.25rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--color-ink-100);
+}
+.demo-messages__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.demo-messages__body {
+  white-space: pre-line;
+  font-size: 0.875rem;
+}
+.demo-messages__code strong {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+}
+.demo-chip {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.demo-chip--sms {
+  background: var(--color-ink-100);
+  color: var(--color-ink-800);
+}
+.demo-chip--email {
+  background: var(--color-brand-50);
+  color: var(--color-brand-800);
+}
+.demo-chip--line {
+  background: #e8f8ee;
+  color: #05612b;
+}
