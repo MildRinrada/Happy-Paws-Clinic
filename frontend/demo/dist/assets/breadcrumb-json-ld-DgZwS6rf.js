@@ -1,0 +1,1 @@
+import{j as m}from"./index-Ci3v_PYW.js";import{a as o}from"./seo-BqvV2T6E.js";import{J as r,a as i}from"./json-ld-Ba6_Yujk.js";function u({trail:e}){const a=[{name:o.homeLabel,path:"/"},...e];return m.jsx(r,{data:{"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:a.map((t,s)=>({"@type":"ListItem",position:s+1,name:t.name,item:i(t.path)}))}})}export{u as B};

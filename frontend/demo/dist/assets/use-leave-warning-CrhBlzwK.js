@@ -1,1 +1,0 @@
-import{r as s}from"./index-BP0NbZfQ.js";import{S as r}from"./save-bar-context-XIj85Z-1.js";function f(e,t){const{register:a,unregister:n}=s.useContext(r);s.useEffect(()=>{a({formId:e,section:"",dirty:t,pending:!1,failed:!1,inBar:!1},()=>{})},[a,e,t]),s.useEffect(()=>()=>n(e),[n,e])}export{f as u};

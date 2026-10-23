@@ -1,1 +1,0 @@
-import{j as r}from"./index-BP0NbZfQ.js";function e(){return r.jsx("span",{"aria-hidden":!0,className:"ml-2 inline-block size-3 rounded-full border-2 border-current border-r-transparent align-[-1px] opacity-0"})}export{e as L};

@@ -1,0 +1,1 @@
+import{j as a}from"./index-Ci3v_PYW.js";import{B as t}from"./badge-CYI9nZTc.js";import{s as e,l as r,a as o}from"./delivery-labels-Cub4KzwY.js";function m({status:s}){return a.jsx(t,{tone:e[s]??"neutral",children:r(o,s)})}export{m as D};

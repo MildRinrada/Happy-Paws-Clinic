@@ -1,0 +1,1 @@
+import{j as e,L as i}from"./index-Ci3v_PYW.js";function s({href:n,children:t}){return e.jsxs(i,{href:n,className:"inline-flex items-center gap-1 text-sm text-ink-600 hover:text-brand-700",children:[e.jsx("span",{"aria-hidden":!0,children:"←"}),t]})}export{s as B};

@@ -1,0 +1,1 @@
+import{a as i,j as n}from"./index-Ci3v_PYW.js";import{l as a}from"./load-site-info-C3w_HEeZ.js";import{l as t,c}from"./load-clinic-profile-D83ieW_4.js";import{J as r}from"./json-ld-Ba6_Yujk.js";async function l(){const[o,s]=await Promise.all([t(),a()]);return n.jsx(r,{data:c(o,s)})}const d=i(l,"features/seo/components/clinic-json-ld.tsx#ClinicJsonLd");export{d as C};

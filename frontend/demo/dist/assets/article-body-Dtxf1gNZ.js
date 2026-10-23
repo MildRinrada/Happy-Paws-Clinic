@@ -1,0 +1,1 @@
+import{j as r}from"./index-Ci3v_PYW.js";import{b as s}from"./article-text-COJ4fFWF.js";function p({body:t}){return r.jsx("div",{className:"space-y-5 text-[17px] leading-[1.8] text-ink-800",children:s(t).map((a,e)=>r.jsx("p",{children:a},e))})}export{p as A};

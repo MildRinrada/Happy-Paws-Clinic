@@ -1,0 +1,1 @@
+import{j as a}from"./index-Ci3v_PYW.js";import{P as o}from"./page-loading-CdA8NBvC.js";import{u as t}from"./ui-text-CUIj806k.js";function f(){return a.jsx(o,{label:t.loadingPage})}export{f as default};

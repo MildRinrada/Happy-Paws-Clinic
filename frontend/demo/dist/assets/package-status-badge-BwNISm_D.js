@@ -1,1 +1,0 @@
-import{j as e}from"./index-BP0NbZfQ.js";import{B as o}from"./badge-BuUXoKLZ.js";import{a as r}from"./crm-labels-hDIqr2bc.js";function i({status:a}){const t=r[a];return e.jsx(o,{tone:t.tone,children:t.text})}export{i as P};

@@ -1,1 +1,0 @@
-import{j as s,L as i}from"./index-BP0NbZfQ.js";function l({nextHref:e,firstHref:n,nextLabel:r,firstLabel:a}){return!e&&!n?null:s.jsxs("div",{className:"flex items-center justify-end gap-4 text-sm",children:[n&&s.jsx(i,{href:n,className:"text-ink-600 hover:underline",children:a}),e&&s.jsx(i,{href:e,className:"text-brand-700 hover:underline",children:r})]})}export{l as P};

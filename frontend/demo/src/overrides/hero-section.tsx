@@ -3,40 +3,30 @@ import { SiteContainer } from '@/components/layout/site-container';
 import { HeroActions } from '@/features/home/components/hero/hero-actions';
 import { HeroHeading } from '@/features/home/components/hero/hero-heading';
 import { SocialProof } from '@/features/home/components/hero/social-proof';
-import { NextFreeTime } from '@/features/home/components/next-free/next-free-time';
 import { hero, heroImage } from '@/features/home/content/hero';
-import { WalkInWait } from '@/features/wait-estimate/components/walk-in-wait';
 
 /**
- * The product's hero, laid out for the demo. In the product the banner hangs off the section's
- * right edge at 82% of its height; with the next free time and the walk-in wait both filled in,
- * the section grows so tall that the dog and cat dwarf the text. Here the two halves sit side by
- * side inside the page's container, with tighter spacing, and the picture fills its half down to
- * the bottom edge. Same parts, same words, same data.
+ * The product's hero, laid out for the demo: the words and the two buttons on the left, the dog
+ * and cat filling the right half of the page's container from top to bottom.
+ *
+ * The product's hero also carries the next free time and the walk-in wait. They grow with every
+ * branch the clinic has, and with two branches they pushed the banner past the height the picture
+ * can fill, so the demo leaves them out of the banner. Booking (`/book`) shows the free times.
  */
 export function HeroSection() {
   return (
-    <section className="demo-hero relative overflow-hidden bg-site-teal text-white">
+    <section className="relative overflow-hidden bg-site-teal text-white">
       <SiteContainer className="grid lg:grid-cols-2 lg:gap-8">
-        <div className="relative z-10 py-10 lg:py-11">
+        <div className="relative z-10 py-12 lg:py-20">
           <HeroHeading />
 
-          <p className="mt-4 max-w-[520px] text-base font-light leading-relaxed sm:text-lg sm:leading-[25px]">{hero.lead}</p>
+          <p className="mt-7 max-w-[520px] text-base font-light leading-relaxed sm:text-lg sm:leading-[25px]">{hero.lead}</p>
 
-          <div className="mt-5">
+          <div className="mt-8">
             <HeroActions />
           </div>
 
-          <div className="demo-hero__live max-w-[520px]">
-            <Suspense fallback={null}>
-              <NextFreeTime />
-            </Suspense>
-            <Suspense fallback={null}>
-              <WalkInWait tone="hero" className="mt-3" />
-            </Suspense>
-          </div>
-
-          <div className="mt-5">
+          <div className="mt-10">
             <Suspense fallback={null}>
               <SocialProof />
             </Suspense>
@@ -49,7 +39,7 @@ export function HeroSection() {
               src={heroImage.src}
               alt={heroImage.alt}
               fetchPriority="high"
-              className="absolute inset-0 h-full w-full object-contain object-bottom"
+              className="absolute inset-0 h-full w-full object-contain object-bottom lg:pt-6"
             />
           </div>
         )}

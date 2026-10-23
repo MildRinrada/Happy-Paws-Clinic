@@ -1,0 +1,1 @@
+import{j as t}from"./index-Ci3v_PYW.js";import{A as e,a}from"./ai-draft-badge-BmNIidjZ.js";function i(){return t.jsxs("p",{className:"flex flex-wrap items-center gap-2 text-xs text-amber-900",children:[t.jsx(e,{}),t.jsx("span",{children:a.draftNotice})]})}export{i as A};

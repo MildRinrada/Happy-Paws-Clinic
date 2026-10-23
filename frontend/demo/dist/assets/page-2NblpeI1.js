@@ -1,0 +1,1 @@
+import{a as e,b as r}from"./index-Ci3v_PYW.js";import{r as t}from"./referral-paths-DNUwLDD1.js";import{v as s}from"./valid-referral-code-Ca7h3f0w.js";const d={robots:{index:!1,follow:!1}},l="force-dynamic";async function c({params:a}){const{code:o}=await a;r(t.book(await s(o)))}const m=e(c,"app/(public)/r/[code]/page.tsx#default");export{m as default,l as dynamic,d as metadata};

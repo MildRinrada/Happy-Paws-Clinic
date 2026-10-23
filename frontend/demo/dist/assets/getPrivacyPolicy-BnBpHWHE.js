@@ -1,0 +1,1 @@
+import{p as e}from"./index-Ci3v_PYW.js";const i=60;function t(){return e().get("/privacy-policy",{revalidate:i})}function c(r){return e().get(`/privacy-policy/versions/${encodeURIComponent(r)}`,{revalidate:i})}export{c as a,t as g};

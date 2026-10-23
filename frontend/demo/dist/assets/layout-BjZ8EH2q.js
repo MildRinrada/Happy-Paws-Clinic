@@ -1,1 +1,0 @@
-import{j as e}from"./index-BP0NbZfQ.js";const o="force-dynamic",n={robots:{index:!1,follow:!1}};function s({children:t}){return e.jsx("div",{className:"min-h-dvh bg-ink-900 text-white",children:t})}export{s as default,o as dynamic,n as metadata};

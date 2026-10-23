@@ -1,1 +1,0 @@
-import{j as i}from"./index-BP0NbZfQ.js";function n({id:t,children:e}){return i.jsx("h2",{id:t,className:"text-2xl font-semibold leading-tight sm:text-[30px] sm:leading-tight",children:e})}export{n as S};

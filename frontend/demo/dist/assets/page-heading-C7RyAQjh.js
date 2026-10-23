@@ -1,0 +1,1 @@
+import{j as e}from"./index-Ci3v_PYW.js";function i({title:s,intro:t}){return e.jsxs("div",{children:[e.jsx("h1",{className:"text-2xl font-semibold text-ink-900",children:s}),t&&e.jsx("p",{className:"mt-1 text-sm text-site-muted",children:t})]})}export{i as P};

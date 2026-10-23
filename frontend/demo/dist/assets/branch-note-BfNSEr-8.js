@@ -1,0 +1,1 @@
+import{j as r}from"./index-Ci3v_PYW.js";import{i as e}from"./inventory-tabs-BFsOluoR.js";function s({name:t}){return r.jsx("span",{className:"text-sm text-ink-600",children:e.branchNote(t)})}export{s as B};

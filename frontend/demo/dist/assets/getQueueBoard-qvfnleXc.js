@@ -1,1 +1,0 @@
-import{s as e}from"./index-BP0NbZfQ.js";function i(s,t={}){return e().get("/staff/queue",{query:{branch:s,date:t.date,include_finished:t.includeFinished?!0:void 0,status:t.statuses&&t.statuses.length>0?t.statuses.join(","):void 0}})}export{i as g};

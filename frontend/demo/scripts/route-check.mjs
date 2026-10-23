@@ -193,13 +193,13 @@ for (const visit of visits) {
     heading: document.querySelector('main h1, h1')?.textContent?.trim().slice(0, 80) ?? null,
     nextError: document.body.innerText.includes('เกิดข้อผิดพลาด') || document.body.innerText.includes('Something went wrong'),
   })`);
-  // Before the screenshot, so a probe may also scroll to what it wants pictured.
-  if (probe) state.probe = await evaluate(probe);
   if (mouse) {
     const [x, y] = mouse.split(',').map(Number);
     await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
+  // Before the screenshot, so a probe may also scroll to what it wants pictured.
+  if (probe) state.probe = await evaluate(probe);
   if (shots) {
     const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     const name = `${visit.role}${visit.path.replace(/[^a-z0-9]+/gi, '_')}`.slice(0, 120);
